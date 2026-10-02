@@ -99,3 +99,21 @@ injoignable autrement que par Caddy, en TLS.
 - **Authentification.** Comptes élèves, ou codes de classe sans compte.
 - **Content-Security-Policy.** Absente pour l'instant : Next injecte ses
   propres scripts, et une politique stricte demande de leur poser un nonce.
+
+## Tests et validation
+
+Installer avec `bun install --frozen-lockfile`, puis lancer :
+
+- `bun run test` : tests unitaires Vitest, une execution puis sortie.
+- `bun run test:watch` : relance des tests pendant le developpement.
+- `bun run lint` : verification ESLint.
+- `bun run build` : compilation de production.
+
+Les tests sont places dans `src/**/*.test.ts` ou `src/**/*.test.tsx`.
+React Testing Library et les assertions jest-dom sont disponibles ; le DOM est nettoye apres chaque test.
+Les premiers tests valident le rendu de la page de demarrage, pas encore les fonctionnalites de Typio.
+Les composants serveur asynchrones necessiteront des tests d'integration ou de navigateur.
+
+La CI execute tests, lint et build sur les PR vers `develop` et `main`, ainsi que les pushes sur ces branches.
+Le controle a rendre obligatoire dans les protections GitHub est `Tests, lint and build`.
+Le workflow CI ne deploie rien et ne compile rien sur le VPS.
