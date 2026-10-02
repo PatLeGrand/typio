@@ -1,0 +1,23 @@
+# Les fins de ligne.
+#
+# Ce dépôt se développe sous Windows et se déploie sous Linux. Git convertit
+# par défaut en CRLF à la sortie du dépôt (core.autocrlf), ce qui est sans
+# effet sur du TypeScript mais fatal pour un script shell : bash lit le
+# retour chariot comme une partie de la commande et répond
+# « \r: command not found ».
+#
+# Les fichiers ci-dessous gardent donc des fins de ligne LF partout, y
+# compris dans la copie de travail Windows.
+
+* text=auto eol=lf
+
+*.sh         text eol=lf
+Dockerfile   text eol=lf
+*.caddyfile  text eol=lf
+*.yml        text eol=lf
+*.yaml       text eol=lf
+
+# Binaires : aucune conversion.
+*.png binary
+*.ico binary
+*.svg text eol=lf
