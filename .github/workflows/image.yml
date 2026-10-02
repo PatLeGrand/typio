@@ -1,0 +1,67 @@
+# Construit l'image de Typio et la publie sur GHCR.
+#
+# C'est ici que la compilation a lieu, et nulle part ailleurs : le VPS n'a que
+# 1,9 Go de RAM partagés avec huit conteneurs en production, et un `next build`
+# sur place risquerait de faire désigner par l'OOM killer une victime qui n'a
+# rien demandé. Le VPS ne fait qu'un `docker pull`. Voir le Dockerfile.
+
+name: Image
+
+on:
+  push:
+    branches: [main]
+  # Pour reconstruire sans avoir à pousser un commit vide.
+  workflow_dispatch:
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      # Le GITHUB_TOKEN de l'exécution suffit à publier sur GHCR : pas de
+      # jeton personnel à créer, ni de secret à faire tourner.
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Buildx pour avoir le cache de couches entre deux exécutions.
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # github.repository s'écrit PatLeGrand/typio, avec des majuscules
+          # que GHCR refuse ; cette action met le nom en minuscules d'elle-même.
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+          # Fait le lien entre l'image et le dépôt dans l'interface GitHub.
+          labels: |
+            org.opencontainers.image.title=Typio
+            org.opencontainers.image.description=Courses de frappe au clavier pour les eleves du secondaire
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Le cache évite de rejouer `bun install` à chaque commit qui ne
+          # touche pas aux dépendances.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Rappel du déploiement
+        run: |
+          echo "Image publiee : ${{ steps.meta.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo 'Pour deployer :  ssh root@164.90.160.137 "cd /srv/typio/infra && ./deployer.sh"' >> "$GITHUB_STEP_SUMMARY"

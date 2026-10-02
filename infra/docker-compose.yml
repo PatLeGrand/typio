@@ -1,0 +1,62 @@
+# Typio sur le VPS.
+#
+#   cd /srv/typio/infra
+#   ./deployer.sh
+#
+# Il n'y a **pas de frontal ici**. Le serveur en héberge déjà un — le Caddy
+# qui sert pilote, socle, cuisine et les autres — et Typio passe par lui
+# plutôt que de lui disputer les ports 80 et 443. Voir caddy/typio.caddyfile.
+#
+# Rien n'est construit sur cette machine : l'image vient de GitHub Actions,
+# via GHCR. Voir le Dockerfile pour la raison (la RAM du VPS).
+
+name: typio
+
+services:
+  web:
+    # Le nom du dépôt en minuscules : GHCR refuse les majuscules, alors que
+    # le compte GitHub s'écrit PatLeGrand.
+    # Le tag est pilotable depuis deployer.sh (TAG=sha-a1b2c3d ./deployer.sh)
+    # pour revenir a une version precise sans editer ce fichier.
+    image: ghcr.io/patlegrand/typio:${TYPIO_TAG:-latest}
+
+    # `docker compose up -d` réutilise l'image déjà présente s'il en a une.
+    # Sans cette ligne, un déploiement après un nouveau build relancerait
+    # l'ancienne version sans rien signaler.
+    pull_policy: always
+
+    restart: unless-stopped
+
+    # 8018 : les ports 8010 à 8017 sont pris par les sept API de « carte »
+    # (8013 est réservé à son agenda), 8765 et 8766 par pilote et commandant.
+    #
+    # Le `127.0.0.1:` en tête n'est pas décoratif : sans lui, Docker ouvre le
+    # port sur toutes les interfaces et écrit sa propre règle dans iptables,
+    # en amont du pare-feu — Typio serait joignable en clair sur
+    # http://164.90.160.137:8018, hors de Caddy et sans TLS.
+    ports:
+      - "127.0.0.1:8018:3000"
+
+    # Le VPS a 1,9 Go partagés avec huit conteneurs et un swap déjà entamé.
+    # Ce plafond garantit qu'une fuite de mémoire dans Typio fasse tomber
+    # Typio, et pas la base PostgreSQL de la famille : au-delà, le noyau tue
+    # ce conteneur-ci, que Docker redémarre ensuite tout seul.
+    mem_limit: 512m
+    memswap_limit: 512m
+
+    # Le serveur de Next répond sur / dès qu'il est prêt. wget est fourni par
+    # le busybox de l'image Alpine : rien à installer.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    # Les journaux d'un serveur web grossissent sans fin. 33 Go libres, et
+    # personne pour surveiller : on plafonne.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

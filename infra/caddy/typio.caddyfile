@@ -1,0 +1,41 @@
+# >>> Typio — début. Géré par brancher-caddy.sh ; ne pas recopier à la main.
+#
+# Le bloc à greffer sur le Caddy déjà en place sur le VPS.
+#
+# Ce serveur héberge déjà pilote, commandant et les sept services de
+# « carte ». Plutôt que de lui disputer les ports 80 et 443, Typio passe par
+# le même portier : Caddy obtient et renouvelle seul le certificat Let's
+# Encrypt, et les autres domaines continuent exactement comme avant.
+#
+# Volontairement sans `import carte-commun` : ce raccourci appartient au bloc
+# de « carte », qu'un brancher-caddy.sh voisin réécrit de temps en temps. Si
+# ce bloc-là disparaissait, Typio tomberait avec lui. Les quatre en-têtes sont
+# donc répétées ici — six lignes contre une dépendance invisible.
+
+typio.aether-manager.ca {
+	encode zstd gzip
+
+	header {
+		# Le navigateur refusera le HTTP en clair sur ce domaine pendant un an.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		# Personne ne charge Typio dans un cadre invisible : une course de
+		# frappe se joue au clavier, et un cadre tiers pourrait enregistrer
+		# ce que l'élève tape.
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		# Ne pas annoncer quel serveur tourne ici.
+		-Server
+	}
+
+	# Le serveur de Next n'écoute que sur 127.0.0.1:8018 : depuis internet, il
+	# est injoignable autrement que par ce proxy, en TLS.
+	reverse_proxy 127.0.0.1:8018
+}
+
+# Pas de Content-Security-Policy ici, contrairement à commandant : Next injecte
+# ses propres scripts au chargement, et une politique stricte demande de leur
+# poser un nonce côté application. À faire quand il y aura une page à protéger
+# — aujourd'hui ce domaine ne sert que le squelette.
+#
+# <<< Typio — fin.

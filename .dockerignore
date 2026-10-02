@@ -1,0 +1,29 @@
+# Ce qui ne doit pas entrer dans le contexte de construction.
+#
+# `COPY . .` dans le Dockerfile recopie ce répertoire : sans ce fichier, le
+# node_modules et le .next de la machine de développement — compilés sous
+# Windows — écraseraient ceux que l'image vient d'installer pour Linux.
+
+node_modules
+.next
+out
+build
+
+.git
+.gitignore
+
+# Les secrets ne traversent jamais le contexte de construction : une variable
+# posée dans une image y reste lisible par qui récupère l'image.
+.env
+.env.*
+!.env.example
+
+Dockerfile
+.dockerignore
+README.md
+infra
+.github
+
+npm-debug.log*
+*.tsbuildinfo
+.DS_Store
