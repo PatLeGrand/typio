@@ -1,62 +1,26 @@
 ---
 name: git-commit
-description: Prepare and create atomic Git commits for Typio using Conventional Commits when the user requests a commit or help preparing one.
+description: Prepare atomic Typio commits when requested or at implementation milestones under the project commit/push policy.
 ---
 
 # Git Commit
 
-Create clean, atomic, understandable commits. Each commit must represent one logical change that is easy to review and revert. Create commits only within the scope authorized by the user; invoking this skill does not authorize pushing to a remote.
+Own commit contents and messages. Do not repeat feature planning, code review, or the QA test pipeline.
 
-## Workflow
+1. Inspect `git status`, `git diff`, and `git diff --staged`; read relevant untracked files separately.
+2. Identify one logical change and preserve unrelated work, including staged changes. Stage explicit files or hunks; do not commit unrelated staged content.
+3. Apply validation proportionate to the commit: intermediate implementation milestones need focused checks, not the entire pre-merge pipeline. Disclose pending feature validation and never present an intermediate commit as merge-ready. Reuse the [QA](../qa/SKILL.md) validation record when it covers the exact content being committed. A passing dirty-working-tree run does not prove a partial staged snapshot passes. If relevant evidence is absent or stale, use QA for only the missing checks. Documentation-only changes need content/diff review, not application tests.
+4. Resolve required validation failures within scope before committing; report blocked checks honestly. Do not silently broaden a commit request into implementation work.
+5. Review the final staged diff, create the authorized commit, and report its hash, message, validation evidence, and remaining changes.
 
-1. Run `git status` and review all modified and untracked files.
-2. Inspect `git diff` and `git diff --staged`. Read relevant untracked files separately, since they do not appear in the diff.
-3. Identify the files or hunks belonging to the requested change. Keep unrelated changes out of the commit and preserve existing user work, including unrelated staged changes.
-4. Run relevant validation using the project's current scripts. Typio uses Bun: use `bun run lint` for source changes and `bun run build` when the change affects application behavior or build configuration. Run relevant tests if a test command exists; do not invent a missing test script. Documentation-only changes need a content and diff review rather than an application build.
-5. If validation fails, report the failure and resolve issues within the authorized scope before committing. Do not claim that unavailable or failed checks passed.
-6. Stage only the related files or hunks using explicit paths or selective staging. Review `git diff --staged` again and ensure the commit contains only the intended change. Never commit without reviewing the final staged diff.
-7. Create the commit with the format below, then check `git status` and report the commit hash, message, validation performed, and any remaining changes.
+Do not amend, discard work, or rewrite history without authorization. Follow the standing milestone commit/push authorization and frequency in [git-branch](../git-branch/SKILL.md). Do not ask again for pushes covered by that policy. Merge authorization remains separate.
 
-Do not discard unrelated work, amend an existing commit, or rewrite history unless the user authorizes it. If unrelated staged changes cannot be safely isolated, explain the conflict before proceeding.
+## Messages
 
-## Commit format
+Use `<type>(<scope>): <description>`, with a concise English imperative description starting lowercase and no trailing period. Use a stable domain scope when useful, such as `typing`, `lesson`, `keyboard`, `stats`, `auth`, `ui`, or `config`; omit it for cross-cutting changes. Avoid vague descriptions such as `update`.
 
-Use Conventional Commits:
+Types: `feat` (feature), `fix` (bug), `refactor` (no behavior change), `perf` (performance), `style` (UI/CSS or formatting in this project), `test`, `docs`, `chore` (maintenance), `build` (build/dependencies), and `ci`.
 
-```text
-<type>(<scope>): <description>
-```
+Add a body for important reasons or tradeoffs. Mark breaking changes with `!` and a `BREAKING CHANGE:` footer explaining them.
 
-Use a scope whenever possible. Write a concise English description starting with a lowercase imperative verb, without a trailing period. Describe the actual change; avoid vague messages such as `update` or `misc fixes`. Add a body when the reason or tradeoff needs explanation. Mark breaking changes with `!` and explain them in a `BREAKING CHANGE:` footer.
-
-## Allowed types
-
-- `feat`: new feature
-- `fix`: bug fix
-- `refactor`: internal code change without behavior change
-- `perf`: performance improvement
-- `style`: UI/CSS or formatting changes, following this project's convention
-- `test`: adding or updating tests
-- `docs`: documentation
-- `chore`: maintenance or tooling
-- `build`: build system or dependencies
-- `ci`: CI/CD configuration
-
-## Suggested scopes
-
-Choose a stable domain rather than inventing a scope for every file:
-
-`typing`, `lesson`, `exercise`, `keyboard`, `stats`, `progress`, `student`, `teacher`, `auth`, `profile`, `dashboard`, `ui`, `api`, `database`, `config`.
-
-Reuse established scopes from the repository history when appropriate. Omit the scope for genuinely cross-cutting changes.
-
-## Examples
-
-```text
-feat(typing): add typing speed calculation
-fix(auth): prevent login with empty credentials
-refactor(lesson): simplify lesson progression logic
-style(ui): improve typing exercise layout
-test(typing): add WPM calculation tests
-docs(readme): add local setup instructions
-```
+Examples: `feat(typing): add typing speed calculation`, `fix(keyboard): handle corrected input`, `docs: explain local setup`.

@@ -1,52 +1,41 @@
 ---
 name: git-branch
-description: Create, select, and manage task branches in Typio when starting implementation work or when the user requests Git branching operations.
+description: Create or select Typio task branches and perform authorized merges, publishing, or branch cleanup.
 ---
 
 # Git Branch
 
-Use one short-lived branch per logical task. Keep the default branch stable and perform implementation work on task branches. Reuse the current branch when it already belongs to the requested task. Creating this skill does not itself require creating or switching branches.
+Own branch strategy and merge authorization. Do not run a separate validation pipeline.
 
-## Branch strategy
+## Strategy
 
-- Typio currently uses `master`. Determine the default branch from the repository before acting; do not rename it or assume it is `main`.
-- Start new, independent work from the default branch unless the user specifies another base. Use a task branch as a base only for intentionally dependent work.
-- Do not introduce a permanent `develop` branch or release branches without a project requirement.
-- Keep related commits together and split unrelated tasks into separate branches.
+- `main` is stable; `develop` is the permanent integration branch.
+- Start one short-lived branch per feature from verified `develop`, unless the user specifies another base. Reuse a branch already serving the task.
+- Name branches `<type>/<short-english-description>` in lowercase with hyphens, for example `feat/typing-speed`. Types follow [git-commit](../git-commit/SKILL.md). Honor explicit user names; do not invent issue identifiers.
+- Squash feature branches into `develop` using a Conventional Commits message. Use regular merges from `develop` into `main` to preserve ancestry. Synchronize direct fixes on `main` back to `develop` through an authorized merge.
 
-## Naming
+## Branch operations
 
-Use `<type>/<short-description>` with lowercase English words separated by hyphens. Follow an explicit branch name supplied by the user.
+Inspect current Git status, branches, and relevant diffs. Verify the base and check name collisions. Fetch configured remote references when needed for a current starting point; report fetch failures or divergence rather than silently using stale references or resetting history.
 
-Use the same types as the commit convention: `feat`, `fix`, `refactor`, `perf`, `style`, `test`, `docs`, `chore`, `build`, or `ci`. Include a domain in the description when helpful. Include an issue identifier only when one is provided or verified.
+Preserve staged, unstaged, and untracked work. Creating a branch at current HEAD can retain related changes when HEAD is the intended base. Do not transfer unrelated work, auto-stash, commit, or discard it to force a switch. Use an authorized isolated worktree or resolve the conflict with the user when needed. Never reset an existing branch using `git switch -C`.
 
-Examples:
+Create or switch to the verified branch and report its name, base, and any synchronization limitation. If `develop` is missing, establish it from the verified stable branch only within the authorized scope.
 
-```text
-feat/typing-speed
-fix/keyboard-input
-refactor/lesson-progression
-docs/local-setup
-chore/commit-skills
-```
+## Merge gate and publishing
 
-## Workflow
+Before proposing a merge, use the existing [QA](../qa/SKILL.md) validation record and applicable [code-review](../code-review/SKILL.md) findings. Application changes require code review; documentation-only work needs a content review. Sensitive changes also use [security-review](../security-review/SKILL.md). Load only the relevant skills. Missing or stale checks go through QA, not a duplicate branch-specific test run.
 
-1. Inspect `git status --short`, the current branch, local branches, and configured remotes. Inspect relevant diffs before moving existing work.
-2. Determine the base using the user's instruction, then the remote default-branch reference when available, then the verified local default branch. If multiple candidates remain ambiguous, ask which base to use.
-3. Reuse an existing branch for the same task. Check for a name collision before creating a branch; never reset an existing branch with `git switch -C`.
-4. When a remote is configured and accessible, fetch its references before choosing the starting commit. Do not silently start from a stale remote reference if fetching fails; report the limitation. Compare local and remote history before selecting the base. Do not automatically merge, rebase, or reset a divergent local default branch.
-5. Preserve staged, unstaged, and untracked work. If current changes belong to the task and the current HEAD is the intended base, `git switch -c <branch>` can retain them on the new branch. If unrelated changes or a different base make switching unsafe, use an authorized isolated worktree or ask how to handle the changes. Do not automatically stash, commit, discard, or transfer unrelated work.
-6. For a clean working tree, create the branch with `git switch -c <branch> <verified-base>`, or switch to an existing appropriate branch with `git switch <branch>`. Do not overwrite local changes to force a switch.
-7. Verify the resulting branch and working-tree status. Report the branch name, starting base, and any synchronization limitation.
+Resolve blocking findings, confirm evidence applies to the candidate integration, then obtain user merge approval unless already provided. Passing checks do not grant approval. QA owns the scope of revalidation after conflict resolution or target changes.
 
-## Publishing and cleanup
+## Commit and push frequency
 
-Local branch work does not authorize pushing, opening a pull request, merging, or deleting branches. Perform those actions when requested or already authorized in the conversation.
+The user authorizes atomic commits and normal pushes on the task branch during requested implementation work: commit and push after each meaningful, coherent milestone, and push remaining task commits before a pause or at task completion. Examples include a completed component, a working business-logic step, or added tests. Do not commit after every file edit or wait for the entire feature to be finished. Planning-only, review-only, and skill-editing requests do not themselves trigger publication.
 
-- For an authorized first push, use the verified remote and set the upstream with `git push -u <remote> <branch>`.
-- Do not force-push or rewrite shared history without explicit authorization.
-- Before authorized cleanup, verify the branch's work has been integrated and that it is not checked out in another worktree. Prefer `git branch -d`; if Git refuses, inspect the reason instead of forcing deletion.
-- Never delete the default branch. Remote branch deletion requires authorization covering that remote action.
+This standing authorization covers only the verified task branch and intended configured GitHub repository, never direct pushes to `main` or `develop`. Honor any explicit local-only or no-push instruction. Verify the remote destination, branch, and outgoing commits before pushing; exclude unrelated work and secrets. Set upstream on the first push with `git push -u <remote> <task-branch>`; subsequently use the verified upstream. If the destination is missing or ambiguous, report it rather than creating or choosing a repository arbitrarily.
 
-When a commit is requested, apply the project's `git-commit` skill for staged-diff review, validation, and commit messages.
+Use [git-commit](../git-commit/SKILL.md) for atomic commits. A coherent intermediate commit may be pushed before the whole feature is ready; disclose incomplete validation. Do not rerun full QA solely because of a push. Reuse valid evidence and perform focused checks for the milestone; the full applicable merge gate remains required before integration.
+
+If a push fails, report the failure and preserve local commits; do not force-push or rewrite history to bypass rejection. Verify successful publication before reporting it. PR creation, merges, branch deletion, force-push, and history rewriting still require authorization covering those actions.
+
+For authorized cleanup, verify integration and worktree usage; prefer `git branch -d` and investigate refusal instead of forcing deletion. Never delete `main` or `develop`. Remote deletion requires authorization for that action.
