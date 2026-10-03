@@ -1,0 +1,26 @@
+{
+  "site": {
+    "name": "Typio"
+  },
+  "meta": {
+    "title": "Typio : courses de dactylographie",
+    "description": "Typio, des courses de dactylographie multijoueur pour les 12-17 ans."
+  },
+  "language": {
+    "names": {
+      "fr": "Français",
+      "en": "English"
+    }
+  },
+  "theme": {
+    "label": "Thème",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
+  "home": {
+    "tagline": "Défie tes amis dans des courses de dactylographie et vois qui tape le plus vite.",
+    "createRace": "Créer une course",
+    "joinWithCode": "Rejoindre avec un code"
+  }
+}

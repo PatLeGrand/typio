@@ -1,0 +1,26 @@
+{
+  "site": {
+    "name": "Typio"
+  },
+  "meta": {
+    "title": "Typio: typing races",
+    "description": "Typio, multiplayer typing races for ages 12 to 17."
+  },
+  "language": {
+    "names": {
+      "fr": "Français",
+      "en": "English"
+    }
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "home": {
+    "tagline": "Challenge your friends to typing races and see who types the fastest.",
+    "createRace": "Create a race",
+    "joinWithCode": "Join with a code"
+  }
+}
