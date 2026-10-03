@@ -27,6 +27,13 @@ services:
 
     restart: unless-stopped
 
+    environment:
+      DATABASE_URL: postgresql://typio:${MDP_TYPIO:?MDP_TYPIO doit etre defini dans infra/.env}@db:5432/typio
+
+    networks:
+      - default
+      - carte
+
     # 8018 : les ports 8010 à 8017 sont pris par les sept API de « carte »
     # (8013 est réservé à son agenda), 8765 et 8766 par pilote et commandant.
     #
@@ -60,3 +67,8 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  carte:
+    external: true
+    name: carte_default

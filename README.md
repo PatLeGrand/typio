@@ -20,6 +20,29 @@ En production : **https://typio.aether-manager.ca**
 
 ## En développement
 
+Le démarrage complet ne demande que Docker Desktop (Windows/macOS) ou Docker
+Engine avec le plugin Compose (Linux) :
+
+```bash
+docker compose up --build
+```
+
+Puis ouvrir http://localhost:3000. PostgreSQL 17 démarre dans le même réseau,
+les migrations sont appliquées avant le serveur web et les données restent dans
+le volume Docker `typio_db-data`.
+
+```bash
+docker compose down      # arrêter
+docker compose down -v   # arrêter et repartir d'une base vide
+```
+
+Si le port 3000 est déjà utilisé, remplacer `"3000:3000"` par `"3001:3000"`
+dans `docker-compose.yml`. Si Docker est injoignable, démarrer Docker Desktop.
+Le premier build peut demander environ 1 Go de mémoire ; allouer au moins 2 Go
+à Docker Desktop.
+
+Pour travailler sans Docker :
+
 ```bash
 bun install
 bun run dev
@@ -30,7 +53,25 @@ Puis http://localhost:3000.
 ```bash
 bun run build   # compile comme en production
 bun run lint    # ESLint
+bun run test    # tests unitaires
 ```
+
+Tailwind CSS 4 est installé via `@tailwindcss/postcss` et chargé depuis
+`src/app/globals.css`.
+
+### Base de données
+
+L'application utilise PostgreSQL 17, Drizzle ORM et `postgres.js`. Le pool est
+limité à cinq connexions pour préserver le VPS partagé. Ajouter les tables dans
+`src/db/schema.ts`, puis générer une migration versionnée :
+
+```bash
+bun run db:generate
+bun run db:migrate
+```
+
+`db:migrate` exige `DATABASE_URL`. Avec Compose, elle est fournie
+automatiquement.
 
 ## Comment ça se déploie
 
@@ -93,9 +134,8 @@ injoignable autrement que par Caddy, en TLS.
 
 ## Ce qui reste à décider
 
-- **Base de données.** Les comptes élèves, les scores et l'historique des
-  courses n'ont pas encore de support. Un PostgreSQL tourne déjà sur le VPS
-  (`carte-db-1`) ; le réutiliser ou en monter un à part reste ouvert.
+- **Modèle de données.** PostgreSQL et les migrations sont prêts, mais les
+  tables des comptes, scores et courses seront définies avec les fonctionnalités.
 - **Authentification.** Comptes élèves, ou codes de classe sans compte.
 - **Content-Security-Policy.** Absente pour l'instant : Next injecte ses
   propres scripts, et une politique stricte demande de leur poser un nonce.
