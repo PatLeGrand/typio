@@ -29,6 +29,9 @@ echo "── Version en place : ${AVANT}"
 echo "── Récupération de l'image"
 docker compose pull web
 
+echo "── Application des migrations PostgreSQL"
+docker compose run --rm --no-deps web bun scripts/migrate.ts
+
 echo "── Redémarrage du conteneur"
 docker compose up -d web
 

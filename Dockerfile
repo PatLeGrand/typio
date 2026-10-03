@@ -57,6 +57,15 @@ COPY --from=builder --chown=typio:typio /app/.next/standalone ./
 COPY --from=builder --chown=typio:typio /app/.next/static ./.next/static
 COPY --from=builder --chown=typio:typio /app/public ./public
 
+# Le déploiement lance les migrations explicitement avant de redémarrer le
+# serveur. Le bundle standalone ne suit pas un script hors du graphe Next : on
+# copie donc le script, les migrations et leurs deux dépendances runtime.
+COPY --from=builder --chown=typio:typio /app/scripts ./scripts
+COPY --from=builder --chown=typio:typio /app/src/db ./src/db
+COPY --from=builder --chown=typio:typio /app/drizzle ./drizzle
+COPY --from=builder --chown=typio:typio /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --from=builder --chown=typio:typio /app/node_modules/postgres ./node_modules/postgres
+
 USER typio
 EXPOSE 3000
 
