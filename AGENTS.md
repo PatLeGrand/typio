@@ -7,3 +7,19 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+# Infrastructure — à lire avant de toucher à Docker ou à la base de données
+
+La spécification de la stack Docker et du PostgreSQL partagé du VPS est dans
+[docs/stack-docker-postgresql.md](docs/stack-docker-postgresql.md).
+
+Trois points y sont contre-intuitifs et coûteux à redécouvrir seul :
+
+- **Le VPS ne construit jamais l'image** (1,9 Go de RAM, OOM killer). Il tire
+  depuis GHCR. Ne jamais ajouter un `build:` à `infra/docker-compose.yml`.
+- **La base est partagée** avec les sept API de « carte ». Les données sont
+  cloisonnées, le sort ne l'est pas.
+- **Le bundle `output: standalone` ne suit que le graphe de Next.** Tout script
+  lancé hors de Next (migrations, futur serveur temps réel) doit être copié
+  explicitement dans l'image `runner`, avec ses dépendances : voir le
+  `Dockerfile` pour `scripts/migrate.ts`.
