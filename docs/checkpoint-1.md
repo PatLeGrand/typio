@@ -19,7 +19,13 @@ Grille d'évaluation (100 points). Tout ce qui n'y figure pas attend après le c
 4. **Salle par code en temps réel.**
 5. **Déploiement**, puis la matrice des exigences, mise à jour en fin de parcours.
 
-## Décisions ouvertes, à trancher dans l'ADR
+## Architecture
 
-- **H-13 est dépassée.** Le cahier suppose Vercel + Render + Neon, mais le projet est déjà déployé sur le VPS (GHCR → Docker, Caddy, PostgreSQL partagé avec `carte` ; voir [stack-docker-postgresql.md](stack-docker-postgresql.md)). Il faut mettre à jour l'hypothèse ou documenter l'écart.
-- **Où vivent les WebSockets.** L'image `output: standalone` ne sert que HTTP. Les options : un serveur Node personnalisé autour de Next, ou un service Socket.IO séparé. Le choix doit tenir dans la mémoire du VPS (≈ 350 Mo libres).
+- [ADR-001 — service temps réel séparé](architecture/adr-001-temps-reel.md) : Socket.IO, même image, second service compose, route `/socket.io/*` dans Caddy.
+- [Machine à états](architecture/machine-a-etats.md) : salle, rôle d'hôte, coureur.
+- [Modèle de données](architecture/modele-de-donnees.md) : seules `users` et `sessions` servent au checkpoint.
+
+## À faire plus tard
+
+- **Réviser H-13 dans le Word** (Patrick) : hébergement sur le VPS, avec un renvoi vers l'ADR-001.
+- **Confirmer avec le client** qu'un invité peut hériter du rôle d'hôte (voir la machine à états, § 2).
