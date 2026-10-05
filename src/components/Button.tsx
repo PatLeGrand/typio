@@ -1,22 +1,18 @@
 import type { ComponentPropsWithoutRef } from "react";
-
-type ButtonVariant = "primary" | "secondary";
+import { buttonClasses, type ButtonVariant } from "./buttonStyles";
 
 type ButtonProps = ComponentPropsWithoutRef<"button"> & {
   variant?: ButtonVariant;
+  /** Occupe toute la largeur du conteneur. */
+  fullWidth?: boolean;
 };
 
-const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-accent-foreground enabled:hover:opacity-90",
-  secondary: "border border-border bg-background text-foreground enabled:hover:bg-foreground/5",
-};
-
-export function Button({ variant = "primary", type = "button", className = "", ...props }: ButtonProps) {
-  return (
-    <button
-      type={type}
-      className={`inline-flex min-h-11 items-center justify-center rounded-md px-5 py-2 text-base font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variantClasses[variant]} ${className}`}
-      {...props}
-    />
-  );
+export function Button({
+  variant = "primary",
+  type = "button",
+  fullWidth = false,
+  className = "",
+  ...props
+}: ButtonProps) {
+  return <button type={type} className={buttonClasses(variant, fullWidth, className)} {...props} />;
 }

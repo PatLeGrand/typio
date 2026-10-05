@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/SiteHeader";
+import { Inter } from "next/font/google";
 import { locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
 import { themeInitScript } from "@/theme/themeScript";
 import "../globals.css";
+
+// Inter est téléchargée au build et servie avec les assets du site : aucune
+// requête vers Google à l'exécution. Variable CSS lue par `--font-sans` (globals.css).
+const inter = Inter({
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 // Toute locale hors de `locales` donne une 404.
 export const dynamicParams = false;
@@ -21,7 +29,6 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
 
 export default async function RootLayout({ children, params }: LayoutProps<"/[lang]">) {
   const locale = requireLocale((await params).lang);
-  const dictionary = getDictionary(locale);
 
   return (
     // Pas de `className` sur <html> : la classe `dark` y est posée hors de React
@@ -31,8 +38,10 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
         {/* Pose la classe `dark` avant le premier rendu pour éviter tout flash. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased">
-        <SiteHeader locale={locale} dictionary={dictionary} />
+      <body
+        className={`${inter.variable} flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased`}
+      >
+        {/* L'en-tête vit dans (site)/layout.tsx : les pages (auth) ont le leur. */}
         {children}
       </body>
     </html>

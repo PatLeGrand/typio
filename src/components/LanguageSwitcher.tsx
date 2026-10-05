@@ -34,7 +34,7 @@ export function LanguageSwitcher({ locale, labels }: LanguageSwitcherProps) {
       href={getPathInLocale(pathname, target)}
       hrefLang={target}
       lang={target}
-      className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/5"
+      className="inline-flex min-h-11 items-center rounded-field border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-accent-soft"
     >
       {labels.names[target]}
     </a>

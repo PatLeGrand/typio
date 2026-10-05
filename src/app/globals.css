@@ -3,41 +3,98 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Tokens de couleur : la refonte graphique ne devrait avoir qu'à les changer.
- * Les composants utilisent bg-background, text-foreground, border-border, etc.,
- * jamais de couleur en dur.
+ * Tokens de couleur issus de la maquette Figma (docs/design/login/README.md).
+ * Les composants utilisent bg-surface, text-accent-text, border-border, etc.,
+ * jamais de couleur en dur : la refonte ne change que ces valeurs.
+ * src/theme/contrast.test.ts lit ces deux blocs et vérifie les contrastes WCAG.
  */
 :root {
   color-scheme: light;
-  --background: #ffffff;
-  --foreground: #18181b;
-  --muted: #52525b;
-  --border: #d4d4d8;
-  --accent: #4f46e5;
+  --background: #fffcf7;
+  --surface: #ffffff;
+  --foreground: #29233d;
+  --muted: #777184;
+  --muted-strong: #65577e;
+  --border: #dfdae7;
+  --accent: #7043d9;
   --accent-foreground: #ffffff;
+  --accent-text: #7043d9;
+  --accent-shadow: #5933b4;
+  --accent-soft: #f6f1ff;
+  --accent-panel: #ede5ff;
+  --key-yellow: #ffda70;
+  --key-mint: #bce9da;
+  --key-coral: #ff967d;
+  --key-ink: #29233d;
+  /* Île du panneau d'inscription (docs/design/inscription/README.md). */
+  --island-sand: #fff8e8;
+  --island-mint: #e8f7f0;
+  /* Ajout hors maquette : la maquette n'a pas d'état d'erreur. */
+  --danger: #b42318;
+  --shadow-soft: 0 8px 24px rgba(83, 53, 155, 0.05);
 }
 
 .dark {
   color-scheme: dark;
-  --background: #0a0a0a;
-  --foreground: #fafafa;
-  --muted: #a1a1aa;
-  --border: #3f3f46;
-  --accent: #818cf8;
-  --accent-foreground: #0a0a0a;
+  --background: #15121d;
+  --surface: #1f1a2b;
+  --foreground: #f4f1fa;
+  --muted: #a7a1b6;
+  --muted-strong: #c4b9dc;
+  --border: #352e47;
+  --accent: #7043d9;
+  --accent-foreground: #ffffff;
+  --accent-text: #b49cf6;
+  --accent-shadow: #4a2a99;
+  --accent-soft: #2a2240;
+  --accent-panel: #211a34;
+  --key-yellow: #ffda70;
+  --key-mint: #bce9da;
+  --key-coral: #ff967d;
+  --key-ink: #29233d;
+  /* Variantes sombres dérivées : mêmes teintes (sable chaud, menthe), très assombries. */
+  --island-sand: #2c2530;
+  --island-mint: #1e3633;
+  --danger: #ff9b8a;
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-muted-strong: var(--muted-strong);
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-accent-text: var(--accent-text);
+  --color-accent-shadow: var(--accent-shadow);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-panel: var(--accent-panel);
+  --color-key-yellow: var(--key-yellow);
+  --color-key-mint: var(--key-mint);
+  --color-key-coral: var(--key-coral);
+  --color-key-ink: var(--key-ink);
+  --color-island-sand: var(--island-sand);
+  --color-island-mint: var(--island-mint);
+  --color-danger: var(--danger);
+  --radius-field: 12px;
+  --radius-card: 24px;
+  --radius-panel: 32px;
+  /* `--font-inter` est posée sur <body> par next/font (src/app/[lang]/layout.tsx). */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/*
+ * `--shadow-soft` change selon le thème. Un `--shadow-soft` dans @theme serait
+ * circulaire (même nom que le token ci-dessus) : on passe par un utilitaire.
+ */
+@utility shadow-soft {
+  box-shadow: var(--shadow-soft);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-text);
   outline-offset: 2px;
 }
