@@ -187,5 +187,11 @@
     "title": "Oops, something went wrong",
     "text": "An error occurred. Try again in a moment.",
     "retry": "Try again"
+  },
+  "notFound": {
+    "eyebrow": "Error 404",
+    "title": "This page hit the wrong key.",
+    "text": "We couldn't find this address. The octopus will take you home so you can get back in the race.",
+    "home": "Back to home"
   }
 }
