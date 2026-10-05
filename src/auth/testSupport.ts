@@ -1,0 +1,145 @@
+// Dépôts en mémoire pour les tests unitaires de l'authentification (aucune base requise).
+import type { Locale } from "@/i18n/config";
+import type { AuthDeps } from "./authFlows";
+import type { PasswordHasher } from "./password";
+import { resetPurgeThrottle } from "./purge";
+import { createAuthLimiters } from "./rateLimit";
+import type { NewSession, SessionRepository, SessionWithUser } from "./session";
+import type { UserKind } from "./types";
+import { UsernameTakenError, type MemberRecord, type UserRepository } from "./userRepository";
+
+export interface StoredUser {
+  id: string;
+  kind: UserKind;
+  username: string | null;
+  displayName: string;
+  passwordHash: string | null;
+  locale: Locale;
+  expiresAt: Date | null;
+}
+
+export class MemoryUserRepository implements UserRepository {
+  readonly users: StoredUser[] = [];
+  private counter = 0;
+
+  async findMemberByUsername(username: string): Promise<MemberRecord | null> {
+    const user = this.users.find(
+      (candidate) => candidate.kind === "member" && candidate.username?.toLowerCase() === username,
+    );
+    if (!user || user.passwordHash === null) return null;
+    return { id: user.id, passwordHash: user.passwordHash };
+  }
+
+  async createMember(params: {
+    username: string;
+    displayName: string;
+    passwordHash: string;
+    locale: Locale;
+  }): Promise<{ id: string }> {
+    if (this.users.some((user) => user.username?.toLowerCase() === params.username.toLowerCase())) {
+      throw new UsernameTakenError();
+    }
+    const id = `user-${(this.counter += 1)}`;
+    this.users.push({ id, kind: "member", expiresAt: null, ...params });
+    return { id };
+  }
+
+  async createGuest(params: {
+    displayName: string;
+    locale: Locale;
+    expiresAt: Date;
+  }): Promise<{ id: string }> {
+    const id = `user-${(this.counter += 1)}`;
+    this.users.push({ id, kind: "guest", username: null, passwordHash: null, ...params });
+    return { id };
+  }
+
+  async deleteExpiredGuests(now: Date, limit: number): Promise<number> {
+    const expired = this.users
+      .filter((user) => user.kind === "guest" && user.expiresAt !== null && user.expiresAt < now)
+      .slice(0, limit);
+    for (const user of expired) this.users.splice(this.users.indexOf(user), 1);
+    return expired.length;
+  }
+}
+
+export class MemorySessionRepository implements SessionRepository {
+  readonly sessions = new Map<string, NewSession>();
+
+  constructor(private readonly users: MemoryUserRepository) {}
+
+  async insert(session: NewSession): Promise<void> {
+    this.sessions.set(session.id, session);
+  }
+
+  async findWithUser(id: string): Promise<SessionWithUser | null> {
+    const session = this.sessions.get(id);
+    if (!session) return null;
+    const user = this.users.users.find((candidate) => candidate.id === session.userId);
+    if (!user) return null;
+    return {
+      session: { expiresAt: session.expiresAt },
+      user: {
+        id: user.id,
+        kind: user.kind,
+        displayName: user.displayName,
+        username: user.username,
+        locale: user.locale,
+        expiresAt: user.expiresAt,
+      },
+    };
+  }
+
+  async delete(id: string): Promise<void> {
+    this.sessions.delete(id);
+  }
+
+  async deleteExpired(now: Date, limit: number): Promise<number> {
+    let deleted = 0;
+    for (const [id, session] of this.sessions) {
+      if (deleted >= limit) break;
+      if (session.expiresAt.getTime() < now.getTime()) {
+        this.sessions.delete(id);
+        deleted += 1;
+      }
+    }
+    return deleted;
+  }
+}
+
+/** Hacheur factice rapide : les parcours se testent sans payer argon2, et les appels sont observables. */
+function createFakePasswordHasher(): PasswordHasher & {
+  verifyCalls: { hash: string; password: string }[];
+} {
+  const verifyCalls: { hash: string; password: string }[] = [];
+  return {
+    verifyCalls,
+    async hash(password) {
+      return `fake-hash:${password}`;
+    },
+    async verify(hash, password) {
+      verifyCalls.push({ hash, password });
+      return hash === `fake-hash:${password}`;
+    },
+  };
+}
+
+/** Dépendances en mémoire et horloge pilotable. Remet à zéro le délai de purge, global au processus. */
+export function createTestDeps(start = new Date("2026-10-05T10:00:00.000Z")) {
+  resetPurgeThrottle();
+  let current = start.getTime();
+  const users = new MemoryUserRepository();
+  const sessions = new MemorySessionRepository(users);
+  const passwords = createFakePasswordHasher();
+  const limiters = createAuthLimiters(() => current);
+  const deps: AuthDeps = { users, sessions, limiters, passwords, now: () => new Date(current) };
+  return {
+    deps,
+    users,
+    sessions,
+    passwords,
+    advance(ms: number) {
+      current += ms;
+    },
+  };
+}
