@@ -215,7 +215,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
     const alive = await userRepository.createGuest({ displayName: `new${suffix}`, locale: "fr", expiresAt: future });
     createdUserIds.push(alive.id);
     await createSession(sessionRepository, { userId: expired.id, kind: "guest", remember: false }, new Date());
-    const member = await newMember(`keep${suffix}`);
+    const member = await newMember(`stay${suffix}`);
 
     const deleted = await userRepository.deleteExpiredGuests(new Date(), 500);
 
