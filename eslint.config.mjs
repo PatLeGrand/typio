@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Dossiers de travail isolés des agents Claude Code : chacun est une copie
+    // complète du dépôt, avec son propre .next et ses node_modules.
+    ".claude/**",
   ]),
 ]);
 

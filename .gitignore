@@ -41,3 +41,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Dossiers de travail isolés des agents Claude Code
+/.claude/worktrees/
