@@ -4,25 +4,27 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { themeInitScript } from "@/theme/themeScript";
 import RootLayout, { dynamicParams, generateMetadata, generateStaticParams } from "./layout";
 
-// SiteHeader contient un composant client qui lit le chemin courant.
-vi.mock("next/navigation", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("next/navigation")>()),
-  usePathname: () => "/en",
-}));
+// next/font/google n'est compilé que par Next ; ici on simule sa sortie.
+vi.mock("next/font/google", () => ({ Inter: () => ({ variable: "font-inter-mock" }) }));
 
 function layoutProps(lang: string) {
   return { children: <p>contenu</p>, params: Promise.resolve({ lang }) };
 }
 
 describe("RootLayout", () => {
-  it("pose la locale sur <html> et rend l'en-tête et le contenu", async () => {
+  it("pose la locale sur <html> et rend le contenu, sans en-tête (il vit dans (site)/layout)", async () => {
     const html = renderToStaticMarkup(await RootLayout(layoutProps("en")));
 
     expect(html).toContain('<html lang="en"');
-    expect(html).toContain("<header");
+    expect(html).not.toContain("<header");
     expect(html).toContain("<p>contenu</p>");
     // <html> ne porte aucun className : la classe `dark` y est gérée hors de React.
     expect(html).not.toMatch(/<html[^>]*class=/);
+  });
+
+  it("branche la variable de police Inter sur <body>", async () => {
+    const html = renderToStaticMarkup(await RootLayout(layoutProps("fr")));
+    expect(html).toMatch(/<body[^>]*class="[^"]*font-inter-mock/);
   });
 
   it("pose la locale française sur <html>", async () => {

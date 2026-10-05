@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791219771632,
+      "tag": "0000_short_gateway",
+      "breakpoints": true
+    }
+  ]
 }

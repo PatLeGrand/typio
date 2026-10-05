@@ -67,6 +67,11 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Apply database migrations
         run: bun run db:migrate
+      # Seul test qui vérifie le schéma contre un vrai PostgreSQL : index unique
+      # sans casse, CHECK, cascade des sessions, purges par lots. Le job `quality`
+      # n'a pas de base et l'ignore.
+      - name: PostgreSQL integration tests
+        run: bun run test src/auth/repositories.integration.test.ts
       - name: Validate local Compose
         run: docker compose config --quiet
       - name: Validate VPS Compose
