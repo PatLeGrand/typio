@@ -19,7 +19,28 @@ Grille d'évaluation (100 points). Tout ce qui n'y figure pas attend après le c
 4. **Salle par code en temps réel.**
 5. **Déploiement**, puis la matrice des exigences, mise à jour en fin de parcours.
 
-## Décisions ouvertes, à trancher dans l'ADR
+## Architecture
 
-- **H-13 est dépassée.** Le cahier suppose Vercel + Render + Neon, mais le projet est déjà déployé sur le VPS (GHCR → Docker, Caddy, PostgreSQL partagé avec `carte` ; voir [stack-docker-postgresql.md](stack-docker-postgresql.md)). Il faut mettre à jour l'hypothèse ou documenter l'écart.
-- **Où vivent les WebSockets.** L'image `output: standalone` ne sert que HTTP. Les options : un serveur Node personnalisé autour de Next, ou un service Socket.IO séparé. Le choix doit tenir dans la mémoire du VPS (≈ 350 Mo libres).
+- [ADR-001 — service temps réel séparé](architecture/adr-001-temps-reel.md) : Socket.IO, même image, second service compose, route `/socket.io/*` dans Caddy.
+- [Machine à états](architecture/machine-a-etats.md) : salle, rôle d'hôte, coureur.
+- [Modèle de données](architecture/modele-de-donnees.md) : seules `users` et `sessions` servent au checkpoint.
+
+## À faire plus tard
+
+- **Réviser H-13 dans le Word** (Patrick) : hébergement sur le VPS, avec un renvoi vers l'ADR-001.
+- **Confirmer avec le client** qu'un invité peut hériter du rôle d'hôte (voir la machine à états, § 2).
+
+## État au 5 octobre 2026
+
+- ✅ Architecture validée par Patrick : arrondis, invité héritier du rôle d'hôte, fermeture
+  des résultats après 10 min.
+- ✅ Déploiement en production : HTTPS (Caddy), authentification des membres et des invités,
+  PostgreSQL (tables `users` et `sessions`), version `sha-ee2493e`.
+- ✅ Langue et thème : FR/EN, clair/sombre, direction artistique Figma.
+- ✅ Intégration continue : tests, lint, build, migrations et tests d'intégration PostgreSQL.
+- ⬜ Salle créée et rejointe par code, mise à jour en temps réel.
+- ⬜ Matrice des exigences.
+
+**Risque connu :** un élève qui connaît l'identifiant d'un camarade peut le bloquer 15 min
+depuis la même IP (5 échecs). La parade, un cookie d'appareil, est prévue après le
+checkpoint.
