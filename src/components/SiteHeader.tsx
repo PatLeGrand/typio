@@ -32,6 +32,11 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
                   <span className="ml-1.5 text-xs font-normal text-muted">({dictionary.header.guest})</span>
                 ) : null}
               </p>
+              {user.kind === "guest" ? (
+                <ButtonLink href={`/${locale}/register`} variant="ghost">
+                  {dictionary.header.signUp}
+                </ButtonLink>
+              ) : null}
               <form action={logout}>
                 <input type="hidden" name={AUTH_FIELDS.locale} value={locale} />
                 <Button type="submit" variant="ghost">

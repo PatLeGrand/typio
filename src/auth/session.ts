@@ -1,5 +1,6 @@
 import { generateToken, hashToken, isWellFormedToken } from "./token";
 import type { CurrentUser, UserKind } from "./types";
+import type { UserRepository } from "./userRepository";
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
@@ -112,4 +113,22 @@ export async function validateSession(
 export async function destroySession(repository: SessionRepository, token: unknown): Promise<void> {
   if (!isWellFormedToken(token)) return;
   await repository.delete(hashToken(token));
+}
+
+/**
+ * Déconnexion : supprime la session désignée par `token`, et si elle appartenait à un INVITÉ,
+ * supprime aussi son compte (H-2 : un invité n'existe que le temps de sa session ; ses autres
+ * sessions suivent en cascade). Un membre garde son compte. Sans effet si le jeton est invalide.
+ */
+export async function endSession(
+  sessions: SessionRepository,
+  users: UserRepository,
+  token: unknown,
+): Promise<void> {
+  if (!isWellFormedToken(token)) return;
+
+  const id = hashToken(token);
+  const found = await sessions.findWithUser(id);
+  await sessions.delete(id);
+  if (found?.user.kind === "guest") await users.deleteGuest(found.user.id);
 }

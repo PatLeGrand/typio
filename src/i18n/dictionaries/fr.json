@@ -26,12 +26,14 @@
     "createRace": "Créer une course",
     "joinWithCode": "Rejoindre avec un code",
     "signIn": "Se connecter",
-    "playAsGuest": "Jouer en invité"
+    "playAsGuest": "Jouer en invité",
+    "signUp": "Créer un compte"
   },
   "header": {
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
-    "guest": "invité"
+    "guest": "invité",
+    "signUp": "Créer un compte"
   },
   "footer": {
     "copyright": "© 2026 Typio",
@@ -83,8 +85,9 @@
       "INVALID_CREDENTIALS": "Identifiant ou mot de passe incorrect.",
       "RATE_LIMITED": "Trop d'essais en peu de temps. Patiente un peu, puis réessaie.",
       "PASSWORD_MISMATCH": "Les deux mots de passe ne sont pas identiques.",
-      "TERMS_REQUIRED": "Pour continuer, accepte les conditions d'utilisation et la politique de confidentialité.",
-      "UNKNOWN": "Oups, quelque chose s'est mal passé. Réessaie dans un instant."
+      "TERMS_REQUIRED": "Pour continuer, accepte la politique de confidentialité.",
+      "UNKNOWN": "Oups, quelque chose s'est mal passé. Réessaie dans un instant.",
+      "PSEUDO_TAKEN": "Ce pseudo appartient à un membre."
     }
   },
   "login": {
@@ -117,20 +120,19 @@
     "divider": "ou avec un pseudo",
     "pseudoLabel": "Pseudo",
     "pseudoPlaceholder": "Ex. : PoulpeRapide",
-    "pseudoHint": "3 à 20 caractères : lettres, chiffres et _.",
+    "pseudoHint": "3 à 20 caractères : lettres, chiffres et _. C'est aussi ton identifiant pour te connecter.",
     "passwordLabel": "Mot de passe",
     "confirmLabel": "Confirmation",
     "passwordPlaceholder": "8+ caractères",
     "confirmPlaceholder": "Retape-le",
     "passwordRule": "Au moins 8 caractères, avec une lettre et un chiffre.",
-    "termsBefore": "J'accepte les ",
-    "termsLink": "conditions d'utilisation",
-    "termsAnd": " et la ",
+    "termsBefore": "J'accepte la ",
     "privacyLink": "politique de confidentialité",
     "termsAfter": ".",
     "submit": "Créer mon compte",
     "haveAccount": "Déjà un compte ?",
-    "signInLink": "Connecte-toi"
+    "signInLink": "Connecte-toi",
+    "newTab": "(nouvel onglet)"
   },
   "guest": {
     "meta": {
@@ -143,7 +145,7 @@
     "pseudoPlaceholder": "Ex. : PoulpeRapide",
     "pseudoHint": "2 à 20 caractères : lettres, chiffres, espaces, _ et -.",
     "submit": "Jouer en invité",
-    "limits": "Les données d'un invité sont supprimées après 24 h, et un invité ne peut pas créer de course.",
+    "limits": "Les données d'un invité sont supprimées à sa déconnexion, ou après 24 h au plus tard, et un invité ne peut pas créer de course.",
     "haveAccount": "Tu as déjà un compte ?",
     "signInLink": "Connecte-toi"
   },
@@ -156,24 +158,34 @@
     "intro": "Voici, simplement, ce que Typio garde sur toi et pourquoi. Moins on garde de choses, mieux c'est.",
     "storedTitle": "Ce que Typio enregistre",
     "stored": {
-      "identity": "Ton pseudo (ton identifiant de connexion) et ton nom affiché.",
+      "identity": "Ton pseudo (ton identifiant de connexion), ton nom affiché et la date de création de ton compte.",
       "password": "Ton mot de passe, uniquement sous forme hachée avec argon2id. Il n'est jamais stocké en clair : personne ne peut le relire.",
       "preferences": "Ta langue et la disposition de ton clavier.",
+      "session": "Ta session sur le serveur : l'empreinte du jeton de ta session et sa date d'expiration. Le jeton lui-même n'est pas stocké.",
       "results": "Tes résultats de course, quand les courses seront disponibles."
     },
     "cookiesTitle": "Cookies et stockage",
     "cookies": {
-      "session": "Un cookie de session te garde connecté. Il contient un jeton aléatoire et indique si tu es membre ou invité. Il n'est lisible que par Typio.",
-      "duration": "Avec « Rester connecté », ce cookie dure 30 jours. Sans cette case, il disparaît quand tu fermes le navigateur.",
-      "preferences": "Ta langue est mémorisée dans un cookie, et ton thème (clair ou sombre) dans le stockage de ton navigateur."
+      "session": "Un cookie de session te garde connecté. Il contient seulement un jeton aléatoire : ton statut et tes informations restent sur le serveur.",
+      "duration": "Avec « Rester connecté », ce cookie dure 30 jours. Sans cette case, c'est un cookie de session, et la session expire au plus tard après 24 h, même si ton navigateur la restaure.",
+      "preferences": "Ta langue est mémorisée dans un cookie pendant un an, et ton thème (clair ou sombre) dans le stockage de ton navigateur."
     },
     "guestsTitle": "Les invités",
-    "guests": "Un invité est supprimé, avec toutes ses données, après 24 h.",
+    "guests": "Un invité est supprimé, avec toutes ses données, quand il se déconnecte, et au plus tard lors du nettoyage automatique qui suit l'expiration de 24 h.",
+    "securityTitle": "Sécurité",
+    "security": {
+      "ip": "Ton adresse IP sert au plus 1 h à bloquer les attaques. Elle reste seulement en mémoire, jusqu'à son effacement automatique, et n'est jamais enregistrée en base."
+    },
     "neverTitle": "Ce que Typio ne fait pas",
     "never": {
       "email": "Typio ne te demande aucune adresse e-mail.",
       "tracking": "Il n'y a aucune publicité et aucun pistage.",
       "resale": "Tes données ne sont jamais revendues."
     }
+  },
+  "errorPage": {
+    "title": "Oups, quelque chose s'est mal passé",
+    "text": "Une erreur est survenue. Réessaie dans un instant.",
+    "retry": "Réessayer"
   }
 }

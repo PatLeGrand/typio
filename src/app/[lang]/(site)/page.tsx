@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/auth/currentUser";
+import { getCurrentUserForDisplay } from "@/auth/currentUser";
 import { Button } from "@/components/Button";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
@@ -7,7 +7,7 @@ import { requireLocale } from "@/i18n/requireLocale";
 export default async function Home({ params }: PageProps<"/[lang]">) {
   const locale = requireLocale((await params).lang);
   const { site, home } = getDictionary(locale);
-  const user = await getCurrentUser();
+  const user = await getCurrentUserForDisplay();
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8 px-4 py-12 text-center sm:px-8">
@@ -22,7 +22,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
           {home.joinWithCode}
         </Button>
       </div>
-      {user ? null : (
+      {user === null ? (
         <p className="flex flex-wrap items-center justify-center gap-x-2 text-sm">
           <Link href={`/${locale}/login`} className={linkClasses}>
             {home.signIn}
@@ -34,7 +34,15 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
             {home.playAsGuest}
           </Link>
         </p>
-      )}
+      ) : null}
+      {/* Un invité peut se créer un compte (la connexion et l'inscription lui restent ouvertes). */}
+      {user?.kind === "guest" ? (
+        <p className="text-sm">
+          <Link href={`/${locale}/register`} className={linkClasses}>
+            {home.signUp}
+          </Link>
+        </p>
+      ) : null}
     </main>
   );
 }

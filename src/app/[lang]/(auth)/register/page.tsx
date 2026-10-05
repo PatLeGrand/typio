@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/register">
 /** AUTH-1 : inscription par pseudo et mot de passe, sans e-mail (OAuth d'abord, désactivé pour l'instant). */
 export default async function RegisterPage({ params }: PageProps<"/[lang]/register">) {
   const locale = requireLocale((await params).lang);
-  await redirectIfSignedIn(locale);
+  await redirectIfSignedIn(locale, { allowGuests: true });
   const dictionary = getDictionary(locale);
   const { register, auth, oauth, promise, island } = dictionary;
 

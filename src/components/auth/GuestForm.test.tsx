@@ -55,10 +55,10 @@ describe("GuestForm", () => {
 
     await submit();
 
-    expect(screen.getByRole("button", { name: guest.submit })).toBeDisabled();
+    expect(screen.getByRole("button", { name: guest.submit })).toHaveAttribute("aria-disabled", "true");
 
     await act(async () => finish({ status: "idle" }));
-    expect(screen.getByRole("button", { name: guest.submit })).toBeEnabled();
+    expect(screen.getByRole("button", { name: guest.submit })).not.toHaveAttribute("aria-disabled");
   });
 
   describe.each(["fr", "en"] as const)("erreurs (%s)", (locale) => {

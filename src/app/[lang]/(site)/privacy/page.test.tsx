@@ -13,36 +13,55 @@ describe("PrivacyPage", () => {
     render(await PrivacyPage(props(lang)));
 
     expect(screen.getByRole("heading", { level: 1, name: privacy.title })).toBeInTheDocument();
-    for (const title of [privacy.storedTitle, privacy.cookiesTitle, privacy.guestsTitle, privacy.neverTitle]) {
+    for (const title of [
+      privacy.storedTitle,
+      privacy.cookiesTitle,
+      privacy.guestsTitle,
+      privacy.securityTitle,
+      privacy.neverTitle,
+    ]) {
       expect(screen.getByRole("heading", { level: 2, name: title })).toBeInTheDocument();
     }
     for (const text of [
       ...Object.values(privacy.stored),
       ...Object.values(privacy.cookies),
       privacy.guests,
+      ...Object.values(privacy.security),
       ...Object.values(privacy.never),
     ]) {
       expect(screen.getByText(text)).toBeInTheDocument();
     }
   });
 
-  it("dit honnêtement ce qui est stocké et ce qui ne l'est pas (FR)", () => {
+  it("dit ce que le code fait vraiment (FR)", () => {
     const { privacy } = getDictionary("fr");
     expect(privacy.stored.password).toMatch(/argon2id/);
     expect(privacy.stored.password).toMatch(/jamais .* en clair/);
+    expect(privacy.cookies.session).toMatch(/seulement un jeton aléatoire/);
+    expect(privacy.cookies.session).toMatch(/restent sur le serveur/);
     expect(privacy.cookies.duration).toMatch(/30 jours/);
-    expect(privacy.guests).toMatch(/24 h/);
+    expect(privacy.cookies.duration).toMatch(/au plus tard après 24 h, même si ton navigateur la restaure/);
+    expect(privacy.guests).toMatch(/quand il se déconnecte/);
+    expect(privacy.guests).toMatch(/nettoyage automatique qui suit l'expiration de 24 h/);
+    expect(privacy.security.ip).toMatch(/au plus 1 h/);
+    expect(privacy.security.ip).toMatch(/jamais enregistrée en base/);
     expect(privacy.never.email).toMatch(/e-mail/);
     expect(privacy.never.tracking).toMatch(/publicité/);
     expect(privacy.never.resale).toMatch(/revendues/);
   });
 
-  it("dit honnêtement ce qui est stocké et ce qui ne l'est pas (EN)", () => {
+  it("dit ce que le code fait vraiment (EN)", () => {
     const { privacy } = getDictionary("en");
     expect(privacy.stored.password).toMatch(/argon2id/);
     expect(privacy.stored.password).toMatch(/never stored in plain text/);
+    expect(privacy.cookies.session).toMatch(/only holds a random token/);
+    expect(privacy.cookies.session).toMatch(/stay on the server/);
     expect(privacy.cookies.duration).toMatch(/30 days/);
-    expect(privacy.guests).toMatch(/24 hours/);
+    expect(privacy.cookies.duration).toMatch(/24 hours at most, even if your browser restores it/);
+    expect(privacy.guests).toMatch(/when they sign out/);
+    expect(privacy.guests).toMatch(/cleanup that follows the 24-hour expiry/);
+    expect(privacy.security.ip).toMatch(/1 hour at most/);
+    expect(privacy.security.ip).toMatch(/never saved in the database/);
     expect(privacy.never.email).toMatch(/email/);
     expect(privacy.never.tracking).toMatch(/no ads/);
     expect(privacy.never.resale).toMatch(/never sold/);

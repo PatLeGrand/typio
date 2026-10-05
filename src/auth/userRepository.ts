@@ -17,6 +17,11 @@ export class UsernameTakenError extends Error {
 export interface UserRepository {
   /** `username` est déjà en minuscules. Ne renvoie que des membres. */
   findMemberByUsername(username: string): Promise<MemberRecord | null>;
+  /**
+   * Vrai si un MEMBRE a cet identifiant, sans tenir compte de la casse. `username` est déjà
+   * en minuscules. Sert à refuser un pseudo d'invité qui usurperait un membre.
+   */
+  memberUsernameExists(username: string): Promise<boolean>;
   /** Lève `UsernameTakenError` si l'identifiant existe déjà. */
   createMember(params: {
     username: string;
@@ -34,4 +39,9 @@ export interface UserRepository {
    * le nombre de lignes supprimées. H-2 : un invité n'a pas d'identité durable.
    */
   deleteExpiredGuests(now: Date, limit: number): Promise<number>;
+  /**
+   * Supprime l'invité `id` (ses sessions suivent, en cascade). Ne touche jamais un membre :
+   * sans effet si `id` n'est pas un invité.
+   */
+  deleteGuest(id: string): Promise<void>;
 }

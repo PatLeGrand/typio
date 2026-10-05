@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/login">): 
 /** AUTH-1 : GitHub et Discord d'abord (désactivés pour l'instant), puis l'identifiant, en dernier. */
 export default async function LoginPage({ params }: PageProps<"/[lang]/login">) {
   const locale = requireLocale((await params).lang);
-  await redirectIfSignedIn(locale);
+  await redirectIfSignedIn(locale, { allowGuests: true });
   const dictionary = getDictionary(locale);
   const { login, auth, oauth, promise, illustration } = dictionary;
 

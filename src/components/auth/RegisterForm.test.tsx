@@ -22,6 +22,12 @@ async function submit(): Promise<void> {
   });
 }
 
+/** Nom accessible « début fin », avec ou sans espace entre les deux (voir la note sur jsdom). */
+function nameWith(start: string, end: string): RegExp {
+  const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${escape(start)}\\s*${escape(end)}$`);
+}
+
 function type(label: string, value: string): void {
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 }
@@ -53,11 +59,29 @@ describe("RegisterForm", () => {
     expect(document.querySelector('input[type="email"], input[name="email"]')).toBeNull();
   });
 
-  it.each(["fr", "en"] as const)("les deux liens de la case mènent à la page de confidentialité (%s)", (locale) => {
-    const { register } = renderForm(locale);
+  it.each(["fr", "en"] as const)(
+    "la case n'a qu'un lien, vers la confidentialité, dans un nouvel onglet annoncé (%s)",
+    (locale) => {
+      const { register } = renderForm(locale);
 
-    expect(screen.getByRole("link", { name: register.termsLink })).toHaveAttribute("href", `/${locale}/privacy`);
-    expect(screen.getByRole("link", { name: register.privacyLink })).toHaveAttribute("href", `/${locale}/privacy`);
+      // jsdom ne calcule pas la mise en page : l'espace entre le lien et la mention peut manquer.
+      const link = screen.getByRole("link", { name: nameWith(register.privacyLink, register.newTab) });
+      expect(link).toHaveAttribute("href", `/${locale}/privacy`);
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+      expect(screen.getAllByRole("link")).toHaveLength(1);
+      expect(screen.getByRole("checkbox")).toHaveAccessibleName(
+        nameWith(`${register.termsBefore}${register.privacyLink}`, `${register.newTab}${register.termsAfter}`),
+      );
+    },
+  );
+
+  it("le texte du consentement ne parle plus de conditions d'utilisation", () => {
+    for (const locale of ["fr", "en"] as const) {
+      const { register, auth } = getDictionary(locale);
+      expect(JSON.stringify(register)).not.toMatch(/conditions d'utilisation|terms of use/i);
+      expect(auth.errors.TERMS_REQUIRED).not.toMatch(/conditions d'utilisation|terms of use/i);
+    }
   });
 
   it("cliquer sur le libellé de la case la coche", () => {
@@ -103,10 +127,10 @@ describe("RegisterForm", () => {
 
     await submit();
 
-    expect(screen.getByRole("button", { name: register.submit })).toBeDisabled();
+    expect(screen.getByRole("button", { name: register.submit })).toHaveAttribute("aria-disabled", "true");
 
     await act(async () => finish({ status: "idle" }));
-    expect(screen.getByRole("button", { name: register.submit })).toBeEnabled();
+    expect(screen.getByRole("button", { name: register.submit })).not.toHaveAttribute("aria-disabled");
   });
 
   describe.each(["fr", "en"] as const)("erreurs (%s)", (locale) => {

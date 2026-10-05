@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import type { FormEvent } from "react";
+import { describe, expect, it, vi } from "vitest";
 import { AuthAltLink } from "./AuthAltLink";
 import { AuthDivider } from "./AuthDivider";
 import { AuthHeading } from "./AuthHeading";
@@ -19,12 +20,44 @@ describe("AuthSubmitButton", () => {
     expect(pill?.querySelector("svg")).not.toBeNull();
   });
 
-  it("pendant l'envoi : désactivé et marqué occupé", () => {
+  it("pendant l'envoi : aria-disabled et occupé, mais pas `disabled` (le focus est gardé)", () => {
     render(<AuthSubmitButton label="Se connecter" enterKeyLabel="Entrée" pending />);
 
     const button = screen.getByRole("button", { name: "Se connecter" });
-    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
     expect(button).toHaveAttribute("aria-busy", "true");
+    expect(button).not.toHaveAttribute("disabled");
+    button.focus();
+    expect(button).toHaveFocus();
+  });
+
+  it("hors envoi : ni aria-disabled ni aria-busy", () => {
+    render(<AuthSubmitButton label="Se connecter" enterKeyLabel="Entrée" pending={false} />);
+
+    const button = screen.getByRole("button", { name: "Se connecter" });
+    expect(button).not.toHaveAttribute("aria-disabled");
+    expect(button).not.toHaveAttribute("aria-busy");
+  });
+
+  it("ignore un second envoi pendant l'envoi, et laisse passer le premier", () => {
+    const onSubmit = vi.fn((event: FormEvent) => event.preventDefault());
+    const { rerender } = render(
+      <form onSubmit={onSubmit}>
+        <AuthSubmitButton label="Se connecter" enterKeyLabel="Entrée" pending={false} />
+      </form>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Se connecter" }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <form onSubmit={onSubmit}>
+        <AuthSubmitButton label="Se connecter" enterKeyLabel="Entrée" pending />
+      </form>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Se connecter" }));
+    fireEvent.click(screen.getByRole("button", { name: "Se connecter" }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });
 

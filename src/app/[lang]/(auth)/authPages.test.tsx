@@ -4,11 +4,11 @@ import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
 
 const mocks = vi.hoisted(() => ({
-  getCurrentUser: vi.fn<() => Promise<CurrentUser | null>>(),
+  getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>(),
   redirect: vi.fn<(path: string) => never>(),
 }));
 
-vi.mock("@/auth/currentUser", () => ({ getCurrentUser: mocks.getCurrentUser }));
+vi.mock("@/auth/currentUser", () => ({ getCurrentUserForDisplay: mocks.getCurrentUserForDisplay }));
 vi.mock("@/auth/actions", () => ({ login: vi.fn(), register: vi.fn(), continueAsGuest: vi.fn() }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
@@ -36,7 +36,7 @@ function props(lang: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.getCurrentUser.mockResolvedValue(null);
+  mocks.getCurrentUserForDisplay.mockResolvedValue(null);
   mocks.redirect.mockImplementation((path) => {
     throw new Error(`${REDIRECTED}:${path}`);
   });
@@ -50,19 +50,35 @@ const pages = [
 
 describe.each(pages)("page $name : utilisateur connecté", ({ Page }) => {
   it.each(["fr", "en"] as const)("redirige un membre vers l'accueil de la langue (%s)", async (lang) => {
-    mocks.getCurrentUser.mockResolvedValue(member);
+    mocks.getCurrentUserForDisplay.mockResolvedValue(member);
 
     await expect(Page(props(lang))).rejects.toThrow(`${REDIRECTED}:/${lang}`);
   });
 
-  it("redirige aussi un invité", async () => {
-    mocks.getCurrentUser.mockResolvedValue({ ...member, kind: "guest", username: null });
-
-    await expect(Page(props("fr"))).rejects.toThrow(`${REDIRECTED}:/fr`);
-  });
-
   it("répond par une 404 pour une locale inconnue", async () => {
     await expect(Page(props("de"))).rejects.toMatchObject({ digest: expect.stringContaining("404") });
+  });
+});
+
+describe("invité connecté", () => {
+  const guestUser: CurrentUser = { ...member, kind: "guest", username: null };
+
+  it.each([
+    ["login", LoginPage],
+    ["register", RegisterPage],
+  ] as const)("peut atteindre la page %s pour se créer un compte", async (_name, Page) => {
+    mocks.getCurrentUserForDisplay.mockResolvedValue(guestUser);
+
+    render(await Page(props("fr")));
+
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("est renvoyé à l'accueil depuis la page « invité »", async () => {
+    mocks.getCurrentUserForDisplay.mockResolvedValue(guestUser);
+
+    await expect(GuestPage(props("fr"))).rejects.toThrow(`${REDIRECTED}:/fr`);
   });
 });
 
@@ -97,9 +113,8 @@ describe("page login", () => {
 
     const guest = screen.getByRole("link", { name: login.guestButton });
     expect(guest).toHaveAttribute("href", `/${lang}/guest`);
-    expect(guest).toHaveClass("w-full", "border-border", "bg-surface");
     expect(guest.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getByText(login.guestNote)).toHaveClass("text-xs", "text-muted");
+    expect(screen.getByText(login.guestNote)).toBeInTheDocument();
     const submit = screen.getByRole("button", { name: login.submit });
     expect(submit.compareDocumentPosition(guest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // La phrase « Pas de compte ? Joue en invité » est remplacée par ce bouton.

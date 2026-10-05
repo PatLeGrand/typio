@@ -77,6 +77,38 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
     expect(found).toMatchObject({ id, passwordHash: expect.any(String) });
   });
 
+  it("memberUsernameExists finds a member by lowercase username, and ignores guests", async () => {
+    await newMember(`Bob${suffix}`);
+    const guest = await userRepository.createGuest({
+      displayName: `Guest2${suffix}`,
+      locale: "fr",
+      expiresAt: new Date(Date.now() + GUEST_LIFETIME_MS),
+    });
+    createdUserIds.push(guest.id);
+
+    expect(await userRepository.memberUsernameExists(`bob${suffix}`)).toBe(true);
+    expect(await userRepository.memberUsernameExists(`nobody${suffix}`)).toBe(false);
+    expect(await userRepository.memberUsernameExists(`guest2${suffix}`)).toBe(false);
+  });
+
+  it("deleteGuest removes a guest and its sessions, and never a member", async () => {
+    const memberId = await newMember(`keep${suffix}`);
+    const guest = await userRepository.createGuest({
+      displayName: `Gone${suffix}`,
+      locale: "fr",
+      expiresAt: new Date(Date.now() + GUEST_LIFETIME_MS),
+    });
+    createdUserIds.push(guest.id);
+    const grant = await createSession(sessionRepository, { userId: guest.id, kind: "guest", remember: false }, new Date());
+
+    await userRepository.deleteGuest(guest.id);
+    await userRepository.deleteGuest(memberId);
+
+    expect(await client.db.select().from(users).where(eq(users.id, guest.id))).toHaveLength(0);
+    expect(await client.db.select().from(sessions).where(eq(sessions.id, hashToken(grant.token)))).toHaveLength(0);
+    expect(await client.db.select().from(users).where(eq(users.id, memberId))).toHaveLength(1);
+  });
+
   it("rejects a duplicate username regardless of case with UsernameTakenError", async () => {
     await newMember(`dup${suffix}`);
 

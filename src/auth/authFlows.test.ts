@@ -610,6 +610,79 @@ describe("distributed brute force", () => {
   });
 });
 
+describe("createGuest: pseudo equal to a member username", () => {
+  it.each(["alice", "Alice", "ALICE", "  alice  "])("refuses %j with PSEUDO_TAKEN on the pseudo field", async (pseudo) => {
+    const { deps, users } = await withAlice();
+
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo, locale: "fr" })).toEqual({
+      ok: false,
+      error: { code: "PSEUDO_TAKEN", field: "pseudo" },
+    });
+    expect(users.users.filter((user) => user.kind === "guest")).toHaveLength(0);
+  });
+
+  it("compares without case: a lookalike made with the Kelvin sign is refused too", async () => {
+    const { deps } = createTestDeps();
+    await registerMember(deps, credentials({ username: "kevin", ip: "10.0.0.1" }));
+
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo: "Kevin", locale: "fr" })).toMatchObject({
+      ok: false,
+      error: { code: "PSEUDO_TAKEN" },
+    });
+  });
+
+  it("allows a pseudo that only resembles a member username", async () => {
+    const { deps } = await withAlice();
+
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo: "alice 2", locale: "fr" })).toMatchObject({ ok: true });
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo: "Zoé", locale: "fr" })).toMatchObject({ ok: true });
+  });
+
+  it("does not match another guest's pseudo", async () => {
+    const { deps } = createTestDeps();
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo: "Zoé", locale: "fr" })).toMatchObject({ ok: true });
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo: "zoé", locale: "fr" })).toMatchObject({ ok: true });
+  });
+
+  it("checks the format and the limiter first: no lookup for an invalid pseudo or a limited IP", async () => {
+    const { deps } = await withAlice();
+    let lookups = 0;
+    const lookup = deps.users.memberUsernameExists.bind(deps.users);
+    deps.users.memberUsernameExists = async (username) => {
+      lookups += 1;
+      return lookup(username);
+    };
+
+    await createGuest(deps, { ip: "203.0.113.7", pseudo: "<b>", locale: "fr" });
+    expect(lookups).toBe(0);
+
+    for (let i = 0; i < 120; i += 1) {
+      await createGuest(deps, { ip: "198.51.100.1", pseudo: `Guest ${i}`, locale: "fr" });
+    }
+    lookups = 0;
+    expect(await createGuest(deps, { ip: "198.51.100.1", pseudo: "alice", locale: "fr" })).toEqual({
+      ok: false,
+      error: { code: "RATE_LIMITED" },
+    });
+    expect(lookups).toBe(0);
+  });
+});
+
+describe("loginMember: per-username limiter full of live keys", () => {
+  it("answers RATE_LIMITED for a new username without evicting a victim, and releases the pair reservation", async () => {
+    const { deps } = await withAlice();
+    const { loginFailuresPerUsername, loginFailures } = deps.limiters;
+    for (let i = 0; i < 100_000; i += 1) loginFailuresPerUsername.consume(`filler-${i}`);
+
+    expect(await loginMember(deps, credentials({ username: "newcomer", password: "wrong-password1" }))).toEqual({
+      ok: false,
+      error: { code: "RATE_LIMITED" },
+    });
+    expect(loginFailuresPerUsername.size()).toBe(100_000);
+    expect(loginFailures.isLimited("203.0.113.7|newcomer")).toBe(false);
+  });
+});
+
 describe("createGuest", () => {
   it("creates a guest with no username or password, expiring in 24 hours", async () => {
     const { deps, users } = createTestDeps();

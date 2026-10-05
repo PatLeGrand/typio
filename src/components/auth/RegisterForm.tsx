@@ -115,12 +115,15 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
           label={
             <span className="leading-snug">
               {labels.termsBefore}
-              <Link href={privacyHref} className="font-semibold text-accent-text underline-offset-2 hover:underline">
-                {labels.termsLink}
-              </Link>
-              {labels.termsAnd}
-              <Link href={privacyHref} className="font-semibold text-accent-text underline-offset-2 hover:underline">
+              {/* Nouvel onglet : la saisie du formulaire n'est pas perdue. La mention est lue par les lecteurs d'écran. */}
+              <Link
+                href={privacyHref}
+                target="_blank"
+                rel="noopener"
+                className="font-semibold text-accent-text underline-offset-2 hover:underline"
+              >
                 {labels.privacyLink}
+                <span className="sr-only"> {labels.newTab}</span>
               </Link>
               {labels.termsAfter}
             </span>

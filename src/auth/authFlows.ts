@@ -156,6 +156,10 @@ export async function createGuest(
   const pseudo = validatePseudo(input.pseudo);
   if (!pseudo.ok) return fail(pseudo.code, "pseudo");
 
+  // Un pseudo d'invité égal (sans casse, après NFC) à l'identifiant d'un membre usurperait ce
+  // membre dans une partie. Contrôlé après le limiteur : c'est une lecture en base.
+  if (await deps.users.memberUsernameExists(pseudo.value.toLowerCase())) return fail("PSEUDO_TAKEN", "pseudo");
+
   const now = deps.now();
   const { id: userId } = await deps.users.createGuest({
     displayName: pseudo.value,

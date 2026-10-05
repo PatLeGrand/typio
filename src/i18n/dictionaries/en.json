@@ -26,12 +26,14 @@
     "createRace": "Create a race",
     "joinWithCode": "Join with a code",
     "signIn": "Sign in",
-    "playAsGuest": "Play as a guest"
+    "playAsGuest": "Play as a guest",
+    "signUp": "Create an account"
   },
   "header": {
     "signIn": "Sign in",
     "signOut": "Sign out",
-    "guest": "guest"
+    "guest": "guest",
+    "signUp": "Create an account"
   },
   "footer": {
     "copyright": "© 2026 Typio",
@@ -83,8 +85,9 @@
       "INVALID_CREDENTIALS": "Wrong username or password.",
       "RATE_LIMITED": "Too many tries in a short time. Wait a little, then try again.",
       "PASSWORD_MISMATCH": "The two passwords don't match.",
-      "TERMS_REQUIRED": "To continue, accept the terms of use and the privacy policy.",
-      "UNKNOWN": "Oops, something went wrong. Try again in a moment."
+      "TERMS_REQUIRED": "To continue, accept the privacy policy.",
+      "UNKNOWN": "Oops, something went wrong. Try again in a moment.",
+      "PSEUDO_TAKEN": "That nickname belongs to a member."
     }
   },
   "login": {
@@ -117,20 +120,19 @@
     "divider": "or with a username",
     "pseudoLabel": "Username",
     "pseudoPlaceholder": "E.g. SpeedyOctopus",
-    "pseudoHint": "3 to 20 characters: letters, digits and _.",
+    "pseudoHint": "3 to 20 characters: letters, digits and _. It's also your username to sign in.",
     "passwordLabel": "Password",
     "confirmLabel": "Confirm password",
     "passwordPlaceholder": "8+ characters",
     "confirmPlaceholder": "Type it again",
     "passwordRule": "At least 8 characters, with a letter and a digit.",
     "termsBefore": "I accept the ",
-    "termsLink": "terms of use",
-    "termsAnd": " and the ",
     "privacyLink": "privacy policy",
     "termsAfter": ".",
     "submit": "Create my account",
     "haveAccount": "Already have an account?",
-    "signInLink": "Sign in"
+    "signInLink": "Sign in",
+    "newTab": "(new tab)"
   },
   "guest": {
     "meta": {
@@ -143,7 +145,7 @@
     "pseudoPlaceholder": "E.g. SpeedyOctopus",
     "pseudoHint": "2 to 20 characters: letters, digits, spaces, _ and -.",
     "submit": "Play as a guest",
-    "limits": "A guest's data is deleted after 24 hours, and a guest can't create a race.",
+    "limits": "A guest's data is deleted when they sign out, or after 24 hours at most, and a guest can't create a race.",
     "haveAccount": "Already have an account?",
     "signInLink": "Sign in"
   },
@@ -156,24 +158,34 @@
     "intro": "Here is, in plain words, what Typio keeps about you and why. The less we keep, the better.",
     "storedTitle": "What Typio stores",
     "stored": {
-      "identity": "Your username (your sign-in name) and your display name.",
+      "identity": "Your username (your sign-in name), your display name and the date your account was created.",
       "password": "Your password, only as an argon2id hash. It is never stored in plain text: nobody can read it back.",
       "preferences": "Your language and your keyboard layout.",
+      "session": "Your session on the server: a fingerprint of your session token and its expiry date. The token itself is not stored.",
       "results": "Your race results, once races are available."
     },
     "cookiesTitle": "Cookies and storage",
     "cookies": {
-      "session": "A session cookie keeps you signed in. It holds a random token and says whether you are a member or a guest. Only Typio can read it.",
-      "duration": "With \"Stay signed in\", this cookie lasts 30 days. Without it, the cookie disappears when you close your browser.",
-      "preferences": "Your language is remembered in a cookie, and your theme (light or dark) in your browser's storage."
+      "session": "A session cookie keeps you signed in. It only holds a random token: your status and your information stay on the server.",
+      "duration": "With \"Stay signed in\", this cookie lasts 30 days. Without it, it is a session cookie, and the session expires after 24 hours at most, even if your browser restores it.",
+      "preferences": "Your language is remembered in a cookie for one year, and your theme (light or dark) in your browser's storage."
     },
     "guestsTitle": "Guests",
-    "guests": "A guest is deleted, along with all their data, after 24 hours.",
+    "guests": "A guest is deleted, along with all their data, when they sign out, and at the latest during the automatic cleanup that follows the 24-hour expiry.",
+    "securityTitle": "Security",
+    "security": {
+      "ip": "Your IP address is used for 1 hour at most to block attacks. It only stays in memory until it is automatically cleared, and it is never saved in the database."
+    },
     "neverTitle": "What Typio does not do",
     "never": {
       "email": "Typio never asks for an email address.",
       "tracking": "There are no ads and no tracking.",
       "resale": "Your data is never sold."
     }
+  },
+  "errorPage": {
+    "title": "Oops, something went wrong",
+    "text": "An error occurred. Try again in a moment.",
+    "retry": "Try again"
   }
 }

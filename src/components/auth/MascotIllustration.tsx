@@ -51,7 +51,6 @@ export function MascotIllustration({ labels }: MascotIllustrationProps) {
         width={1264}
         height={848}
         sizes="(min-width: 1440px) 655px, 45vw"
-        priority
         className="absolute h-auto max-w-none"
         style={{
           left: horizontal(300),

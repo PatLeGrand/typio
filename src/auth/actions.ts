@@ -14,7 +14,7 @@ import { getSessionCookieName, sessionCookieOptions } from "./cookie";
 import { getAuthDeps } from "./deps";
 import { describeError } from "./errors";
 import { getClientIp } from "./rateLimit";
-import { destroySession, type SessionGrant } from "./session";
+import { destroySession, endSession, type SessionGrant } from "./session";
 import { AUTH_FIELDS, type AuthFormState } from "./types";
 
 // Un fichier "use server" n'exporte que des fonctions asynchrones : les types et les noms
@@ -120,7 +120,9 @@ export async function logout(formData: FormData): Promise<void> {
     const name = getSessionCookieName();
     const token = cookieStore.get(name)?.value;
     cookieStore.delete(name);
-    await destroySession(getAuthDeps().sessions, token);
+    const deps = getAuthDeps();
+    // Un invité est supprimé avec sa session (H-2) ; un membre garde son compte.
+    await endSession(deps.sessions, deps.users, token);
   } catch (error) {
     console.error("[auth] logout failed", describeError(error));
   }

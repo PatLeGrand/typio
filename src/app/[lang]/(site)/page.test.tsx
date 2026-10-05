@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
 
-const mocks = vi.hoisted(() => ({ getCurrentUser: vi.fn<() => Promise<CurrentUser | null>>() }));
-vi.mock("@/auth/currentUser", () => ({ getCurrentUser: mocks.getCurrentUser }));
+const mocks = vi.hoisted(() => ({ getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>() }));
+vi.mock("@/auth/currentUser", () => ({ getCurrentUserForDisplay: mocks.getCurrentUserForDisplay }));
 
 import Home from "./page";
 
@@ -21,7 +21,7 @@ const member: CurrentUser = {
 };
 
 beforeEach(() => {
-  mocks.getCurrentUser.mockResolvedValue(null);
+  mocks.getCurrentUserForDisplay.mockResolvedValue(null);
 });
 
 describe("Home", () => {
@@ -45,12 +45,29 @@ describe("Home", () => {
   });
 
   it("un utilisateur connecté ne voit pas ces liens", async () => {
-    mocks.getCurrentUser.mockResolvedValue(member);
+    mocks.getCurrentUserForDisplay.mockResolvedValue(member);
     const { home } = getDictionary("fr");
     render(await Home(props("fr")));
 
     expect(screen.queryByRole("link", { name: home.signIn })).toBeNull();
     expect(screen.queryByRole("link", { name: home.playAsGuest })).toBeNull();
+  });
+
+  it.each(["fr", "en"] as const)("un invité voit « Créer un compte » vers l'inscription, pas les liens de visiteur (%s)", async (lang) => {
+    mocks.getCurrentUserForDisplay.mockResolvedValue({ ...member, kind: "guest", username: null });
+    const { home } = getDictionary(lang);
+    render(await Home(props(lang)));
+
+    expect(screen.getByRole("link", { name: home.signUp })).toHaveAttribute("href", `/${lang}/register`);
+    expect(screen.queryByRole("link", { name: home.signIn })).toBeNull();
+    expect(screen.queryByRole("link", { name: home.playAsGuest })).toBeNull();
+  });
+
+  it("un membre ne voit pas « Créer un compte »", async () => {
+    mocks.getCurrentUserForDisplay.mockResolvedValue(member);
+    render(await Home(props("fr")));
+
+    expect(screen.queryByRole("link", { name: getDictionary("fr").home.signUp })).toBeNull();
   });
 
   it("répond par une 404 pour une locale inconnue", async () => {

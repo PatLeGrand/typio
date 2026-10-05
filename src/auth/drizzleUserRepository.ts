@@ -19,6 +19,16 @@ export function createDrizzleUserRepository(db: PostgresJsDatabase): UserReposit
       return { id: row.id, passwordHash: row.passwordHash };
     },
 
+    async memberUsernameExists(username: string): Promise<boolean> {
+      const [row] = await db
+        .select({ id: users.id })
+        .from(users)
+        // Même expression que l'index unique `lower(username)`, pour qu'il serve.
+        .where(sql`${users.kind} = 'member' and lower(${users.username}) = ${username}`)
+        .limit(1);
+      return row !== undefined;
+    },
+
     async createMember(params) {
       try {
         const [row] = await db
@@ -49,6 +59,11 @@ export function createDrizzleUserRepository(db: PostgresJsDatabase): UserReposit
         })
         .returning({ id: users.id });
       return { id: row.id };
+    },
+
+    async deleteGuest(id: string) {
+      // `kind = 'guest'` : un membre ne peut jamais être supprimé par ce chemin.
+      await db.delete(users).where(and(eq(users.id, id), eq(users.kind, "guest")));
     },
 
     async deleteExpiredGuests(now: Date, limit: number) {

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createSession,
   destroySession,
+  endSession,
   GUEST_LIFETIME_MS,
   REMEMBERED_SESSION_MS,
   SHORT_SESSION_MS,
@@ -190,6 +191,68 @@ describe("destroySession", () => {
     await destroySession(sessions, "nope");
 
     expect(sessions.sessions.size).toBe(1);
+  });
+});
+
+describe("endSession", () => {
+  it("deletes the guest account with its session (H-2)", async () => {
+    const { users, sessions, guestId } = await setup();
+    const grant = await createSession(sessions, { userId: guestId, kind: "guest", remember: false }, NOW);
+    const other = await createSession(sessions, { userId: guestId, kind: "guest", remember: false }, NOW);
+
+    await endSession(sessions, users, grant.token);
+
+    expect(users.users.some((user) => user.id === guestId)).toBe(false);
+    expect(sessions.sessions.size).toBe(0); // la cascade emporte aussi l'autre session de l'invité
+    expect(sessions.sessions.has(hashToken(other.token))).toBe(false);
+  });
+
+  it("keeps a member's account and only deletes the session", async () => {
+    const { users, sessions, memberId } = await setup();
+    const grant = await createSession(sessions, { userId: memberId, kind: "member", remember: true }, NOW);
+    const other = await createSession(sessions, { userId: memberId, kind: "member", remember: false }, NOW);
+
+    await endSession(sessions, users, grant.token);
+
+    expect(users.users.some((user) => user.id === memberId)).toBe(true);
+    expect(sessions.sessions.has(hashToken(grant.token))).toBe(false);
+    expect(sessions.sessions.has(hashToken(other.token))).toBe(true);
+  });
+
+  it("does not touch other guests", async () => {
+    const { users, sessions, guestId } = await setup();
+    const bystander = await users.createGuest({
+      displayName: "Léa",
+      locale: "fr",
+      expiresAt: new Date(NOW.getTime() + HOUR),
+    });
+    const grant = await createSession(sessions, { userId: guestId, kind: "guest", remember: false }, NOW);
+    await createSession(sessions, { userId: bystander.id, kind: "guest", remember: false }, NOW);
+
+    await endSession(sessions, users, grant.token);
+
+    expect(users.users.some((user) => user.id === bystander.id)).toBe(true);
+    expect(sessions.sessions.size).toBe(1);
+  });
+
+  it("ignores an invalid or unknown token", async () => {
+    const { users, sessions, guestId } = await setup();
+    await createSession(sessions, { userId: guestId, kind: "guest", remember: false }, NOW);
+
+    await endSession(sessions, users, undefined);
+    await endSession(sessions, users, "nope");
+    await endSession(sessions, users, generateToken());
+
+    expect(users.users.some((user) => user.id === guestId)).toBe(true);
+    expect(sessions.sessions.size).toBe(1);
+  });
+
+  it("deleteGuest never deletes a member, even given a member id", async () => {
+    const { users, memberId } = await setup();
+
+    await users.deleteGuest(memberId);
+
+    expect(users.users.some((user) => user.id === memberId)).toBe(true);
   });
 });
 

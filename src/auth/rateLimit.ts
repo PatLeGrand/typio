@@ -18,8 +18,16 @@ const DEFAULT_MAX_KEYS = 10_000;
 export const AUTH_RATE_LIMITS = {
   /** Essais de connexion par couple (IP, identifiant) : protection contre la force brute. */
   loginFailures: { limit: 5, windowMs: 15 * MINUTE_MS },
-  /** Essais par identifiant, toutes IP confondues (inconnus compris) : force brute répartie. */
-  loginFailuresPerUsername: { limit: 50, windowMs: 15 * MINUTE_MS },
+  /**
+   * Essais par identifiant, toutes IP confondues (inconnus compris) : force brute répartie.
+   *
+   * `maxKeys` : 100 000 identifiants suivis. Mesuré (Node, clé de 20 caractères) : environ
+   * 19 Mo avec un événement par clé, environ 84 Mo si chaque clé portait déjà 50 événements,
+   * ce que les plafonds par IP rendent irréaliste. Quand la table est pleine de clés encore
+   * dans leur fenêtre, une NOUVELLE clé est refusée (`onFull: "refuse"`) : évincer la plus
+   * ancienne ferait oublier les échecs d'une victime, et lèverait sa protection.
+   */
+  loginFailuresPerUsername: { limit: 50, windowMs: 15 * MINUTE_MS, maxKeys: 100_000, onFull: "refuse" },
   /** Tentatives de connexion, réussies ou non, par IP (toute une classe derrière une IP). */
   loginAttempts: { limit: 300, windowMs: 15 * MINUTE_MS },
   /** Inscriptions par IP (une classe qui s'inscrit en même temps). */
@@ -33,8 +41,14 @@ export interface RateLimiterOptions {
   windowMs: number;
   /** Horloge injectée, en millisecondes (`Date.now` par défaut). */
   now?: () => number;
-  /** Nombre maximal de clés suivies ; au-delà, les plus anciennes sont écartées. */
+  /** Nombre maximal de clés suivies. */
   maxKeys?: number;
+  /**
+   * Que faire quand `maxKeys` clés encore vivantes sont suivies et qu'une nouvelle arrive :
+   * `evict-oldest` (défaut) écarte la clé la moins récemment écrite ; `refuse` garde toutes
+   * les clés vivantes, `consume` refuse la nouvelle clé (renvoie faux) et `record` l'ignore.
+   */
+  onFull?: "evict-oldest" | "refuse";
 }
 
 export interface RateLimiter {
@@ -43,7 +57,8 @@ export interface RateLimiter {
   /** Enregistre un événement. */
   record(key: string): void;
   /**
-   * Si la limite n'est pas atteinte, enregistre un événement et renvoie vrai ; sinon faux.
+   * Si la limite n'est pas atteinte, enregistre un événement et renvoie vrai ; sinon faux
+   * (aussi faux pour une nouvelle clé quand la table est pleine en mode `refuse`).
    * Synchrone : c'est ce qui permet de réserver un essai avant tout `await`.
    */
   consume(key: string): boolean;
@@ -60,7 +75,7 @@ export interface RateLimiter {
  * Il vit dans un seul processus : une seconde instance de `web` aurait ses propres compteurs.
  */
 export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
-  const { limit, windowMs, now = Date.now, maxKeys = DEFAULT_MAX_KEYS } = options;
+  const { limit, windowMs, now = Date.now, maxKeys = DEFAULT_MAX_KEYS, onFull = "evict-oldest" } = options;
   // Un `Map` garde l'ordre d'insertion : on réinsère à chaque écriture, la plus ancienne vient en tête.
   const entries = new Map<string, number[]>();
   let lastSweep = now();
@@ -92,24 +107,33 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
     if (at - lastSweep >= SWEEP_INTERVAL_MS) sweep(at);
   }
 
-  /** Fait de la place pour une nouvelle clé : d'abord les périmées, sinon la moins récemment écrite (O(1)). */
-  function makeRoom(at: number): void {
-    if (entries.size < maxKeys) return;
+  /**
+   * Fait de la place pour une nouvelle clé : d'abord les périmées (balayage au plus une fois
+   * par intervalle : sinon un flot de clés nouvelles ferait un parcours complet à chaque
+   * requête), puis selon `onFull` la moins récemment écrite (O(1)) ou rien. Renvoie faux si
+   * la place n'a pas pu être faite.
+   */
+  function makeRoom(at: number): boolean {
+    if (entries.size < maxKeys) return true;
     maybeSweep(at);
+    if (onFull === "refuse") return entries.size < maxKeys;
     while (entries.size >= maxKeys) {
       const oldest = entries.keys().next();
       if (oldest.done) break;
       entries.delete(oldest.value);
     }
+    return true;
   }
 
-  function write(key: string, at: number): void {
+  /** Enregistre un événement ; faux si la clé est nouvelle et que la table pleine la refuse. */
+  function write(key: string, at: number): boolean {
     const fresh = live(key, at) ?? [];
-    if (fresh.length === 0) makeRoom(at);
+    if (fresh.length === 0 && !makeRoom(at)) return false;
     fresh.push(at);
     if (fresh.length > limit) fresh.splice(0, fresh.length - limit);
     entries.delete(key);
     entries.set(key, fresh);
+    return true;
   }
 
   return {
@@ -128,8 +152,7 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
       maybeSweep(at);
       const key = normalize(rawKey);
       if ((live(key, at)?.length ?? 0) >= limit) return false;
-      write(key, at);
-      return true;
+      return write(key, at);
     },
     release(rawKey) {
       const key = normalize(rawKey);

@@ -88,10 +88,10 @@ describe("LoginForm", () => {
     const { login } = renderForm();
 
     await submit();
-    expect(screen.getByRole("button", { name: login.submit })).toBeDisabled();
+    expect(screen.getByRole("button", { name: login.submit })).toHaveAttribute("aria-disabled", "true");
 
     await act(async () => finish({ status: "idle" }));
-    expect(screen.getByRole("button", { name: login.submit })).toBeEnabled();
+    expect(screen.getByRole("button", { name: login.submit })).not.toHaveAttribute("aria-disabled");
   });
 
   it("n'affiche aucune erreur tant que rien n'a échoué", () => {

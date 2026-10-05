@@ -16,6 +16,7 @@ export default async function PrivacyPage({ params }: PageProps<"/[lang]/privacy
     { title: privacy.storedTitle, items: Object.values(privacy.stored) },
     { title: privacy.cookiesTitle, items: Object.values(privacy.cookies) },
     { title: privacy.guestsTitle, items: [privacy.guests] },
+    { title: privacy.securityTitle, items: Object.values(privacy.security) },
     { title: privacy.neverTitle, items: Object.values(privacy.never) },
   ];
 

@@ -67,6 +67,16 @@ describe("SiteHeader", () => {
       expect(input?.value).toBe(locale);
     });
 
+    it("un invité peut créer un compte ; un membre non", () => {
+      const dictionary = getDictionary(locale);
+      const { unmount } = render(<SiteHeader locale={locale} dictionary={dictionary} user={guest} />);
+      expect(screen.getByRole("link", { name: dictionary.header.signUp })).toHaveAttribute("href", `/${locale}/register`);
+      unmount();
+
+      render(<SiteHeader locale={locale} dictionary={dictionary} user={member} />);
+      expect(screen.queryByRole("link", { name: dictionary.header.signUp })).toBeNull();
+    });
+
     it("signale un invité par la mention traduite", () => {
       const dictionary = getDictionary(locale);
       render(<SiteHeader locale={locale} dictionary={dictionary} user={guest} />);

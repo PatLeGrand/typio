@@ -415,6 +415,19 @@ describe("continueAsGuest", () => {
     });
   });
 
+  it("returns PSEUDO_TAKEN for a pseudo equal to a member's username", async () => {
+    await run(register(IDLE, signupForm({ username: "Alice", password: "correct-password1" })));
+    mocks.cookieJar.clear();
+    mocks.requestHeaders.set("x-forwarded-for", "198.51.100.30");
+
+    expect(await run(continueAsGuest(IDLE, form({ pseudo: "alice" })))).toEqual({
+      status: "error",
+      code: "PSEUDO_TAKEN",
+      field: "pseudo",
+    });
+    expect(test.users.users.filter((user) => user.kind === "guest")).toHaveLength(0);
+  });
+
   it("returns RATE_LIMITED after 120 guests from the same IP", async () => {
     for (let i = 0; i < 120; i += 1) await run(continueAsGuest(IDLE, form({ pseudo: `Guest ${i}` })));
 
@@ -473,6 +486,27 @@ describe("logout", () => {
     expect(mocks.cookieStore.delete).toHaveBeenCalledWith("typio_session");
     expect(test.sessions.sessions.size).toBe(0);
     expect(mocks.cookieJar.has("typio_session")).toBe(false);
+  });
+
+  it("deletes a guest's account along with the session (H-2)", async () => {
+    await run(continueAsGuest(IDLE, form({ pseudo: "Zoé" })));
+    expect(test.users.users).toHaveLength(1);
+
+    await run(logout(form({ locale: "fr" })));
+
+    expect(test.users.users).toHaveLength(0);
+    expect(test.sessions.sessions.size).toBe(0);
+    expect(mocks.cookieJar.has("typio_session")).toBe(false);
+  });
+
+  it("keeps a member's account on logout", async () => {
+    await run(register(IDLE, signupForm({ username: "alice", password: "correct-password1" })));
+
+    await run(logout(form({ locale: "fr" })));
+
+    expect(test.users.users).toHaveLength(1);
+    expect(test.users.users[0]).toMatchObject({ kind: "member", username: "alice" });
+    expect(test.sessions.sessions.size).toBe(0);
   });
 
   it("still clears the cookie and redirects without a session", async () => {

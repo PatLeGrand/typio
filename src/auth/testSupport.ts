@@ -30,6 +30,10 @@ export class MemoryUserRepository implements UserRepository {
     return { id: user.id, passwordHash: user.passwordHash };
   }
 
+  async memberUsernameExists(username: string): Promise<boolean> {
+    return this.users.some((user) => user.kind === "member" && user.username?.toLowerCase() === username);
+  }
+
   async createMember(params: {
     username: string;
     displayName: string;
@@ -54,6 +58,17 @@ export class MemoryUserRepository implements UserRepository {
     return { id };
   }
 
+  async deleteGuest(id: string): Promise<void> {
+    const index = this.users.findIndex((user) => user.id === id && user.kind === "guest");
+    if (index === -1) return;
+    this.users.splice(index, 1);
+    // Comme la cascade SQL : les sessions de l'invité disparaissent avec lui.
+    this.onUserDeleted?.(id);
+  }
+
+  /** Branché par `MemorySessionRepository` pour reproduire `on delete cascade`. */
+  onUserDeleted?: (id: string) => void;
+
   async deleteExpiredGuests(now: Date, limit: number): Promise<number> {
     const expired = this.users
       .filter((user) => user.kind === "guest" && user.expiresAt !== null && user.expiresAt < now)
@@ -66,7 +81,11 @@ export class MemoryUserRepository implements UserRepository {
 export class MemorySessionRepository implements SessionRepository {
   readonly sessions = new Map<string, NewSession>();
 
-  constructor(private readonly users: MemoryUserRepository) {}
+  constructor(private readonly users: MemoryUserRepository) {
+    users.onUserDeleted = (userId) => {
+      for (const [id, session] of this.sessions) if (session.userId === userId) this.sessions.delete(id);
+    };
+  }
 
   async insert(session: NewSession): Promise<void> {
     this.sessions.set(session.id, session);

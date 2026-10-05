@@ -165,6 +165,65 @@ describe("createRateLimiter", () => {
     expect(performance.now() - started).toBeLessThan(500);
   });
 
+  describe("onFull: refuse", () => {
+    it("refuses a new key when every tracked key is still live, and keeps the victims' failures", () => {
+      const limiter = createRateLimiter({ limit: 3, windowMs: 10 * MINUTE, maxKeys: 3, onFull: "refuse", now: clock().now });
+      expect(limiter.consume("victim")).toBe(true);
+      expect(limiter.consume("victim")).toBe(true);
+      expect(limiter.consume("b")).toBe(true);
+      expect(limiter.consume("c")).toBe(true);
+
+      expect(limiter.consume("newcomer")).toBe(false);
+      expect(limiter.size()).toBe(3);
+      // La victime n'a rien oublié : son troisième essai passe, le quatrième est refusé.
+      expect(limiter.consume("victim")).toBe(true);
+      expect(limiter.consume("victim")).toBe(false);
+    });
+
+    it("keeps accepting keys that are already tracked when full", () => {
+      const limiter = createRateLimiter({ limit: 5, windowMs: 10 * MINUTE, maxKeys: 2, onFull: "refuse", now: clock().now });
+      limiter.consume("a");
+      limiter.consume("b");
+
+      expect(limiter.consume("a")).toBe(true);
+      expect(limiter.consume("c")).toBe(false);
+    });
+
+    it("makes room again once keys expire (after a sweep)", () => {
+      const time = clock();
+      const limiter = createRateLimiter({ limit: 1, windowMs: 10 * MINUTE, maxKeys: 2, onFull: "refuse", now: time.now });
+      limiter.consume("a");
+      limiter.consume("b");
+      expect(limiter.consume("c")).toBe(false);
+
+      time.advance(11 * MINUTE);
+
+      expect(limiter.consume("c")).toBe(true);
+      expect(limiter.size()).toBe(1);
+    });
+
+    it("record ignores a new key when full instead of evicting", () => {
+      const limiter = createRateLimiter({ limit: 1, windowMs: 10 * MINUTE, maxKeys: 2, onFull: "refuse", now: clock().now });
+      limiter.record("a");
+      limiter.record("b");
+      limiter.record("c");
+
+      expect(limiter.size()).toBe(2);
+      expect(limiter.isLimited("a")).toBe(true);
+      expect(limiter.isLimited("c")).toBe(false);
+    });
+
+    it("does not sweep the whole table on every refused key", () => {
+      const limiter = createRateLimiter({ limit: 1, windowMs: 10 * MINUTE, maxKeys: 1000, onFull: "refuse", now: clock().now });
+      for (let i = 0; i < 1000; i += 1) limiter.consume(`ip-${i}`);
+
+      const started = performance.now();
+      for (let i = 0; i < 5000; i += 1) expect(limiter.consume(`flood-${i}`)).toBe(false);
+
+      expect(performance.now() - started).toBeLessThan(500);
+    });
+  });
+
   it("truncates very long keys instead of storing them whole", () => {
     const limiter = createRateLimiter({ limit: 1, windowMs: MINUTE, now: clock().now });
     const longKey = "x".repeat(10_000);
@@ -177,10 +236,32 @@ describe("createRateLimiter", () => {
 describe("createAuthLimiters", () => {
   it("applies the documented limits", () => {
     expect(AUTH_RATE_LIMITS.loginFailures).toEqual({ limit: 5, windowMs: 15 * MINUTE });
-    expect(AUTH_RATE_LIMITS.loginFailuresPerUsername).toEqual({ limit: 50, windowMs: 15 * MINUTE });
+    expect(AUTH_RATE_LIMITS.loginFailuresPerUsername).toEqual({
+      limit: 50,
+      windowMs: 15 * MINUTE,
+      maxKeys: 100_000,
+      onFull: "refuse",
+    });
     expect(AUTH_RATE_LIMITS.loginAttempts).toEqual({ limit: 300, windowMs: 15 * MINUTE });
     expect(AUTH_RATE_LIMITS.registrations).toEqual({ limit: 60, windowMs: 60 * MINUTE });
     expect(AUTH_RATE_LIMITS.guests).toEqual({ limit: 120, windowMs: 60 * MINUTE });
+  });
+
+  it("the per-username limiter never forgets a victim to make room: a new username is refused when full", () => {
+    const limiters = createAuthLimiters(clock().now);
+    limiters.loginFailuresPerUsername.consume("victim");
+    for (let i = 0; i < 99_999; i += 1) limiters.loginFailuresPerUsername.consume(`user-${i}`);
+    expect(limiters.loginFailuresPerUsername.size()).toBe(100_000);
+
+    expect(limiters.loginFailuresPerUsername.consume("one-more")).toBe(false);
+    expect(limiters.loginFailuresPerUsername.size()).toBe(100_000);
+    expect(limiters.loginFailuresPerUsername.consume("victim")).toBe(true);
+  });
+
+  it("the other limiters keep evicting the oldest key", () => {
+    const limiters = createAuthLimiters(clock().now);
+    for (let i = 0; i < 10_001; i += 1) expect(limiters.guests.consume(`ip-${i}`)).toBe(true);
+    expect(limiters.guests.size()).toBe(10_000);
   });
 
   it("limits login failures at 5 per window, guests at 120 per hour", () => {
