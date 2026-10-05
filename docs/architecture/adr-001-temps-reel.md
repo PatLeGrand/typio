@@ -127,8 +127,12 @@ Les événements de course (`race:start`, `race:countdown`, `race:input`, `race:
 
 **Négatives, assumées**
 
-- **Une seule instance.** L'état en mémoire interdit de lancer deux `realtime` sans
-  adaptateur Redis. Pour une classe et un TP, c'est suffisant ; la limite est écrite ici.
+- **Un seul processus `realtime`.** Il héberge toutes les salles et toutes les courses
+  simultanées, chacune isolée dans sa salle Socket.IO : dix classes peuvent courir en même
+  temps. Ce qu'il ne permet pas, c'est de répartir la charge sur plusieurs processus, car
+  leur mémoire n'est pas partagée : il faudrait alors un adaptateur Redis. Pour un
+  établissement, un processus suffit ; sa capacité réelle sera mesurée par un test de
+  charge avec la fonctionnalité « salle ».
 - **Un redémarrage perd les salles ouvertes.** Un déploiement pendant une course la
   coupe. Il faut déployer hors des heures d'usage ; les courses déjà terminées sont en base.
 - **Deux processus en développement.** `bun run dev` lance Next, et un second script lance

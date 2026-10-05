@@ -29,3 +29,18 @@ Grille d'évaluation (100 points). Tout ce qui n'y figure pas attend après le c
 
 - **Réviser H-13 dans le Word** (Patrick) : hébergement sur le VPS, avec un renvoi vers l'ADR-001.
 - **Confirmer avec le client** qu'un invité peut hériter du rôle d'hôte (voir la machine à états, § 2).
+
+## État au 5 octobre 2026
+
+- ✅ Architecture validée par Patrick : arrondis, invité héritier du rôle d'hôte, fermeture
+  des résultats après 10 min.
+- ✅ Déploiement en production : HTTPS (Caddy), authentification des membres et des invités,
+  PostgreSQL (tables `users` et `sessions`), version `sha-ee2493e`.
+- ✅ Langue et thème : FR/EN, clair/sombre, direction artistique Figma.
+- ✅ Intégration continue : tests, lint, build, migrations et tests d'intégration PostgreSQL.
+- ⬜ Salle créée et rejointe par code, mise à jour en temps réel.
+- ⬜ Matrice des exigences.
+
+**Risque connu :** un élève qui connaît l'identifiant d'un camarade peut le bloquer 15 min
+depuis la même IP (5 échecs). La parade, un cookie d'appareil, est prévue après le
+checkpoint.

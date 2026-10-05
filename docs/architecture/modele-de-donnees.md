@@ -71,20 +71,30 @@ erDiagram
 une session et peut finir sur un podium. Lui donner une ligne `users` avec
 `kind = 'guest'` évite de dédoubler toute la logique de session et de classement.
 `expires_at` borne sa durée de vie (H-2 : ses statistiques n'existent que le temps de sa
-session). Un nettoyage périodique supprime les invités expirés ; leurs résultats restent,
-avec `user_id = null` et le `display_name` figé, pour que le podium des autres ne perde
-pas de ligne.
+session). Un invité est supprimé **dès qu'il se déconnecte**. Sinon, un nettoyage le
+supprime après expiration : il tourne par lots de 500, au plus une fois par minute, à la
+moindre visite (`src/auth/purge.ts`). Quand `race_results` existera, ses résultats
+resteront, avec `user_id = null` et le `display_name` figé, pour que le podium des autres ne
+perde pas de ligne. Un pseudo d'invité identique, sans tenir compte de la casse, à
+l'identifiant d'un membre est refusé, pour qu'un invité ne puisse pas se faire passer pour
+un membre.
 
 **Pas de rôle enseignant.** C-1 est résolu : tout membre peut être hôte. Aucune colonne
 `role`.
 
 **Sessions maison, jetons hachés.** Le cookie contient un jeton aléatoire de 32 octets ; la
 base ne stocke que son SHA-256. Une fuite de la table ne permet donc pas d'usurper une
-session. Le service `realtime` lit cette même table pour authentifier chaque connexion
+session. En production, le cookie s'appelle `__Host-typio_session` (`HttpOnly`, `Secure`,
+`SameSite=Lax`, sans `Domain`) : un sous-domaine voisin ne peut pas l'écraser. La session dure
+30 jours avec « Rester connecté », sinon 24 h au plus, sans prolongation automatique. Une
+nouvelle connexion révoque la session précédente du navigateur. Le service `realtime` lit cette même table pour authentifier chaque connexion
 WebSocket : c'est le seul point de contact entre les deux services, en plus des
 résultats.
 
-**`password_hash` en argon2id** (AUTH-5), nul pour les comptes OAuth et les invités.
+**`password_hash` en argon2id** (AUTH-5 ; m = 19 Mio, t = 2, p = 1, d'après l'OWASP), nul
+pour les invités. La contrainte actuelle l'exige pour tout membre : les comptes OAuth
+demanderont une migration qui l'assouplit. Des CHECK bornent `username` à 20 caractères et
+`display_name` à 40, en défense en profondeur derrière la validation de l'application.
 `username` est unique sans tenir compte de la casse, grâce à un index sur `lower(username)` :
 `Patrick` et `patrick` sont le même compte. On évite l'extension `citext`, qu'on ne peut
 pas supposer installable sur la base partagée.
