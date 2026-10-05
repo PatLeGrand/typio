@@ -10,6 +10,13 @@ describe("Badge", () => {
     expect(badge).toHaveClass("rounded-full", "bg-accent-soft", "text-accent-text", "uppercase");
   });
 
+  it("ton « surface » : fond de carte au lieu du fond d'accent doux", () => {
+    render(<Badge tone="surface">Nouveau</Badge>);
+    const badge = screen.getByText("Nouveau");
+    expect(badge).toHaveClass("bg-surface", "text-accent-text");
+    expect(badge).not.toHaveClass("bg-accent-soft");
+  });
+
   it("sans icône : aucun svg", () => {
     const { container } = render(<Badge>Nouveau</Badge>);
     expect(container.querySelector("svg")).toBeNull();

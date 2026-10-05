@@ -26,6 +26,9 @@
   --key-mint: #bce9da;
   --key-coral: #ff967d;
   --key-ink: #29233d;
+  /* Île du panneau d'inscription (docs/design/inscription/README.md). */
+  --island-sand: #fff8e8;
+  --island-mint: #e8f7f0;
   /* Ajout hors maquette : la maquette n'a pas d'état d'erreur. */
   --danger: #b42318;
   --shadow-soft: 0 8px 24px rgba(83, 53, 155, 0.05);
@@ -49,6 +52,9 @@
   --key-mint: #bce9da;
   --key-coral: #ff967d;
   --key-ink: #29233d;
+  /* Variantes sombres dérivées : mêmes teintes (sable chaud, menthe), très assombries. */
+  --island-sand: #2c2530;
+  --island-mint: #1e3633;
   --danger: #ff9b8a;
   --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
@@ -70,6 +76,8 @@
   --color-key-mint: var(--key-mint);
   --color-key-coral: var(--key-coral);
   --color-key-ink: var(--key-ink);
+  --color-island-sand: var(--island-sand);
+  --color-island-mint: var(--island-mint);
   --color-danger: var(--danger);
   --radius-field: 12px;
   --radius-card: 24px;

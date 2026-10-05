@@ -45,6 +45,19 @@ function form(fields: Record<string, string>): FormData {
   return data;
 }
 
+/**
+ * Formulaire d'inscription valide par défaut : confirmation identique au mot de passe et
+ * conditions acceptées. Chaque test surcharge ce qu'il veut casser (`undefined` retire le champ).
+ */
+function signupForm(fields: Record<string, string | undefined>): FormData {
+  const merged = { passwordConfirm: fields.password, terms: "on", ...fields };
+  const data = new FormData();
+  for (const [name, value] of Object.entries(merged)) {
+    if (value !== undefined) data.set(name, value);
+  }
+  return data;
+}
+
 /** Comme le vrai `redirect`, lève une exception pour interrompre l'action. */
 async function run(action: Promise<AuthFormState | void>): Promise<AuthFormState | "redirected"> {
   try {
@@ -72,7 +85,7 @@ beforeEach(() => {
 describe("register", () => {
   it("creates the account, sets the cookie, and redirects to the locale home", async () => {
     const result = await run(
-      register(IDLE, form({ username: "Alice", password: "correct-password", locale: "en" })),
+      register(IDLE, signupForm({ username: "Alice", password: "correct-password1", locale: "en" })),
     );
 
     expect(result).toBe("redirected");
@@ -82,7 +95,7 @@ describe("register", () => {
   });
 
   it("sets a cookie with the right attributes and no Max-Age without remember", async () => {
-    await run(register(IDLE, form({ username: "Alice", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "Alice", password: "correct-password1" })));
 
     const [name, value, options] = mocks.cookieStore.set.mock.calls[0] as unknown as [
       string,
@@ -96,29 +109,79 @@ describe("register", () => {
   });
 
   it("sets Max-Age of 30 days when remember is on", async () => {
-    await run(register(IDLE, form({ username: "Alice", password: "correct-password", remember: "on" })));
+    await run(register(IDLE, signupForm({ username: "Alice", password: "correct-password1", remember: "on" })));
 
     expect(mocks.cookieStore.set.mock.calls[0][2]).toMatchObject({ maxAge: 2_592_000 });
   });
 
   it.each([
-    [{ username: "a!", password: "correct-password" }, { code: "INVALID_USERNAME", field: "username" }],
+    [{ username: "a!", password: "correct-password1" }, { code: "INVALID_USERNAME", field: "username" }],
     [{ username: "alice", password: "short" }, { code: "INVALID_PASSWORD", field: "password" }],
-    [{ password: "correct-password" }, { code: "INVALID_USERNAME", field: "username" }],
+    [{ password: "correct-password1" }, { code: "INVALID_USERNAME", field: "username" }],
   ])("returns the validation error for %j", async (fields, expected) => {
-    const result = await run(register(IDLE, form(fields)));
+    const result = await run(register(IDLE, signupForm(fields)));
 
     expect(result).toEqual({ status: "error", ...expected });
     expect(mocks.redirect).not.toHaveBeenCalled();
     expect(mocks.cookieStore.set).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["no letter", "12345678"],
+    ["no digit", "password-only"],
+    ["fewer than 8 characters", "abc123"],
+  ])("rejects a password with %s", async (_label, password) => {
+    const result = await run(register(IDLE, signupForm({ username: "alice", password })));
+
+    expect(result).toEqual({ status: "error", code: "INVALID_PASSWORD", field: "password" });
+    expect(test.users.users).toHaveLength(0);
+  });
+
+  it("rejects a confirmation that differs from the password", async () => {
+    const result = await run(
+      register(IDLE, signupForm({ username: "alice", password: "correct-password1", passwordConfirm: "correct-password2" })),
+    );
+
+    expect(result).toEqual({ status: "error", code: "PASSWORD_MISMATCH", field: "passwordConfirm" });
+    expect(mocks.cookieStore.set).not.toHaveBeenCalled();
+    expect(test.users.users).toHaveLength(0);
+  });
+
+  it("rejects a missing confirmation field", async () => {
+    const result = await run(
+      register(IDLE, signupForm({ username: "alice", password: "correct-password1", passwordConfirm: undefined })),
+    );
+
+    expect(result).toEqual({ status: "error", code: "PASSWORD_MISMATCH", field: "passwordConfirm" });
+  });
+
+  it.each([[undefined], ["off"], ["true"], [""]])("rejects the terms value %j", async (terms) => {
+    const result = await run(
+      register(IDLE, signupForm({ username: "alice", password: "correct-password1", terms })),
+    );
+
+    expect(result).toEqual({ status: "error", code: "TERMS_REQUIRED", field: "terms" });
+    expect(test.users.users).toHaveLength(0);
+  });
+
+  it("does not spend the registration budget on invalid forms, and hashes nothing", async () => {
+    const hash = vi.spyOn(test.deps.passwords, "hash");
+    for (let i = 0; i < 70; i += 1) {
+      await run(register(IDLE, signupForm({ username: `user_${i}`, password: "correct-password1", terms: undefined })));
+    }
+
+    expect(hash).not.toHaveBeenCalled();
+    expect(await run(register(IDLE, signupForm({ username: "valid_one", password: "correct-password1" })))).toBe(
+      "redirected",
+    );
+  });
+
   it("returns USERNAME_TAKEN when the username exists", async () => {
-    await run(register(IDLE, form({ username: "Alice", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "Alice", password: "correct-password1" })));
     mocks.redirect.mockClear();
     mocks.cookieStore.set.mockClear();
 
-    const result = await run(register(IDLE, form({ username: "alice", password: "other-password" })));
+    const result = await run(register(IDLE, signupForm({ username: "alice", password: "other-password2" })));
 
     expect(result).toEqual({ status: "error", code: "USERNAME_TAKEN", field: "username" });
     expect(mocks.cookieStore.set).not.toHaveBeenCalled();
@@ -126,10 +189,10 @@ describe("register", () => {
 
   it("returns RATE_LIMITED after 60 registrations from the same IP", async () => {
     for (let i = 0; i < 60; i += 1) {
-      await run(register(IDLE, form({ username: `user_${i}`, password: "correct-password" })));
+      await run(register(IDLE, signupForm({ username: `user_${i}`, password: "correct-password1" })));
     }
 
-    expect(await run(register(IDLE, form({ username: "user_60", password: "correct-password" })))).toEqual({
+    expect(await run(register(IDLE, signupForm({ username: "user_60", password: "correct-password1" })))).toEqual({
       status: "error",
       code: "RATE_LIMITED",
     });
@@ -137,26 +200,26 @@ describe("register", () => {
 
   it("reads the IP from x-forwarded-for, so another IP has its own budget", async () => {
     for (let i = 0; i < 60; i += 1) {
-      await run(register(IDLE, form({ username: `user_${i}`, password: "correct-password" })));
+      await run(register(IDLE, signupForm({ username: `user_${i}`, password: "correct-password1" })));
     }
     mocks.requestHeaders.set("x-forwarded-for", "198.51.100.9, 10.0.0.1");
 
-    expect(await run(register(IDLE, form({ username: "user_60", password: "correct-password" })))).toBe(
+    expect(await run(register(IDLE, signupForm({ username: "user_60", password: "correct-password1" })))).toBe(
       "redirected",
     );
   });
 
   it("falls back to French for a missing or unknown locale", async () => {
-    await run(register(IDLE, form({ username: "alice", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "alice", password: "correct-password1" })));
     expect(mocks.redirect).toHaveBeenLastCalledWith("/fr");
 
-    await run(register(IDLE, form({ username: "bob", password: "correct-password", locale: "de" })));
+    await run(register(IDLE, signupForm({ username: "bob", password: "correct-password1", locale: "de" })));
     expect(mocks.redirect).toHaveBeenLastCalledWith("/fr");
   });
 
   it("never redirects to an attacker-controlled path through the locale field", async () => {
     await run(
-      register(IDLE, form({ username: "alice", password: "correct-password", locale: "//evil.example" })),
+      register(IDLE, signupForm({ username: "alice", password: "correct-password1", locale: "//evil.example" })),
     );
 
     expect(mocks.redirect).toHaveBeenCalledWith("/fr");
@@ -165,7 +228,7 @@ describe("register", () => {
 
 describe("login", () => {
   beforeEach(async () => {
-    await run(register(IDLE, form({ username: "Alice", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "Alice", password: "correct-password1" })));
     mocks.cookieJar.clear();
     vi.clearAllMocks();
     mocks.redirect.mockImplementation(() => {
@@ -176,7 +239,7 @@ describe("login", () => {
 
   it("sets the cookie and redirects to the locale home on success", async () => {
     const result = await run(
-      login(IDLE, form({ username: "alice", password: "correct-password", locale: "en" })),
+      login(IDLE, form({ username: "alice", password: "correct-password1", locale: "en" })),
     );
 
     expect(result).toBe("redirected");
@@ -186,7 +249,7 @@ describe("login", () => {
   });
 
   it("uses Max-Age of 30 days with remember on", async () => {
-    await run(login(IDLE, form({ username: "alice", password: "correct-password", remember: "on" })));
+    await run(login(IDLE, form({ username: "alice", password: "correct-password1", remember: "on" })));
 
     expect(mocks.cookieStore.set.mock.calls[0][2]).toMatchObject({ maxAge: 2_592_000, httpOnly: true });
   });
@@ -194,7 +257,7 @@ describe("login", () => {
   it("uses the __Host- prefixed name and Secure in production, without Domain", async () => {
     vi.stubEnv("NODE_ENV", "production");
     try {
-      await run(login(IDLE, form({ username: "alice", password: "correct-password" })));
+      await run(login(IDLE, form({ username: "alice", password: "correct-password1" })));
       const [name, , options] = mocks.cookieStore.set.mock.calls[0];
       expect(name).toBe("__Host-typio_session");
       expect(options).toMatchObject({ secure: true, path: "/", httpOnly: true, sameSite: "lax" });
@@ -207,7 +270,7 @@ describe("login", () => {
   it("reads and deletes the __Host- prefixed cookie on logout in production", async () => {
     vi.stubEnv("NODE_ENV", "production");
     try {
-      await run(login(IDLE, form({ username: "alice", password: "correct-password" })));
+      await run(login(IDLE, form({ username: "alice", password: "correct-password1" })));
       expect(mocks.cookieJar.has("__Host-typio_session")).toBe(true);
 
       await run(logout(form({})));
@@ -246,7 +309,7 @@ describe("login", () => {
 
 describe("session replacement", () => {
   async function signUpAsAlice(): Promise<string> {
-    await run(register(IDLE, form({ username: "alice", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "alice", password: "correct-password1" })));
     const token = mocks.cookieJar.get("typio_session");
     if (token === undefined) throw new Error("no cookie was set");
     return token;
@@ -256,7 +319,7 @@ describe("session replacement", () => {
     const oldToken = await signUpAsAlice();
     mocks.requestHeaders.set("x-forwarded-for", "198.51.100.20");
 
-    await run(login(IDLE, form({ username: "alice", password: "correct-password" })));
+    await run(login(IDLE, form({ username: "alice", password: "correct-password1" })));
 
     const newToken = mocks.cookieJar.get("typio_session");
     expect(newToken).toBeDefined();
@@ -269,7 +332,7 @@ describe("session replacement", () => {
   it("registration revokes the previous session too", async () => {
     const oldToken = await signUpAsAlice();
 
-    await run(register(IDLE, form({ username: "bob", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "bob", password: "correct-password1" })));
 
     expect(test.sessions.sessions.has(hashToken(oldToken))).toBe(false);
     expect(test.sessions.sessions.size).toBe(1);
@@ -307,12 +370,12 @@ describe("session replacement", () => {
     await signUpAsAlice();
     const bobBrowser = new Map(mocks.cookieJar);
     mocks.cookieJar.clear();
-    await run(register(IDLE, form({ username: "bob", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "bob", password: "correct-password1" })));
     const bobToken = mocks.cookieJar.get("typio_session") ?? "";
     mocks.cookieJar.clear();
 
     for (const [name, value] of bobBrowser) mocks.cookieJar.set(name, value);
-    await run(register(IDLE, form({ username: "carol", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "carol", password: "correct-password1" })));
 
     expect(test.sessions.sessions.has(hashToken(bobToken))).toBe(true);
   });
@@ -371,13 +434,13 @@ describe("unexpected errors", () => {
       });
     };
 
-    const result = await run(register(IDLE, form({ username: "alice", password: "correct-password" })));
+    const result = await run(register(IDLE, signupForm({ username: "alice", password: "correct-password1" })));
 
     expect(result).toEqual({ status: "error", code: "UNKNOWN" });
     expect(mocks.redirect).not.toHaveBeenCalled();
     expect(consoleError).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(consoleError.mock.calls)).not.toContain("secret-hash");
-    expect(JSON.stringify(consoleError.mock.calls)).not.toContain("correct-password");
+    expect(JSON.stringify(consoleError.mock.calls)).not.toContain("correct-password1");
     expect(consoleError.mock.calls[0][1]).toEqual({ name: "Error", code: "XX000" });
     consoleError.mockRestore();
   });
@@ -388,7 +451,7 @@ describe("unexpected errors", () => {
       throw new Error("DATABASE_URL is required");
     });
 
-    expect(await run(login(IDLE, form({ username: "alice", password: "correct-password" })))).toEqual({
+    expect(await run(login(IDLE, form({ username: "alice", password: "correct-password1" })))).toEqual({
       status: "error",
       code: "UNKNOWN",
     });
@@ -398,7 +461,7 @@ describe("unexpected errors", () => {
 
 describe("logout", () => {
   it("deletes the session in the database and the cookie, then redirects", async () => {
-    await run(register(IDLE, form({ username: "alice", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "alice", password: "correct-password1" })));
     const token = mocks.cookieJar.get("typio_session");
     expect(token).toBeDefined();
     expect(test.sessions.sessions.has(hashToken(token ?? ""))).toBe(true);
@@ -422,7 +485,7 @@ describe("logout", () => {
 
   it("still clears the cookie and redirects when the database fails", async () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    await run(register(IDLE, form({ username: "alice", password: "correct-password" })));
+    await run(register(IDLE, signupForm({ username: "alice", password: "correct-password1" })));
     test.sessions.delete = async () => {
       throw new Error("database down");
     };

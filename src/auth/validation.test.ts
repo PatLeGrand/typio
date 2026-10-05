@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validatePassword, validatePseudo, validateUsername } from "./validation";
+import { validateNewPassword, validatePassword, validatePseudo, validateUsername } from "./validation";
 
 describe("validateUsername", () => {
   it("normalizes to lowercase and trims, keeping the typed form as display name", () => {
@@ -71,6 +71,45 @@ describe("validatePassword", () => {
   it("rejects non-string values", () => {
     expect(validatePassword(undefined).ok).toBe(false);
     expect(validatePassword(12345678).ok).toBe(false);
+  });
+});
+
+describe("validateNewPassword", () => {
+  it("accepts a password with at least one letter and one digit", () => {
+    expect(validateNewPassword("abcdefg1")).toEqual({ ok: true, value: "abcdefg1" });
+    expect(validateNewPassword("1234567a").ok).toBe(true);
+  });
+
+  it("accepts non-ASCII letters and digits", () => {
+    expect(validateNewPassword("éclair٣٤٥").ok).toBe(true); // lettre accentuée + chiffres arabo-indiens
+    expect(validateNewPassword("пароль12").ok).toBe(true);
+  });
+
+  it("rejects a password without a letter or without a digit", () => {
+    expect(validateNewPassword("12345678")).toEqual({ ok: false, code: "INVALID_PASSWORD" });
+    expect(validateNewPassword("abcdefgh")).toEqual({ ok: false, code: "INVALID_PASSWORD" });
+    expect(validateNewPassword("!!!!????")).toEqual({ ok: false, code: "INVALID_PASSWORD" });
+  });
+
+  it("does not count roman numerals or superscripts as digits (Nd only)", () => {
+    expect(validateNewPassword("abcdefgⅣ")).toEqual({ ok: false, code: "INVALID_PASSWORD" });
+    expect(validateNewPassword("abcdefg²")).toEqual({ ok: false, code: "INVALID_PASSWORD" });
+  });
+
+  it("keeps the 8 to 128 code point bounds", () => {
+    expect(validateNewPassword("abcde12").ok).toBe(false);
+    expect(validateNewPassword(`a1${"b".repeat(126)}`).ok).toBe(true);
+    expect(validateNewPassword(`a1${"b".repeat(127)}`).ok).toBe(false);
+  });
+
+  it("rejects non-string values", () => {
+    expect(validateNewPassword(undefined).ok).toBe(false);
+    expect(validateNewPassword(["abcdefg1"]).ok).toBe(false);
+  });
+
+  it("leaves validatePassword (login) unchanged: no letter/digit requirement", () => {
+    expect(validatePassword("12345678").ok).toBe(true);
+    expect(validatePassword("abcdefgh").ok).toBe(true);
   });
 });
 

@@ -6,7 +6,7 @@ import { QueueFullError } from "./semaphore";
 import { createSession, GUEST_LIFETIME_MS, type SessionGrant, type SessionRepository } from "./session";
 import type { AuthFailure } from "./types";
 import { UsernameTakenError, type UserRepository } from "./userRepository";
-import { validatePassword, validatePseudo, validateUsername } from "./validation";
+import { validateNewPassword, validatePassword, validatePseudo, validateUsername } from "./validation";
 
 /** Tout ce dont les parcours ont besoin, injecté pour les tester sans base ni horloge réelle. */
 export interface AuthDeps {
@@ -29,20 +29,36 @@ export interface Credentials {
   locale: Locale;
 }
 
+/** Données du formulaire d'inscription : les identifiants, la confirmation et le consentement. */
+export interface RegistrationInput extends Credentials {
+  /** Valeur brute du champ de confirmation, comparée au mot de passe. */
+  passwordConfirm: unknown;
+  /** Case « j'accepte les conditions d'utilisation et la politique de confidentialité ». */
+  termsAccepted: boolean;
+}
+
 const fail = (code: AuthFailure["code"], field?: AuthFailure["field"]): AuthFlowResult => ({
   ok: false,
   error: field ? { code, field } : { code },
 });
 
-/** AUTH-1 : crée un membre puis ouvre sa session. */
-export async function registerMember(deps: AuthDeps, input: Credentials): Promise<AuthFlowResult> {
-  // Chaque tentative compte, même invalide : le hachage argon2 est coûteux.
-  if (!deps.limiters.registrations.consume(ipRateLimitKey(input.ip))) return fail("RATE_LIMITED");
-
+/**
+ * AUTH-1 : crée un membre puis ouvre sa session.
+ *
+ * Tous les contrôles de formulaire (identifiant, règle du mot de passe, confirmation,
+ * consentement) passent AVANT le limiteur et avant tout hachage : ils ne coûtent rien, et
+ * un envoi invalide ne doit pas consommer le budget d'inscriptions de l'IP.
+ */
+export async function registerMember(deps: AuthDeps, input: RegistrationInput): Promise<AuthFlowResult> {
   const username = validateUsername(input.username);
   if (!username.ok) return fail(username.code, "username");
-  const password = validatePassword(input.password);
+  const password = validateNewPassword(input.password);
   if (!password.ok) return fail(password.code, "password");
+  if (input.passwordConfirm !== password.value) return fail("PASSWORD_MISMATCH", "passwordConfirm");
+  if (!input.termsAccepted) return fail("TERMS_REQUIRED", "terms");
+
+  // Chaque tentative qui atteindrait le hachage argon2 (coûteux) compte, qu'elle aboutisse ou non.
+  if (!deps.limiters.registrations.consume(ipRateLimitKey(input.ip))) return fail("RATE_LIMITED");
 
   let passwordHash: string;
   try {

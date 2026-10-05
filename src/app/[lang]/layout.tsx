@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { SiteHeader } from "@/components/SiteHeader";
 import { locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
@@ -30,7 +29,6 @@ export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Prom
 
 export default async function RootLayout({ children, params }: LayoutProps<"/[lang]">) {
   const locale = requireLocale((await params).lang);
-  const dictionary = getDictionary(locale);
 
   return (
     // Pas de `className` sur <html> : la classe `dark` y est posée hors de React
@@ -43,7 +41,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
       <body
         className={`${inter.variable} flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased`}
       >
-        <SiteHeader locale={locale} dictionary={dictionary} />
+        {/* L'en-tête vit dans (site)/layout.tsx : les pages (auth) ont le leur. */}
         {children}
       </body>
     </html>

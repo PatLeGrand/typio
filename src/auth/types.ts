@@ -3,16 +3,21 @@ import type { Locale } from "@/i18n/config";
 export type UserKind = "member" | "guest";
 
 /** Codes d'erreur rendus aux formulaires ; l'interface les traduit (UI-5), jamais de phrase ici. */
-export type AuthErrorCode =
-  | "INVALID_USERNAME"
-  | "INVALID_PASSWORD"
-  | "INVALID_PSEUDO"
-  | "USERNAME_TAKEN"
-  | "INVALID_CREDENTIALS"
-  | "RATE_LIMITED"
-  | "UNKNOWN";
+export const AUTH_ERROR_CODES = [
+  "INVALID_USERNAME",
+  "INVALID_PASSWORD",
+  "INVALID_PSEUDO",
+  "USERNAME_TAKEN",
+  "INVALID_CREDENTIALS",
+  "RATE_LIMITED",
+  "PASSWORD_MISMATCH",
+  "TERMS_REQUIRED",
+  "UNKNOWN",
+] as const;
 
-export type AuthField = "username" | "password" | "pseudo";
+export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[number];
+
+export type AuthField = "username" | "password" | "passwordConfirm" | "terms" | "pseudo";
 
 /** État renvoyé par les Server Actions, branché sur `useActionState`. */
 export type AuthFormState =
@@ -35,6 +40,10 @@ export interface CurrentUser {
 export const AUTH_FIELDS = {
   username: "username",
   password: "password",
+  /** Confirmation du mot de passe, à l'inscription seulement. */
+  passwordConfirm: "passwordConfirm",
+  /** Case « j'accepte les conditions » : `"on"` quand cochée, absente sinon. */
+  terms: "terms",
   /** Case « rester connecté » : `"on"` quand cochée, absente sinon. */
   remember: "remember",
   pseudo: "pseudo",

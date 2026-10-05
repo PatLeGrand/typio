@@ -21,6 +21,8 @@ const PSEUDO_PATTERN = /^[\p{L}\p{N} _-]+$/u;
  */
 const FORBIDDEN_PSEUDO_CHARACTERS = /[ᅟᅠㅤﾠ\p{Cf}\p{Cc}\p{Zl}\p{Zp}]/u;
 const VISIBLE_PSEUDO_CHARACTER = /[\p{L}\p{N}]/u;
+const LETTER = /\p{L}/u;
+const DIGIT = /\p{Nd}/u;
 
 export type ValidationResult<T> = { ok: true; value: T } | { ok: false; code: AuthErrorCode };
 
@@ -51,6 +53,20 @@ export function validatePassword(raw: unknown): ValidationResult<string> {
     return { ok: false, code: "INVALID_PASSWORD" };
   }
   return { ok: true, value: raw };
+}
+
+/**
+ * Règle appliquée à l'INSCRIPTION seulement : en plus des bornes de `validatePassword`, au
+ * moins une lettre et un chiffre (Unicode). La connexion garde `validatePassword`, pour que
+ * les comptes créés avant cette règle puissent toujours se connecter.
+ */
+export function validateNewPassword(raw: unknown): ValidationResult<string> {
+  const result = validatePassword(raw);
+  if (!result.ok) return result;
+  if (!LETTER.test(result.value) || !DIGIT.test(result.value)) {
+    return { ok: false, code: "INVALID_PASSWORD" };
+  }
+  return result;
 }
 
 export function validatePseudo(raw: unknown): ValidationResult<string> {

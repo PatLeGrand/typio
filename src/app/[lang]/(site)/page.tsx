@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { getCurrentUser } from "@/auth/currentUser";
 import { Button } from "@/components/Button";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
@@ -5,6 +7,7 @@ import { requireLocale } from "@/i18n/requireLocale";
 export default async function Home({ params }: PageProps<"/[lang]">) {
   const locale = requireLocale((await params).lang);
   const { site, home } = getDictionary(locale);
+  const user = await getCurrentUser();
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8 px-4 py-12 text-center sm:px-8">
@@ -19,6 +22,22 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
           {home.joinWithCode}
         </Button>
       </div>
+      {user ? null : (
+        <p className="flex flex-wrap items-center justify-center gap-x-2 text-sm">
+          <Link href={`/${locale}/login`} className={linkClasses}>
+            {home.signIn}
+          </Link>
+          <span aria-hidden="true" className="text-muted">
+            ·
+          </span>
+          <Link href={`/${locale}/guest`} className={linkClasses}>
+            {home.playAsGuest}
+          </Link>
+        </p>
+      )}
     </main>
   );
 }
+
+const linkClasses =
+  "inline-flex min-h-11 items-center rounded-field px-1 font-semibold text-accent-text underline-offset-2 hover:underline";

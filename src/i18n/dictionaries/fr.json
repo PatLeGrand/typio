@@ -24,6 +24,156 @@
   "home": {
     "tagline": "Défie tes amis dans des courses de dactylographie et vois qui tape le plus vite.",
     "createRace": "Créer une course",
-    "joinWithCode": "Rejoindre avec un code"
+    "joinWithCode": "Rejoindre avec un code",
+    "signIn": "Se connecter",
+    "playAsGuest": "Jouer en invité"
+  },
+  "header": {
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "guest": "invité"
+  },
+  "footer": {
+    "copyright": "© 2026 Typio",
+    "privacy": "Confidentialité"
+  },
+  "promise": {
+    "badge": "Apprendre. Jouer. Progresser.",
+    "titleLine1": "Deviens le boss",
+    "titleLine2": "du clavier.",
+    "description": "Des défis rigolos, des progrès bien réels.",
+    "tipTitle": "Pas besoin de 8 bras.",
+    "tipText": "10 minutes par jour et tes doigts font le reste !",
+    "benefits": {
+      "ownPace": "À ton rythme",
+      "noPressure": "Sans pression",
+      "playful": "100 % ludique"
+    }
+  },
+  "illustration": {
+    "praise": "Bien joué !",
+    "spaceKey": "espace"
+  },
+  "island": {
+    "zoneTitle": "Ta zone de progression",
+    "zoneText": "10 minutes par jour, c'est tout ce qu'il faut.",
+    "progressTitle": "Progrès en vue",
+    "progressText": "Des exercices courts, des récompenses sympas.",
+    "perDay": "10 min/jour",
+    "rewards": "Récompenses"
+  },
+  "oauth": {
+    "groupLabel": "Connexion avec un autre service",
+    "github": "GitHub",
+    "discord": "Discord",
+    "soon": "bientôt"
+  },
+  "auth": {
+    "kicker": "À tes touches, prêt…",
+    "enterKey": "Entrée",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "Ton mot de passe",
+    "errors": {
+      "INVALID_USERNAME": "Le pseudo doit faire de 3 à 20 caractères : lettres sans accent, chiffres et _.",
+      "INVALID_PASSWORD": "Le mot de passe doit faire de 8 à 128 caractères, avec au moins une lettre et un chiffre.",
+      "INVALID_PSEUDO": "Choisis un pseudo de 2 à 20 caractères : lettres, chiffres, espaces, _ et -.",
+      "USERNAME_TAKEN": "Ce pseudo est déjà pris. Essaie-en un autre !",
+      "INVALID_CREDENTIALS": "Identifiant ou mot de passe incorrect.",
+      "RATE_LIMITED": "Trop d'essais en peu de temps. Patiente un peu, puis réessaie.",
+      "PASSWORD_MISMATCH": "Les deux mots de passe ne sont pas identiques.",
+      "TERMS_REQUIRED": "Pour continuer, accepte les conditions d'utilisation et la politique de confidentialité.",
+      "UNKNOWN": "Oups, quelque chose s'est mal passé. Réessaie dans un instant."
+    }
+  },
+  "login": {
+    "meta": {
+      "title": "Connexion · Typio",
+      "description": "Connecte-toi à Typio pour retrouver tes défis et ton score."
+    },
+    "title": "Content de te revoir !",
+    "intro": "Connecte-toi pour retrouver tes défis et faire grimper ton score. À ton rythme.",
+    "divider": "ou avec ton identifiant",
+    "securityNote": "Se connecter avec un identifiant est moins sécurisé qu'avec un compte GitHub ou Discord.",
+    "usernameLabel": "Identifiant",
+    "usernamePlaceholder": "Ton identifiant",
+    "remember": "Rester connecté",
+    "submit": "Se connecter",
+    "guestDivider": "ou",
+    "guestButton": "Jouer en tant qu'invité",
+    "guestNote": "Sans compte, tes résultats sont effacés après 24 h.",
+    "noAccount": "Pas encore de compte ?",
+    "signUpLink": "Rejoins l'aventure",
+    "sharedComputerNote": "Sur un ordinateur partagé, ne coche pas « Rester connecté » et déconnecte-toi à la fin."
+  },
+  "register": {
+    "meta": {
+      "title": "Inscription · Typio",
+      "description": "Crée ton compte Typio et fais tes premiers progrès au clavier."
+    },
+    "title": "Rejoins l'aventure !",
+    "intro": "Crée ton compte et fais tes premiers progrès.",
+    "divider": "ou avec un pseudo",
+    "pseudoLabel": "Pseudo",
+    "pseudoPlaceholder": "Ex. : PoulpeRapide",
+    "pseudoHint": "3 à 20 caractères : lettres, chiffres et _.",
+    "passwordLabel": "Mot de passe",
+    "confirmLabel": "Confirmation",
+    "passwordPlaceholder": "8+ caractères",
+    "confirmPlaceholder": "Retape-le",
+    "passwordRule": "Au moins 8 caractères, avec une lettre et un chiffre.",
+    "termsBefore": "J'accepte les ",
+    "termsLink": "conditions d'utilisation",
+    "termsAnd": " et la ",
+    "privacyLink": "politique de confidentialité",
+    "termsAfter": ".",
+    "submit": "Créer mon compte",
+    "haveAccount": "Déjà un compte ?",
+    "signInLink": "Connecte-toi"
+  },
+  "guest": {
+    "meta": {
+      "title": "Jouer en invité · Typio",
+      "description": "Joue à Typio sans compte, avec un simple pseudo."
+    },
+    "title": "Joue en invité",
+    "intro": "Choisis un pseudo et lance-toi, sans créer de compte.",
+    "pseudoLabel": "Pseudo",
+    "pseudoPlaceholder": "Ex. : PoulpeRapide",
+    "pseudoHint": "2 à 20 caractères : lettres, chiffres, espaces, _ et -.",
+    "submit": "Jouer en invité",
+    "limits": "Les données d'un invité sont supprimées après 24 h, et un invité ne peut pas créer de course.",
+    "haveAccount": "Tu as déjà un compte ?",
+    "signInLink": "Connecte-toi"
+  },
+  "privacy": {
+    "meta": {
+      "title": "Confidentialité · Typio",
+      "description": "Ce que Typio enregistre sur toi, et ce qu'il ne fait jamais."
+    },
+    "title": "Confidentialité",
+    "intro": "Voici, simplement, ce que Typio garde sur toi et pourquoi. Moins on garde de choses, mieux c'est.",
+    "storedTitle": "Ce que Typio enregistre",
+    "stored": {
+      "identity": "Ton pseudo (ton identifiant de connexion) et ton nom affiché.",
+      "password": "Ton mot de passe, uniquement sous forme hachée avec argon2id. Il n'est jamais stocké en clair : personne ne peut le relire.",
+      "preferences": "Ta langue et la disposition de ton clavier.",
+      "results": "Tes résultats de course, quand les courses seront disponibles."
+    },
+    "cookiesTitle": "Cookies et stockage",
+    "cookies": {
+      "session": "Un cookie de session te garde connecté. Il contient un jeton aléatoire et indique si tu es membre ou invité. Il n'est lisible que par Typio.",
+      "duration": "Avec « Rester connecté », ce cookie dure 30 jours. Sans cette case, il disparaît quand tu fermes le navigateur.",
+      "preferences": "Ta langue est mémorisée dans un cookie, et ton thème (clair ou sombre) dans le stockage de ton navigateur."
+    },
+    "guestsTitle": "Les invités",
+    "guests": "Un invité est supprimé, avec toutes ses données, après 24 h.",
+    "neverTitle": "Ce que Typio ne fait pas",
+    "never": {
+      "email": "Typio ne te demande aucune adresse e-mail.",
+      "tracking": "Il n'y a aucune publicité et aucun pistage.",
+      "resale": "Tes données ne sont jamais revendues."
+    }
   }
 }

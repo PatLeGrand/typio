@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { createGuest, loginMember, registerMember, type Credentials } from "./authFlows";
+import { createGuest, loginMember, registerMember, type RegistrationInput } from "./authFlows";
 import { DUMMY_PASSWORD_HASH } from "./password";
 import { QueueFullError } from "./semaphore";
 import { hashToken } from "./token";
@@ -9,11 +9,15 @@ import { createTestDeps } from "./testSupport";
 const HOUR = 60 * 60 * 1000;
 const MINUTE = 60 * 1000;
 
-function credentials(overrides: Partial<Credentials> = {}): Credentials {
+/** Entrée d'inscription valide ; `loginMember` n'en lit que les champs de `Credentials`. */
+function credentials(overrides: Partial<RegistrationInput> = {}): RegistrationInput {
+  const password = overrides.password ?? "correct-password1";
   return {
     ip: "203.0.113.7",
     username: "Alice",
-    password: "correct-password",
+    password,
+    passwordConfirm: password,
+    termsAccepted: true,
     remember: false,
     locale: "fr",
     ...overrides,
@@ -41,8 +45,8 @@ describe("registerMember", () => {
       locale: "en",
       expiresAt: null,
     });
-    expect(users.users[0].passwordHash).toBe("fake-hash:correct-password");
-    expect(users.users[0].passwordHash).not.toBe("correct-password");
+    expect(users.users[0].passwordHash).toBe("fake-hash:correct-password1");
+    expect(users.users[0].passwordHash).not.toBe("correct-password1");
   });
 
   it("logs the new member in: session stored by token hash", async () => {
@@ -79,6 +83,83 @@ describe("registerMember", () => {
     expect(users.users).toHaveLength(0);
   });
 
+  it.each([
+    ["no letter", "12345678"],
+    ["no digit", "password-only"],
+    ["7 characters", "abcde12"],
+    ["129 characters", `a1${"b".repeat(127)}`],
+  ])("answers INVALID_PASSWORD for a password with %s", async (_label, password) => {
+    const { deps, users } = createTestDeps();
+
+    expect(await registerMember(deps, credentials({ password }))).toEqual({
+      ok: false,
+      error: { code: "INVALID_PASSWORD", field: "password" },
+    });
+    expect(users.users).toHaveLength(0);
+  });
+
+  it("accepts the 8 and 128 character bounds, and non-ASCII letters and digits", async () => {
+    for (const password of ["abcdefg1", `a1${"b".repeat(126)}`, "éclair٣٤٥", "пароль12"]) {
+      const { deps } = createTestDeps();
+      expect(await registerMember(deps, credentials({ password }))).toMatchObject({ ok: true });
+    }
+  });
+
+  it("answers PASSWORD_MISMATCH on the confirmation field when it differs, is missing, or is not text", async () => {
+    const { deps, users } = createTestDeps();
+
+    for (const passwordConfirm of ["correct-password2", "", undefined, 12345678, ["correct-password1"]]) {
+      expect(await registerMember(deps, credentials({ passwordConfirm }))).toEqual({
+        ok: false,
+        error: { code: "PASSWORD_MISMATCH", field: "passwordConfirm" },
+      });
+    }
+    expect(users.users).toHaveLength(0);
+  });
+
+  it("answers TERMS_REQUIRED on the terms field when the box is not ticked", async () => {
+    const { deps, users } = createTestDeps();
+
+    expect(await registerMember(deps, credentials({ termsAccepted: false }))).toEqual({
+      ok: false,
+      error: { code: "TERMS_REQUIRED", field: "terms" },
+    });
+    expect(users.users).toHaveLength(0);
+  });
+
+  it("reports the first failing control: username, then password rule, then confirmation, then terms", async () => {
+    const { deps } = createTestDeps();
+    const bad = { passwordConfirm: "different", termsAccepted: false };
+
+    expect(await registerMember(deps, credentials({ ...bad, username: "a!", password: "x" }))).toMatchObject({
+      error: { code: "INVALID_USERNAME" },
+    });
+    expect(await registerMember(deps, credentials({ ...bad, password: "x" }))).toMatchObject({
+      error: { code: "INVALID_PASSWORD" },
+    });
+    expect(await registerMember(deps, credentials({ ...bad }))).toMatchObject({
+      error: { code: "PASSWORD_MISMATCH" },
+    });
+    expect(await registerMember(deps, credentials({ termsAccepted: false }))).toMatchObject({
+      error: { code: "TERMS_REQUIRED" },
+    });
+  });
+
+  it("checks the form before the limiter and before hashing: invalid forms cost no budget", async () => {
+    const { deps } = createTestDeps();
+    let hashCalls = 0;
+    const hash = deps.passwords.hash;
+    deps.passwords.hash = async (password) => {
+      hashCalls += 1;
+      return hash(password);
+    };
+
+    for (let i = 0; i < 100; i += 1) await registerMember(deps, credentials({ termsAccepted: false }));
+
+    expect(hashCalls).toBe(0);
+    expect(await registerMember(deps, credentials({ username: "valid_one" }))).toMatchObject({ ok: true });
+  });
+
   it("answers USERNAME_TAKEN regardless of case", async () => {
     const { deps, users } = await withAlice();
 
@@ -98,7 +179,7 @@ describe("registerMember", () => {
     await expect(registerMember(deps, credentials())).rejects.toThrow("database down");
   });
 
-  it("allows 60 registrations per hour per IP, counting invalid attempts", async () => {
+  it("allows 60 registrations per hour per IP", async () => {
     const { deps, advance } = createTestDeps();
 
     for (let i = 0; i < 60; i += 1) {
@@ -234,7 +315,7 @@ describe("loginMember", () => {
 
     expect(passwords.verifyCalls).toEqual([
       { hash: DUMMY_PASSWORD_HASH, password: "whatever-pass" },
-      { hash: "fake-hash:correct-password", password: "wrong-password" },
+      { hash: "fake-hash:correct-password1", password: "wrong-password" },
     ]);
   });
 

@@ -82,6 +82,8 @@ export async function register(_prevState: AuthFormState, formData: FormData): P
       ip,
       username: readText(formData, AUTH_FIELDS.username),
       password: readText(formData, AUTH_FIELDS.password),
+      passwordConfirm: readText(formData, AUTH_FIELDS.passwordConfirm),
+      termsAccepted: formData.get(AUTH_FIELDS.terms) === "on",
       remember: formData.get(AUTH_FIELDS.remember) === "on",
       locale,
     }),

@@ -49,6 +49,14 @@ const pairs: ReadonlyArray<readonly [string, string]> = [
   ["danger", "background"],
   ["danger", "surface"],
   ["accent-text", "accent-soft"],
+  // Encarts d'information (texte foreground sur fond accent-soft).
+  ["foreground", "accent-soft"],
+  // Titre du panneau violet (PromisePanel), dont la deuxième ligne est en couleur d'accent.
+  ["foreground", "accent-panel"],
+  ["accent-text", "accent-panel"],
+  // Panneau d'inscription (ProgressIsland) : textes posés directement sur l'île et la colline.
+  ["foreground", "island-sand"],
+  ["foreground", "island-mint"],
 ];
 
 describe("contraste WCAG des tokens", () => {
