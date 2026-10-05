@@ -68,7 +68,8 @@
     "groupLabel": "Sign in with another service",
     "github": "GitHub",
     "discord": "Discord",
-    "soon": "soon"
+    "soon": "soon",
+    "ageNote": "Discord and GitHub are for ages 13 and over."
   },
   "auth": {
     "kicker": "Fingers ready…",
@@ -108,7 +109,13 @@
     "guestNote": "Without an account, your results are deleted after 24 hours.",
     "noAccount": "No account yet?",
     "signUpLink": "Join the adventure",
-    "sharedComputerNote": "On a shared computer, don't tick \"Stay signed in\" and sign out when you're done."
+    "sharedComputerNote": "On a shared computer, don't tick \"Stay signed in\" and sign out when you're done.",
+    "oauthErrors": {
+      "cancelled": "Sign-in cancelled. You can try again whenever you like.",
+      "failed": "Signing in with this service failed. Please try again in a moment.",
+      "unavailable": "This sign-in service is not available right now.",
+      "already_linked": "This GitHub or Discord account is already linked to another Typio account."
+    }
   },
   "register": {
     "meta": {
@@ -160,6 +167,7 @@
     "stored": {
       "identity": "Your username (your sign-in name), your display name and the date your account was created.",
       "password": "Your password, only as an argon2id hash. It is never stored in plain text: nobody can read it back.",
+      "oauth": "If you sign in with GitHub or Discord: only the numeric ID of your account there, so we can recognise you next time. Your username and display name are created from your name on that service. Your email address, your picture and your other details are not kept, nor are the access tokens: they are used once, during sign-in, then thrown away.",
       "preferences": "Your language and your keyboard layout.",
       "session": "Your session on the server: a fingerprint of your session token and its expiry date. The token itself is not stored.",
       "results": "Your race results, once races are available."
@@ -167,7 +175,7 @@
     "cookiesTitle": "Cookies and storage",
     "cookies": {
       "session": "A session cookie keeps you signed in. It only holds a random token: your status and your information stay on the server.",
-      "duration": "With \"Stay signed in\", this cookie lasts 30 days. Without it, it is a session cookie, and the session expires after 24 hours at most, even if your browser restores it.",
+      "duration": "With \"Stay signed in\", or with GitHub or Discord, this cookie lasts 30 days. Without it, it is a session cookie, and the session expires after 24 hours at most, even if your browser restores it.",
       "preferences": "Your language is remembered in a cookie for one year, and your theme (light or dark) in your browser's storage."
     },
     "guestsTitle": "Guests",

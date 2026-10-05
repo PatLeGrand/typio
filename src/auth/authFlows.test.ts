@@ -319,6 +319,58 @@ describe("loginMember", () => {
     ]);
   });
 
+  describe("account without a password (created through GitHub or Discord)", () => {
+    async function withOAuthMember() {
+      const test = createTestDeps();
+      await test.oauthAccounts.createMemberWithAccount({
+        provider: "github",
+        providerAccountId: "583231",
+        username: "octocat",
+        displayName: "The Octocat",
+        locale: "fr",
+      });
+      return test;
+    }
+
+    it("answers INVALID_CREDENTIALS, exactly like an unknown username", async () => {
+      const { deps } = await withOAuthMember();
+
+      const passwordless = await loginMember(deps, credentials({ username: "octocat", password: "whatever-pass" }));
+      const unknown = await loginMember(deps, credentials({ username: "nobody", password: "whatever-pass" }));
+
+      expect(passwordless).toEqual({ ok: false, error: { code: "INVALID_CREDENTIALS" } });
+      expect(passwordless).toEqual(unknown);
+    });
+
+    it("verifies the dummy hash, so the response time does not reveal the account", async () => {
+      const { deps, passwords } = await withOAuthMember();
+      passwords.verifyCalls.length = 0;
+
+      await loginMember(deps, credentials({ username: "octocat", password: "whatever-pass" }));
+
+      expect(passwords.verifyCalls).toEqual([{ hash: DUMMY_PASSWORD_HASH, password: "whatever-pass" }]);
+    });
+
+    it("never opens a session, even if the hasher says yes, and consumes the failure counters", async () => {
+      const { deps, passwords, sessions } = await withOAuthMember();
+      passwords.verify = async () => true;
+
+      for (let i = 0; i < 5; i += 1) {
+        expect(await loginMember(deps, credentials({ username: "octocat", password: "whatever-pass" }))).toEqual({
+          ok: false,
+          error: { code: "INVALID_CREDENTIALS" },
+        });
+      }
+
+      expect(sessions.sessions.size).toBe(0);
+      // Les 5 essais du couple (IP, identifiant) sont consommés : le suivant est limité.
+      expect(await loginMember(deps, credentials({ username: "octocat", password: "whatever-pass" }))).toEqual({
+        ok: false,
+        error: { code: "RATE_LIMITED" },
+      });
+    });
+  });
+
   it("never logs a user in against the dummy hash", async () => {
     const { deps } = createTestDeps();
     deps.passwords.verify = async () => true; // even a verifier that says yes

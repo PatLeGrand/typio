@@ -33,6 +33,24 @@ describe("PrivacyPage", () => {
     }
   });
 
+  it("dit exactement ce qui est stocké lors d'une connexion GitHub ou Discord (FR)", () => {
+    const { privacy } = getDictionary("fr");
+    expect(privacy.stored.oauth).toMatch(/GitHub ou Discord/);
+    expect(privacy.stored.oauth).toMatch(/seulement l'identifiant numérique/);
+    expect(privacy.stored.oauth).toMatch(/adresse e-mail, ta photo/);
+    expect(privacy.stored.oauth).toMatch(/jetons d'accès/);
+    expect(privacy.cookies.duration).toMatch(/GitHub ou Discord/);
+  });
+
+  it("dit exactement ce qui est stocké lors d'une connexion GitHub ou Discord (EN)", () => {
+    const { privacy } = getDictionary("en");
+    expect(privacy.stored.oauth).toMatch(/GitHub or Discord/);
+    expect(privacy.stored.oauth).toMatch(/only the numeric ID/);
+    expect(privacy.stored.oauth).toMatch(/email address, your picture/);
+    expect(privacy.stored.oauth).toMatch(/access tokens/);
+    expect(privacy.cookies.duration).toMatch(/GitHub or Discord/);
+  });
+
   it("dit ce que le code fait vraiment (FR)", () => {
     const { privacy } = getDictionary("fr");
     expect(privacy.stored.password).toMatch(/argon2id/);

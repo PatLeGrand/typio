@@ -35,8 +35,9 @@ erDiagram
   }
   oauth_accounts {
     text provider PK "discord | github"
-    text provider_account_id PK
+    text provider_account_id PK "identifiant numérique chez le fournisseur"
     uuid user_id FK
+    timestamptz created_at
   }
   races {
     uuid id PK
@@ -92,8 +93,9 @@ WebSocket : c'est le seul point de contact entre les deux services, en plus des
 résultats.
 
 **`password_hash` en argon2id** (AUTH-5 ; m = 19 Mio, t = 2, p = 1, d'après l'OWASP), nul
-pour les invités. La contrainte actuelle l'exige pour tout membre : les comptes OAuth
-demanderont une migration qui l'assouplit. Des CHECK bornent `username` à 20 caractères et
+pour les invités. Depuis la migration 0001, un membre peut ne pas en avoir
+(compte créé par GitHub ou Discord) ; il exige toujours un `username`. Un compte sans mot de passe
+est traité à la connexion comme un identifiant inconnu (hash factice vérifié). Des CHECK bornent `username` à 20 caractères et
 `display_name` à 40, en défense en profondeur derrière la validation de l'application.
 `username` est unique sans tenir compte de la casse, grâce à un index sur `lower(username)` :
 `Patrick` et `patrick` sont le même compte. On évite l'extension `citext`, qu'on ne peut
@@ -101,7 +103,8 @@ pas supposer installable sur la base partagée.
 
 **`oauth_accounts` à part** (AUTH-2, AUTH-3, souhaitables). Un membre peut relier Discord
 et GitHub au même compte. La clé `(provider, provider_account_id)` empêche qu'un même
-compte Discord ouvre deux comptes Typio.
+compte Discord ouvre deux comptes Typio. On ne stocke que le fournisseur et l'identifiant numérique
+stable : ni login, ni e-mail, ni avatar, ni jeton d'accès. La table est créée (migration 0001).
 
 **Les salles ne sont pas une table.** Une salle d'attente change plusieurs fois par seconde
 et ne vaut rien une fois fermée. Son code (H-5) n'a besoin d'être unique que parmi les
@@ -134,6 +137,6 @@ ne se dessine pas au même endroit en AZERTY et en QWERTY.
 ## Périmètre du checkpoint 1
 
 Seules `users` (membres et invités) et `sessions` sont nécessaires pour le checkpoint :
-connexion par identifiants, mode invité, salle rejointe par code. `races`, `race_results`
-et `oauth_accounts` sont décrites ici pour valider le modèle, et seront créées avec leurs
-fonctionnalités.
+connexion par identifiants, mode invité, salle rejointe par code. `oauth_accounts`
+(AUTH-2, AUTH-3) a été ajoutée ensuite. `races` et `race_results` sont décrites ici pour valider
+le modèle, et seront créées avec leurs fonctionnalités.

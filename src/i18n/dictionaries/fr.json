@@ -68,7 +68,8 @@
     "groupLabel": "Connexion avec un autre service",
     "github": "GitHub",
     "discord": "Discord",
-    "soon": "bientôt"
+    "soon": "bientôt",
+    "ageNote": "Discord et GitHub sont réservés aux 13 ans et plus."
   },
   "auth": {
     "kicker": "À tes touches, prêt…",
@@ -108,7 +109,13 @@
     "guestNote": "Sans compte, tes résultats sont effacés après 24 h.",
     "noAccount": "Pas encore de compte ?",
     "signUpLink": "Rejoins l'aventure",
-    "sharedComputerNote": "Sur un ordinateur partagé, ne coche pas « Rester connecté » et déconnecte-toi à la fin."
+    "sharedComputerNote": "Sur un ordinateur partagé, ne coche pas « Rester connecté » et déconnecte-toi à la fin.",
+    "oauthErrors": {
+      "cancelled": "Connexion annulée. Tu peux réessayer quand tu veux.",
+      "failed": "La connexion avec ce service a échoué. Réessaie dans un instant.",
+      "unavailable": "Ce service de connexion n'est pas disponible pour le moment.",
+      "already_linked": "Ce compte GitHub ou Discord est déjà relié à un autre compte Typio."
+    }
   },
   "register": {
     "meta": {
@@ -160,6 +167,7 @@
     "stored": {
       "identity": "Ton pseudo (ton identifiant de connexion), ton nom affiché et la date de création de ton compte.",
       "password": "Ton mot de passe, uniquement sous forme hachée avec argon2id. Il n'est jamais stocké en clair : personne ne peut le relire.",
+      "oauth": "Si tu te connectes avec GitHub ou Discord : seulement l'identifiant numérique de ton compte chez eux, pour te reconnaître la prochaine fois. Ton pseudo et ton nom affiché sont créés à partir de ton nom sur ce service. Ton adresse e-mail, ta photo et tes autres informations ne sont pas conservées, ni les jetons d'accès : ils ne servent qu'une fois, pendant la connexion, puis sont jetés.",
       "preferences": "Ta langue et la disposition de ton clavier.",
       "session": "Ta session sur le serveur : l'empreinte du jeton de ta session et sa date d'expiration. Le jeton lui-même n'est pas stocké.",
       "results": "Tes résultats de course, quand les courses seront disponibles."
@@ -167,7 +175,7 @@
     "cookiesTitle": "Cookies et stockage",
     "cookies": {
       "session": "Un cookie de session te garde connecté. Il contient seulement un jeton aléatoire : ton statut et tes informations restent sur le serveur.",
-      "duration": "Avec « Rester connecté », ce cookie dure 30 jours. Sans cette case, c'est un cookie de session, et la session expire au plus tard après 24 h, même si ton navigateur la restaure.",
+      "duration": "Avec « Rester connecté », ou avec GitHub ou Discord, ce cookie dure 30 jours. Sans cette case, c'est un cookie de session, et la session expire au plus tard après 24 h, même si ton navigateur la restaure.",
       "preferences": "Ta langue est mémorisée dans un cookie pendant un an, et ton thème (clair ou sombre) dans le stockage de ton navigateur."
     },
     "guestsTitle": "Les invités",

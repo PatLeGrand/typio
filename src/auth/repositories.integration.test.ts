@@ -9,8 +9,11 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDatabaseClient } from "@/db/client";
-import { sessions, users } from "@/db/schema";
+import { oauthAccounts, sessions, users } from "@/db/schema";
 import { createDrizzleUserRepository } from "./drizzleUserRepository";
+import { createDrizzleOAuthRepository } from "./oauth/drizzleOAuthRepository";
+import { OAuthAccountTakenError } from "./oauth/oauthRepository";
+import { completeOAuthSignIn } from "./oauth/signIn";
 import { createSession, destroySession, GUEST_LIFETIME_MS, validateSession } from "./session";
 import { createDrizzleSessionRepository } from "./sessionRepository";
 import { hashToken } from "./token";
@@ -24,12 +27,14 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
   let client: ReturnType<typeof createDatabaseClient>;
   let userRepository: ReturnType<typeof createDrizzleUserRepository>;
   let sessionRepository: ReturnType<typeof createDrizzleSessionRepository>;
+  let oauthRepository: ReturnType<typeof createDrizzleOAuthRepository>;
 
   beforeAll(async () => {
     client = createDatabaseClient(databaseUrl);
     await migrate(client.db, { migrationsFolder: "./drizzle" });
     userRepository = createDrizzleUserRepository(client.db);
     sessionRepository = createDrizzleSessionRepository(client.db);
+    oauthRepository = createDrizzleOAuthRepository(client.db);
   });
 
   afterAll(async () => {
@@ -50,14 +55,14 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
     return id;
   }
 
-  it("creates exactly the users and sessions tables with the expected indexes", async () => {
+  it("creates the users, sessions and oauth_accounts tables with the expected indexes", async () => {
     const tables = await client.db.execute<{ tablename: string }>(
-      sql`select tablename from pg_tables where schemaname = 'public' and tablename in ('users', 'sessions')`,
+      sql`select tablename from pg_tables where schemaname = 'public' and tablename in ('users', 'sessions', 'oauth_accounts')`,
     );
-    expect(tables.map((row) => row.tablename).sort()).toEqual(["sessions", "users"]);
+    expect(tables.map((row) => row.tablename).sort()).toEqual(["oauth_accounts", "sessions", "users"]);
 
     const indexes = await client.db.execute<{ indexname: string }>(
-      sql`select indexname from pg_indexes where schemaname = 'public' and tablename in ('users', 'sessions')`,
+      sql`select indexname from pg_indexes where schemaname = 'public' and tablename in ('users', 'sessions', 'oauth_accounts')`,
     );
     expect(indexes.map((row) => row.indexname)).toEqual(
       expect.arrayContaining([
@@ -65,6 +70,8 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
         "users_guest_expires_at_idx",
         "sessions_user_id_idx",
         "sessions_expires_at_idx",
+        "oauth_accounts_user_id_idx",
+        "oauth_accounts_provider_provider_account_id_pk",
       ]),
     );
   });
@@ -140,8 +147,12 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
       client.db.insert(users).values({ kind: "member", displayName: "x", ...values });
 
     await expect(insert({ kind: "robot", username: `c1${suffix}`, passwordHash: "h" })).rejects.toThrow();
-    // un membre sans mot de passe
-    await expect(insert({ username: `c2${suffix}` })).rejects.toThrow();
+    // un membre sans mot de passe est permis (compte GitHub ou Discord) ; sans identifiant, jamais
+    const [passwordless] = await insert({ username: `c2${suffix}` }).returning({ id: users.id });
+    createdUserIds.push(passwordless.id);
+    await expect(insert({ username: null })).rejects.toThrow();
+    // un invité avec un mot de passe
+    await expect(insert({ kind: "guest", passwordHash: "h", expiresAt: new Date() })).rejects.toThrow();
     // un membre sans identifiant
     await expect(insert({ passwordHash: "h" })).rejects.toThrow();
     // un invité avec un identifiant, ou sans expiration
@@ -249,5 +260,132 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
 
     await client.db.delete(users).where(eq(users.id, userId));
     expect(await client.db.select().from(sessions).where(eq(sessions.userId, userId))).toHaveLength(0);
+  });
+
+  describe("oauth_accounts", () => {
+    const accountId = () => `${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+
+    it("creates a passwordless member and its link together, and the member cannot log in by password", async () => {
+      const providerAccountId = accountId();
+      const { id } = await oauthRepository.createMemberWithAccount({
+        provider: "github",
+        providerAccountId,
+        username: `oa${suffix}`,
+        displayName: "Octo",
+        locale: "fr",
+      });
+      createdUserIds.push(id);
+
+      const [row] = await client.db.select().from(users).where(eq(users.id, id));
+      expect(row).toMatchObject({ kind: "member", username: `oa${suffix}`, passwordHash: null });
+      expect(await oauthRepository.findUserIdByAccount({ provider: "github", providerAccountId })).toBe(id);
+      expect(await userRepository.findMemberByUsername(`oa${suffix}`)).toBeNull();
+      const links = await client.db.select().from(oauthAccounts).where(eq(oauthAccounts.userId, id));
+      expect(links).toHaveLength(1);
+      // Seulement le fournisseur et l'identifiant numérique : ni login, ni e-mail, ni jeton.
+      expect(Object.keys(links[0]).sort()).toEqual(["createdAt", "provider", "providerAccountId", "userId"]);
+    });
+
+    it("leaves no orphan user when the link insertion fails (transaction rolled back)", async () => {
+      const providerAccountId = accountId();
+      const owner = await newMember(`own${suffix}`);
+      await oauthRepository.linkAccount({ provider: "discord", providerAccountId, userId: owner });
+
+      await expect(
+        oauthRepository.createMemberWithAccount({
+          provider: "discord",
+          providerAccountId,
+          username: `orphan${suffix}`,
+          displayName: "Orphan",
+          locale: "fr",
+        }),
+      ).rejects.toBeInstanceOf(OAuthAccountTakenError);
+
+      expect(await client.db.select().from(users).where(eq(users.username, `orphan${suffix}`))).toHaveLength(0);
+      expect(await oauthRepository.findUserIdByAccount({ provider: "discord", providerAccountId })).toBe(owner);
+    });
+
+    it("leaves no link when the username is taken, with UsernameTakenError", async () => {
+      await newMember(`taken${suffix}`);
+      const providerAccountId = accountId();
+
+      await expect(
+        oauthRepository.createMemberWithAccount({
+          provider: "github",
+          providerAccountId,
+          username: `TAKEN${suffix}`,
+          displayName: "x",
+          locale: "fr",
+        }),
+      ).rejects.toBeInstanceOf(UsernameTakenError);
+
+      expect(await oauthRepository.findUserIdByAccount({ provider: "github", providerAccountId })).toBeNull();
+    });
+
+    it("the primary key is (provider, id): the same id is free on the other provider", async () => {
+      const providerAccountId = accountId();
+      const first = await newMember(`pk1${suffix}`);
+      const second = await newMember(`pk2${suffix}`);
+
+      expect(await oauthRepository.linkAccount({ provider: "github", providerAccountId, userId: first })).toBe(true);
+      expect(await oauthRepository.linkAccount({ provider: "github", providerAccountId, userId: second })).toBe(false);
+      expect(await oauthRepository.linkAccount({ provider: "discord", providerAccountId, userId: second })).toBe(true);
+      expect(await oauthRepository.findUserIdByAccount({ provider: "github", providerAccountId })).toBe(first);
+    });
+
+    it("lets one member hold both GitHub and Discord", async () => {
+      const member = await newMember(`both${suffix}`);
+
+      expect(await oauthRepository.linkAccount({ provider: "github", providerAccountId: accountId(), userId: member })).toBe(true);
+      expect(await oauthRepository.linkAccount({ provider: "discord", providerAccountId: accountId(), userId: member })).toBe(true);
+      expect(await client.db.select().from(oauthAccounts).where(eq(oauthAccounts.userId, member))).toHaveLength(2);
+    });
+
+    it("rejects an unknown provider and a link to a missing user", async () => {
+      const member = await newMember(`bad${suffix}`);
+
+      await expect(
+        client.db.insert(oauthAccounts).values({ provider: "twitter", providerAccountId: accountId(), userId: member }),
+      ).rejects.toThrow();
+      await expect(
+        oauthRepository.linkAccount({ provider: "github", providerAccountId: accountId(), userId: randomUUID() }),
+      ).rejects.toThrow();
+    });
+
+    it("deleting the user cascades to its links", async () => {
+      const providerAccountId = accountId();
+      const member = await newMember(`casc${suffix}`);
+      await oauthRepository.linkAccount({ provider: "github", providerAccountId, userId: member });
+
+      await client.db.delete(users).where(eq(users.id, member));
+
+      expect(await oauthRepository.findUserIdByAccount({ provider: "github", providerAccountId })).toBeNull();
+      expect(await client.db.select().from(oauthAccounts).where(eq(oauthAccounts.userId, member))).toHaveLength(0);
+    });
+
+    it("signs in with the real repositories: creation, then the same account finds the same member", async () => {
+      const deps = {
+        users: userRepository,
+        oauthAccounts: oauthRepository,
+        sessions: sessionRepository,
+        // Non utilisés par ce parcours.
+        limiters: undefined as never,
+        passwords: undefined as never,
+        now: () => new Date(),
+      };
+      const profile = { accountId: accountId(), login: `Real-${suffix}`, displayName: "Real Person" };
+
+      const first = await completeOAuthSignIn(deps, { provider: "github", profile, currentUser: null, locale: "en" });
+      const second = await completeOAuthSignIn(deps, { provider: "github", profile, currentUser: null, locale: "en" });
+
+      if (first.status !== "signed-in" || second.status !== "signed-in") throw new Error("expected sign-ins");
+      const ownerId = await oauthRepository.findUserIdByAccount({ provider: "github", providerAccountId: profile.accountId });
+      if (ownerId === null) throw new Error("expected a link");
+      createdUserIds.push(ownerId);
+      expect(await client.db.select().from(sessions).where(eq(sessions.userId, ownerId))).toHaveLength(2);
+      expect(await client.db.select().from(users).where(eq(users.id, ownerId))).toMatchObject([
+        { username: `real-${suffix}`.replace("-", "_"), displayName: "Real Person", passwordHash: null, locale: "en" },
+      ]);
+    });
   });
 });
