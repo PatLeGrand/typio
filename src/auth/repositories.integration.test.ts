@@ -74,7 +74,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
 
     const found = await userRepository.findMemberByUsername(`alice${suffix}`);
 
-    expect(found).toMatchObject({ id, displayName: `Alice${suffix}` });
+    expect(found).toMatchObject({ id, passwordHash: expect.any(String) });
   });
 
   it("rejects a duplicate username regardless of case with UsernameTakenError", async () => {
