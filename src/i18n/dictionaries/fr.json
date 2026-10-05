@@ -187,5 +187,11 @@
     "title": "Oups, quelque chose s'est mal passé",
     "text": "Une erreur est survenue. Réessaie dans un instant.",
     "retry": "Réessayer"
+  },
+  "notFound": {
+    "eyebrow": "Erreur 404",
+    "title": "Cette page a pris une mauvaise touche.",
+    "text": "Impossible de trouver cette adresse. Le poulpe te raccompagne à l'accueil pour reprendre la course.",
+    "home": "Retour à l'accueil"
   }
 }
