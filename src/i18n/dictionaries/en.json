@@ -2,6 +2,9 @@
   "site": {
     "name": "Typio"
   },
+  "brand": {
+    "tagline": "Little by little, faster at the keyboard."
+  },
   "meta": {
     "title": "Typio: typing races",
     "description": "Typio, multiplayer typing races for ages 12 to 17."

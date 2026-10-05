@@ -20,7 +20,7 @@ export function ThemeToggle({ labels }: ThemeToggleProps) {
   const preference = useSyncExternalStore(subscribeToTheme, getThemePreference, getServerThemePreference);
 
   return (
-    <fieldset className="m-0 flex min-w-0 rounded-md border border-border p-0.5">
+    <fieldset className="m-0 flex min-w-0 rounded-field border border-border bg-surface p-0.5">
       <legend className="sr-only">{labels.label}</legend>
       {THEME_PREFERENCES.map((option) => (
         <label key={option} className="cursor-pointer">
@@ -32,7 +32,7 @@ export function ThemeToggle({ labels }: ThemeToggleProps) {
             onChange={() => setThemePreference(option)}
             className="peer sr-only"
           />
-          <span className="flex min-h-10 items-center rounded px-3 text-sm font-medium text-muted transition-colors hover:text-foreground peer-checked:bg-accent peer-checked:text-accent-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
+          <span className="flex min-h-10 items-center rounded-[10px] px-3 text-sm font-semibold text-muted transition-colors hover:text-foreground peer-checked:bg-accent peer-checked:text-accent-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent-text">
             {labels[option]}
           </span>
         </label>

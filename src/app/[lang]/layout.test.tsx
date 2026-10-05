@@ -10,6 +10,9 @@ vi.mock("next/navigation", async (importOriginal) => ({
   usePathname: () => "/en",
 }));
 
+// next/font/google n'est compilé que par Next ; ici on simule sa sortie.
+vi.mock("next/font/google", () => ({ Inter: () => ({ variable: "font-inter-mock" }) }));
+
 function layoutProps(lang: string) {
   return { children: <p>contenu</p>, params: Promise.resolve({ lang }) };
 }
@@ -23,6 +26,11 @@ describe("RootLayout", () => {
     expect(html).toContain("<p>contenu</p>");
     // <html> ne porte aucun className : la classe `dark` y est gérée hors de React.
     expect(html).not.toMatch(/<html[^>]*class=/);
+  });
+
+  it("branche la variable de police Inter sur <body>", async () => {
+    const html = renderToStaticMarkup(await RootLayout(layoutProps("fr")));
+    expect(html).toMatch(/<body[^>]*class="[^"]*font-inter-mock/);
   });
 
   it("pose la locale française sur <html>", async () => {

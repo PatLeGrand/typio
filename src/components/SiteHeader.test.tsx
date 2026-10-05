@@ -15,4 +15,13 @@ describe("SiteHeader", () => {
     expect(screen.getByRole("link", { name: dictionary.language.names[other] })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: dictionary.theme.label })).toBeInTheDocument();
   });
+
+  it.each(["fr", "en"] as const)("le logo mène à l'accueil de la langue et porte la signature traduite (%s)", (locale) => {
+    const dictionary = getDictionary(locale);
+    render(<SiteHeader locale={locale} dictionary={dictionary} />);
+
+    const home = screen.getByRole("link", { name: new RegExp(dictionary.site.name) });
+    expect(home).toHaveAttribute("href", `/${locale}`);
+    expect(home).toHaveTextContent(dictionary.brand.tagline);
+  });
 });
