@@ -80,3 +80,35 @@ Deux colonnes égales sur ordinateur :
 | E-10 | « Rester connecté » cochée | Compatible : session de 30 jours si cochée, cookie de session sinon | À garder |
 | E-11 | Textes uniquement en français | **UI-5** | Traductions anglaises à rédiger |
 | E-12 | GitHub et Discord | AUTH-2 et AUTH-3 sont « souhaitables », pas dans le checkpoint 1 | Boutons visibles mais désactivés, ou masqués, jusqu'à l'OAuth |
+
+## Décisions (5 octobre 2026)
+
+- **E-2 :** AUTH-1 respectée. GitHub et Discord en premier, désactivés avec la mention
+  « bientôt » tant que l'OAuth n'existe pas. Puis « ou avec ton identifiant », le formulaire et
+  la mention « moins sécuritaire ».
+- **E-3 :** « Identifiant ».
+- **E-4 :** « Mot de passe oublié ? » retiré.
+- **E-7 :** palette sombre dérivée par l'orchestrateur ; Patrick pourra la corriger dans Figma.
+- **Portée :** cette direction artistique s'applique à **tout le site**. Elle remplace les tokens
+  provisoires de `globals.css`.
+- **Icônes :** `lucide-react`, le même jeu que la maquette, recolorable selon le thème. La mascotte
+  reste l'image `assets/poulpe-virtuose.png`.
+
+### Palette sombre
+
+| Token | Clair | Sombre |
+|---|---|---|
+| `--background` | `#fffcf7` | `#15121d` |
+| `--surface` | `#ffffff` | `#1f1a2b` |
+| `--foreground` | `#29233d` | `#f4f1fa` |
+| `--muted` | `#777184` | `#a7a1b6` |
+| `--muted-strong` | `#65577e` | `#c4b9dc` |
+| `--border` | `#dfdae7` | `#352e47` |
+| `--accent` (fond du bouton) | `#7043d9` | `#7043d9` |
+| `--accent-foreground` | `#ffffff` | `#ffffff` |
+| `--accent-text` (liens, texte violet) | `#7043d9` | `#b49cf6` |
+| `--accent-shadow` | `#5933b4` | `#4a2a99` |
+| `--accent-soft` | `#f6f1ff` | `#2a2240` |
+| `--accent-panel` | `#ede5ff` | `#211a34` |
+| `--key-yellow` / `--key-mint` / `--key-coral` | `#ffda70` / `#bce9da` / `#ff967d` | identiques |
+| `--key-ink` (texte sur les touches) | `#29233d` | `#29233d` |
