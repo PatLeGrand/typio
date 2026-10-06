@@ -1,12 +1,14 @@
 import { generateCodeVerifier, generateState } from "arctic";
-import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
-import type { AuthLimiters } from "../rateLimit";
-import { ipRateLimitKey } from "../rateLimit";
+import { ipRateLimitKey, type AuthLimiters } from "../rateLimit";
+import { validateSession, type SessionRepository } from "../session";
 import { oauthCookieNames, oauthCookieOptions, type OAuthCookie, type OAuthRedirect } from "./cookies";
-import type { OAuthNotice, OAuthProviderClient, OAuthProviderName } from "./providers";
+import { loginNoticeLocation, parseOAuthLocale } from "./locale";
+import type { OAuthProviderClient, OAuthProviderName } from "./providers";
 
 export interface OAuthStartDeps {
   limiters: Pick<AuthLimiters, "oauthStarts">;
+  sessions: SessionRepository;
+  now: () => Date;
   getProvider: (name: OAuthProviderName) => OAuthProviderClient | null;
 }
 
@@ -15,30 +17,28 @@ export interface OAuthStartInput {
   /** Valeur brute du paramètre `locale` : seule `fr` ou `en` est retenue. */
   rawLocale: string | null;
   ip: string;
-}
-
-/** Langue de retour : `fr` ou `en`, sinon le français. */
-export function parseOAuthLocale(value: unknown): Locale {
-  return isLocale(value) ? value : defaultLocale;
-}
-
-/** Retour vers la page de connexion avec un message. */
-export function loginNoticeLocation(locale: Locale, notice: OAuthNotice): string {
-  return `/${locale}/login?oauth=${notice}`;
+  /** Jeton du cookie de session du navigateur, s'il y en a un. */
+  sessionToken?: string;
 }
 
 /**
  * AUTH-2, AUTH-3 : départ du flux. Génère `state` (et `codeVerifier` pour Discord, PKCE), les
  * place dans des cookies temporaires, et renvoie l'URL d'autorisation du fournisseur.
- * Un fournisseur non configuré, ou une IP au-delà de 60 départs par 15 minutes, renvoie à la
+ *
+ * Un MEMBRE déjà connecté n'a rien à faire ici (le flux ne sait ni lier ni changer de compte) :
+ * il retourne à l'accueil sans cookie. Un invité ou un visiteur peut s'y connecter.
+ * Un fournisseur non configuré, ou une IP au-delà de 300 départs par 15 minutes, renvoie à la
  * page de connexion avec un message.
  */
-export function startOAuth(deps: OAuthStartDeps, input: OAuthStartInput): OAuthRedirect {
+export async function startOAuth(deps: OAuthStartDeps, input: OAuthStartInput): Promise<OAuthRedirect> {
   const locale = parseOAuthLocale(input.rawLocale);
 
   if (!deps.limiters.oauthStarts.consume(ipRateLimitKey(input.ip))) {
     return { location: loginNoticeLocation(locale, "failed"), cookies: [] };
   }
+  const user = await validateSession(deps.sessions, input.sessionToken, deps.now());
+  if (user?.kind === "member") return { location: `/${locale}`, cookies: [] };
+
   const client = deps.getProvider(input.provider);
   if (!client) return { location: loginNoticeLocation(locale, "unavailable"), cookies: [] };
 

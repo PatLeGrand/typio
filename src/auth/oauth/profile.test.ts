@@ -32,15 +32,10 @@ describe("fetchOAuthProfile: GitHub", () => {
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it("returns only the numeric id (as text), the login and the name: never the email or avatar", async () => {
+  it("returns only the numeric id (as text) and the login: never the name, email or avatar", async () => {
     const profile = await fetchOAuthProfile("github", "t", mockFetch(jsonResponse(body)));
 
-    expect(profile).toEqual({ accountId: "583231", login: "octocat", displayName: "The Octocat" });
-  });
-
-  it("has no display name when GitHub's is null or empty", async () => {
-    expect((await fetchOAuthProfile("github", "t", mockFetch(jsonResponse({ id: 1, login: "a", name: null })))).displayName).toBeNull();
-    expect((await fetchOAuthProfile("github", "t", mockFetch(jsonResponse({ id: 1, login: "a", name: "" })))).displayName).toBeNull();
+    expect(profile).toEqual({ accountId: "583231", login: "octocat" });
   });
 
   it.each([
@@ -74,17 +69,11 @@ describe("fetchOAuthProfile: Discord", () => {
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 
-  it("returns the snowflake, the username and the global name only", async () => {
+  it("returns only the snowflake and the username: never the global name, email or avatar", async () => {
     expect(await fetchOAuthProfile("discord", "t", mockFetch(jsonResponse(body)))).toEqual({
       accountId: "80351110224678912",
       login: "nelly",
-      displayName: "Nelly",
     });
-  });
-
-  it("has no display name when the global name is null", async () => {
-    const profile = await fetchOAuthProfile("discord", "t", mockFetch(jsonResponse({ ...body, global_name: null })));
-    expect(profile.displayName).toBeNull();
   });
 
   it.each([

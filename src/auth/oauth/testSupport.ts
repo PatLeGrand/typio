@@ -22,5 +22,5 @@ export function createFakeProvider(
 }
 
 export function profile(overrides: Partial<OAuthProfile> = {}): OAuthProfile {
-  return { accountId: "583231", login: "octocat", displayName: "The Octocat", ...overrides };
+  return { accountId: "583231", login: "octocat", ...overrides };
 }

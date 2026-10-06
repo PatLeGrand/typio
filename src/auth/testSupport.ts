@@ -95,12 +95,6 @@ export class MemoryOAuthAccountRepository implements OAuthAccountRepository {
     return this.find(account)?.userId ?? null;
   }
 
-  async linkAccount(account: OAuthAccountRef & { userId: string }): Promise<boolean> {
-    if (this.find(account)) return false;
-    this.accounts.push({ ...account });
-    return true;
-  }
-
   async createMemberWithAccount(member: NewOAuthMember): Promise<{ id: string }> {
     // Même ordre que la transaction SQL : l'identifiant d'abord, puis le lien ; tout ou rien.
     const before = this.users.users.length;

@@ -70,6 +70,9 @@ describe("OAuthButtons: providers configured", () => {
     for (const link of screen.getAllByRole("link")) {
       expect(link.className).toContain("rounded-field");
       expect(link.className).toContain("border");
+      // Le survol doit s'appliquer à un lien (`:enabled` ne vise que les éléments de formulaire).
+      expect(link.className).toContain("not-disabled:hover:bg-accent-soft");
+      expect(link.className).not.toContain("enabled:hover:");
     }
   });
 });

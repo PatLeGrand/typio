@@ -15,6 +15,13 @@
       "when": 1791225775996,
       "tag": "0001_real_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791246007566,
+      "tag": "0002_fair_daredevil",
+      "breakpoints": true
     }
   ]
 }

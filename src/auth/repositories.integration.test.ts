@@ -14,6 +14,7 @@ import { createDrizzleUserRepository } from "./drizzleUserRepository";
 import { createDrizzleOAuthRepository } from "./oauth/drizzleOAuthRepository";
 import { OAuthAccountTakenError } from "./oauth/oauthRepository";
 import { completeOAuthSignIn } from "./oauth/signIn";
+import { postgresErrorCode, UNIQUE_VIOLATION } from "./errors";
 import { createSession, destroySession, GUEST_LIFETIME_MS, validateSession } from "./session";
 import { createDrizzleSessionRepository } from "./sessionRepository";
 import { hashToken } from "./token";
@@ -71,6 +72,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
         "sessions_user_id_idx",
         "sessions_expires_at_idx",
         "oauth_accounts_user_id_idx",
+        "oauth_accounts_user_provider_idx",
         "oauth_accounts_provider_provider_account_id_pk",
       ]),
     );
@@ -264,6 +266,19 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
 
   describe("oauth_accounts", () => {
     const accountId = () => `${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+    /**
+     * Insertion directe (l'application ne relie jamais un compte à un membre existant) : vrai si
+     * insérée, faux si une contrainte d'unicité la refuse, erreur pour tout autre refus.
+     */
+    const insertLink = async (provider: "github" | "discord", providerAccountId: string, userId: string) => {
+      try {
+        await client.db.insert(oauthAccounts).values({ provider, providerAccountId, userId });
+        return true;
+      } catch (error) {
+        if (postgresErrorCode(error) === UNIQUE_VIOLATION) return false;
+        throw error;
+      }
+    };
 
     it("creates a passwordless member and its link together, and the member cannot log in by password", async () => {
       const providerAccountId = accountId();
@@ -289,7 +304,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
     it("leaves no orphan user when the link insertion fails (transaction rolled back)", async () => {
       const providerAccountId = accountId();
       const owner = await newMember(`own${suffix}`);
-      await oauthRepository.linkAccount({ provider: "discord", providerAccountId, userId: owner });
+      await insertLink("discord", providerAccountId, owner);
 
       await expect(
         oauthRepository.createMemberWithAccount({
@@ -327,17 +342,17 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
       const first = await newMember(`pk1${suffix}`);
       const second = await newMember(`pk2${suffix}`);
 
-      expect(await oauthRepository.linkAccount({ provider: "github", providerAccountId, userId: first })).toBe(true);
-      expect(await oauthRepository.linkAccount({ provider: "github", providerAccountId, userId: second })).toBe(false);
-      expect(await oauthRepository.linkAccount({ provider: "discord", providerAccountId, userId: second })).toBe(true);
+      expect(await insertLink("github", providerAccountId, first)).toBe(true);
+      expect(await insertLink("github", providerAccountId, second)).toBe(false);
+      expect(await insertLink("discord", providerAccountId, second)).toBe(true);
       expect(await oauthRepository.findUserIdByAccount({ provider: "github", providerAccountId })).toBe(first);
     });
 
     it("lets one member hold both GitHub and Discord", async () => {
       const member = await newMember(`both${suffix}`);
 
-      expect(await oauthRepository.linkAccount({ provider: "github", providerAccountId: accountId(), userId: member })).toBe(true);
-      expect(await oauthRepository.linkAccount({ provider: "discord", providerAccountId: accountId(), userId: member })).toBe(true);
+      expect(await insertLink("github", accountId(), member)).toBe(true);
+      expect(await insertLink("discord", accountId(), member)).toBe(true);
       expect(await client.db.select().from(oauthAccounts).where(eq(oauthAccounts.userId, member))).toHaveLength(2);
     });
 
@@ -348,14 +363,36 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
         client.db.insert(oauthAccounts).values({ provider: "twitter", providerAccountId: accountId(), userId: member }),
       ).rejects.toThrow();
       await expect(
-        oauthRepository.linkAccount({ provider: "github", providerAccountId: accountId(), userId: randomUUID() }),
+        insertLink("github", accountId(), randomUUID()),
       ).rejects.toThrow();
+    });
+
+    it("allows at most one account per provider and member (unique index on user_id, provider)", async () => {
+      const member = await newMember(`uniq${suffix}`);
+      expect(await insertLink("github", accountId(), member)).toBe(true);
+
+      expect(await insertLink("github", accountId(), member)).toBe(false);
+      expect(await client.db.select().from(oauthAccounts).where(eq(oauthAccounts.userId, member))).toHaveLength(1);
+    });
+
+    it("creates the member through the repository with a display name equal to the username", async () => {
+      const { id } = await oauthRepository.createMemberWithAccount({
+        provider: "discord",
+        providerAccountId: accountId(),
+        username: `dn${suffix}`,
+        displayName: `dn${suffix}`,
+        locale: "fr",
+      });
+      createdUserIds.push(id);
+
+      const [row] = await client.db.select().from(users).where(eq(users.id, id));
+      expect(row.displayName).toBe(row.username);
     });
 
     it("deleting the user cascades to its links", async () => {
       const providerAccountId = accountId();
       const member = await newMember(`casc${suffix}`);
-      await oauthRepository.linkAccount({ provider: "github", providerAccountId, userId: member });
+      await insertLink("github", providerAccountId, member);
 
       await client.db.delete(users).where(eq(users.id, member));
 
@@ -373,18 +410,17 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
         passwords: undefined as never,
         now: () => new Date(),
       };
-      const profile = { accountId: accountId(), login: `Real-${suffix}`, displayName: "Real Person" };
+      const profile = { accountId: accountId(), login: `Real-${suffix}` };
 
-      const first = await completeOAuthSignIn(deps, { provider: "github", profile, currentUser: null, locale: "en" });
-      const second = await completeOAuthSignIn(deps, { provider: "github", profile, currentUser: null, locale: "en" });
+      await completeOAuthSignIn(deps, { provider: "github", profile, locale: "en" });
+      await completeOAuthSignIn(deps, { provider: "github", profile, locale: "en" });
 
-      if (first.status !== "signed-in" || second.status !== "signed-in") throw new Error("expected sign-ins");
       const ownerId = await oauthRepository.findUserIdByAccount({ provider: "github", providerAccountId: profile.accountId });
       if (ownerId === null) throw new Error("expected a link");
       createdUserIds.push(ownerId);
       expect(await client.db.select().from(sessions).where(eq(sessions.userId, ownerId))).toHaveLength(2);
       expect(await client.db.select().from(users).where(eq(users.id, ownerId))).toMatchObject([
-        { username: `real-${suffix}`.replace("-", "_"), displayName: "Real Person", passwordHash: null, locale: "en" },
+        { username: `real-${suffix}`.replace("-", "_"), displayName: `real_${suffix}`, passwordHash: null, locale: "en" },
       ]);
     });
   });

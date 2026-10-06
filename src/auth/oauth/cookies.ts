@@ -2,8 +2,6 @@ import type { OAuthProviderName } from "./providers";
 
 /** Les cookies temporaires du flux vivent 10 minutes : le temps d'aller chez le fournisseur et de revenir. */
 export const OAUTH_COOKIE_MAX_AGE_SECONDS = 600;
-/** Limité aux routes `/api/auth` : ni les pages ni le reste de l'API ne reçoivent ces cookies. */
-export const OAUTH_COOKIE_PATH = "/api/auth";
 
 export interface OAuthCookieOptions {
   httpOnly?: boolean;
@@ -29,13 +27,17 @@ export interface OAuthCookieNames {
 /**
  * Noms des cookies temporaires, propres à chaque fournisseur : deux connexions lancées dans
  * deux onglets ne s'écrasent pas, et un état posé pour GitHub ne vaut jamais pour Discord.
- * En production, le préfixe `__Secure-` oblige le navigateur à refuser le cookie hors https.
+ *
+ * En production, le préfixe `__Host-` oblige le navigateur à n'accepter le cookie que s'il est
+ * `Secure`, `Path=/` et sans `Domain` : un sous-domaine voisin ne peut ni le poser ni l'écraser
+ * (injection d'un `state` ou d'un `code_verifier` choisis par un attaquant). Comme pour le cookie
+ * de session, le préfixe est refusé en http : en développement, noms simples.
  */
 export function oauthCookieNames(
   provider: OAuthProviderName,
   nodeEnv: string | undefined = process.env.NODE_ENV,
 ): OAuthCookieNames {
-  const prefix = nodeEnv === "production" ? "__Secure-" : "";
+  const prefix = nodeEnv === "production" ? "__Host-" : "";
   return {
     state: `${prefix}typio_oauth_state_${provider}`,
     verifier: `${prefix}typio_oauth_verifier_${provider}`,
@@ -43,20 +45,23 @@ export function oauthCookieNames(
   };
 }
 
-/** `HttpOnly`, `SameSite=Lax` (le retour du fournisseur est une navigation GET de haut niveau), `Secure` en production. */
+/**
+ * `HttpOnly`, `SameSite=Lax` (le retour du fournisseur est une navigation GET de haut niveau),
+ * `Path=/` et jamais de `Domain` (exigés par `__Host-`), `Secure` en production.
+ */
 export function oauthCookieOptions(
   nodeEnv: string | undefined = process.env.NODE_ENV,
 ): Required<OAuthCookieOptions> {
   return {
     httpOnly: true,
     sameSite: "lax",
-    path: OAUTH_COOKIE_PATH,
+    path: "/",
     secure: nodeEnv === "production",
     maxAge: OAUTH_COOKIE_MAX_AGE_SECONDS,
   };
 }
 
-/** Efface un cookie temporaire : mêmes attributs de portée (`Path`), échéance immédiate. */
+/** Efface un cookie temporaire : mêmes attributs de portée, échéance immédiate. */
 export function expiredOAuthCookie(name: string, nodeEnv: string | undefined = process.env.NODE_ENV): OAuthCookie {
   return { name, value: "", options: { ...oauthCookieOptions(nodeEnv), maxAge: 0 } };
 }

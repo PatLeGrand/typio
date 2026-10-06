@@ -37,18 +37,26 @@ describe("PrivacyPage", () => {
     const { privacy } = getDictionary("fr");
     expect(privacy.stored.oauth).toMatch(/GitHub ou Discord/);
     expect(privacy.stored.oauth).toMatch(/seulement l'identifiant numérique/);
+    expect(privacy.stored.oauth).toMatch(/sert une seule fois, à proposer ton pseudo/);
     expect(privacy.stored.oauth).toMatch(/adresse e-mail, ta photo/);
     expect(privacy.stored.oauth).toMatch(/jetons d'accès/);
-    expect(privacy.cookies.duration).toMatch(/GitHub ou Discord/);
+    expect(privacy.cookies.duration).toMatch(/avec GitHub ou Discord, c'est un cookie de session/);
+    expect(privacy.cookies.oauth).toMatch(/GitHub ou Discord/);
+    expect(privacy.cookies.oauth).toMatch(/10 minutes/);
+    expect(privacy.cookies.oauth).toMatch(/effacés dès ton retour/);
   });
 
   it("dit exactement ce qui est stocké lors d'une connexion GitHub ou Discord (EN)", () => {
     const { privacy } = getDictionary("en");
     expect(privacy.stored.oauth).toMatch(/GitHub or Discord/);
     expect(privacy.stored.oauth).toMatch(/only the numeric ID/);
+    expect(privacy.stored.oauth).toMatch(/used once, to suggest your username/);
     expect(privacy.stored.oauth).toMatch(/email address, your picture/);
     expect(privacy.stored.oauth).toMatch(/access tokens/);
-    expect(privacy.cookies.duration).toMatch(/GitHub or Discord/);
+    expect(privacy.cookies.duration).toMatch(/with GitHub or Discord, it is a session cookie/);
+    expect(privacy.cookies.oauth).toMatch(/GitHub or Discord/);
+    expect(privacy.cookies.oauth).toMatch(/10 minutes/);
+    expect(privacy.cookies.oauth).toMatch(/deleted as soon as you come back/);
   });
 
   it("dit ce que le code fait vraiment (FR)", () => {

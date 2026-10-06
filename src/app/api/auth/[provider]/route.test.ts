@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getSessionCookieName } from "@/auth/cookie";
+import { createSession } from "@/auth/session";
 import { createTestDeps } from "@/auth/testSupport";
 
 const mocks = vi.hoisted(() => ({ getAuthDeps: vi.fn() }));
@@ -16,9 +18,9 @@ const ENV = {
   DISCORD_CLIENT_SECRET: "dc-secret",
 };
 
-function call(provider: string, query = "", ip = "203.0.113.7") {
+function call(provider: string, query = "", ip = "203.0.113.7", cookie?: string) {
   const request = new NextRequest(`http://localhost:3000/api/auth/${provider}${query}`, {
-    headers: { "x-forwarded-for": ip },
+    headers: { "x-forwarded-for": ip, ...(cookie ? { cookie } : {}) },
   });
   return GET(request, { params: Promise.resolve({ provider }) });
 }
@@ -28,9 +30,11 @@ function setCookies(response: Response): Record<string, string> {
 }
 
 let consoleError: ReturnType<typeof vi.spyOn>;
+let test: ReturnType<typeof createTestDeps>;
 
 beforeEach(() => {
-  mocks.getAuthDeps.mockReturnValue(createTestDeps().deps);
+  test = createTestDeps();
+  mocks.getAuthDeps.mockReturnValue(test.deps);
   for (const [name, value] of Object.entries(ENV)) vi.stubEnv(name, value);
   consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -60,7 +64,7 @@ describe("GET /api/auth/[provider]", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
   });
 
-  it("sets state and locale cookies: HttpOnly, SameSite=Lax, Path=/api/auth, Max-Age=600; GitHub has no verifier", async () => {
+  it("sets state and locale cookies: HttpOnly, SameSite=Lax, Path=/, Max-Age=600; GitHub has no verifier", async () => {
     const response = await call("github", "?locale=en");
 
     const cookies = setCookies(response);
@@ -68,7 +72,7 @@ describe("GET /api/auth/[provider]", () => {
     for (const header of Object.values(cookies)) {
       expect(header).toMatch(/HttpOnly/i);
       expect(header).toMatch(/SameSite=lax/i);
-      expect(header).toMatch(/Path=\/api\/auth(;|$)/);
+      expect(header).toMatch(/Path=\/(;|$)/);
       expect(header).toMatch(/Max-Age=600/);
       expect(header).not.toMatch(/Secure/i);
       expect(header).not.toMatch(/Domain/i);
@@ -95,16 +99,45 @@ describe("GET /api/auth/[provider]", () => {
     expect(location.toString()).not.toContain(verifier);
   });
 
-  it("marks the cookies Secure and prefixes them __Secure- in production", async () => {
+  it("production: __Host- cookies (Secure, Path=/, no Domain, HttpOnly, SameSite=Lax), so a sibling subdomain cannot set them", async () => {
     vi.stubEnv("NODE_ENV", "production");
 
-    const cookies = setCookies(await call("github"));
+    const cookies = setCookies(await call("discord"));
 
     expect(Object.keys(cookies).sort()).toEqual([
-      "__Secure-typio_oauth_locale_github",
-      "__Secure-typio_oauth_state_github",
+      "__Host-typio_oauth_locale_discord",
+      "__Host-typio_oauth_state_discord",
+      "__Host-typio_oauth_verifier_discord",
     ]);
-    for (const header of Object.values(cookies)) expect(header).toMatch(/Secure/);
+    for (const header of Object.values(cookies)) {
+      expect(header).toMatch(/; Secure/);
+      expect(header).toMatch(/Path=\/(;|$)/);
+      expect(header).toMatch(/HttpOnly/i);
+      expect(header).toMatch(/SameSite=lax/i);
+      expect(header).toMatch(/Max-Age=600/);
+      expect(header).not.toMatch(/Domain/i);
+    }
+  });
+
+  it("does not start the flow for a signed-in member: back to the home page, no cookie", async () => {
+    const member = await test.users.createMember({ username: "alice", displayName: "Alice", passwordHash: "h", locale: "fr" });
+    const grant = await createSession(test.sessions, { userId: member.id, kind: "member", remember: false }, test.deps.now());
+
+    const response = await call("github", "?locale=en", "203.0.113.7", `${getSessionCookieName()}=${grant.token}`);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("location")).toBe("/en");
+    expect(response.headers.getSetCookie()).toEqual([]);
+  });
+
+  it("lets a guest start the flow", async () => {
+    const guest = await test.users.createGuest({ displayName: "G", locale: "fr", expiresAt: new Date("2030-01-01") });
+    const grant = await createSession(test.sessions, { userId: guest.id, kind: "guest", remember: false }, test.deps.now());
+
+    const response = await call("github", "", "203.0.113.7", `${getSessionCookieName()}=${grant.token}`);
+
+    expect(response.headers.get("location")).toContain("https://github.com/login/oauth/authorize");
+    expect(response.headers.getSetCookie()).toHaveLength(2);
   });
 
   it("filters the locale: an unknown value becomes French", async () => {
@@ -132,8 +165,8 @@ describe("GET /api/auth/[provider]", () => {
     expect(response.headers.get("location")).toBe("/fr/login?oauth=unavailable");
   });
 
-  it("limits starts per IP: the 61st within the window goes back to the login page with oauth=failed", async () => {
-    for (let i = 0; i < 60; i += 1) expect((await call("github", "", "198.51.100.1")).headers.getSetCookie().length).toBe(2);
+  it("limits starts per IP: the 301st within the window goes back to the login page with oauth=failed", async () => {
+    for (let i = 0; i < 300; i += 1) expect((await call("github", "", "198.51.100.1")).headers.getSetCookie().length).toBe(2);
 
     const limited = await call("github", "", "198.51.100.1");
 

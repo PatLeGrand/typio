@@ -175,7 +175,7 @@ describe("page login : connexion GitHub et Discord", () => {
     expect(screen.getByText(oauth.ageNote)).toBeInTheDocument();
   });
 
-  it.each(["cancelled", "failed", "unavailable", "already_linked"] as const)(
+  it.each(["cancelled", "failed", "unavailable"] as const)(
     "?oauth=%s affiche le message traduit dans une alerte, avant les boutons (fr et en)",
     async (notice) => {
       for (const lang of ["fr", "en"] as const) {

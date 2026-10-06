@@ -1,19 +1,21 @@
 import type { NextRequest } from "next/server";
+import { getSessionCookieName } from "@/auth/cookie";
 import { getAuthDeps } from "@/auth/deps";
 import { describeError } from "@/auth/errors";
 import { handleOAuthCallback } from "@/auth/oauth/callback";
 import { getOAuthProvider } from "@/auth/oauth/config";
 import { expiredOAuthCookie, oauthCookieNames } from "@/auth/oauth/cookies";
+import { getOAuthExchangeSemaphore } from "@/auth/oauth/exchangeSemaphore";
+import { loginNoticeLocation, parseOAuthLocale } from "@/auth/oauth/locale";
 import { providerNotFound, toRedirectResponse } from "@/auth/oauth/oauthResponse";
 import { fetchOAuthProfile } from "@/auth/oauth/profile";
 import { isOAuthProviderName } from "@/auth/oauth/providers";
-import { loginNoticeLocation, parseOAuthLocale } from "@/auth/oauth/start";
-import { getSessionCookieName } from "@/auth/cookie";
+import { getClientIp } from "@/auth/rateLimit";
 
 /**
  * AUTH-2, AUTH-3 : retour du fournisseur, `GET /api/auth/{provider}/callback`. Vérifie le
- * `state`, échange le code, lit l'identifiant du compte, puis ouvre la session (ou relie le
- * compte au membre connecté) et redirige vers le site.
+ * `state`, échange le code, lit l'identifiant du compte, puis ouvre la session et redirige vers
+ * le site.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
@@ -27,9 +29,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     return toRedirectResponse(
       await handleOAuthCallback(
-        { auth: getAuthDeps(), getProvider: getOAuthProvider, fetchProfile: fetchOAuthProfile },
+        {
+          auth: getAuthDeps(),
+          getProvider: getOAuthProvider,
+          fetchProfile: fetchOAuthProfile,
+          exchanges: getOAuthExchangeSemaphore(),
+        },
         {
           provider,
+          ip: getClientIp(request.headers),
           query: { code: query.get("code"), state: query.get("state"), error: query.get("error") },
           cookies: {
             state: cookies.get(names.state)?.value,

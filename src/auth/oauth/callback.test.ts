@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getSessionCookieName } from "../cookie";
-import { REMEMBERED_SESSION_MS } from "../session";
+import { createSemaphore } from "../semaphore";
 import { createTestDeps } from "../testSupport";
-import { hashToken, generateToken } from "../token";
+import { generateToken, hashToken } from "../token";
 import { handleOAuthCallback, type OAuthCallbackDeps, type OAuthCallbackInput } from "./callback";
 import { OAuthProfileError } from "./profile";
 import type { OAuthProfile, OAuthProviderName } from "./providers";
@@ -20,24 +20,30 @@ function setup(options: { provider?: OAuthProviderName; fetchedProfile?: OAuthPr
     auth: test.deps,
     getProvider: (name) => (name === provider.name ? provider : null),
     fetchProfile,
+    exchanges: createSemaphore({ maxConcurrent: 4, maxQueue: 32 }),
   };
   return { ...test, provider, fetchProfile, deps };
 }
 
-function input(overrides: Partial<OAuthCallbackInput> & { provider?: OAuthProviderName } = {}): OAuthCallbackInput {
+function input(overrides: Partial<OAuthCallbackInput> = {}): OAuthCallbackInput {
   const provider = overrides.provider ?? "github";
   return {
     provider,
+    ip: "203.0.113.7",
+    ...overrides,
     query: { code: "auth-code", state: STATE, error: null, ...overrides.query },
     cookies: { state: STATE, locale: "fr", ...(provider === "discord" ? { verifier: VERIFIER } : {}), ...overrides.cookies },
   };
 }
 
-/** Les trois cookies temporaires sont effacés (même Path, Max-Age 0). */
-function expectTemporaryCookiesCleared(cookies: { name: string; value: string; options: { maxAge?: number; path?: string } }[], provider: OAuthProviderName = "github") {
+/** Les trois cookies temporaires sont effacés (mêmes attributs, Max-Age 0). */
+function expectTemporaryCookiesCleared(
+  cookies: { name: string; value: string; options: { maxAge?: number; path?: string } }[],
+  provider: OAuthProviderName = "github",
+) {
   for (const kind of ["state", "verifier", "locale"]) {
     const cleared = cookies.find((cookie) => cookie.name === `typio_oauth_${kind}_${provider}`);
-    expect(cleared, `${kind} cookie`).toMatchObject({ value: "", options: { maxAge: 0, path: "/api/auth" } });
+    expect(cleared, `${kind} cookie`).toMatchObject({ value: "", options: { maxAge: 0, path: "/" } });
   }
 }
 
@@ -97,10 +103,7 @@ describe("handleOAuthCallback: state and user refusal", () => {
   it("sends oauth=failed for any other provider error", async () => {
     const { deps } = setup();
 
-    const result = await handleOAuthCallback(
-      deps,
-      input({ query: { code: null, state: STATE, error: "server_error" } }),
-    );
+    const result = await handleOAuthCallback(deps, input({ query: { code: null, state: STATE, error: "server_error" } }));
 
     expect(result.location).toBe("/fr/login?oauth=failed");
     expectTemporaryCookiesCleared(result.cookies);
@@ -149,6 +152,74 @@ describe("handleOAuthCallback: state and user refusal", () => {
   });
 });
 
+describe("handleOAuthCallback: abuse limits before any outgoing request", () => {
+  it("limits returns to 300 per IP per window: the 301st gets oauth=failed with no outgoing request", async () => {
+    const { deps, provider, fetchProfile } = setup();
+    for (let i = 0; i < 300; i += 1) {
+      // État forgé : consomme le budget sans rien lancer, comme un attaquant qui martèle la route.
+      await handleOAuthCallback(deps, input({ query: { code: "c", state: "forged", error: null } }));
+    }
+
+    const result = await handleOAuthCallback(deps, input());
+
+    expect(result.location).toBe("/fr/login?oauth=failed");
+    expect(provider.exchangeCode).not.toHaveBeenCalled();
+    expect(fetchProfile).not.toHaveBeenCalled();
+    expectTemporaryCookiesCleared(result.cookies);
+  });
+
+  it("counts per IP: another address is not limited", async () => {
+    const { deps, provider } = setup();
+    for (let i = 0; i < 300; i += 1) {
+      await handleOAuthCallback(deps, input({ query: { code: "c", state: "forged", error: null } }));
+    }
+
+    const result = await handleOAuthCallback(deps, input({ ip: "198.51.100.1" }));
+
+    expect(result.location).toBe("/fr");
+    expect(provider.exchangeCode).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows at most 4 simultaneous exchanges and 32 waiting: the 37th is refused without any request", async () => {
+    const { deps, provider, fetchProfile } = setup();
+    const releases: (() => void)[] = [];
+    provider.exchangeCode.mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          releases.push(() => resolve("access-token-xyz"));
+        }),
+    );
+    // Un compte distinct par retour, pour ne tester que le sémaphore.
+    let accounts = 0;
+    fetchProfile.mockImplementation(async () => {
+      accounts += 1;
+      return profile({ accountId: String(accounts), login: `player${accounts}` });
+    });
+    // Autant d'IP que de retours : seul le sémaphore est en cause, pas le limiteur par IP.
+    const call = (index: number) => handleOAuthCallback(deps, input({ ip: `198.51.100.${index}`, query: { code: `c${index}`, state: STATE, error: null } }));
+
+    const pending = Array.from({ length: 36 }, (_unused, index) => call(index));
+    await vi.waitFor(() => expect(provider.exchangeCode).toHaveBeenCalledTimes(4));
+    expect(deps.exchanges.active()).toBe(4);
+    expect(deps.exchanges.queued()).toBe(32);
+
+    const refused = await call(200);
+
+    expect(refused.location).toBe("/fr/login?oauth=failed");
+    expect(provider.exchangeCode).toHaveBeenCalledTimes(4);
+    expect(fetchProfile).not.toHaveBeenCalled();
+    expect(JSON.stringify(consoleError.mock.calls)).toContain("QueueFullError");
+
+    // Les retours déjà acceptés finissent normalement.
+    while (deps.exchanges.active() > 0) {
+      releases.splice(0).forEach((release) => release());
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    const results = await Promise.all(pending);
+    expect(results.every((result) => result.location === "/fr")).toBe(true);
+  });
+});
+
 describe("handleOAuthCallback: failures while talking to the provider", () => {
   it("sends oauth=failed when the code exchange fails, and logs the error without token or code", async () => {
     const { deps, provider } = setup();
@@ -169,6 +240,15 @@ describe("handleOAuthCallback: failures while talking to the provider", () => {
     expect(logged).not.toContain("auth-code");
     expect(logged).not.toContain("access-token-xyz");
     expect(logged).not.toContain(STATE);
+  });
+
+  it("gives the exchange slot back when the exchange fails", async () => {
+    const { deps, provider } = setup();
+    provider.exchangeCode.mockRejectedValue(new Error("boom"));
+
+    await handleOAuthCallback(deps, input());
+
+    expect(deps.exchanges.active()).toBe(0);
   });
 
   it("sends oauth=failed when the profile cannot be read", async () => {
@@ -213,7 +293,7 @@ describe("handleOAuthCallback: failures while talking to the provider", () => {
 });
 
 describe("handleOAuthCallback: signing in", () => {
-  it("creates the member and sets the 30-day session cookie, HttpOnly and Lax, then goes home", async () => {
+  it("creates the member and sets a SESSION cookie (no Max-Age), HttpOnly and Lax, then goes home", async () => {
     const { deps, users, sessions } = setup();
 
     const result = await handleOAuthCallback(deps, input());
@@ -221,7 +301,8 @@ describe("handleOAuthCallback: signing in", () => {
     expect(result.location).toBe("/fr");
     expect(users.users).toHaveLength(1);
     const session = result.cookies.find((cookie) => cookie.name === getSessionCookieName());
-    expect(session?.options).toMatchObject({ httpOnly: true, sameSite: "lax", path: "/", maxAge: REMEMBERED_SESSION_MS / 1000 });
+    expect(session?.options).toMatchObject({ httpOnly: true, sameSite: "lax", path: "/" });
+    expect(session?.options.maxAge).toBeUndefined();
     expect(sessions.sessions.has(hashToken(session?.value ?? ""))).toBe(true);
     expectTemporaryCookiesCleared(result.cookies);
   });
@@ -294,32 +375,29 @@ describe("handleOAuthCallback: signing in", () => {
   });
 });
 
-describe("handleOAuthCallback: linking", () => {
-  async function signedInMember(test: ReturnType<typeof setup>) {
-    const member = await test.users.createMember({ username: "alice", displayName: "Alice", passwordHash: "h", locale: "fr" });
-    const token = generateToken();
-    test.sessions.sessions.set(hashToken(token), { id: hashToken(token), userId: member.id, expiresAt: new Date("2030-01-01") });
-    return { member, token };
-  }
+describe("handleOAuthCallback: no implicit linking", () => {
+  it("a signed-in member who returns with a free provider account is NOT linked: a new member is created and signed in, the old session revoked", async () => {
+    const { deps, users, oauthAccounts, sessions } = setup();
+    const alice = await users.createMember({ username: "alice", displayName: "Alice", passwordHash: "h", locale: "fr" });
+    const aliceToken = generateToken();
+    sessions.sessions.set(hashToken(aliceToken), { id: hashToken(aliceToken), userId: alice.id, expiresAt: new Date("2030-01-01") });
 
-  it("links the account to the signed-in member and keeps the current session", async () => {
-    const test = setup();
-    const { member, token } = await signedInMember(test);
-
-    const result = await handleOAuthCallback(test.deps, input({ cookies: { state: STATE, locale: "fr", session: token } }));
+    const result = await handleOAuthCallback(deps, input({ cookies: { state: STATE, locale: "fr", session: aliceToken } }));
 
     expect(result.location).toBe("/fr");
-    expect(test.oauthAccounts.accounts).toEqual([{ provider: "github", providerAccountId: "583231", userId: member.id }]);
-    expect(test.users.users).toHaveLength(1);
-    expect(test.sessions.sessions.has(hashToken(token))).toBe(true);
-    expect(result.cookies.some((cookie) => cookie.name === getSessionCookieName())).toBe(false);
-    expectTemporaryCookiesCleared(result.cookies);
+    expect(oauthAccounts.accounts.some((account) => account.userId === alice.id)).toBe(false);
+    expect(users.users).toHaveLength(2);
+    expect(sessions.sessions.has(hashToken(aliceToken))).toBe(false);
+    const newSession = result.cookies.find((cookie) => cookie.name === getSessionCookieName());
+    expect(sessions.sessions.get(hashToken(newSession?.value ?? ""))?.userId).not.toBe(alice.id);
   });
 
-  it("sends oauth=already_linked, changing nothing, when the account belongs to another member", async () => {
-    const test = setup();
-    const { token } = await signedInMember(test);
-    const { id: otherId } = await test.oauthAccounts.createMemberWithAccount({
+  it("a signed-in member who returns with an account linked to ANOTHER member is signed in as that other member, never linked", async () => {
+    const { deps, users, oauthAccounts, sessions } = setup();
+    const alice = await users.createMember({ username: "alice", displayName: "Alice", passwordHash: "h", locale: "fr" });
+    const aliceToken = generateToken();
+    sessions.sessions.set(hashToken(aliceToken), { id: hashToken(aliceToken), userId: alice.id, expiresAt: new Date("2030-01-01") });
+    const { id: bobId } = await oauthAccounts.createMemberWithAccount({
       provider: "github",
       providerAccountId: "583231",
       username: "bob",
@@ -327,13 +405,12 @@ describe("handleOAuthCallback: linking", () => {
       locale: "fr",
     });
 
-    const result = await handleOAuthCallback(test.deps, input({ cookies: { state: STATE, locale: "en", session: token } }));
+    const result = await handleOAuthCallback(deps, input({ cookies: { state: STATE, locale: "fr", session: aliceToken } }));
 
-    expect(result.location).toBe("/en/login?oauth=already_linked");
-    expect(test.oauthAccounts.accounts).toEqual([{ provider: "github", providerAccountId: "583231", userId: otherId }]);
-    expect(test.sessions.sessions.has(hashToken(token))).toBe(true);
-    expect(test.sessions.sessions.size).toBe(1);
-    expect(result.cookies.some((cookie) => cookie.name === getSessionCookieName())).toBe(false);
-    expectTemporaryCookiesCleared(result.cookies);
+    expect(result.location).toBe("/fr");
+    expect(oauthAccounts.accounts).toEqual([{ provider: "github", providerAccountId: "583231", userId: bobId }]);
+    const newSession = result.cookies.find((cookie) => cookie.name === getSessionCookieName());
+    expect(sessions.sessions.get(hashToken(newSession?.value ?? ""))?.userId).toBe(bobId);
+    expect(sessions.sessions.has(hashToken(aliceToken))).toBe(false);
   });
 });

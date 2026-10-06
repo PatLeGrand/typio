@@ -97,7 +97,8 @@ describe("GET /api/auth/[provider]/callback", () => {
     const cookies = setCookies(response);
     const session = cookies.find((cookie) => cookie.startsWith(`${getSessionCookieName()}=`));
     expect(session).toMatch(/HttpOnly/i);
-    expect(session).toMatch(/Max-Age=2592000/);
+    // Session de 24 h en base, cookie de session (pas de « Rester connecté » avec un fournisseur).
+    expect(session).not.toMatch(/Max-Age/i);
     expect(session).toMatch(/Path=\//);
     const token = (session ?? "").split(";")[0].split("=")[1];
     expect(test.sessions.sessions.has(hashToken(token))).toBe(true);
@@ -112,6 +113,47 @@ describe("GET /api/auth/[provider]/callback", () => {
     ]);
     expect(calls[1].init?.headers).toMatchObject({ Authorization: "Bearer gho_secret_token", "User-Agent": "Typio" });
     expect(calls[1].init?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("production: reads the __Host- state cookie, and clears the __Host- cookies (Secure, Path=/)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    githubNetwork();
+
+    const response = await callback("github", "?code=c&state=S1", {
+      "__Host-typio_oauth_state_github": "S1",
+      "__Host-typio_oauth_locale_github": "en",
+    });
+
+    expect(response.headers.get("location")).toBe("/en");
+    const cookies = setCookies(response);
+    expect(cookies.some((cookie) => cookie.startsWith("__Host-typio_session=") && /; Secure/.test(cookie))).toBe(true);
+    for (const kind of ["state", "verifier", "locale"]) {
+      const cleared = cookies.find((cookie) => cookie.startsWith(`__Host-typio_oauth_${kind}_github=;`));
+      expect(cleared).toMatch(/Max-Age=0/);
+      expect(cleared).toMatch(/Path=\/(;|$)/);
+      expect(cleared).toMatch(/; Secure/);
+    }
+  });
+
+  it("ignores a development-named state cookie in production: only the __Host- one counts", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const calls = githubNetwork();
+
+    const response = await callback("github", "?code=c&state=S1", { typio_oauth_state_github: "S1" });
+
+    expect(response.headers.get("location")).toBe("/fr/login?oauth=failed");
+    expect(calls).toHaveLength(0);
+  });
+
+  it("returns oauth=failed without any outgoing request once the IP has used its 300 returns", async () => {
+    const calls = githubNetwork();
+    for (let i = 0; i < 300; i += 1) await callback("github", "?code=c&state=FORGED", { typio_oauth_state_github: "S1" });
+
+    const response = await callback("github", "?code=c&state=S1", { typio_oauth_state_github: "S1" });
+
+    expect(response.headers.get("location")).toBe("/fr/login?oauth=failed");
+    expect(calls).toHaveLength(0);
+    expect(test.users.users).toHaveLength(0);
   });
 
   it("never stores or logs the access token", async () => {
@@ -139,7 +181,7 @@ describe("GET /api/auth/[provider]/callback", () => {
     expect(response.headers.get("location")).toBe("/fr");
     expect(new URLSearchParams(calls[0].body).get("code_verifier")).toBe("the-verifier");
     expect(test.oauthAccounts.accounts[0]).toMatchObject({ provider: "discord", providerAccountId: "80351110224678912" });
-    expect(test.users.users[0]).toMatchObject({ username: "nelly", displayName: "Nelly" });
+    expect(test.users.users[0]).toMatchObject({ username: "nelly", displayName: "nelly" });
   });
 
   it("rejects a forged state without any outgoing request, and still clears the cookies", async () => {

@@ -2,25 +2,39 @@ import type { Locale } from "@/i18n/config";
 import type { AuthDeps } from "../authFlows";
 import { purgeExpired } from "../purge";
 import { createSession, type SessionGrant } from "../session";
-import type { CurrentUser } from "../types";
 import { UsernameTakenError } from "../userRepository";
-import { deriveDisplayName, deriveUsernameBase, USERNAME_ATTEMPTS, usernameForAttempt } from "./identity";
+import { deriveUsernameBase, USERNAME_ATTEMPTS, usernameForAttempt } from "./identity";
 import { OAuthAccountTakenError, type OAuthAccountRef } from "./oauthRepository";
 import type { OAuthProfile, OAuthProviderName } from "./providers";
 
-export type OAuthSignInResult =
-  /** Nouvelle session membre à poser dans le cookie. */
-  | { status: "signed-in"; grant: SessionGrant }
-  /** Compte relié au membre déjà connecté ; sa session est conservée. */
-  | { status: "linked" }
-  /** Compte déjà relié à un AUTRE membre : rien n'a changé. */
-  | { status: "already-linked" };
-
+/**
+ * AUTH-2, AUTH-3 : connexion par GitHub ou Discord.
+ *
+ * Deux issues seulement : le compte fournisseur est déjà relié à un membre, on ouvre une session
+ * sur CE membre ; sinon on crée un nouveau membre (sans mot de passe) et son lien, puis une
+ * session. AUCUN chemin ne relie un compte fournisseur à un membre qui existe déjà.
+ *
+ * Pourquoi pas de liaison : lier le compte fournisseur de qui se présente au membre actuellement
+ * connecté se déclenche par une simple navigation (GET), donc un lien piégé ou un onglet ouvert
+ * suffirait à une prise de contrôle silencieuse du compte (l'attaquant lie SON compte GitHub à la
+ * victime, puis se connecte en tant qu'elle). La liaison reviendra avec une page « Mon compte » :
+ * action POST explicite et confirmée, liste des comptes reliés et déliaison. Tant qu'elle n'existe
+ * pas, un membre connecté ne peut pas lancer le flux (voir `startOAuth`).
+ *
+ * Session : même règle qu'une connexion sans « Rester connecté » (cookie de session, 24 h en base).
+ * Il n'y a pas de case à cocher ici, et GitHub ou Discord reste souvent ouvert sur les postes
+ * partagés : la durée courte est le choix sûr.
+ *
+ * Données : le login du fournisseur sert une seule fois, à proposer l'identifiant ; le nom d'affichage
+ * en est dérivé (jamais le `name` ou `global_name` du fournisseur). Seul l'identifiant numérique du
+ * compte est conservé.
+ *
+ * Le remplacement de la session précédente du navigateur (invité compris) est fait par l'appelant,
+ * qui détient le cookie.
+ */
 export interface OAuthSignInInput {
   provider: OAuthProviderName;
   profile: OAuthProfile;
-  /** Utilisateur de la session en cours (membre ou invité), `null` pour un visiteur. */
-  currentUser: CurrentUser | null;
   locale: Locale;
   /** Injectable pour les tests ; trois chiffres du suffixe d'identifiant. */
   randomThreeDigits?: () => string;
@@ -34,80 +48,36 @@ export class UsernameExhaustedError extends Error {
   }
 }
 
-/**
- * Session d'un membre ouverte par un fournisseur tiers : 30 jours, comme « Rester connecté ».
- * L'utilisateur a choisi de s'authentifier chez GitHub ou Discord, il n'y a pas de case à
- * cocher ; un poste partagé se protège en se déconnectant.
- */
-async function openMemberSession(deps: AuthDeps, userId: string): Promise<OAuthSignInResult> {
-  const grant = await createSession(deps.sessions, { userId, kind: "member", remember: true }, deps.now());
+async function openMemberSession(deps: AuthDeps, userId: string): Promise<SessionGrant> {
+  const grant = await createSession(deps.sessions, { userId, kind: "member", remember: false }, deps.now());
   await purgeExpired(deps);
-  return { status: "signed-in", grant };
+  return grant;
 }
 
-/**
- * AUTH-2, AUTH-3 : applique l'identité lue chez le fournisseur.
- *
- * 1. Compte déjà relié : session de ce membre (sauf si un AUTRE membre est connecté : on ne
- *    change rien, `already-linked`).
- * 2. Compte libre et un MEMBRE connecté : on le relie à ce membre.
- * 3. Compte libre, visiteur ou invité : création d'un membre sans mot de passe, puis session.
- *    Le login et le nom d'affichage du fournisseur ne servent qu'à proposer l'identifiant et
- *    le nom d'affichage ; rien d'autre n'est conservé.
- *
- * Le remplacement de la session précédente du navigateur (invité compris) est fait par
- * l'appelant, qui détient le cookie.
- */
-export async function completeOAuthSignIn(deps: AuthDeps, input: OAuthSignInInput): Promise<OAuthSignInResult> {
+export async function completeOAuthSignIn(deps: AuthDeps, input: OAuthSignInInput): Promise<SessionGrant> {
   const account: OAuthAccountRef = { provider: input.provider, providerAccountId: input.profile.accountId };
-  const member = input.currentUser?.kind === "member" ? input.currentUser : null;
 
   const ownerId = await deps.oauthAccounts.findUserIdByAccount(account);
-  if (ownerId !== null) return signInToOwner(deps, ownerId, member);
+  if (ownerId !== null) return openMemberSession(deps, ownerId);
 
-  if (member) {
-    if (await deps.oauthAccounts.linkAccount({ ...account, userId: member.id })) return { status: "linked" };
-    // Lié entre-temps (requête concurrente) : même membre, c'est fait ; autre membre, on refuse.
-    const concurrentOwner = await deps.oauthAccounts.findUserIdByAccount(account);
-    return concurrentOwner === member.id ? { status: "linked" } : { status: "already-linked" };
-  }
-
-  return createMember(deps, input, account);
-}
-
-async function signInToOwner(
-  deps: AuthDeps,
-  ownerId: string,
-  member: CurrentUser | null,
-): Promise<OAuthSignInResult> {
-  if (member && member.id !== ownerId) return { status: "already-linked" };
-  return openMemberSession(deps, ownerId);
-}
-
-async function createMember(
-  deps: AuthDeps,
-  input: OAuthSignInInput,
-  account: OAuthAccountRef,
-): Promise<OAuthSignInResult> {
-  // Ici aucun membre n'est connecté : visiteur ou invité.
   const base = deriveUsernameBase(input.profile.login);
-  const displayName = deriveDisplayName(input.profile.displayName, base);
-
   for (let attempt = 0; attempt < USERNAME_ATTEMPTS; attempt += 1) {
+    const username = usernameForAttempt(base, attempt, input.randomThreeDigits);
     try {
       const { id } = await deps.oauthAccounts.createMemberWithAccount({
         ...account,
-        username: usernameForAttempt(base, attempt, input.randomThreeDigits),
-        displayName,
+        username,
+        // Le nom d'affichage est l'identifiant : rien du profil du fournisseur n'est repris.
+        displayName: username,
         locale: input.locale,
       });
-      return openMemberSession(deps, id);
+      return await openMemberSession(deps, id);
     } catch (error) {
       if (error instanceof UsernameTakenError) continue;
       if (error instanceof OAuthAccountTakenError) {
         // Deux retours simultanés pour le même nouveau compte : l'autre a gagné, on s'y connecte.
-        const ownerId = await deps.oauthAccounts.findUserIdByAccount(account);
-        if (ownerId !== null) return openMemberSession(deps, ownerId);
+        const winnerId = await deps.oauthAccounts.findUserIdByAccount(account);
+        if (winnerId !== null) return openMemberSession(deps, winnerId);
       }
       throw error;
     }

@@ -8,7 +8,7 @@ export function isOAuthProviderName(value: unknown): value is OAuthProviderName 
 }
 
 /** Valeurs de `?oauth=` que la page de connexion sait afficher. */
-export const OAUTH_NOTICES = ["cancelled", "failed", "unavailable", "already_linked"] as const;
+export const OAUTH_NOTICES = ["cancelled", "failed", "unavailable"] as const;
 
 export type OAuthNotice = (typeof OAUTH_NOTICES)[number];
 
@@ -37,8 +37,10 @@ export interface OAuthProviderClient {
 export interface OAuthProfile {
   /** Identifiant numérique stable du compte chez le fournisseur, en texte. */
   accountId: string;
-  /** Login GitHub ou nom d'utilisateur Discord : sert seulement à proposer un identifiant. */
+  /**
+   * Login GitHub ou nom d'utilisateur Discord : sert une seule fois, à proposer l'identifiant
+   * (et le nom d'affichage, qui en est dérivé) à la création du compte. Le nom d'affichage du
+   * fournisseur (`name`, `global_name`) n'est jamais lu.
+   */
   login: string;
-  /** Nom affiché chez le fournisseur : sert seulement à proposer un nom d'affichage. */
-  displayName: string | null;
 }

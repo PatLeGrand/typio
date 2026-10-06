@@ -95,6 +95,9 @@ export const oauthAccounts = pgTable(
   (table) => [
     primaryKey({ columns: [table.provider, table.providerAccountId] }),
     index("oauth_accounts_user_id_idx").on(table.userId),
+    // Un membre n'a au plus qu'un compte par fournisseur (défense en profondeur : aucun chemin
+    // applicatif ne relie un compte à un membre existant pour l'instant).
+    uniqueIndex("oauth_accounts_user_provider_idx").on(table.userId, table.provider),
     check("oauth_accounts_provider_check", sql`${table.provider} in ('github', 'discord')`),
   ],
 );

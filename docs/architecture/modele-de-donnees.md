@@ -101,10 +101,26 @@ est traité à la connexion comme un identifiant inconnu (hash factice vérifié
 `Patrick` et `patrick` sont le même compte. On évite l'extension `citext`, qu'on ne peut
 pas supposer installable sur la base partagée.
 
-**`oauth_accounts` à part** (AUTH-2, AUTH-3, souhaitables). Un membre peut relier Discord
-et GitHub au même compte. La clé `(provider, provider_account_id)` empêche qu'un même
-compte Discord ouvre deux comptes Typio. On ne stocke que le fournisseur et l'identifiant numérique
-stable : ni login, ni e-mail, ni avatar, ni jeton d'accès. La table est créée (migration 0001).
+**`oauth_accounts` à part** (AUTH-2, AUTH-3, souhaitables). La clé `(provider, provider_account_id)`
+empêche qu'un même compte Discord ouvre deux comptes Typio, et l'index unique
+`(user_id, provider)` (migration 0002) borne un membre à un compte par fournisseur. On ne
+stocke que le fournisseur et l'identifiant numérique stable : ni login, ni nom, ni e-mail, ni
+avatar, ni jeton d'accès. La table est créée par la migration 0001.
+
+**Pas de liaison pour l'instant.** Un compte GitHub ou Discord n'est jamais relié à un membre
+qui existe déjà : à son retour, soit le compte est déjà lié et ouvre une session sur ce membre,
+soit un NOUVEAU membre est créé. Lier le compte de qui se présente au membre connecté se
+déclenche par une simple navigation, donc permettrait une prise de contrôle silencieuse (un lien
+piégé lie le compte de l'attaquant à la victime). La liaison reviendra avec une page « Mon
+compte » : action POST explicite, liste des comptes reliés et déliaison. D'ici là, un membre
+connecté ne peut pas lancer le flux.
+
+**Nom affiché d'un membre OAuth = son identifiant.** À la création, l'identifiant est dérivé du
+login du fournisseur (minuscules, `[a-z0-9_]`, 16 caractères au plus, suffixe `_` + 3 chiffres en
+cas de collision) et le nom affiché prend la même valeur. Le `name` ou `global_name` du
+fournisseur n'est jamais lu : un nom réel, ou un nom malveillant, n'entre pas dans les parties.
+La session ouverte par OAuth dure 24 h, comme une connexion sans « Rester connecté » (poste
+partagé).
 
 **Les salles ne sont pas une table.** Une salle d'attente change plusieurs fois par seconde
 et ne vaut rien une fois fermée. Son code (H-5) n'a besoin d'être unique que parmi les
@@ -132,6 +148,9 @@ ne se dessine pas au même endroit en AZERTY et en QWERTY.
 | `sessions (user_id)` | Déconnexion de toutes les sessions |
 | `sessions (expires_at)` | Nettoyage |
 | `users (expires_at) where kind = 'guest'` | Nettoyage des invités |
+| `oauth_accounts (provider, provider_account_id)` clé primaire | Retrouver le membre d'un compte GitHub ou Discord |
+| `oauth_accounts (user_id, provider)` unique | Un compte par fournisseur et par membre |
+| `oauth_accounts (user_id)` | Cascade et liste des comptes d'un membre |
 | `race_results (user_id, race_id)` | Historique et progression (STATS-1 à 3) |
 
 ## Périmètre du checkpoint 1

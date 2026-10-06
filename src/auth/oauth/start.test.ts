@@ -1,21 +1,31 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { createAuthLimiters } from "../rateLimit";
-import { startOAuth, loginNoticeLocation, parseOAuthLocale } from "./start";
-import { createFakeProvider } from "./testSupport";
+import { createSession } from "../session";
+import { createTestDeps } from "../testSupport";
+import { loginNoticeLocation, parseOAuthLocale } from "./locale";
 import type { OAuthProviderClient, OAuthProviderName } from "./providers";
+import { startOAuth } from "./start";
+import { createFakeProvider } from "./testSupport";
 
-function deps(clients: Partial<Record<OAuthProviderName, OAuthProviderClient>>) {
-  const now = 0;
-  return { limiters: createAuthLimiters(() => now), getProvider: (name: OAuthProviderName) => clients[name] ?? null };
+function setup(clients: Partial<Record<OAuthProviderName, OAuthProviderClient>>) {
+  const test = createTestDeps();
+  const deps = {
+    limiters: test.deps.limiters,
+    sessions: test.deps.sessions,
+    now: test.deps.now,
+    getProvider: (name: OAuthProviderName) => clients[name] ?? null,
+  };
+  return { ...test, startDeps: deps };
 }
 
 const github = () => createFakeProvider("github");
 const discord = () => createFakeProvider("discord");
 
 describe("startOAuth", () => {
-  it("redirects to the provider's authorization URL, carrying the generated state", () => {
-    const result = startOAuth(deps({ github: github() }), { provider: "github", rawLocale: "fr", ip: "203.0.113.7" });
+  it("redirects to the provider's authorization URL, carrying the generated state", async () => {
+    const { startDeps } = setup({ github: github() });
+
+    const result = await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: "203.0.113.7" });
 
     const url = new URL(result.location);
     expect(url.origin).toBe("https://github.example");
@@ -24,38 +34,34 @@ describe("startOAuth", () => {
     expect(stateCookie?.value).toMatch(/^[A-Za-z0-9_-]{43}$/);
   });
 
-  it("sets state and locale cookies with the right attributes", () => {
-    const result = startOAuth(deps({ github: github() }), { provider: "github", rawLocale: "en", ip: "203.0.113.7" });
+  it("sets state and locale cookies: HttpOnly, SameSite=Lax, Path=/, 10 minutes (development: no Secure)", async () => {
+    const { startDeps } = setup({ github: github() });
+
+    const result = await startOAuth(startDeps, { provider: "github", rawLocale: "en", ip: "203.0.113.7" });
 
     expect(result.cookies.map((cookie) => cookie.name).sort()).toEqual([
       "typio_oauth_locale_github",
       "typio_oauth_state_github",
     ]);
     for (const cookie of result.cookies) {
-      expect(cookie.options).toEqual({
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/api/auth",
-        secure: false,
-        maxAge: 600,
-      });
+      expect(cookie.options).toEqual({ httpOnly: true, sameSite: "lax", path: "/", secure: false, maxAge: 600 });
     }
     expect(result.cookies.find((cookie) => cookie.name === "typio_oauth_locale_github")?.value).toBe("en");
   });
 
-  it("generates a fresh state each time", () => {
-    const d = deps({ github: github() });
-    const first = startOAuth(d, { provider: "github", rawLocale: "fr", ip: "1.1.1.1" });
-    const second = startOAuth(d, { provider: "github", rawLocale: "fr", ip: "1.1.1.1" });
+  it("generates a fresh state each time", async () => {
+    const { startDeps } = setup({ github: github() });
+    const first = await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: "1.1.1.1" });
+    const second = await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: "1.1.1.1" });
 
     expect(first.cookies[0].value).not.toBe(second.cookies[0].value);
   });
 
-  it("uses PKCE for Discord only: a verifier cookie, and the same verifier given to the URL", () => {
-    const d = deps({ github: github(), discord: discord() });
+  it("uses PKCE for Discord only: a verifier cookie, and the same verifier given to the URL", async () => {
+    const { startDeps } = setup({ github: github(), discord: discord() });
 
-    const discordResult = startOAuth(d, { provider: "discord", rawLocale: "fr", ip: "1.1.1.1" });
-    const githubResult = startOAuth(d, { provider: "github", rawLocale: "fr", ip: "1.1.1.1" });
+    const discordResult = await startOAuth(startDeps, { provider: "discord", rawLocale: "fr", ip: "1.1.1.1" });
+    const githubResult = await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: "1.1.1.1" });
 
     const verifier = discordResult.cookies.find((cookie) => cookie.name === "typio_oauth_verifier_discord");
     expect(verifier?.value).toMatch(/^[A-Za-z0-9_-]{43}$/);
@@ -64,8 +70,10 @@ describe("startOAuth", () => {
     expect(new URL(githubResult.location).searchParams.has("code_verifier_seen")).toBe(false);
   });
 
-  it("redirects to the login page with oauth=unavailable when the provider is not configured", () => {
-    expect(startOAuth(deps({}), { provider: "github", rawLocale: "en", ip: "1.1.1.1" })).toEqual({
+  it("redirects to the login page with oauth=unavailable when the provider is not configured", async () => {
+    const { startDeps } = setup({});
+
+    expect(await startOAuth(startDeps, { provider: "github", rawLocale: "en", ip: "1.1.1.1" })).toEqual({
       location: "/en/login?oauth=unavailable",
       cookies: [],
     });
@@ -79,45 +87,97 @@ describe("startOAuth", () => {
     ["en/../../evil", "fr"],
     ["en", "en"],
     ["fr", "fr"],
-  ])("filters the locale %j to %s", (rawLocale, expected) => {
-    const result = startOAuth(deps({}), { provider: "github", rawLocale, ip: "1.1.1.1" });
+  ])("filters the locale %j to %s", async (rawLocale, expected) => {
+    const { startDeps } = setup({});
+
+    const result = await startOAuth(startDeps, { provider: "github", rawLocale, ip: "1.1.1.1" });
+
     expect(result.location).toBe(`/${expected}/login?oauth=unavailable`);
   });
 
-  it("stores the validated locale, never the raw value", () => {
-    const result = startOAuth(deps({ github: github() }), {
-      provider: "github",
-      rawLocale: "<script>",
-      ip: "1.1.1.1",
-    });
+  it("stores the validated locale, never the raw value", async () => {
+    const { startDeps } = setup({ github: github() });
+
+    const result = await startOAuth(startDeps, { provider: "github", rawLocale: "<script>", ip: "1.1.1.1" });
+
     expect(result.cookies.find((cookie) => cookie.name === "typio_oauth_locale_github")?.value).toBe("fr");
   });
 
-  it("limits starts to 60 per IP per window, then redirects with oauth=failed and sets nothing", () => {
-    const d = deps({ github: github() });
-    for (let i = 0; i < 60; i += 1) {
-      const result = startOAuth(d, { provider: "github", rawLocale: "fr", ip: "198.51.100.9" });
+  it("limits starts to 300 per IP per window, then redirects with oauth=failed and sets nothing", async () => {
+    const { startDeps } = setup({ github: github() });
+    for (let i = 0; i < 300; i += 1) {
+      const result = await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: "198.51.100.9" });
       expect(result.cookies.length).toBeGreaterThan(0);
     }
 
-    expect(startOAuth(d, { provider: "github", rawLocale: "fr", ip: "198.51.100.9" })).toEqual({
+    expect(await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: "198.51.100.9" })).toEqual({
       location: "/fr/login?oauth=failed",
       cookies: [],
     });
-    // Une autre IP n'est pas touchée.
-    expect(startOAuth(d, { provider: "github", rawLocale: "fr", ip: "198.51.100.10" }).cookies.length).toBeGreaterThan(0);
+    const other = await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: "198.51.100.10" });
+    expect(other.cookies.length).toBeGreaterThan(0);
   });
 
-  it("groups an IPv6 client by its /64 prefix, as the other limiters do", () => {
-    const d = deps({ github: github() });
-    for (let i = 0; i < 60; i += 1) {
-      startOAuth(d, { provider: "github", rawLocale: "fr", ip: `2001:db8:0:1::${i + 1}` });
+  it("groups an IPv6 client by its /64 prefix, as the other limiters do", async () => {
+    const { startDeps } = setup({ github: github() });
+    for (let i = 0; i < 300; i += 1) {
+      await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: `2001:db8:0:1::${i + 1}` });
     }
-    expect(startOAuth(d, { provider: "github", rawLocale: "fr", ip: "2001:db8:0:1:ffff::1" }).cookies).toEqual([]);
+
+    const result = await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: "2001:db8:0:1:ffff::1" });
+    expect(result.cookies).toEqual([]);
   });
 });
 
-describe("helpers", () => {
+describe("startOAuth: signed-in browsers", () => {
+  async function sessionTokenFor(test: ReturnType<typeof setup>, kind: "member" | "guest") {
+    const user =
+      kind === "member"
+        ? await test.users.createMember({ username: "alice", displayName: "Alice", passwordHash: "h", locale: "fr" })
+        : await test.users.createGuest({ displayName: "G", locale: "fr", expiresAt: new Date("2030-01-01") });
+    const grant = await createSession(test.sessions, { userId: user.id, kind, remember: false }, test.deps.now());
+    return grant.token;
+  }
+
+  it("does not start the flow for a signed-in MEMBER: back to the home page, no cookie, no provider call", async () => {
+    const test = setup({ github: github() });
+    const sessionToken = await sessionTokenFor(test, "member");
+
+    const result = await startOAuth(test.startDeps, { provider: "github", rawLocale: "en", ip: "1.1.1.1", sessionToken });
+
+    expect(result).toEqual({ location: "/en", cookies: [] });
+  });
+
+  it("lets a GUEST start the flow", async () => {
+    const test = setup({ github: github() });
+    const sessionToken = await sessionTokenFor(test, "guest");
+
+    const result = await startOAuth(test.startDeps, { provider: "github", rawLocale: "fr", ip: "1.1.1.1", sessionToken });
+
+    expect(result.location).toContain("github.example");
+    expect(result.cookies.length).toBe(2);
+  });
+
+  it.each([undefined, "garbage", "A".repeat(43)])("lets a visitor with an absent or unknown session (%j) start the flow", async (sessionToken) => {
+    const test = setup({ github: github() });
+
+    const result = await startOAuth(test.startDeps, { provider: "github", rawLocale: "fr", ip: "1.1.1.1", sessionToken });
+
+    expect(result.cookies.length).toBe(2);
+  });
+
+  it("lets a visitor whose member session has expired start the flow", async () => {
+    const test = setup({ github: github() });
+    const sessionToken = await sessionTokenFor(test, "member");
+    test.advance(25 * 60 * 60 * 1000);
+
+    const result = await startOAuth(test.startDeps, { provider: "github", rawLocale: "fr", ip: "1.1.1.1", sessionToken });
+
+    expect(result.cookies.length).toBe(2);
+  });
+});
+
+describe("locale helpers", () => {
   it("parseOAuthLocale accepts fr and en only", () => {
     expect(parseOAuthLocale("en")).toBe("en");
     expect(parseOAuthLocale("fr")).toBe("fr");
@@ -126,6 +186,6 @@ describe("helpers", () => {
   });
 
   it("loginNoticeLocation builds the login URL with the notice", () => {
-    expect(loginNoticeLocation("en", "already_linked")).toBe("/en/login?oauth=already_linked");
+    expect(loginNoticeLocation("en", "failed")).toBe("/en/login?oauth=failed");
   });
 });

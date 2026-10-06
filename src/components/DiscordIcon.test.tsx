@@ -1,10 +1,9 @@
 import { render } from "@testing-library/react";
-import { siDiscord } from "simple-icons";
 import { describe, expect, it } from "vitest";
 import { DiscordIcon } from "./DiscordIcon";
 
 describe("DiscordIcon", () => {
-  it("draws the Simple Icons Discord path, monochrome, 20 px, decorative", () => {
+  it("draws the Simple Icons Discord path inline, monochrome, 20 px, decorative", () => {
     const { container } = render(<DiscordIcon />);
     const svg = container.querySelector("svg");
 
@@ -13,7 +12,10 @@ describe("DiscordIcon", () => {
     expect(svg).toHaveAttribute("width", "20");
     expect(svg).toHaveAttribute("height", "20");
     expect(svg).toHaveAttribute("aria-hidden", "true");
-    expect(container.querySelector("path")).toHaveAttribute("d", siDiscord.path);
+    const path = container.querySelector("path")?.getAttribute("d") ?? "";
+    expect(path.startsWith("M20.317 4.3698a19.7913 19.7913")).toBe(true);
+    expect(path.endsWith("2.4189-2.1568 2.4189Z")).toBe(true);
+    expect(path.length).toBeGreaterThan(1200);
   });
 
   it("uses a single path with no hard-coded colour", () => {

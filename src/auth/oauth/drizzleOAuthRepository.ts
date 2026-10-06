@@ -18,15 +18,6 @@ export function createDrizzleOAuthRepository(db: PostgresJsDatabase): OAuthAccou
       return row?.userId ?? null;
     },
 
-    async linkAccount({ provider, providerAccountId, userId }) {
-      const inserted = await db
-        .insert(oauthAccounts)
-        .values({ provider, providerAccountId, userId })
-        .onConflictDoNothing()
-        .returning({ userId: oauthAccounts.userId });
-      return inserted.length > 0;
-    },
-
     async createMemberWithAccount(member) {
       // Les deux insertions réussissent ensemble ou échouent ensemble : jamais de membre
       // sans lien. Une erreur levée dans le rappel annule la transaction.

@@ -24,10 +24,6 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function optionalText(value: unknown): string | null {
-  return typeof value === "string" && value.length > 0 ? value : null;
-}
-
 function parseGithubProfile(body: unknown): OAuthProfile {
   const data = asRecord(body);
   const { id, login } = data;
@@ -35,7 +31,8 @@ function parseGithubProfile(body: unknown): OAuthProfile {
     throw new OAuthProfileError("invalid GitHub id");
   }
   if (typeof login !== "string" || login.length === 0) throw new OAuthProfileError("invalid GitHub login");
-  return { accountId: String(id), login, displayName: optionalText(data.name) };
+  // `name`, `email`, `avatar_url`… ne sont volontairement pas lus.
+  return { accountId: String(id), login };
 }
 
 function parseDiscordProfile(body: unknown): OAuthProfile {
@@ -45,7 +42,8 @@ function parseDiscordProfile(body: unknown): OAuthProfile {
   if (typeof username !== "string" || username.length === 0) {
     throw new OAuthProfileError("invalid Discord username");
   }
-  return { accountId: id, login: username, displayName: optionalText(data.global_name) };
+  // `global_name`, `email`, `avatar`… ne sont volontairement pas lus.
+  return { accountId: id, login: username };
 }
 
 /**

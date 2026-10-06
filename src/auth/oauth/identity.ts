@@ -1,10 +1,7 @@
-import { validatePseudo } from "../validation";
-
 /** Longueur maximale de la base d'un identifiant : 16 + `_` + 3 chiffres = 20 (limite de `users.username`). */
 const USERNAME_BASE_MAX_LENGTH = 16;
 const USERNAME_MIN_LENGTH = 3;
 const FALLBACK_USERNAME = "joueur";
-const PSEUDO_MAX_LENGTH = 20;
 
 /** Nombre d'essais d'identifiant avant d'abandonner : le nom de base, puis 4 suffixes aléatoires. */
 export const USERNAME_ATTEMPTS = 5;
@@ -42,25 +39,4 @@ function defaultRandomThreeDigits(): string {
   const bytes = new Uint32Array(1);
   crypto.getRandomValues(bytes);
   return String(bytes[0] % 1000).padStart(3, "0");
-}
-
-/**
- * Nom d'affichage proposé : le nom du fournisseur, débarrassé des caractères que la
- * validation de pseudo refuse, ramené à 20 caractères, puis revalidé ; à défaut, `fallback`
- * (l'identifiant). Le résultat respecte donc les mêmes règles qu'un pseudo saisi à la main.
- */
-export function deriveDisplayName(providerName: string | null, fallback: string): string {
-  if (providerName === null) return fallback;
-  const cleaned = Array.from(
-    providerName
-      .normalize("NFC")
-      .replace(/[^\p{L}\p{N} _-]/gu, "")
-      .replace(/ +/g, " ")
-      .trim(),
-  )
-    .slice(0, PSEUDO_MAX_LENGTH)
-    .join("")
-    .trim();
-  const pseudo = validatePseudo(cleaned);
-  return pseudo.ok ? pseudo.value : fallback;
 }

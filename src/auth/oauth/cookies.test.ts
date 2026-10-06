@@ -10,35 +10,54 @@ describe("oauthCookieNames", () => {
     expect(new Set([...Object.values(github), ...Object.values(discord)]).size).toBe(6);
   });
 
-  it("carries the __Secure- prefix in production only", () => {
-    expect(oauthCookieNames("github", "production").state).toBe("__Secure-typio_oauth_state_github");
-    expect(oauthCookieNames("github", "test").state).toBe("typio_oauth_state_github");
+  it("carries the __Host- prefix in production, for all three cookies", () => {
+    expect(oauthCookieNames("github", "production")).toEqual({
+      state: "__Host-typio_oauth_state_github",
+      verifier: "__Host-typio_oauth_verifier_github",
+      locale: "__Host-typio_oauth_locale_github",
+    });
+  });
+
+  it("has plain names in development and test (the prefix is refused over http)", () => {
+    for (const env of ["development", "test", undefined]) {
+      for (const name of Object.values(oauthCookieNames("discord", env))) expect(name.startsWith("__")).toBe(false);
+    }
   });
 });
 
 describe("oauthCookieOptions", () => {
-  it("is HttpOnly, SameSite=Lax, scoped to /api/auth, 10 minutes", () => {
+  it("production: __Host- compatible, so Secure, Path=/, no Domain, HttpOnly, SameSite=Lax, 10 minutes", () => {
+    const options = oauthCookieOptions("production");
+
+    expect(options).toEqual({ httpOnly: true, sameSite: "lax", path: "/", secure: true, maxAge: 600 });
+    expect(options).not.toHaveProperty("domain");
+  });
+
+  it("development: same attributes except Secure", () => {
     expect(oauthCookieOptions("development")).toEqual({
       httpOnly: true,
       sameSite: "lax",
-      path: "/api/auth",
+      path: "/",
       secure: false,
       maxAge: 600,
     });
   });
-
-  it("is Secure in production only", () => {
-    expect(oauthCookieOptions("production").secure).toBe(true);
-    expect(oauthCookieOptions("development").secure).toBe(false);
-  });
 });
 
 describe("expiredOAuthCookie", () => {
-  it("clears the cookie with the same Path and a zero Max-Age", () => {
-    expect(expiredOAuthCookie("typio_oauth_state_github", "production")).toEqual({
-      name: "typio_oauth_state_github",
+  it("clears the cookie with the same attributes and a zero Max-Age (production)", () => {
+    expect(expiredOAuthCookie("__Host-typio_oauth_state_github", "production")).toEqual({
+      name: "__Host-typio_oauth_state_github",
       value: "",
-      options: { httpOnly: true, sameSite: "lax", path: "/api/auth", secure: true, maxAge: 0 },
+      options: { httpOnly: true, sameSite: "lax", path: "/", secure: true, maxAge: 0 },
+    });
+  });
+
+  it("clears the cookie in development without Secure", () => {
+    expect(expiredOAuthCookie("typio_oauth_state_github", "development").options).toMatchObject({
+      path: "/",
+      secure: false,
+      maxAge: 0,
     });
   });
 });

@@ -35,7 +35,9 @@ export const AUTH_RATE_LIMITS = {
   /** Créations d'invité par IP (une classe, plusieurs parties dans l'heure). */
   guests: { limit: 120, windowMs: HOUR_MS },
   /** Départs d'une connexion GitHub ou Discord par IP (AUTH-2, AUTH-3) : borne l'abus massif. */
-  oauthStarts: { limit: 60, windowMs: 15 * MINUTE_MS },
+  oauthStarts: { limit: 300, windowMs: 15 * MINUTE_MS },
+  /** Retours de GitHub ou Discord par IP, comptés AVANT tout échange de code (requête sortante). */
+  oauthCallbacks: { limit: 300, windowMs: 15 * MINUTE_MS },
 } as const;
 
 export interface RateLimiterOptions {
@@ -179,6 +181,7 @@ export interface AuthLimiters {
   registrations: RateLimiter;
   guests: RateLimiter;
   oauthStarts: RateLimiter;
+  oauthCallbacks: RateLimiter;
 }
 
 export function createAuthLimiters(now: () => number = Date.now): AuthLimiters {
@@ -189,6 +192,7 @@ export function createAuthLimiters(now: () => number = Date.now): AuthLimiters {
     registrations: createRateLimiter({ ...AUTH_RATE_LIMITS.registrations, now }),
     guests: createRateLimiter({ ...AUTH_RATE_LIMITS.guests, now }),
     oauthStarts: createRateLimiter({ ...AUTH_RATE_LIMITS.oauthStarts, now }),
+    oauthCallbacks: createRateLimiter({ ...AUTH_RATE_LIMITS.oauthCallbacks, now }),
   };
 }
 

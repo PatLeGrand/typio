@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { validateUsername } from "../validation";
-import { deriveDisplayName, deriveUsernameBase, usernameForAttempt } from "./identity";
+import { deriveUsernameBase, usernameForAttempt } from "./identity";
 
 describe("deriveUsernameBase", () => {
   it.each([
@@ -44,34 +44,5 @@ describe("usernameForAttempt", () => {
 
   it("draws random three-digit suffixes by default", () => {
     for (let i = 0; i < 50; i += 1) expect(usernameForAttempt("abc", 1)).toMatch(/^abc_\d{3}$/);
-  });
-});
-
-describe("deriveDisplayName", () => {
-  it("keeps a clean provider name", () => {
-    expect(deriveDisplayName("Jean Dupont", "jean")).toBe("Jean Dupont");
-    expect(deriveDisplayName("Élodie_B-2", "elodie")).toBe("Élodie_B-2");
-  });
-
-  it("strips characters the pseudo validation refuses", () => {
-    expect(deriveDisplayName("Jean (dev) 🚀", "jean")).toBe("Jean dev");
-    expect(deriveDisplayName("  Léa   Martin  ", "lea")).toBe("Léa Martin");
-  });
-
-  it("shortens a long name to 20 characters", () => {
-    const result = deriveDisplayName("Jean-Pierre Dupont de la Tour d'Auvergne", "jp");
-    expect(Array.from(result).length).toBeLessThanOrEqual(20);
-    expect(result).toBe("Jean-Pierre Dupont d");
-  });
-
-  it("falls back to the username when there is no usable name", () => {
-    expect(deriveDisplayName(null, "octocat")).toBe("octocat");
-    expect(deriveDisplayName("🚀🚀", "octocat")).toBe("octocat");
-    expect(deriveDisplayName("x", "octocat")).toBe("octocat");
-    expect(deriveDisplayName("   ", "octocat")).toBe("octocat");
-  });
-
-  it("rejects invisible filler characters that look like letters", () => {
-    expect(deriveDisplayName("ㅤㅤㅤ", "octocat")).toBe("octocat");
   });
 });

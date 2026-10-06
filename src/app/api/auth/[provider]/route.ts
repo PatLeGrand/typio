@@ -1,10 +1,12 @@
 import type { NextRequest } from "next/server";
+import { getSessionCookieName } from "@/auth/cookie";
 import { getAuthDeps } from "@/auth/deps";
 import { describeError } from "@/auth/errors";
 import { getOAuthProvider } from "@/auth/oauth/config";
+import { loginNoticeLocation, parseOAuthLocale } from "@/auth/oauth/locale";
 import { providerNotFound, toRedirectResponse } from "@/auth/oauth/oauthResponse";
 import { isOAuthProviderName } from "@/auth/oauth/providers";
-import { loginNoticeLocation, parseOAuthLocale, startOAuth } from "@/auth/oauth/start";
+import { startOAuth } from "@/auth/oauth/start";
 import { getClientIp } from "@/auth/rateLimit";
 
 /**
@@ -18,10 +20,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const rawLocale = request.nextUrl.searchParams.get("locale");
   try {
+    const { limiters, sessions, now } = getAuthDeps();
     return toRedirectResponse(
-      startOAuth(
-        { limiters: getAuthDeps().limiters, getProvider: getOAuthProvider },
-        { provider, rawLocale, ip: getClientIp(request.headers) },
+      await startOAuth(
+        { limiters, sessions, now, getProvider: getOAuthProvider },
+        {
+          provider,
+          rawLocale,
+          ip: getClientIp(request.headers),
+          sessionToken: request.cookies.get(getSessionCookieName())?.value,
+        },
       ),
     );
   } catch (error) {

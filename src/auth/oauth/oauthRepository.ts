@@ -24,8 +24,6 @@ export interface NewOAuthMember extends OAuthAccountRef {
 export interface OAuthAccountRepository {
   /** Membre auquel le compte fournisseur est relié, ou `null`. */
   findUserIdByAccount(account: OAuthAccountRef): Promise<string | null>;
-  /** Relie le compte à `userId`. Faux, sans rien changer, si le compte est déjà relié (à n'importe qui). */
-  linkAccount(account: OAuthAccountRef & { userId: string }): Promise<boolean>;
   /**
    * Crée un membre SANS mot de passe et son lien fournisseur dans UNE transaction : si le
    * lien échoue, le membre n'existe pas non plus. Lève `UsernameTakenError` si l'identifiant
