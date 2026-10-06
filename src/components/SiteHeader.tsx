@@ -18,12 +18,19 @@ type SiteHeaderProps = {
 
 export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
   return (
-    <header>
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-5 sm:px-8">
+    <header className="border-b border-border bg-surface">
+      <div className="mx-auto flex min-h-24 w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-3 px-4 py-4 sm:px-8 lg:px-[88px]">
         <Link href={`/${locale}`} className="rounded-field">
-          <Logo name={dictionary.site.name} tagline={dictionary.brand.tagline} />
+          <Logo name={dictionary.site.name} />
         </Link>
-        <div className="flex flex-wrap items-center gap-2">
+        <nav className="order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted lg:order-none lg:flex lg:w-auto" aria-label={dictionary.home.navigation.preview}>
+          <Link href={`/${locale}#why`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.why}</Link>
+          <Link href={`/${locale}#preview`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
+          <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>
+        </nav>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <LanguageSwitcher locale={locale} labels={dictionary.language} compact />
+          <ThemeToggle labels={dictionary.theme} compact />
           {user ? (
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-sm font-semibold text-foreground">
@@ -45,12 +52,13 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
               </form>
             </div>
           ) : (
-            <ButtonLink href={`/${locale}/login`} variant="ghost">
-              {dictionary.header.signIn}
-            </ButtonLink>
+            <>
+              <ButtonLink href={`/${locale}/login`} variant="ghost">
+                {dictionary.header.signIn}
+              </ButtonLink>
+              <ButtonLink href={`/${locale}/register`}>{dictionary.header.signUp}</ButtonLink>
+            </>
           )}
-          <LanguageSwitcher locale={locale} labels={dictionary.language} />
-          <ThemeToggle labels={dictionary.theme} />
         </div>
       </div>
     </header>

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { Globe2 } from "lucide-react";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { getOtherLocale, type Locale } from "@/i18n/config";
 import { getPathInLocale } from "@/i18n/paths";
@@ -8,6 +9,7 @@ import { getPathInLocale } from "@/i18n/paths";
 type LanguageSwitcherProps = {
   locale: Locale;
   labels: Dictionary["language"];
+  compact?: boolean;
 };
 
 /**
@@ -25,7 +27,7 @@ type LanguageSwitcherProps = {
  * Le nom accessible est le texte visible (WCAG 2.5.3) ; `lang` indique la langue
  * de ce texte et `hrefLang` celle de la cible.
  */
-export function LanguageSwitcher({ locale, labels }: LanguageSwitcherProps) {
+export function LanguageSwitcher({ locale, labels, compact = false }: LanguageSwitcherProps) {
   const pathname = usePathname();
   const target = getOtherLocale(locale);
 
@@ -34,9 +36,11 @@ export function LanguageSwitcher({ locale, labels }: LanguageSwitcherProps) {
       href={getPathInLocale(pathname, target)}
       hrefLang={target}
       lang={target}
+      aria-label={compact ? labels.names[target] : undefined}
       className="inline-flex min-h-11 items-center rounded-field border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-accent-soft"
     >
-      {labels.names[target]}
+      {compact ? <Globe2 aria-hidden="true" className="mr-2 size-[18px]" /> : null}
+      {compact ? target.toUpperCase() : labels.names[target]}
     </a>
   );
 }

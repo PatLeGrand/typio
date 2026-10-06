@@ -53,8 +53,8 @@ describe("base de données injoignable, cookie de session présent", () => {
     const { home } = getDictionary("fr");
     render(await Home(props("fr")));
 
-    expect(screen.getByRole("link", { name: home.signIn })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: home.playAsGuest })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: home.signIn }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: home.signUp }).length).toBeGreaterThan(0);
   });
 
   it("la page de connexion se rend (pas de redirection, pas d'exception)", async () => {

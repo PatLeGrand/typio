@@ -27,7 +27,82 @@
     "joinWithCode": "Rejoindre avec un code",
     "signIn": "Se connecter",
     "playAsGuest": "Jouer en invité",
-    "signUp": "Créer un compte"
+    "signUp": "Créer un compte",
+    "navigation": {
+      "why": "Pourquoi Typio",
+      "preview": "Aperçu",
+      "approach": "Démarche"
+    },
+    "hero": {
+      "titleLine1": "Petit à petit,",
+      "titleLine2": "plus à l’aise au clavier.",
+      "description": "Typio, une plateforme pour apprendre à taper au clavier et prendre de bonnes habitudes, à son rythme."
+    },
+    "media": {
+      "imageLabel": "Image Typio",
+      "videoLabel": "Vidéo Typio",
+      "replaceable": "Emplacement remplaçable",
+      "heroTitle": "Un premier regard sur Typio",
+      "heroDescription": "Ajoute ici une vue d’ensemble de ton projet.",
+      "videoTitle": "Typio en quelques secondes",
+      "videoDescription": "Ton navigateur ne peut pas lire la vidéo de présentation de Typio.",
+      "videoFormat": "Lecture automatique · Son désactivé",
+      "interfaceTitle": "L’interface de Typio",
+      "interfaceDescription": "Cette zone accueillera une capture du projet.",
+      "detailTitle": "Un détail à partager",
+      "detailDescription": "Cette zone accueillera une image du projet."
+    },
+    "why": {
+      "eyebrow": "Pourquoi Typio ?",
+      "title": "Le clavier fait partie du quotidien. L’apprendre aussi.",
+      "description": "Écrire un texte, préparer un devoir, partager une idée… Typio part d’une envie simple : aider les élèves à se familiariser avec la frappe."
+    },
+    "video": {
+      "eyebrow": "En vidéo",
+      "title": "Typio, de plus près.",
+      "description": "Une place pour montrer le projet, son interface et son intention."
+    },
+    "preview": {
+      "eyebrow": "Un premier aperçu",
+      "title": "Faire une place à l’apprentissage.",
+      "description": "Découvre l’univers de Typio et la manière dont le projet aborde la dactylographie pour les élèves.",
+      "videoLink": "Voir la présentation en vidéo"
+    },
+    "detail": {
+      "eyebrow": "Dans les détails",
+      "title": "Une touche après l’autre.",
+      "description": "Prendre le temps de repérer les lettres, d’essayer et de recommencer. L’idée n’est pas d’aller vite tout de suite, mais de se sentir plus à l’aise.",
+      "note": "La précision avant la vitesse."
+    },
+    "approach": {
+      "eyebrow": "La démarche",
+      "title": "Des gestes simples. Du temps pour apprendre.",
+      "steps": [
+        {
+          "title": "Prendre ses repères",
+          "description": "Observer le clavier et trouver une position confortable avant de se lancer."
+        },
+        {
+          "title": "Pratiquer tranquillement",
+          "description": "Taper avec attention, sans chercher à accélérer à tout prix."
+        },
+        {
+          "title": "Revenir à son rythme",
+          "description": "Recommencer pour se familiariser avec les touches, petit à petit."
+        }
+      ]
+    },
+    "about": {
+      "eyebrow": "Derrière Typio",
+      "title": "Un projet autour d’un geste quotidien.",
+      "description": "Typio est un projet d’apprentissage de la dactylographie destiné aux élèves. Cette page présente son intention, ses aperçus et sa démarche : rendre la pratique du clavier plus familière.",
+      "signature": "Petit à petit, plus vite au clavier."
+    },
+    "cta": {
+      "title": "À ton tour de prendre le clavier.",
+      "description": "Le premier pas commence avec quelques touches.",
+      "existingAccount": "Déjà un compte ?"
+    }
   },
   "header": {
     "signIn": "Se connecter",
@@ -195,5 +270,11 @@
     "title": "Oups, quelque chose s'est mal passé",
     "text": "Une erreur est survenue. Réessaie dans un instant.",
     "retry": "Réessayer"
+  },
+  "notFound": {
+    "eyebrow": "Erreur 404",
+    "title": "Cette page a pris une mauvaise touche.",
+    "text": "Impossible de trouver cette adresse. Le poulpe te raccompagne à l'accueil pour reprendre la course.",
+    "home": "Retour à l'accueil"
   }
 }
