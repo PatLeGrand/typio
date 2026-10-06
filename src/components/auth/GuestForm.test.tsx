@@ -33,7 +33,7 @@ describe("GuestForm", () => {
 
     const input = screen.getByRole("textbox", { name: guest.pseudoLabel });
     expect(input).toHaveAttribute("name", "pseudo");
-    expect(input).toHaveAccessibleDescription(guest.pseudoHint);
+
     expect(screen.getByRole("button", { name: guest.submit })).toHaveAttribute("type", "submit");
   });
 
@@ -71,7 +71,7 @@ describe("GuestForm", () => {
 
       const input = screen.getByRole("textbox", { name: guest.pseudoLabel });
       expect(input).toBeInvalid();
-      expect(input).toHaveAccessibleDescription(`${guest.pseudoHint} ${auth.errors.INVALID_PSEUDO}`);
+      expect(input).toHaveAccessibleDescription(auth.errors.INVALID_PSEUDO);
       expect(input).toHaveFocus();
       expect(input).toHaveValue("<b>");
     });

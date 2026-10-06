@@ -48,7 +48,7 @@ describe("RegisterForm", () => {
       "passwordConfirm",
     );
     expect(screen.getByText(register.passwordRule)).toBeInTheDocument();
-    expect(screen.getByText(register.pseudoHint)).toBeInTheDocument();
+
     expect(screen.getByRole("checkbox")).not.toBeChecked();
     expect(screen.getByRole("checkbox")).toBeRequired();
     expect(screen.getByRole("button", { name: register.submit })).toHaveAttribute("type", "submit");
@@ -143,7 +143,7 @@ describe("RegisterForm", () => {
 
         const input = screen.getByRole("textbox", { name: register.pseudoLabel });
         expect(input).toBeInvalid();
-        expect(input).toHaveAccessibleDescription(`${register.pseudoHint} ${auth.errors[code]}`);
+        expect(input).toHaveAccessibleDescription(auth.errors[code]);
         expect(input).toHaveFocus();
         document.body.replaceChildren();
       }

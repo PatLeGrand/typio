@@ -36,7 +36,7 @@ export default async function RegisterPage({ params }: PageProps<"/[lang]/regist
       }
     >
       <div className="flex flex-col gap-7">
-        <AuthHeading kicker={auth.kicker} title={register.title} intro={register.intro} />
+        <AuthHeading kicker={auth.kicker} title={register.title} />
         <OAuthButtons locale={locale} labels={oauth} enabledProviders={getEnabledProviders()} />
         <AuthDivider>{register.divider}</AuthDivider>
         <RegisterForm locale={locale} labels={register} common={auth} />

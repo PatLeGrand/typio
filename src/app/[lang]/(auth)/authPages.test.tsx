@@ -172,7 +172,7 @@ describe("page login : connexion GitHub et Discord", () => {
     const { oauth } = getDictionary(lang);
     render(await LoginPage(props(lang)));
 
-    expect(screen.getByText(oauth.ageNote)).toBeInTheDocument();
+
   });
 
   it.each(["cancelled", "failed", "unavailable"] as const)(
@@ -213,7 +213,7 @@ describe("page register : connexion GitHub et Discord", () => {
 
     render(await RegisterPage(props(lang)));
 
-    expect(screen.getByText(oauth.ageNote)).toBeInTheDocument();
+
     expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute("href", `/api/auth/github?locale=${lang}`);
     expect(screen.getByRole("button", { name: /Discord/ })).toBeDisabled();
   });

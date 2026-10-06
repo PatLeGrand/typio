@@ -57,7 +57,6 @@ export function OAuthButtons({ locale, labels, enabledProviders }: OAuthButtonsP
           ),
         )}
       </div>
-      <p className="text-xs text-muted">{labels.ageNote}</p>
     </div>
   );
 }
