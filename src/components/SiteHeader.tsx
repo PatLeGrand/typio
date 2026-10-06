@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { logout } from "@/auth/actions";
 import { AUTH_FIELDS, type CurrentUser } from "@/auth/types";
@@ -17,9 +20,26 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="border-b border-border bg-surface">
-      <div className="mx-auto flex min-h-24 w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-3 px-4 py-4 sm:px-8 lg:px-[88px]">
+    <header className={`sticky top-0 z-50 w-full transition-all duration-300 ${isScrolled ? "pt-2 px-2 sm:pt-4 sm:px-4" : "bg-surface border-b border-border"}`}>
+      <div className={`mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-3 transition-all duration-300 ${
+        isScrolled 
+          ? "min-h-16 rounded-[32px] border border-border bg-surface/85 backdrop-blur-md shadow-sm px-4 py-2 sm:px-8" 
+          : "min-h-24 px-4 py-4 sm:px-8 lg:px-[88px]"
+      }`}>
         <Link href={`/${locale}`} className="rounded-field">
           <Logo name={dictionary.site.name} />
         </Link>
