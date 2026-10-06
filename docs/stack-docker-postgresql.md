@@ -171,6 +171,13 @@ Le fichier existe. Quatre ajouts au service `web`, et un bloc `networks` en bas.
 - le `infra/.env` réel sur le serveur uniquement, **jamais** commité ;
 - vérifier que `.gitignore` couvre bien `infra/.env`.
 
+**Ajout du 5 octobre 2026, connexion GitHub et Discord.** Le service `web` reçoit aussi
+`APP_ORIGIN` (par défaut `https://typio.aether-manager.ca`), `GITHUB_CLIENT_ID`,
+`GITHUB_CLIENT_SECRET`, `DISCORD_CLIENT_ID` et `DISCORD_CLIENT_SECRET`, lus dans le même
+`infra/.env`. Toutes sont facultatives (`${VAR:-}`) : un fournisseur sans identifiants
+garde son bouton désactivé au lieu d'empêcher le démarrage. Les secrets sont ceux des
+applications OAuth **de production**, distinctes de celles du développement.
+
 ## Le point que j'avais manqué : les migrations
 
 **Le VPS ne construit pas l'image, et l'image ne contient pas de quoi migrer.**
