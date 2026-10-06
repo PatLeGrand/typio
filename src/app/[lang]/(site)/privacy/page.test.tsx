@@ -37,7 +37,7 @@ describe("PrivacyPage", () => {
     const { privacy } = getDictionary("fr");
     expect(privacy.stored.oauth).toMatch(/GitHub ou Discord/);
     expect(privacy.stored.oauth).toMatch(/seulement l'identifiant numérique/);
-    expect(privacy.stored.oauth).toMatch(/sert une seule fois, à proposer ton pseudo/);
+    expect(privacy.stored.oauth).toMatch(/sert une seule fois, à créer ton pseudo/);
     expect(privacy.stored.oauth).toMatch(/adresse e-mail, ta photo/);
     expect(privacy.stored.oauth).toMatch(/jetons d'accès/);
     expect(privacy.cookies.duration).toMatch(/avec GitHub ou Discord, c'est un cookie de session/);
@@ -50,7 +50,7 @@ describe("PrivacyPage", () => {
     const { privacy } = getDictionary("en");
     expect(privacy.stored.oauth).toMatch(/GitHub or Discord/);
     expect(privacy.stored.oauth).toMatch(/only the numeric ID/);
-    expect(privacy.stored.oauth).toMatch(/used once, to suggest your username/);
+    expect(privacy.stored.oauth).toMatch(/used once, to create your username/);
     expect(privacy.stored.oauth).toMatch(/email address, your picture/);
     expect(privacy.stored.oauth).toMatch(/access tokens/);
     expect(privacy.cookies.duration).toMatch(/with GitHub or Discord, it is a session cookie/);

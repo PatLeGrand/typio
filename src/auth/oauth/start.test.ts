@@ -49,6 +49,16 @@ describe("startOAuth", () => {
     expect(result.cookies.find((cookie) => cookie.name === "typio_oauth_locale_github")?.value).toBe("en");
   });
 
+  it("refuses a start launched from another site, without cookies nor limiter use", async () => {
+    const { startDeps } = setup({ github: github() });
+
+    expect(
+      await startOAuth(startDeps, { provider: "github", rawLocale: "en", ip: "1.1.1.1", crossSite: true }),
+    ).toEqual({ location: "/en/login", cookies: [] });
+    const allowed = await startOAuth(startDeps, { provider: "github", rawLocale: "en", ip: "1.1.1.1", crossSite: false });
+    expect(new URL(allowed.location).origin).toBe("https://github.example");
+  });
+
   it("generates a fresh state each time", async () => {
     const { startDeps } = setup({ github: github() });
     const first = await startOAuth(startDeps, { provider: "github", rawLocale: "fr", ip: "1.1.1.1" });

@@ -140,6 +140,23 @@ describe("GET /api/auth/[provider]", () => {
     expect(response.headers.getSetCookie()).toHaveLength(2);
   });
 
+  it("refuses a start announced as cross-site by the browser, and allows same-origin and typed URLs", async () => {
+    const start = (site: string) =>
+      GET(
+        new NextRequest("http://localhost:3000/api/auth/github?locale=en", {
+          headers: { "x-forwarded-for": "203.0.113.20", "sec-fetch-site": site },
+        }),
+        { params: Promise.resolve({ provider: "github" }) },
+      );
+
+    const crossSite = await start("cross-site");
+    expect(crossSite.headers.get("location")).toBe("/en/login");
+    expect(crossSite.headers.getSetCookie()).toEqual([]);
+    for (const site of ["same-origin", "none"]) {
+      expect(new URL((await start(site)).headers.get("location") ?? "").host).toBe("github.com");
+    }
+  });
+
   it("filters the locale: an unknown value becomes French", async () => {
     const response = await call("github", "?locale=%3Cscript%3E");
 

@@ -19,6 +19,12 @@ export interface OAuthStartInput {
   ip: string;
   /** Jeton du cookie de session du navigateur, s'il y en a un. */
   sessionToken?: string;
+  /**
+   * Vrai quand le navigateur annonce une navigation lancée depuis un autre site
+   * (`Sec-Fetch-Site: cross-site`). Les liens de Typio donnent `same-origin`, une URL tapée
+   * à la main `none`.
+   */
+  crossSite?: boolean;
 }
 
 /**
@@ -29,9 +35,14 @@ export interface OAuthStartInput {
  * il retourne à l'accueil sans cookie. Un invité ou un visiteur peut s'y connecter.
  * Un fournisseur non configuré, ou une IP au-delà de 300 départs par 15 minutes, renvoie à la
  * page de connexion avec un message.
+ *
+ * Un départ lancé depuis un autre site est refusé : sinon une page tierce pourrait faire
+ * naviguer un invité vers ce flux, et, s'il a déjà autorisé Typio chez le fournisseur,
+ * remplacer sa partie d'invité par un compte membre sans geste de sa part.
  */
 export async function startOAuth(deps: OAuthStartDeps, input: OAuthStartInput): Promise<OAuthRedirect> {
   const locale = parseOAuthLocale(input.rawLocale);
+  if (input.crossSite) return { location: `/${locale}/login`, cookies: [] };
 
   if (!deps.limiters.oauthStarts.consume(ipRateLimitKey(input.ip))) {
     return { location: loginNoticeLocation(locale, "failed"), cookies: [] };

@@ -29,6 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           rawLocale,
           ip: getClientIp(request.headers),
           sessionToken: request.cookies.get(getSessionCookieName())?.value,
+          crossSite: request.headers.get("sec-fetch-site") === "cross-site",
         },
       ),
     );

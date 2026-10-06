@@ -166,7 +166,7 @@
     "stored": {
       "identity": "Ton pseudo (ton identifiant de connexion), ton nom affiché et la date de création de ton compte.",
       "password": "Ton mot de passe, uniquement sous forme hachée avec argon2id. Il n'est jamais stocké en clair : personne ne peut le relire.",
-      "oauth": "Si tu te connectes avec GitHub ou Discord : seulement l'identifiant numérique de ton compte chez eux, pour te reconnaître la prochaine fois. Ton nom d'utilisateur sur ce service sert une seule fois, à proposer ton pseudo (ton nom affiché est le même), et n'est pas conservé à part. Ton nom, ton adresse e-mail, ta photo et tes autres informations ne sont pas conservés, ni les jetons d'accès : ils ne servent qu'une fois, pendant la connexion, puis sont jetés.",
+      "oauth": "Si tu te connectes avec GitHub ou Discord : seulement l'identifiant numérique de ton compte chez eux, pour te reconnaître la prochaine fois. Ton nom d'utilisateur sur ce service sert une seule fois, à créer ton pseudo (ton nom affiché est le même), et n'est pas conservé à part. Ton nom, ton adresse e-mail, ta photo et tes autres informations ne sont pas conservés, ni les jetons d'accès : ils ne servent qu'une fois, pendant la connexion, puis sont jetés.",
       "preferences": "Ta langue et la disposition de ton clavier.",
       "session": "Ta session sur le serveur : l'empreinte du jeton de ta session et sa date d'expiration. Le jeton lui-même n'est pas stocké.",
       "results": "Tes résultats de course, quand les courses seront disponibles."
