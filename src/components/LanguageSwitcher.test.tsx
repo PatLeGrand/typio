@@ -34,4 +34,11 @@ describe("LanguageSwitcher", () => {
 
     expect(screen.getByRole("link", { name: "Français" })).toHaveAttribute("href", "/fr/room/abc");
   });
+
+  it("le mode compact garde le nom complet comme nom accessible", () => {
+    usePathname.mockReturnValue("/fr");
+    render(<LanguageSwitcher locale="fr" labels={getDictionary("fr").language} compact />);
+
+    expect(screen.getByRole("link", { name: "English" })).toHaveTextContent("EN");
+  });
 });

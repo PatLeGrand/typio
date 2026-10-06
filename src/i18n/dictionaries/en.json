@@ -27,7 +27,83 @@
     "joinWithCode": "Join with a code",
     "signIn": "Sign in",
     "playAsGuest": "Play as a guest",
-    "signUp": "Create an account"
+    "signUp": "Create an account",
+    "navigation": {
+      "why": "Why Typio",
+      "preview": "Preview",
+      "approach": "Approach"
+    },
+    "hero": {
+      "titleLine1": "Little by little,",
+      "titleLine2": "more at ease on the keyboard.",
+      "description": "Typio is a place to learn keyboard skills and build good habits at your own pace."
+    },
+    "media": {
+      "imageLabel": "Typio image",
+      "videoLabel": "Typio video",
+      "replaceable": "Replaceable placeholder",
+      "heroTitle": "A first look at Typio",
+      "heroDescription": "Add an overview of your project here.",
+      "videoTitle": "Your presentation video",
+      "videoDescription": "The video will be added as soon as it is ready.",
+      "videoPending": "Waiting for your video.",
+      "videoFormat": "Planned format: 720p",
+      "interfaceTitle": "The Typio interface",
+      "interfaceDescription": "This area will hold a screenshot of the project.",
+      "detailTitle": "A detail to share",
+      "detailDescription": "This area will hold an image from the project."
+    },
+    "why": {
+      "eyebrow": "Why Typio?",
+      "title": "The keyboard is part of everyday life. Learning it should be too.",
+      "description": "Writing a text, preparing homework, sharing an idea… Typio starts with a simple goal: helping students become comfortable with typing."
+    },
+    "video": {
+      "eyebrow": "In video",
+      "title": "A closer look at Typio.",
+      "description": "A place to show the project, its interface and its purpose."
+    },
+    "preview": {
+      "eyebrow": "A first preview",
+      "title": "Making room for learning.",
+      "description": "Discover Typio’s world and the way the project approaches keyboard skills for students.",
+      "videoLink": "Watch the video presentation"
+    },
+    "detail": {
+      "eyebrow": "In the details",
+      "title": "One key at a time.",
+      "description": "Take time to find the letters, try and start again. The idea is not to go fast right away, but to feel more comfortable.",
+      "note": "Accuracy before speed."
+    },
+    "approach": {
+      "eyebrow": "The approach",
+      "title": "Simple habits. Time to learn.",
+      "steps": [
+        {
+          "title": "Find your bearings",
+          "description": "Observe the keyboard and find a comfortable position before getting started."
+        },
+        {
+          "title": "Practise calmly",
+          "description": "Type with care without trying to speed up at all costs."
+        },
+        {
+          "title": "Return at your pace",
+          "description": "Start again to become familiar with the keys, little by little."
+        }
+      ]
+    },
+    "about": {
+      "eyebrow": "Behind Typio",
+      "title": "A project built around an everyday skill.",
+      "description": "Typio is a keyboard-learning project for students. This page presents its purpose, previews and approach: making keyboard practice feel more familiar.",
+      "signature": "Little by little, faster at the keyboard."
+    },
+    "cta": {
+      "title": "Your turn to take the keyboard.",
+      "description": "The first step begins with a few keys.",
+      "existingAccount": "Already have an account?"
+    }
   },
   "header": {
     "signIn": "Sign in",

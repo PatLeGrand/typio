@@ -1,51 +1,34 @@
-import Link from "next/link";
 import { getCurrentUserForDisplay } from "@/auth/currentUser";
-import { Button } from "@/components/Button";
+import { HomeAboutSection } from "@/components/home/HomeAboutSection";
+import { HomeApproachSection } from "@/components/home/HomeApproachSection";
+import { HomeCallToAction } from "@/components/home/HomeCallToAction";
+import { HomeFeatureSection } from "@/components/home/HomeFeatureSection";
+import { HomeFooter } from "@/components/home/HomeFooter";
+import { HomeHero } from "@/components/home/HomeHero";
+import { HomeVideoSection } from "@/components/home/HomeVideoSection";
+import { HomeWhySection } from "@/components/home/HomeWhySection";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
 
 export default async function Home({ params }: PageProps<"/[lang]">) {
   const locale = requireLocale((await params).lang);
-  const { site, home } = getDictionary(locale);
+  const dictionary = getDictionary(locale);
+  const { home } = dictionary;
   const user = await getCurrentUserForDisplay();
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-8 px-4 py-12 text-center sm:px-8">
-      <h1 className="text-[38px] font-extrabold leading-[1.15] tracking-tight sm:text-5xl sm:leading-[1.08]">
-        {site.name}
-      </h1>
-      <p className="max-w-xl text-base leading-[1.55] text-muted">{home.tagline}</p>
-      {/* Boutons désactivés : ils serviront quand les salles existeront. */}
-      <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-        <Button disabled>{home.createRace}</Button>
-        <Button variant="secondary" disabled>
-          {home.joinWithCode}
-        </Button>
-      </div>
-      {user === null ? (
-        <p className="flex flex-wrap items-center justify-center gap-x-2 text-sm">
-          <Link href={`/${locale}/login`} className={linkClasses}>
-            {home.signIn}
-          </Link>
-          <span aria-hidden="true" className="text-muted">
-            ·
-          </span>
-          <Link href={`/${locale}/guest`} className={linkClasses}>
-            {home.playAsGuest}
-          </Link>
-        </p>
-      ) : null}
-      {/* Un invité peut se créer un compte (la connexion et l'inscription lui restent ouvertes). */}
-      {user?.kind === "guest" ? (
-        <p className="text-sm">
-          <Link href={`/${locale}/register`} className={linkClasses}>
-            {home.signUp}
-          </Link>
-        </p>
-      ) : null}
-    </main>
+    <>
+      <main className="flex-1">
+        <HomeHero home={home} />
+        <HomeWhySection home={home} />
+        <HomeVideoSection home={home} />
+        <HomeFeatureSection home={home} variant="preview" />
+        <HomeFeatureSection home={home} variant="detail" />
+        <HomeApproachSection home={home} />
+        <HomeAboutSection home={home} />
+        <HomeCallToAction home={home} locale={locale} user={user} />
+      </main>
+      <HomeFooter dictionary={dictionary} locale={locale} user={user} />
+    </>
   );
 }
-
-const linkClasses =
-  "inline-flex min-h-11 items-center rounded-field px-1 font-semibold text-accent-text underline-offset-2 hover:underline";
