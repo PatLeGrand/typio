@@ -31,10 +31,6 @@ export function HomeVideoSection({ home }: HomeVideoSectionProps) {
               {home.media.videoDescription}
             </video>
           </div>
-          <div className="mt-4 flex flex-col gap-1 text-xs text-muted sm:flex-row sm:justify-between sm:text-sm">
-            <p>{home.media.videoTitle}</p>
-            <p>{home.media.videoFormat}</p>
-          </div>
         </div>
       </div>
     </section>
