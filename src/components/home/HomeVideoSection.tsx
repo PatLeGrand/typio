@@ -20,7 +20,7 @@ export function HomeVideoSection({ home }: HomeVideoSectionProps) {
             <video
               aria-label={home.media.videoLabel}
               autoPlay
-              className="aspect-video w-full rounded-[22px] bg-black object-cover"
+              className="aspect-video w-full rounded-[22px] bg-surface object-cover"
               controls
               loop
               muted
