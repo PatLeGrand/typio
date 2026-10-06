@@ -70,4 +70,14 @@ describe("ThemeToggle", () => {
     render(<ThemeToggle labels={labels} />);
     expect(screen.getByRole("radio", { name: labels.dark })).toBeChecked();
   });
+
+  it("le mode compact fait défiler les trois préférences", () => {
+    const labels = getDictionary("fr").theme;
+    render(<ThemeToggle labels={labels} compact />);
+
+    fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.system}` }));
+    expect(screen.getByRole("button", { name: `${labels.label}: ${labels.light}` })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.light}` }));
+    expect(screen.getByRole("button", { name: `${labels.label}: ${labels.dark}` })).toBeInTheDocument();
+  });
 });

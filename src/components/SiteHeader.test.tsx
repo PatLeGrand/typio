@@ -25,16 +25,17 @@ describe("SiteHeader", () => {
     expect(screen.getByRole("banner")).toHaveTextContent(dictionary.site.name);
     const other = locale === "fr" ? "en" : "fr";
     expect(screen.getByRole("link", { name: dictionary.language.names[other] })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: dictionary.theme.label })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: `${dictionary.theme.label}: ${dictionary.theme.system}` }),
+    ).toBeInTheDocument();
   });
 
-  it.each(["fr", "en"] as const)("le logo mène à l'accueil de la langue et porte la signature traduite (%s)", (locale) => {
+  it.each(["fr", "en"] as const)("le logo mène à l'accueil de la langue (%s)", (locale) => {
     const dictionary = getDictionary(locale);
     render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
 
-    const home = screen.getByRole("link", { name: new RegExp(dictionary.site.name) });
+    const home = screen.getByRole("link", { name: dictionary.site.name });
     expect(home).toHaveAttribute("href", `/${locale}`);
-    expect(home).toHaveTextContent(dictionary.brand.tagline);
   });
 
   describe.each(["fr", "en"] as const)("visiteur (%s)", (locale) => {
@@ -43,6 +44,7 @@ describe("SiteHeader", () => {
       render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
 
       expect(screen.getByRole("link", { name: dictionary.header.signIn })).toHaveAttribute("href", `/${locale}/login`);
+      expect(screen.getByRole("link", { name: dictionary.header.signUp })).toHaveAttribute("href", `/${locale}/register`);
       expect(screen.queryByRole("button", { name: dictionary.header.signOut })).toBeNull();
     });
   });
