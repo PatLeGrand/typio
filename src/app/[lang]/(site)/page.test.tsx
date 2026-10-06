@@ -35,6 +35,10 @@ describe("Home", () => {
     ).toBeVisible();
     expect(screen.getByText(home.why.title)).toBeVisible();
     expect(screen.getByText(home.video.title)).toBeVisible();
+    const video = screen.getByLabelText(home.media.videoLabel);
+    expect(video).toHaveAttribute("autoplay");
+    expect(video).toHaveAttribute("loop");
+    expect(video.querySelector("source")).toHaveAttribute("src", "/videos/typio-intro.mp4");
     expect(screen.getByText(home.approach.title)).toBeVisible();
     expect(screen.getByRole("button", { name: home.createRace })).toBeDisabled();
     expect(screen.getByRole("button", { name: home.joinWithCode })).toBeDisabled();
