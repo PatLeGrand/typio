@@ -17,7 +17,8 @@ Chacun lit le skill de `.agents/skills/` qui correspond à son rôle.
 
 | Tâche | Qui | Skill appliqué |
 |---|---|---|
-| Recherche, lecture de code ou de doc, « où est X ? » | `scout` (haiku) | — |
+| Recherche, lecture de code ou de doc, « où est X ? » | Gemini `search` ; `scout` (haiku) s'il est indisponible | gemini-delegation |
+| Second avis sur un diff : relecture, cas de test, accessibilité et textes FR/EN, captures d'écran | Gemini `review`, `tests`, `ui`, `visual`, en parallèle de la chaîne Claude | gemini-delegation |
 | Changement mécanique exactement spécifié : clés FR/EN, texte, renommage, classes, lint, tableaux de doc | `implementer-light` (haiku) | code-quality |
 | Fonctionnalité, page, composant ou correctif cadré par des critères AC-n, avec ses tests unitaires | `implementer` (sonnet) | code-quality + qa (couverture) |
 | Lancer lint/build/tests, scénarios d'acceptation, registre de validation | `qa` (sonnet) | qa |
@@ -31,8 +32,9 @@ Règles :
 2. **Brief autonome.** Un agent ne voit pas la conversation. Le brief donne les exigences citées, les fichiers, les critères AC-n, les décisions déjà prises et ce qu'il ne faut pas toucher.
 3. **Le moins cher qui suffit.** Si un agent s'arrête sur une ambiguïté, l'orchestrateur tranche ou remonte d'un niveau. Il ne relance pas le même brief.
 4. **Parallèle si indépendant**, séquentiel si les agents touchent les mêmes fichiers.
-5. **Chaîne de validation :** implémentation → `qa` → `code-reviewer` (+ `security-reviewer` si surface sensible) → commit par l'orchestrateur. Aucun agent ne commite ni ne pousse.
+5. **Chaîne de validation :** implémentation → `qa` → `code-reviewer` (+ `security-reviewer` si surface sensible) → commit par l'orchestrateur. Aucun agent ne commite ni ne pousse. En parallèle, Gemini `review` sur tout diff applicatif, plus `ui` et `visual` si l'interface change.
 6. **Résultats fidèles.** Un échec se rapporte tel quel ; un check non lancé n'est pas un check réussi.
+7. **Gemini d'abord, en lecture seule.** Il passe avant `scout` et donne un second avis, mais ne valide rien. L'orchestrateur vérifie chaque constat avant de le relayer ou de le corriger. S'il est indisponible (code 2), on continue comme avant, sans réessayer.
 
 # UI provisoire
 
