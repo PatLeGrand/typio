@@ -1,5 +1,5 @@
 import type { Dictionary } from "@/i18n/dictionaries";
-
+import { InteractiveVideo } from "./InteractiveVideo";
 type HomeVideoSectionProps = {
   home: Dictionary["home"];
 };
@@ -17,19 +17,11 @@ export function HomeVideoSection({ home }: HomeVideoSectionProps) {
         </div>
         <div className="w-full">
           <div className="overflow-hidden rounded-[28px] border border-border bg-accent-panel p-2 shadow-sm sm:p-3">
-            <video
-              aria-label={home.media.videoLabel}
-              autoPlay
-              className="aspect-video w-full rounded-[22px] bg-surface object-cover"
-              controls
-              loop
-              muted
-              playsInline
-              preload="metadata"
-            >
-              <source src="/videos/typio-intro.mp4" type="video/mp4" />
-              {home.media.videoDescription}
-            </video>
+            <InteractiveVideo 
+              ariaLabel={home.media.videoLabel}
+              fallbackText={home.media.videoDescription}
+              src="/videos/typio-intro.mp4"
+            />
           </div>
         </div>
       </div>
