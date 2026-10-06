@@ -25,49 +25,59 @@ beforeEach(() => {
 });
 
 describe("Home", () => {
-  it.each(["fr", "en"] as const)("affiche titre, accroche et deux boutons désactivés traduits (%s)", async (lang) => {
-    const { home, site } = getDictionary(lang);
+  it.each(["fr", "en"] as const)("affiche la page de présentation traduite et ses actions futures (%s)", async (lang) => {
+    const { home } = getDictionary(lang);
     render(await Home(props(lang)));
 
     expect(screen.getByRole("main")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: site.name })).toBeVisible();
-    expect(screen.getByText(home.tagline)).toBeVisible();
+    expect(
+      screen.getByRole("heading", { level: 1, name: `${home.hero.titleLine1} ${home.hero.titleLine2}` }),
+    ).toBeVisible();
+    expect(screen.getByText(home.why.title)).toBeVisible();
+    expect(screen.getByText(home.video.title)).toBeVisible();
+    expect(screen.getByText(home.approach.title)).toBeVisible();
     expect(screen.getByRole("button", { name: home.createRace })).toBeDisabled();
     expect(screen.getByRole("button", { name: home.joinWithCode })).toBeDisabled();
   });
 
-  it.each(["fr", "en"] as const)("un visiteur voit les liens de connexion et d'invité (%s)", async (lang) => {
+  it.each(["fr", "en"] as const)("un visiteur peut créer un compte ou se connecter (%s)", async (lang) => {
     const { home } = getDictionary(lang);
     render(await Home(props(lang)));
 
-    expect(screen.getByRole("link", { name: home.signIn })).toHaveAttribute("href", `/${lang}/login`);
-    expect(screen.getByRole("link", { name: home.playAsGuest })).toHaveAttribute("href", `/${lang}/guest`);
+    for (const link of screen.getAllByRole("link", { name: home.signIn })) {
+      expect(link).toHaveAttribute("href", `/${lang}/login`);
+    }
+    for (const link of screen.getAllByRole("link", { name: home.signUp })) {
+      expect(link).toHaveAttribute("href", `/${lang}/register`);
+    }
   });
 
-  it("un utilisateur connecté ne voit pas ces liens", async () => {
+  it("un membre connecté ne voit pas les liens de connexion et d'inscription", async () => {
     mocks.getCurrentUserForDisplay.mockResolvedValue(member);
     const { home } = getDictionary("fr");
     render(await Home(props("fr")));
 
     expect(screen.queryByRole("link", { name: home.signIn })).toBeNull();
-    expect(screen.queryByRole("link", { name: home.playAsGuest })).toBeNull();
+    expect(screen.queryByRole("link", { name: home.signUp })).toBeNull();
   });
 
-  it.each(["fr", "en"] as const)("un invité voit « Créer un compte » vers l'inscription, pas les liens de visiteur (%s)", async (lang) => {
+  it.each(["fr", "en"] as const)("un invité peut convertir sa session en compte (%s)", async (lang) => {
     mocks.getCurrentUserForDisplay.mockResolvedValue({ ...member, kind: "guest", username: null });
     const { home } = getDictionary(lang);
     render(await Home(props(lang)));
 
-    expect(screen.getByRole("link", { name: home.signUp })).toHaveAttribute("href", `/${lang}/register`);
+    for (const link of screen.getAllByRole("link", { name: home.signUp })) {
+      expect(link).toHaveAttribute("href", `/${lang}/register`);
+    }
     expect(screen.queryByRole("link", { name: home.signIn })).toBeNull();
-    expect(screen.queryByRole("link", { name: home.playAsGuest })).toBeNull();
   });
 
-  it("un membre ne voit pas « Créer un compte »", async () => {
-    mocks.getCurrentUserForDisplay.mockResolvedValue(member);
+  it("relie les renvois de page et la politique de confidentialité", async () => {
+    const { home, footer } = getDictionary("fr");
     render(await Home(props("fr")));
 
-    expect(screen.queryByRole("link", { name: getDictionary("fr").home.signUp })).toBeNull();
+    expect(screen.getByRole("link", { name: `${home.preview.videoLink} ↗` })).toHaveAttribute("href", "#video");
+    expect(screen.getByRole("link", { name: footer.privacy })).toHaveAttribute("href", "/fr/privacy");
   });
 
   it("répond par une 404 pour une locale inconnue", async () => {

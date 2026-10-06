@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useSyncExternalStore } from "react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { THEME_PREFERENCES } from "@/theme/theme";
 import {
@@ -12,12 +13,31 @@ import {
 
 type ThemeToggleProps = {
   labels: Dictionary["theme"];
+  compact?: boolean;
 };
 
 /** Choix clair / sombre / système, mémorisé dans `localStorage`. */
-export function ThemeToggle({ labels }: ThemeToggleProps) {
+export function ThemeToggle({ labels, compact = false }: ThemeToggleProps) {
   const groupName = useId();
   const preference = useSyncExternalStore(subscribeToTheme, getThemePreference, getServerThemePreference);
+
+  if (compact) {
+    const Icon = preference === "light" ? Sun : preference === "dark" ? Moon : Monitor;
+    const index = THEME_PREFERENCES.indexOf(preference);
+    const nextPreference = THEME_PREFERENCES[(index + 1) % THEME_PREFERENCES.length];
+
+    return (
+      <button
+        type="button"
+        aria-label={`${labels.label}: ${labels[preference]}`}
+        title={`${labels.label}: ${labels[preference]}`}
+        onClick={() => setThemePreference(nextPreference)}
+        className="inline-flex size-11 items-center justify-center rounded-field border border-border bg-surface text-foreground transition-colors hover:bg-accent-soft"
+      >
+        <Icon aria-hidden="true" className="size-[18px]" />
+      </button>
+    );
+  }
 
   return (
     <fieldset className="m-0 flex min-w-0 rounded-field border border-border bg-surface p-0.5">
