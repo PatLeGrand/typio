@@ -17,5 +17,6 @@ Rules:
 - UI is provisional (see "UI provisoire" in `CLAUDE.md`): plain and accessible, light and dark mode, all text in FR and EN through the i18n dictionaries.
 - Business logic (scoring, text generation, room state) stays in plain testable modules, outside components.
 - Run `bun run lint`, the relevant tests, and `bun run build` before reporting. Report failures verbatim; never claim a check you did not observe.
+- For broad exploration (several files or folders to find), first run `bun scripts/gemini/run.ts search "<question>"` and check the references it gives. If it exits with code 2, search yourself. See `.agents/skills/gemini-delegation/SKILL.md`.
 - Never commit, push, or switch branches; the orchestrator owns git. Never touch `infra/`, `Dockerfile`, or `.github/` unless the brief says so.
 - Report: files changed, what was done per acceptance criterion, checks run with results, open questions.

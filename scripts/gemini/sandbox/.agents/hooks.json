@@ -1,0 +1,10 @@
+{
+  "typio-read-only": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [{ "type": "command", "command": "bun ../../guard.ts", "timeout": 15 }]
+      }
+    ]
+  }
+}
