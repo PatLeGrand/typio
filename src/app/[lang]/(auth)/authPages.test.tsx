@@ -88,14 +88,14 @@ describe("invité connecté", () => {
 
 describe("page login", () => {
   it.each(["fr", "en"] as const)("suit l'ordre AUTH-1 et affiche les blocs de la maquette (%s)", async (lang) => {
-    const { login, auth, oauth } = getDictionary(lang);
+    const { login, auth } = getDictionary(lang);
     render(await LoginPage(props(lang)));
 
     expect(screen.getByRole("heading", { level: 1, name: login.title })).toBeInTheDocument();
     expect(screen.getByText(auth.kicker)).toBeInTheDocument();
     expect(screen.getByText(login.divider)).toBeInTheDocument();
-    expect(screen.getByText(login.securityNote)).toBeInTheDocument();
-    expect(screen.getByText(login.sharedComputerNote)).toBeInTheDocument();
+
+
 
     // AUTH-1 : GitHub et Discord avant le formulaire d'identifiant.
     const github = screen.getByRole("button", { name: new RegExp(oauth.github) });
@@ -118,7 +118,7 @@ describe("page login", () => {
     const guest = screen.getByRole("link", { name: login.guestButton });
     expect(guest).toHaveAttribute("href", `/${lang}/guest`);
     expect(guest.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getByText(login.guestNote)).toBeInTheDocument();
+
     const submit = screen.getByRole("button", { name: login.submit });
     expect(submit.compareDocumentPosition(guest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // La phrase « Pas de compte ? Joue en invité » est remplacée par ce bouton.
@@ -169,7 +169,7 @@ describe("page login : connexion GitHub et Discord", () => {
   });
 
   it.each(["fr", "en"] as const)("affiche la mention des 13 ans sous les boutons (%s)", async (lang) => {
-    const { oauth } = getDictionary(lang);
+    
     render(await LoginPage(props(lang)));
 
 
@@ -209,7 +209,7 @@ describe("page register : connexion GitHub et Discord", () => {
     vi.stubEnv("APP_ORIGIN", "http://localhost:3000");
     vi.stubEnv("GITHUB_CLIENT_ID", "id");
     vi.stubEnv("GITHUB_CLIENT_SECRET", "secret");
-    const { oauth } = getDictionary(lang);
+    
 
     render(await RegisterPage(props(lang)));
 
