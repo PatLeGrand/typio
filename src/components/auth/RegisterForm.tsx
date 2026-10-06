@@ -67,9 +67,6 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
           onChange={(event) => setUsername(event.target.value)}
           error={errors.fieldErrors.username}
         />
-        <p id={PSEUDO_HINT_ID} className="text-xs text-muted">
-          {labels.pseudoHint}
-        </p>
       </div>
       <div className="flex flex-col gap-2">
         <div className="grid gap-5 sm:grid-cols-2">

@@ -50,9 +50,6 @@ export function GuestForm({ locale, labels, common }: GuestFormProps) {
           onChange={(event) => setPseudo(event.target.value)}
           error={errors.fieldErrors.pseudo}
         />
-        <p id={HINT_ID} className="text-xs text-muted">
-          {labels.pseudoHint}
-        </p>
       </div>
       {errors.general ? <FormAlert>{errors.general}</FormAlert> : null}
       <AuthSubmitButton label={labels.submit} enterKeyLabel={common.enterKey} pending={pending} />
