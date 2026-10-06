@@ -29,6 +29,15 @@ services:
 
     environment:
       DATABASE_URL: postgresql://typio:${MDP_TYPIO:?MDP_TYPIO doit etre defini dans infra/.env}@db:5432/typio
+      # Connexion GitHub et Discord (AUTH-2, AUTH-3). Facultatives : si l'une
+      # manque, le bouton du fournisseur reste désactivé (« bientôt ») au lieu
+      # de faire échouer le démarrage. APP_ORIGIN fixe les URL de retour OAuth,
+      # jamais déduites de l'en-tête Host.
+      APP_ORIGIN: ${APP_ORIGIN:-https://typio.aether-manager.ca}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
 
     networks:
       - default

@@ -27,6 +27,18 @@ describe("ButtonLink", () => {
     );
   });
 
+  it("le survol s'applique au lien (not-disabled:hover:, pas enabled:hover:)", () => {
+    render(
+      <ButtonLink href="/fr/guest" variant="secondary">
+        Go
+      </ButtonLink>,
+    );
+
+    const link = screen.getByRole("link", { name: "Go" });
+    expect(link).toHaveClass("not-disabled:hover:bg-accent-soft");
+    expect(link.className).not.toContain("enabled:hover:");
+  });
+
   it("primaire par défaut", () => {
     render(<ButtonLink href="/fr">Go</ButtonLink>);
     expect(screen.getByRole("link", { name: "Go" })).toHaveClass("bg-accent", "min-h-14");

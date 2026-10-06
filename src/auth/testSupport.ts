@@ -1,6 +1,7 @@
 // Dépôts en mémoire pour les tests unitaires de l'authentification (aucune base requise).
 import type { Locale } from "@/i18n/config";
 import type { AuthDeps } from "./authFlows";
+import { OAuthAccountTakenError, type NewOAuthMember, type OAuthAccountRef, type OAuthAccountRepository } from "./oauth/oauthRepository";
 import type { PasswordHasher } from "./password";
 import { resetPurgeThrottle } from "./purge";
 import { createAuthLimiters } from "./rateLimit";
@@ -37,7 +38,7 @@ export class MemoryUserRepository implements UserRepository {
   async createMember(params: {
     username: string;
     displayName: string;
-    passwordHash: string;
+    passwordHash: string | null;
     locale: Locale;
   }): Promise<{ id: string }> {
     if (this.users.some((user) => user.username?.toLowerCase() === params.username.toLowerCase())) {
@@ -75,6 +76,41 @@ export class MemoryUserRepository implements UserRepository {
       .slice(0, limit);
     for (const user of expired) this.users.splice(this.users.indexOf(user), 1);
     return expired.length;
+  }
+}
+
+/** Comptes GitHub et Discord reliés, en mémoire : reproduit la clé primaire et la création atomique. */
+export class MemoryOAuthAccountRepository implements OAuthAccountRepository {
+  readonly accounts: (OAuthAccountRef & { userId: string })[] = [];
+  /** Test : fait échouer l'insertion du lien, pour vérifier qu'aucun membre ne reste. */
+  failNextLink = false;
+
+  constructor(private readonly users: MemoryUserRepository) {}
+
+  private find({ provider, providerAccountId }: OAuthAccountRef) {
+    return this.accounts.find((a) => a.provider === provider && a.providerAccountId === providerAccountId);
+  }
+
+  async findUserIdByAccount(account: OAuthAccountRef): Promise<string | null> {
+    return this.find(account)?.userId ?? null;
+  }
+
+  async createMemberWithAccount(member: NewOAuthMember): Promise<{ id: string }> {
+    // Même ordre que la transaction SQL : l'identifiant d'abord, puis le lien ; tout ou rien.
+    const before = this.users.users.length;
+    const { id } = await this.users.createMember({
+      username: member.username,
+      displayName: member.displayName,
+      passwordHash: null,
+      locale: member.locale,
+    });
+    if (this.find(member) || this.failNextLink) {
+      this.failNextLink = false;
+      this.users.users.length = before;
+      throw new OAuthAccountTakenError();
+    }
+    this.accounts.push({ provider: member.provider, providerAccountId: member.providerAccountId, userId: id });
+    return { id };
   }
 }
 
@@ -149,12 +185,14 @@ export function createTestDeps(start = new Date("2026-10-05T10:00:00.000Z")) {
   let current = start.getTime();
   const users = new MemoryUserRepository();
   const sessions = new MemorySessionRepository(users);
+  const oauthAccounts = new MemoryOAuthAccountRepository(users);
   const passwords = createFakePasswordHasher();
   const limiters = createAuthLimiters(() => current);
-  const deps: AuthDeps = { users, sessions, limiters, passwords, now: () => new Date(current) };
+  const deps: AuthDeps = { users, oauthAccounts, sessions, limiters, passwords, now: () => new Date(current) };
   return {
     deps,
     users,
+    oauthAccounts,
     sessions,
     passwords,
     advance(ms: number) {

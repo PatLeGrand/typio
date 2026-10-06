@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getEnabledProviders } from "@/auth/oauth/config";
 import { redirectIfSignedIn } from "@/auth/redirectIfSignedIn";
 import { AuthAltLink } from "@/components/auth/AuthAltLink";
 import { AuthDivider } from "@/components/auth/AuthDivider";
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/register">
   return { title: meta.title, description: meta.description };
 }
 
-/** AUTH-1 : inscription par pseudo et mot de passe, sans e-mail (OAuth d'abord, désactivé pour l'instant). */
+/** AUTH-1 : inscription par pseudo et mot de passe, sans e-mail (OAuth d'abord, actif s'il est configuré). */
 export default async function RegisterPage({ params }: PageProps<"/[lang]/register">) {
   const locale = requireLocale((await params).lang);
   await redirectIfSignedIn(locale, { allowGuests: true });
@@ -36,7 +37,7 @@ export default async function RegisterPage({ params }: PageProps<"/[lang]/regist
     >
       <div className="flex flex-col gap-7">
         <AuthHeading kicker={auth.kicker} title={register.title} intro={register.intro} />
-        <OAuthButtons labels={oauth} />
+        <OAuthButtons locale={locale} labels={oauth} enabledProviders={getEnabledProviders()} />
         <AuthDivider>{register.divider}</AuthDivider>
         <RegisterForm locale={locale} labels={register} common={auth} />
         <AuthAltLink prompt={register.haveAccount} linkLabel={register.signInLink} href={`/${locale}/login`} />

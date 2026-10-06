@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
 
@@ -30,12 +30,16 @@ const member: CurrentUser = {
   locale: "fr",
 };
 
-function props(lang: string) {
-  return { params: Promise.resolve({ lang }), searchParams: Promise.resolve({}) };
+function props(lang: string, searchParams: Record<string, string | string[] | undefined> = {}) {
+  return { params: Promise.resolve({ lang }), searchParams: Promise.resolve(searchParams) };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Aucun fournisseur configuré par défaut, quelles que soient les variables du poste.
+  for (const name of ["APP_ORIGIN", "GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET"]) {
+    vi.stubEnv(name, "");
+  }
   mocks.getCurrentUserForDisplay.mockResolvedValue(null);
   mocks.redirect.mockImplementation((path) => {
     throw new Error(`${REDIRECTED}:${path}`);
@@ -133,6 +137,91 @@ describe("page login", () => {
     const { meta } = getDictionary(lang).login;
     const metadata = await loginMetadata(props(lang) as Parameters<typeof loginMetadata>[0]);
     expect(metadata).toEqual({ title: meta.title, description: meta.description });
+  });
+});
+
+describe("page login : connexion GitHub et Discord", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  function configureProviders() {
+    vi.stubEnv("APP_ORIGIN", "https://typio.example");
+    for (const name of ["GITHUB", "DISCORD"]) {
+      vi.stubEnv(`${name}_CLIENT_ID`, "id");
+      vi.stubEnv(`${name}_CLIENT_SECRET`, "secret");
+    }
+  }
+
+  it("sans configuration, les boutons sont désactivés avec « bientôt »", async () => {
+    render(await LoginPage(props("fr")));
+
+    expect(screen.getByRole("button", { name: /GitHub/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Discord/ })).toBeDisabled();
+  });
+
+  it.each(["fr", "en"] as const)("avec la configuration, les boutons sont des liens actifs avec la langue (%s)", async (lang) => {
+    configureProviders();
+    render(await LoginPage(props(lang)));
+
+    expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute("href", `/api/auth/github?locale=${lang}`);
+    expect(screen.getByRole("link", { name: "Discord" })).toHaveAttribute("href", `/api/auth/discord?locale=${lang}`);
+  });
+
+  it.each(["fr", "en"] as const)("affiche la mention des 13 ans sous les boutons (%s)", async (lang) => {
+    const { oauth } = getDictionary(lang);
+    render(await LoginPage(props(lang)));
+
+    expect(screen.getByText(oauth.ageNote)).toBeInTheDocument();
+  });
+
+  it.each(["cancelled", "failed", "unavailable"] as const)(
+    "?oauth=%s affiche le message traduit dans une alerte, avant les boutons (fr et en)",
+    async (notice) => {
+      for (const lang of ["fr", "en"] as const) {
+        const { login } = getDictionary(lang);
+        const { unmount } = render(await LoginPage(props(lang, { oauth: notice })));
+
+        const alert = screen.getByRole("alert");
+        expect(alert).toHaveTextContent(login.oauthErrors[notice]);
+        const group = screen.getByRole("group", { name: getDictionary(lang).oauth.groupLabel });
+        expect(alert.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        unmount();
+      }
+    },
+  );
+
+  it("n'affiche aucune alerte sans paramètre, ni pour une valeur inconnue ou répétée", async () => {
+    for (const searchParams of [{}, { oauth: "hacked" }, { oauth: ["failed", "cancelled"] }, { other: "failed" }]) {
+      const { unmount } = render(await LoginPage(props("fr", searchParams)));
+      expect(screen.queryByRole("alert")).toBeNull();
+      unmount();
+    }
+  });
+});
+
+describe("page register : connexion GitHub et Discord", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.each(["fr", "en"] as const)("affiche la mention des 13 ans et les liens actifs une fois configurée (%s)", async (lang) => {
+    vi.stubEnv("APP_ORIGIN", "http://localhost:3000");
+    vi.stubEnv("GITHUB_CLIENT_ID", "id");
+    vi.stubEnv("GITHUB_CLIENT_SECRET", "secret");
+    const { oauth } = getDictionary(lang);
+
+    render(await RegisterPage(props(lang)));
+
+    expect(screen.getByText(oauth.ageNote)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute("href", `/api/auth/github?locale=${lang}`);
+    expect(screen.getByRole("button", { name: /Discord/ })).toBeDisabled();
+  });
+
+  it("n'affiche aucune alerte OAuth : le message est réservé à la page de connexion", async () => {
+    render(await RegisterPage(props("fr", { oauth: "failed" })));
+
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });
 
