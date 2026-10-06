@@ -245,6 +245,19 @@ describe("createAuthLimiters", () => {
     expect(AUTH_RATE_LIMITS.loginAttempts).toEqual({ limit: 300, windowMs: 15 * MINUTE });
     expect(AUTH_RATE_LIMITS.registrations).toEqual({ limit: 60, windowMs: 60 * MINUTE });
     expect(AUTH_RATE_LIMITS.guests).toEqual({ limit: 120, windowMs: 60 * MINUTE });
+    expect(AUTH_RATE_LIMITS.oauthStarts).toEqual({ limit: 300, windowMs: 15 * MINUTE });
+    expect(AUTH_RATE_LIMITS.oauthCallbacks).toEqual({ limit: 300, windowMs: 15 * MINUTE });
+  });
+
+  it.each(["oauthStarts", "oauthCallbacks"] as const)("limits %s at 300 per IP per 15 minutes", (name) => {
+    const time = clock();
+    const limiter = createAuthLimiters(time.now)[name];
+
+    for (let i = 0; i < 300; i += 1) expect(limiter.consume("1.1.1.1")).toBe(true);
+    expect(limiter.consume("1.1.1.1")).toBe(false);
+    expect(limiter.consume("2.2.2.2")).toBe(true);
+    time.advance(15 * MINUTE);
+    expect(limiter.consume("1.1.1.1")).toBe(true);
   });
 
   it("the per-username limiter never forgets a victim to make room: a new username is refused when full", () => {

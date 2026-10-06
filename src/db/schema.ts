@@ -3,6 +3,7 @@ import {
   check,
   index,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -10,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Comptes : membres (AUTH-1) et invités (AUTH-4, H-2) dans la même table.
+ * Comptes : membres (AUTH-1 à AUTH-3) et invités (AUTH-4, H-2) dans la même table.
  * Un invité a une ligne pour pouvoir ouvrir une session et figurer sur un podium ;
  * `expires_at` borne sa durée de vie. Voir docs/architecture/modele-de-donnees.md.
  *
@@ -44,9 +45,11 @@ export const users = pgTable(
     // Défense en profondeur : la validation applicative borne déjà ces longueurs.
     check("users_username_length_check", sql`char_length(${table.username}) <= 20`),
     check("users_display_name_length_check", sql`char_length(${table.displayName}) <= 40`),
+    // Un membre a toujours un identifiant ; son mot de passe est facultatif, car un compte
+    // créé par GitHub ou Discord (AUTH-2, AUTH-3) n'en a pas. Un invité n'a ni l'un ni l'autre.
     check(
       "users_kind_columns_check",
-      sql`(${table.kind} = 'member' and ${table.username} is not null and ${table.passwordHash} is not null)
+      sql`(${table.kind} = 'member' and ${table.username} is not null)
         or (${table.kind} = 'guest' and ${table.username} is null and ${table.passwordHash} is null and ${table.expiresAt} is not null)`,
     ),
   ],
@@ -70,5 +73,31 @@ export const sessions = pgTable(
   (table) => [
     index("sessions_user_id_idx").on(table.userId),
     index("sessions_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
+/**
+ * Comptes GitHub et Discord reliés à un membre (AUTH-2, AUTH-3). On ne garde QUE le
+ * fournisseur et l'identifiant numérique stable du compte chez lui : ni login, ni e-mail,
+ * ni avatar, ni jeton. La clé (provider, provider_account_id) empêche qu'un même compte
+ * externe ouvre deux comptes Typio.
+ */
+export const oauthAccounts = pgTable(
+  "oauth_accounts",
+  {
+    provider: text("provider").notNull(),
+    providerAccountId: text("provider_account_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.provider, table.providerAccountId] }),
+    index("oauth_accounts_user_id_idx").on(table.userId),
+    // Un membre n'a au plus qu'un compte par fournisseur (défense en profondeur : aucun chemin
+    // applicatif ne relie un compte à un membre existant pour l'instant).
+    uniqueIndex("oauth_accounts_user_provider_idx").on(table.userId, table.provider),
+    check("oauth_accounts_provider_check", sql`${table.provider} in ('github', 'discord')`),
   ],
 );

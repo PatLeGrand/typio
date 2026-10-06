@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n/config";
+import type { OAuthAccountRepository } from "./oauth/oauthRepository";
 import { DUMMY_PASSWORD_HASH, type PasswordHasher } from "./password";
 import { purgeExpired } from "./purge";
 import { ipRateLimitKey, loginFailureKey, type AuthLimiters } from "./rateLimit";
@@ -11,6 +12,7 @@ import { validateNewPassword, validatePassword, validatePseudo, validateUsername
 /** Tout ce dont les parcours ont besoin, injecté pour les tester sans base ni horloge réelle. */
 export interface AuthDeps {
   users: UserRepository;
+  oauthAccounts: OAuthAccountRepository;
   sessions: SessionRepository;
   limiters: AuthLimiters;
   passwords: PasswordHasher;
