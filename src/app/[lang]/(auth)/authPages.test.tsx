@@ -88,7 +88,7 @@ describe("invité connecté", () => {
 
 describe("page login", () => {
   it.each(["fr", "en"] as const)("suit l'ordre AUTH-1 et affiche les blocs de la maquette (%s)", async (lang) => {
-    const { login, auth } = getDictionary(lang);
+    const { login, auth, oauth } = getDictionary(lang);
     render(await LoginPage(props(lang)));
 
     expect(screen.getByRole("heading", { level: 1, name: login.title })).toBeInTheDocument();
