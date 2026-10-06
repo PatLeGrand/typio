@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+import { authenticateHandshake, isAllowedOrigin, readCookie } from "./auth";
+import { createFakeSessions } from "./testSupport";
+
+describe("readCookie", () => {
+  it("finds the named cookie among others", () => {
+    expect(readCookie("a=1; typio_session=abc; b=2", "typio_session")).toBe("abc");
+  });
+
+  it("does not match a cookie whose name only ends with the target", () => {
+    expect(readCookie("xtypio_session=abc", "typio_session")).toBeNull();
+  });
+
+  it("returns null without header or on a malformed value", () => {
+    expect(readCookie(undefined, "typio_session")).toBeNull();
+    expect(readCookie("typio_session=%E0%A4%A", "typio_session")).toBeNull();
+  });
+});
+
+describe("isAllowedOrigin", () => {
+  it("accepts a listed origin or no origin, refuses any other", () => {
+    expect(isAllowedOrigin("https://typio.example", ["https://typio.example"])).toBe(true);
+    expect(isAllowedOrigin(undefined, ["https://typio.example"])).toBe(true);
+    expect(isAllowedOrigin("https://evil.example", ["https://typio.example"])).toBe(false);
+  });
+});
+
+describe("authenticateHandshake", () => {
+  const now = new Date();
+
+  it("returns the user of a valid development cookie", async () => {
+    const sessions = createFakeSessions();
+    const { token, userId } = sessions.signIn("guest", "Zoé");
+    const user = await authenticateHandshake(sessions.repository, `typio_session=${token}`, now, "development");
+    expect(user).toEqual({ id: userId, kind: "guest", displayName: "Zoé" });
+  });
+
+  it("reads the __Host- cookie in production and ignores the development name", async () => {
+    const sessions = createFakeSessions();
+    const { token } = sessions.signIn("member");
+    expect(
+      await authenticateHandshake(sessions.repository, `__Host-typio_session=${token}`, now, "production"),
+    ).not.toBeNull();
+    expect(
+      await authenticateHandshake(sessions.repository, `typio_session=${token}`, now, "production"),
+    ).toBeNull();
+  });
+});
