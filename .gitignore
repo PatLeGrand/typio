@@ -44,3 +44,6 @@ next-env.d.ts
 
 # Dossiers de travail isolés des agents Claude Code
 /.claude/worktrees/
+
+# service temps réel compilé (bun run build:realtime)
+/dist

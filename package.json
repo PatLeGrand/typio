@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:realtime": "bun --watch src/realtime/main.ts",
     "build": "next build",
+    "build:realtime": "bun build src/realtime/main.ts --target=bun --outfile=dist/realtime.js",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
@@ -20,7 +22,9 @@
     "next": "16.3.8",
     "postgres": "^3.4.9",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
