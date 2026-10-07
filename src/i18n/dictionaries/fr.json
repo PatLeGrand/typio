@@ -5,6 +5,39 @@
     "invalid": "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
     "back": "Retour aux paramètres"
   },
+
+
+  "raceScreen": {
+    "roomName": "Prairie des Blobs",
+    "playerOne": "joueur",
+    "playerOther": "joueurs",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "status": { "countdown": "DÉPART", "racing": "EN COURSE", "paused": "EN PAUSE", "finished": "TERMINÉE" },
+    "leaderboard": "Classement",
+    "you": "Toi",
+    "stats": { "title": "Statistiques", "time": "Temps :", "bestWpm": "Meilleur MPM :", "accuracy": "Précision :" },
+    "kicker": { "countdown": "LA COURSE VA COMMENCER", "racing": "LA COURSE EST LANCÉE", "paused": "COURSE EN PAUSE", "finished": "COURSE TERMINÉE" },
+    "headline": {
+      "countdown": "Prépare-toi !",
+      "racing": "Garde le rythme !",
+      "paused": "Reprends ton souffle",
+      "completed": "Bravo, tu as fini !",
+      "timeout": "Temps écoulé !"
+    },
+    "rankOf": "sur",
+    "trackProgress": "% du parcours",
+    "typing": {
+      "title": "À tes touches, prêt, pars !",
+      "phrase": "Phrase",
+      "characters": "caractères",
+      "inputLabel": "Tape la phrase ici",
+      "hint": "Chaque caractère correct fait avancer ton Blob.",
+      "fix": "pour corriger",
+      "autoValidate": "Validation automatique"
+    }
+  },
+
   "site": {
     "name": "Typio"
   },

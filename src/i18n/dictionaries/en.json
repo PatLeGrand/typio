@@ -5,6 +5,39 @@
     "invalid": "These settings are invalid. Return to settings to prepare your race.",
     "back": "Back to settings"
   },
+
+
+  "raceScreen": {
+    "roomName": "Blob Meadow",
+    "playerOne": "player",
+    "playerOther": "players",
+    "pause": "Pause",
+    "resume": "Resume",
+    "status": { "countdown": "STARTING", "racing": "RACING", "paused": "PAUSED", "finished": "FINISHED" },
+    "leaderboard": "Leaderboard",
+    "you": "You",
+    "stats": { "title": "Game Stats", "time": "Time:", "bestWpm": "Best WPM:", "accuracy": "Accuracy:" },
+    "kicker": { "countdown": "THE RACE IS ABOUT TO START", "racing": "THE RACE IS ON", "paused": "RACE PAUSED", "finished": "RACE OVER" },
+    "headline": {
+      "countdown": "Get ready!",
+      "racing": "Keep the rhythm!",
+      "paused": "Catch your breath",
+      "completed": "Well done, you finished!",
+      "timeout": "Time's up!"
+    },
+    "rankOf": "of",
+    "trackProgress": "% of the track",
+    "typing": {
+      "title": "On your keys, get set, go!",
+      "phrase": "Phrase",
+      "characters": "characters",
+      "inputLabel": "Type the phrase here",
+      "hint": "Every correct character moves your Blob forward.",
+      "fix": "to fix",
+      "autoValidate": "Automatic validation"
+    }
+  },
+
   "site": {
     "name": "Typio"
   },

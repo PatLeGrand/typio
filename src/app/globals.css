@@ -31,6 +31,7 @@
   --island-mint: #e8f7f0;
   /* Ajout hors maquette : la maquette n'a pas d'état d'erreur. */
   --danger: #b42318;
+  --success: #059669;
   --shadow-soft: 0 8px 24px rgba(83, 53, 155, 0.05);
 }
 
@@ -56,6 +57,7 @@
   --island-sand: #2c2530;
   --island-mint: #1e3633;
   --danger: #ff9b8a;
+  --success: #34d399;
   --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -79,6 +81,7 @@
   --color-island-sand: var(--island-sand);
   --color-island-mint: var(--island-mint);
   --color-danger: var(--danger);
+  --color-success: var(--success);
   --radius-field: 12px;
   --radius-card: 24px;
   --radius-panel: 32px;

@@ -5,7 +5,6 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
 import { themeInitScript } from "@/theme/themeScript";
 import "../globals.css";
-
 // Inter est téléchargée au build et servie avec les assets du site : aucune
 // requête vers Google à l'exécution. Variable CSS lue par `--font-sans` (globals.css).
 const inter = Inter({
@@ -36,7 +35,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
     <html lang={locale} suppressHydrationWarning>
       <head>
         {/* Pose la classe `dark` avant le premier rendu pour éviter tout flash. */}
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body
         className={`${inter.variable} flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased`}
