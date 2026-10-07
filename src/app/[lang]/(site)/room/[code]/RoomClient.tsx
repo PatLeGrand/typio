@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRoom } from "@/realtime/useRoom";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
-import { Type, SlidersHorizontal, Users } from "lucide-react";
+import { Type, Users } from "lucide-react";
 import { RadioCard } from "@/components/race/RadioCard";
 import type { CurrentUser } from "@/auth/types";
 import type { Dictionary } from "@/i18n/dictionaries";

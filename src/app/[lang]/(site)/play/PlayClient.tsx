@@ -5,7 +5,9 @@ import { useRoom } from "@/realtime/useRoom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 
-export function PlayClient({ action, lang, dict }: { action: "create" | "join", lang: string, dict: Record<string, any> }) {
+import type { Dictionary } from "@/i18n/dictionaries";
+
+export function PlayClient({ action, lang, dict }: { action: "create" | "join", lang: string, dict: Dictionary["room"] }) {
   const room = useRoom();
   const router = useRouter();
   const [code, setCode] = useState("");
