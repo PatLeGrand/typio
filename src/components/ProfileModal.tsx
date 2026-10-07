@@ -44,8 +44,8 @@ export function ProfileModal({ user, dictionary, locale, children }: ProfileModa
     <>
       <button 
         type="button" 
-        onClick={() => setIsOpen(true)}
-        className="text-left hover:opacity-80 transition-opacity outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-primary"
+        onClick={() => { console.log('Profile clicked!'); setIsOpen(true); }}
+        className="cursor-pointer relative z-10 pointer-events-auto text-left hover:opacity-80 transition-opacity outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-primary flex items-center"
       >
         {children}
       </button>
