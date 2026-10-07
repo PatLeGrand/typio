@@ -19,7 +19,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
   return (
     <>
       <main className="flex-1">
-        <HomeHero home={home} />
+        <HomeHero home={home} locale={locale} />
         <HomeWhySection home={home} />
         <HomeVideoSection home={home} />
         <HomeFeatureSection home={home} variant="preview" />
