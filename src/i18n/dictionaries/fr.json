@@ -11,11 +11,26 @@
     "playerOther": "joueurs",
     "pause": "Pause",
     "resume": "Reprendre",
-    "status": { "countdown": "DÉPART", "racing": "EN COURSE", "paused": "EN PAUSE", "finished": "TERMINÉE" },
+    "status": {
+      "countdown": "DÉPART",
+      "racing": "EN COURSE",
+      "paused": "EN PAUSE",
+      "finished": "TERMINÉE"
+    },
     "leaderboard": "Classement",
     "you": "Toi",
-    "stats": { "title": "Statistiques", "time": "Temps :", "bestWpm": "Meilleur MPM :", "accuracy": "Précision :" },
-    "kicker": { "countdown": "LA COURSE VA COMMENCER", "racing": "LA COURSE EST LANCÉE", "paused": "COURSE EN PAUSE", "finished": "COURSE TERMINÉE" },
+    "stats": {
+      "title": "Statistiques",
+      "time": "Temps :",
+      "bestWpm": "Meilleur MPM :",
+      "accuracy": "Précision :"
+    },
+    "kicker": {
+      "countdown": "LA COURSE VA COMMENCER",
+      "racing": "LA COURSE EST LANCÉE",
+      "paused": "COURSE EN PAUSE",
+      "finished": "COURSE TERMINÉE"
+    },
     "headline": {
       "countdown": "Prépare-toi !",
       "racing": "Garde le rythme !",
@@ -443,5 +458,66 @@
       "theme": "Thème"
     },
     "note": "Ces réglages te suivent dans toutes tes courses. À tes touches, prêt, pars !"
+  },
+  "profileDropdown": {
+    "guestWarning": "Tu es actuellement invité(e). Tes données (dont les statistiques) ne sont pas enregistrées et seront perdues à la fin de la session.",
+    "login": "Se connecter",
+    "register": "Créer un compte",
+    "stats": {
+      "title": "Statistiques",
+      "racesPlayed": "Courses jouées",
+      "victories": "Victoires",
+      "averageSpeed": "Vitesse moyenne",
+      "comingSoon": "Les statistiques arrivent bientôt !"
+    },
+    "viewFullProfile": "Voir le profil complet",
+    "close": "Fermer"
+  },
+  "room": {
+    "title": "Salle d'attente",
+    "createRoom": "Créer le salon",
+    "join": "Rejoindre",
+    "leave": "Quitter",
+    "start": "Lancer la course",
+    "roomCode": "Code de la course",
+    "copyCode": "Copier",
+    "codeCopied": "Copié !",
+    "participants": "Participants",
+    "addPlayer": "Ajouter un joueur (Nametag)",
+    "add": "Ajouter",
+    "playerNametag": "Nametag du joueur",
+    "host": "Hôte",
+    "spectator": "Spectateur",
+    "disconnected": "Déconnecté",
+    "play": {
+      "create": {
+        "title": "Créer une salle",
+        "description": "Invite tes amis avec un code.",
+        "button": "Créer"
+      },
+      "join": {
+        "title": "Rejoindre avec un code",
+        "codeLabel": "Code de la salle",
+        "codePlaceholder": "Ex. : ABCDEF",
+        "roleLabel": "Rejoindre en tant que",
+        "runner": "Coureur",
+        "spectator": "Spectateur",
+        "button": "Rejoindre"
+      },
+      "guestCannotCreate": "Les invités ne peuvent pas créer de salle."
+    },
+    "errors": {
+      "UNAUTHENTICATED": "Tu dois être connecté pour faire ça.",
+      "INVALID_PAYLOAD": "Données envoyées invalides.",
+      "INVALID_CODE": "Code de salle invalide. Il doit faire 6 caractères.",
+      "GUEST_CANNOT_CREATE": "Les invités ne peuvent pas créer de salle.",
+      "ROOM_NOT_FOUND": "Salle introuvable avec ce code.",
+      "ROOM_FULL": "Cette salle est déjà pleine.",
+      "ALREADY_IN_ROOM": "Tu es déjà dans une salle.",
+      "NOT_IN_ROOM": "Tu n'es pas dans cette salle.",
+      "NOT_HOST": "Seul l'hôte peut modifier les paramètres.",
+      "CONFIG_LOCKED": "Les paramètres sont verrouillés.",
+      "INTERNAL": "Erreur interne."
+    }
   }
 }

@@ -11,11 +11,26 @@
     "playerOther": "players",
     "pause": "Pause",
     "resume": "Resume",
-    "status": { "countdown": "STARTING", "racing": "RACING", "paused": "PAUSED", "finished": "FINISHED" },
+    "status": {
+      "countdown": "STARTING",
+      "racing": "RACING",
+      "paused": "PAUSED",
+      "finished": "FINISHED"
+    },
     "leaderboard": "Leaderboard",
     "you": "You",
-    "stats": { "title": "Game Stats", "time": "Time:", "bestWpm": "Best WPM:", "accuracy": "Accuracy:" },
-    "kicker": { "countdown": "THE RACE IS ABOUT TO START", "racing": "THE RACE IS ON", "paused": "RACE PAUSED", "finished": "RACE OVER" },
+    "stats": {
+      "title": "Game Stats",
+      "time": "Time:",
+      "bestWpm": "Best WPM:",
+      "accuracy": "Accuracy:"
+    },
+    "kicker": {
+      "countdown": "THE RACE IS ABOUT TO START",
+      "racing": "THE RACE IS ON",
+      "paused": "RACE PAUSED",
+      "finished": "RACE OVER"
+    },
     "headline": {
       "countdown": "Get ready!",
       "racing": "Keep the rhythm!",
@@ -443,5 +458,66 @@
       "theme": "Theme"
     },
     "note": "These settings follow you in all your races. On your keys, get set, go!"
+  },
+  "profileDropdown": {
+    "guestWarning": "You are currently a guest. Your data (including statistics) is not saved and will be lost at the end of the session.",
+    "login": "Sign in",
+    "register": "Create account",
+    "stats": {
+      "title": "Statistics",
+      "racesPlayed": "Races played",
+      "victories": "Victories",
+      "averageSpeed": "Average speed",
+      "comingSoon": "Statistics are coming soon!"
+    },
+    "viewFullProfile": "View full profile",
+    "close": "Close"
+  },
+  "room": {
+    "title": "Waiting room",
+    "createRoom": "Create room",
+    "join": "Join",
+    "leave": "Leave",
+    "start": "Start race",
+    "roomCode": "Race code",
+    "copyCode": "Copy",
+    "codeCopied": "Copied!",
+    "participants": "Participants",
+    "addPlayer": "Add player (Nametag)",
+    "add": "Add",
+    "playerNametag": "Player nametag",
+    "host": "Host",
+    "spectator": "Spectator",
+    "disconnected": "Disconnected",
+    "play": {
+      "create": {
+        "title": "Create a room",
+        "description": "Invite friends with a code.",
+        "button": "Create"
+      },
+      "join": {
+        "title": "Join with a code",
+        "codeLabel": "Room code",
+        "codePlaceholder": "Ex.: ABCDEF",
+        "roleLabel": "Join as",
+        "runner": "Runner",
+        "spectator": "Spectator",
+        "button": "Join"
+      },
+      "guestCannotCreate": "Guests cannot create rooms."
+    },
+    "errors": {
+      "UNAUTHENTICATED": "You must be signed in.",
+      "INVALID_PAYLOAD": "Invalid payload.",
+      "INVALID_CODE": "Invalid room code.",
+      "GUEST_CANNOT_CREATE": "Guests cannot create rooms.",
+      "ROOM_NOT_FOUND": "Room not found.",
+      "ROOM_FULL": "Room is full.",
+      "ALREADY_IN_ROOM": "You are already in a room.",
+      "NOT_IN_ROOM": "You are not in this room.",
+      "NOT_HOST": "Only the host can edit settings.",
+      "CONFIG_LOCKED": "Settings are locked.",
+      "INTERNAL": "Internal error."
+    }
   }
 }
