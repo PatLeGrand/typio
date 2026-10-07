@@ -48,4 +48,16 @@ describe("realtime server", () => {
     const result = await waitForConnection(server.client(token, "https://evil.example"));
     expect(result.connected).toBe(false);
   });
+
+  it("ignores room events without an acknowledgement instead of throwing", async () => {
+    const { token } = server.sessions.signIn("member");
+    const client = server.client(token);
+    expect(await waitForConnection(client)).toEqual({ connected: true });
+    client.emit("room:create", {});
+    client.emit("room:join", { code: "ABCDEF", role: "runner" });
+    client.emit("room:updateConfig", {});
+    client.emit("room:leave");
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect((await fetch(`${server.url}/healthz`)).status).toBe(200);
+  });
 });

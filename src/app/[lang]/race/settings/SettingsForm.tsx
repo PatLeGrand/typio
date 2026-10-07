@@ -211,7 +211,7 @@ export function SettingsForm({ lang, dict, siteName }: SettingsFormProps) {
                     {dict.excludedChars.help}
                   </p>
                   {excludedError && (
-                    <p role="alert" className="text-sm text-red-500 mt-1">{excludedError}</p>
+                    <p role="alert" className="text-sm text-danger mt-1">{excludedError}</p>
                   )}
                 </div>
               </div>
@@ -236,7 +236,7 @@ export function SettingsForm({ lang, dict, siteName }: SettingsFormProps) {
                     <h3 className="text-[15px] font-semibold">{dict.timeLimit.label}</h3>
                     <p className="text-sm text-muted mt-1">{dict.timeLimit.help}</p>
                     {timeLimitError && (
-                      <p role="alert" className="text-sm text-red-500 mt-1">{timeLimitError}</p>
+                      <p role="alert" className="text-sm text-danger mt-1">{timeLimitError}</p>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-4">
@@ -352,7 +352,7 @@ export function SettingsForm({ lang, dict, siteName }: SettingsFormProps) {
           <aside className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-10">
             <div className="bg-surface border border-border rounded-[24px] overflow-hidden flex flex-col shadow-soft">
               {/* Illustration Header */}
-              <div className="h-[180px] bg-[#E8F7F0] relative overflow-hidden flex flex-col items-center justify-end">
+              <div className="h-[180px] bg-island-mint relative overflow-hidden flex flex-col items-center justify-end">
                 <div className="absolute top-6 left-6 text-left">
                   <h3 className="text-[22px] font-extrabold text-foreground">{dict.summary.title}</h3>
                 </div>
@@ -360,14 +360,14 @@ export function SettingsForm({ lang, dict, siteName }: SettingsFormProps) {
                 {/* Hills mockup */}
                 <div className="absolute bottom-0 w-[120%] h-20 bg-key-mint/60 rounded-t-[100%] translate-y-4 -translate-x-10"></div>
                 <div className="absolute bottom-0 w-[110%] h-16 bg-key-mint rounded-t-[100%] translate-y-2 translate-x-4"></div>
-                <div className="absolute bottom-0 w-full h-4 bg-[#e8cd9c]"></div>
+                <div className="absolute bottom-0 w-full h-4 bg-island-sand"></div>
 
                 {/* Blobs mockup */}
                 <div className="relative z-10 flex items-end gap-2 mb-4">
                    <div className="w-14 h-14 bg-accent-text rounded-t-full relative flex items-center justify-center">
                       <div className="flex gap-2 -mt-2">
-                         <div className="w-2 h-2 bg-white rounded-full"></div>
-                         <div className="w-2 h-2 bg-white rounded-full"></div>
+                         <div className="w-2 h-2 bg-accent-foreground rounded-full"></div>
+                         <div className="w-2 h-2 bg-accent-foreground rounded-full"></div>
                       </div>
                    </div>
                 </div>

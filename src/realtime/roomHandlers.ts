@@ -18,8 +18,11 @@ export interface RoomHandlerDeps {
 }
 
 export function registerRoomHandlers(_io: RealtimeServer, socket: RealtimeSocket, _deps: RoomHandlerDeps): void {
-  socket.on("room:create", (_config, ack) => ack({ ok: false, error: "INTERNAL" }));
-  socket.on("room:join", (_payload, ack) => ack({ ok: false, error: "INTERNAL" }));
-  socket.on("room:updateConfig", (_patch, ack) => ack({ ok: false, error: "INTERNAL" }));
-  socket.on("room:leave", (ack) => ack({ ok: false, error: "INTERNAL" }));
+  const reject = (ack: unknown) => {
+    if (typeof ack === "function") ack({ ok: false, error: "INTERNAL" });
+  };
+  socket.on("room:create", (_config, ack) => reject(ack));
+  socket.on("room:join", (_payload, ack) => reject(ack));
+  socket.on("room:updateConfig", (_patch, ack) => reject(ack));
+  socket.on("room:leave", (ack) => reject(ack));
 }

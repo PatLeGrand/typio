@@ -21,7 +21,7 @@ export function Switch({ checked, onChange, className = "", ...props }: SwitchPr
     >
       <span
         className={`
-          pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow-lg ring-0 transition-transform
+          pointer-events-none inline-block h-6 w-6 rounded-full bg-accent-foreground shadow-lg ring-0 transition-transform
           ${checked ? "translate-x-5" : "translate-x-0"}
         `}
       />
