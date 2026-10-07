@@ -1,447 +1,476 @@
 {
-  "raceEntry": {
-    "title": "Course",
-    "pending": "Tes réglages sont prêts. La course jouable sera disponible prochainement.",
-    "invalid": "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
-    "back": "Retour aux paramètres"
-  },
-  "raceScreen": {
-    "roomName": "Prairie des Blobs",
-    "playerOne": "joueur",
-    "playerOther": "joueurs",
-    "pause": "Pause",
-    "resume": "Reprendre",
-    "status": { "countdown": "DÉPART", "racing": "EN COURSE", "paused": "EN PAUSE", "finished": "TERMINÉE" },
-    "leaderboard": "Classement",
-    "you": "Toi",
-    "stats": { "title": "Statistiques", "time": "Temps :", "bestWpm": "Meilleur MPM :", "accuracy": "Précision :" },
-    "kicker": { "countdown": "LA COURSE VA COMMENCER", "racing": "LA COURSE EST LANCÉE", "paused": "COURSE EN PAUSE", "finished": "COURSE TERMINÉE" },
-    "headline": {
-      "countdown": "Prépare-toi !",
-      "racing": "Garde le rythme !",
-      "paused": "Reprends ton souffle",
-      "completed": "Bravo, tu as fini !",
-      "timeout": "Temps écoulé !"
-    },
-    "rankOf": "sur",
-    "trackProgress": "% du parcours",
-    "typing": {
-      "title": "À tes touches, prêt, pars !",
-      "phrase": "Phrase",
-      "characters": "caractères",
-      "inputLabel": "Tape la phrase ici",
-      "hint": "Chaque caractère correct fait avancer ton Blob.",
-      "fix": "pour corriger",
-      "autoValidate": "Validation automatique"
-    }
-  },
-  "site": {
-    "name": "Typio"
-  },
-  "brand": {
-    "tagline": "Petit à petit, plus vite au clavier."
-  },
-  "meta": {
-    "title": "Typio : courses de dactylographie",
-    "description": "Typio, des courses de dactylographie multijoueur pour les 12-17 ans."
-  },
-  "language": {
-    "names": {
-      "fr": "Français",
-      "en": "English"
-    }
-  },
-  "theme": {
-    "label": "Thème",
-    "light": "Clair",
-    "dark": "Sombre",
-    "system": "Système"
-  },
-  "home": {
-    "tagline": "Défie tes amis dans des courses de dactylographie et vois qui tape le plus vite.",
-    "createRace": "Créer une course",
-    "joinWithCode": "Rejoindre avec un code",
-    "signIn": "Se connecter",
-    "playAsGuest": "Jouer en invité",
-    "signUp": "Créer un compte",
-    "navigation": {
-      "why": "Pourquoi Typio",
-      "preview": "Aperçu",
-      "approach": "Démarche"
-    },
-    "hero": {
-      "titleLine1": "Petit à petit,",
-      "titleLine2": "plus à l’aise au clavier.",
-      "description": "Typio, une plateforme pour apprendre à taper au clavier et prendre de bonnes habitudes, à son rythme."
-    },
-    "media": {
-      "imageLabel": "Image Typio",
-      "videoLabel": "Vidéo Typio",
-      "replaceable": "Emplacement remplaçable",
-      "heroTitle": "Un premier regard sur Typio",
-      "heroDescription": "Ajoute ici une vue d’ensemble de ton projet.",
-      "videoTitle": "Typio en quelques secondes",
-      "videoDescription": "Ton navigateur ne peut pas lire la vidéo de présentation de Typio.",
-      "videoFormat": "Lecture automatique · Son désactivé",
-      "interfaceTitle": "L’interface de Typio",
-      "interfaceDescription": "Cette zone accueillera une capture du projet.",
-      "detailTitle": "Un détail à partager",
-      "detailDescription": "Cette zone accueillera une image du projet."
-    },
-    "why": {
-      "eyebrow": "Pourquoi Typio ?",
-      "title": "Le clavier fait partie du quotidien. L’apprendre aussi.",
-      "description": "Écrire un texte, préparer un devoir, partager une idée… Typio part d’une envie simple : aider les élèves à se familiariser avec la frappe."
-    },
-    "video": {
-      "eyebrow": "En vidéo",
-      "title": "Typio, de plus près.",
-      "description": "Une place pour montrer le projet, son interface et son intention."
-    },
-    "preview": {
-      "eyebrow": "Un premier aperçu",
-      "title": "Faire une place à l’apprentissage.",
-      "description": "Découvre l’univers de Typio et la manière dont le projet aborde la dactylographie pour les élèves.",
-      "videoLink": "Voir la présentation en vidéo"
-    },
-    "detail": {
-      "eyebrow": "Dans les détails",
-      "title": "Une touche après l’autre.",
-      "description": "Prendre le temps de repérer les lettres, d’essayer et de recommencer. L’idée n’est pas d’aller vite tout de suite, mais de se sentir plus à l’aise.",
-      "note": "La précision avant la vitesse."
-    },
-    "approach": {
-      "eyebrow": "La démarche",
-      "title": "Des gestes simples. Du temps pour apprendre.",
-      "steps": [
-        {
-          "title": "Prendre ses repères",
-          "description": "Observer le clavier et trouver une position confortable avant de se lancer."
-        },
-        {
-          "title": "Pratiquer tranquillement",
-          "description": "Taper avec attention, sans chercher à accélérer à tout prix."
-        },
-        {
-          "title": "Revenir à son rythme",
-          "description": "Recommencer pour se familiariser avec les touches, petit à petit."
-        }
-      ]
-    },
-    "about": {
-      "eyebrow": "Derrière Typio",
-      "title": "Un projet autour d’un geste quotidien.",
-      "description": "Typio est un projet d’apprentissage de la dactylographie destiné aux élèves. Cette page présente son intention, ses aperçus et sa démarche : rendre la pratique du clavier plus familière.",
-      "signature": "Petit à petit, plus vite au clavier."
-    },
-    "cta": {
-      "title": "À ton tour de prendre le clavier.",
-      "description": "Le premier pas commence avec quelques touches.",
-      "existingAccount": "Déjà un compte ?"
-    }
-  },
-  "header": {
-    "signIn": "Se connecter",
-    "signOut": "Se déconnecter",
-    "guest": "invité",
-    "signUp": "Créer un compte"
-  },
-  "footer": {
-    "copyright": "© 2026 Typio",
-    "privacy": "Confidentialité"
-  },
-  "promise": {
-    "badge": "Apprendre. Jouer. Progresser.",
-    "titleLine1": "Deviens le boss",
-    "titleLine2": "du clavier.",
-    "description": "Des défis rigolos, des progrès bien réels.",
-    "tipTitle": "Pas besoin de 8 bras.",
-    "tipText": "10 minutes par jour et tes doigts font le reste !",
-    "benefits": {
-      "ownPace": "À ton rythme",
-      "noPressure": "Sans pression",
-      "playful": "100 % ludique"
-    }
-  },
-  "illustration": {
-    "praise": "Bien joué !",
-    "spaceKey": "espace"
-  },
-  "island": {
-    "zoneTitle": "Ta zone de progression",
-    "zoneText": "10 minutes par jour, c'est tout ce qu'il faut.",
-    "progressTitle": "Progrès en vue",
-    "progressText": "Des exercices courts, des récompenses sympas.",
-    "perDay": "10 min/jour",
-    "rewards": "Récompenses"
-  },
-  "oauth": {
-    "groupLabel": "Connexion avec un autre service",
-    "github": "GitHub",
-    "discord": "Discord",
-    "soon": "bientôt",
-    "ageNote": "Discord et GitHub sont réservés aux 13 ans et plus."
-  },
-  "auth": {
-    "kicker": "À tes touches, prêt…",
-    "enterKey": "Entrée",
-    "showPassword": "Afficher le mot de passe",
-    "hidePassword": "Masquer le mot de passe",
-    "passwordLabel": "Mot de passe",
-    "passwordPlaceholder": "Ton mot de passe",
-    "errors": {
-      "INVALID_USERNAME": "Le pseudo doit faire de 3 à 20 caractères : lettres sans accent, chiffres et _.",
-      "INVALID_PASSWORD": "Le mot de passe doit faire de 8 à 128 caractères, avec au moins une lettre et un chiffre.",
-      "INVALID_PSEUDO": "Choisis un pseudo de 2 à 20 caractères : lettres, chiffres, espaces, _ et -.",
-      "USERNAME_TAKEN": "Ce pseudo est déjà pris. Essaie-en un autre !",
-      "INVALID_CREDENTIALS": "Identifiant ou mot de passe incorrect.",
-      "RATE_LIMITED": "Trop d'essais en peu de temps. Patiente un peu, puis réessaie.",
-      "PASSWORD_MISMATCH": "Les deux mots de passe ne sont pas identiques.",
-      "TERMS_REQUIRED": "Pour continuer, accepte la politique de confidentialité.",
-      "UNKNOWN": "Oups, quelque chose s'est mal passé. Réessaie dans un instant.",
-      "PSEUDO_TAKEN": "Ce pseudo appartient à un membre."
-    }
-  },
-  "login": {
-    "meta": {
-      "title": "Connexion · Typio",
-      "description": "Connecte-toi à Typio pour retrouver tes défis et ton score."
-    },
-    "title": "Content de te revoir !",
-    "intro": "Connecte-toi pour retrouver tes défis et faire grimper ton score. À ton rythme.",
-    "divider": "ou avec ton identifiant",
-    "securityNote": "Se connecter avec un identifiant est moins sécurisé qu'avec un compte GitHub ou Discord.",
-    "usernameLabel": "Identifiant",
-    "usernamePlaceholder": "Ton identifiant",
-    "remember": "Rester connecté",
-    "submit": "Se connecter",
-    "guestDivider": "ou",
-    "guestButton": "Jouer en tant qu'invité",
-    "guestNote": "Sans compte, tes résultats sont effacés après 24 h.",
-    "noAccount": "Pas encore de compte ?",
-    "signUpLink": "Rejoins l'aventure",
-    "sharedComputerNote": "Sur un ordinateur partagé, ne coche pas « Rester connecté » et déconnecte-toi à la fin.",
-    "oauthErrors": {
-      "cancelled": "Connexion annulée. Tu peux réessayer quand tu veux.",
-      "failed": "La connexion avec ce service a échoué. Réessaie dans un instant.",
-      "unavailable": "Ce service de connexion n'est pas disponible pour le moment."
-    }
-  },
-  "register": {
-    "meta": {
-      "title": "Inscription · Typio",
-      "description": "Crée ton compte Typio et fais tes premiers progrès au clavier."
-    },
-    "title": "Rejoins l'aventure !",
-    "intro": "Crée ton compte et fais tes premiers progrès.",
-    "divider": "ou avec un pseudo",
-    "pseudoLabel": "Pseudo",
-    "pseudoPlaceholder": "Ex. : PoulpeRapide",
-    "pseudoHint": "3 à 20 caractères : lettres, chiffres et _. C'est aussi ton identifiant pour te connecter.",
-    "passwordLabel": "Mot de passe",
-    "confirmLabel": "Confirmation",
-    "passwordPlaceholder": "8+ caractères",
-    "confirmPlaceholder": "Retape-le",
-    "passwordRule": "Au moins 8 caractères, avec une lettre et un chiffre.",
-    "termsBefore": "J'accepte la ",
-    "privacyLink": "politique de confidentialité",
-    "termsAfter": ".",
-    "submit": "Créer mon compte",
-    "haveAccount": "Déjà un compte ?",
-    "signInLink": "Connecte-toi",
-    "newTab": "(nouvel onglet)"
-  },
-  "guest": {
-    "meta": {
-      "title": "Jouer en invité · Typio",
-      "description": "Joue à Typio sans compte, avec un simple pseudo."
-    },
-    "title": "Joue en invité",
-    "intro": "Choisis un pseudo et lance-toi, sans créer de compte.",
-    "pseudoLabel": "Pseudo",
-    "pseudoPlaceholder": "Ex. : PoulpeRapide",
-    "pseudoHint": "2 à 20 caractères : lettres, chiffres, espaces, _ et -.",
-    "submit": "Jouer en invité",
-    "limits": "Les données d'un invité sont supprimées à sa déconnexion, ou après 24 h au plus tard, et un invité ne peut pas créer de course.",
-    "haveAccount": "Tu as déjà un compte ?",
-    "signInLink": "Connecte-toi"
-  },
-  "privacy": {
-    "meta": {
-      "title": "Confidentialité · Typio",
-      "description": "Ce que Typio enregistre sur toi, et ce qu'il ne fait jamais."
-    },
-    "title": "Confidentialité",
-    "intro": "Voici, simplement, ce que Typio garde sur toi et pourquoi. Moins on garde de choses, mieux c'est.",
-    "storedTitle": "Ce que Typio enregistre",
-    "stored": {
-      "identity": "Ton pseudo (ton identifiant de connexion), ton nom affiché et la date de création de ton compte.",
-      "password": "Ton mot de passe, uniquement sous forme hachée avec argon2id. Il n'est jamais stocké en clair : personne ne peut le relire.",
-      "oauth": "Si tu te connectes avec GitHub ou Discord : seulement l'identifiant numérique de ton compte chez eux, pour te reconnaître la prochaine fois. Ton nom d'utilisateur sur ce service sert une seule fois, à créer ton pseudo (ton nom affiché est le même), et n'est pas conservé à part. Ton nom, ton adresse e-mail, ta photo et tes autres informations ne sont pas conservés, ni les jetons d'accès : ils ne servent qu'une fois, pendant la connexion, puis sont jetés.",
-      "preferences": "Ta langue et la disposition de ton clavier.",
-      "session": "Ta session sur le serveur : l'empreinte du jeton de ta session et sa date d'expiration. Le jeton lui-même n'est pas stocké.",
-      "results": "Tes résultats de course, quand les courses seront disponibles."
-    },
-    "cookiesTitle": "Cookies et stockage",
-    "cookies": {
-      "session": "Un cookie de session te garde connecté. Il contient seulement un jeton aléatoire : ton statut et tes informations restent sur le serveur.",
-      "duration": "Avec « Rester connecté », ce cookie dure 30 jours. Sans cette case, et avec GitHub ou Discord, c'est un cookie de session, et la session expire au plus tard après 24 h, même si ton navigateur la restaure.",
-      "oauth": "Quand tu te connectes avec GitHub ou Discord, des cookies temporaires (un état de sécurité, un vérificateur et ta langue) sont posés pour 10 minutes, puis effacés dès ton retour sur Typio.",
-      "preferences": "Ta langue est mémorisée dans un cookie pendant un an, et ton thème (clair ou sombre) dans le stockage de ton navigateur."
-    },
-    "guestsTitle": "Les invités",
-    "guests": "Un invité est supprimé, avec toutes ses données, quand il se déconnecte, et au plus tard lors du nettoyage automatique qui suit l'expiration de 24 h.",
-    "securityTitle": "Sécurité",
-    "security": {
-      "ip": "Ton adresse IP sert au plus 1 h à bloquer les attaques. Elle reste seulement en mémoire, jusqu'à son effacement automatique, et n'est jamais enregistrée en base."
-    },
-    "neverTitle": "Ce que Typio ne fait pas",
-    "never": {
-      "email": "Typio ne te demande aucune adresse e-mail.",
-      "tracking": "Il n'y a aucune publicité et aucun pistage.",
-      "resale": "Tes données ne sont jamais revendues."
-    }
-  },
-  "errorPage": {
-    "title": "Oups, quelque chose s'est mal passé",
-    "text": "Une erreur est survenue. Réessaie dans un instant.",
-    "retry": "Réessayer"
-  },
-  "notFound": {
-    "eyebrow": "Erreur 404",
-    "title": "Cette page a pris une mauvaise touche.",
-    "text": "Impossible de trouver cette adresse. Le poulpe te raccompagne à l'accueil pour reprendre la course.",
-    "home": "Retour à l'accueil"
-  },
-  "raceSettings": {
-    "title": "Paramètres de course",
-    "subtitle": "Un parcours à ton rythme. Choisis tes règles, puis à tes touches !",
-    "reset": "Réinitialiser",
-    "textSection": {
-      "title": "Le texte à taper",
-      "subtitle": "Compose le parcours de tes doigts."
-    },
-    "textMode": {
-      "label": "Type de texte",
-      "sentences": "Phrases",
-      "words": "Mots"
-    },
-    "language": {
-      "label": "Langue",
-      "fr": "Français",
-      "en": "Anglais"
-    },
-    "accents": {
-      "label": "Accents",
-      "include": "Inclus",
-      "exclude": "Exclus"
-    },
-    "length": {
-      "label": "Longueur du texte",
-      "short": "Court",
-      "medium": "Moyen",
-      "long": "Long"
-    },
-    "excludedChars": {
-      "label": "Caractères exclus",
-      "placeholder": "@ # %",
-      "count": "{count} caractères exclus",
-      "none": "Aucun",
-      "help": "Saisis les caractères à éviter, séparés par un espace. Laisse vide pour tout autoriser.",
-      "error": "Trop de caractères exclus (max 100)."
-    },
-    "rulesSection": {
-      "title": "Les règles du jeu",
-      "subtitle": "Un peu de pression... ou juste le plaisir de taper."
-    },
-    "timeLimit": {
-      "label": "Limite de temps",
-      "help": "Sans limite personnalisée, la course s'arrête après 5 minutes.",
-      "on": "Activée",
-      "off": "5 minutes par défaut",
-      "seconds": "secondes",
-      "error": "Entre 1 et 600 secondes."
-    },
-    "inputMode": {
-      "label": "Mode de saisie",
-      "free": "Libre",
-      "freeDesc": "Continue même après une erreur. Seuls les caractères corrects te font avancer.",
-      "blocking": "Bloquant",
-      "blockingDesc": "Corrige chaque erreur pour pouvoir saisir le caractère suivant."
-    },
-    "abilities": {
-      "label": "Capacités",
-      "help": "Active les pouvoirs des Blobs pendant la course.",
-      "on": "Activées",
-      "off": "Désactivées",
-      "comingSoon": "bientôt"
-    },
-    "opponentsSection": {
-      "title": "Tes adversaires",
-      "subtitle": "Les bots complètent la course et suivent les mêmes règles que toi."
-    },
-    "botCount": {
-      "decrease": "Retirer un bot",
-      "increase": "Ajouter un bot",
-      "label": "Nombre de bots",
-      "help": "De 0 à 7 bots · 0 pour jouer sans bot"
-    },
-    "botDifficulty": {
-      "label": "Difficulté des bots",
-      "help": "Un rythme régulier pour une course équilibrée.",
-      "easy": "Facile",
-      "normal": "Normale",
-      "hard": "Difficile"
-    },
-    "footer": "Les mêmes règles s'appliquent à tous les participants. Le départ sera donné après un compte à rebours.",
-    "summary": {
-      "title": "Ta course, en bref",
-      "participants": "Toi + {bots} bots · {total} participants",
-      "tip": "La vitesse, c'est bien. La précision fait avancer ton Blob !",
-      "start": "Lancer la course",
-      "ready": "Tout est prêt. À tes touches, prêt, pars !"
-    }
-  },
-  "profile": {
-    "security": {
-      "unlink": "Délier",
-      "link": "Relier",
-      "linkedAccounts": "Comptes reliés",
-      "setPassword": "Définir un mot de passe",
-      "description": "Ton compte, bien à l'abri.",
-      "changePassword": "Changer le mot de passe",
-      "noPassword": "Si ton compte a été créé via GitHub ou Discord, le mot de passe est facultatif. À la place :",
-      "linkedAccountsDesc": "Tes autres portes d'entrée dans Typio.",
-      "hasPassword": "Un mot de passe est défini pour ce compte.",
-      "privacy": "Seul l’identifiant du compte est conservé, sans e-mail ni avatar.",
-      "title": "Sécurité"
-    },
-    "title": "Mon profil",
-    "identity": {
-      "displayName": "Nom affiché",
-      "usernameHelp": "Lecture seule · ton identifiant reste le même.",
-      "memberSince": "Membre depuis le",
-      "username": "Nom d'utilisateur",
-      "displayNameHelp": "40 caractères maximum",
-      "title": "Identité"
-    },
-    "description": "Ton nom sur la piste, tes réglages aux touches. Fais de Typio ton terrain de jeu.",
-    "backToCourses": "Retour aux courses",
-    "actions": {
-      "cancel": "Annuler",
-      "logout": "Se déconnecter",
-      "save": "Enregistrer",
-      "fixErrors": "Corrige les erreurs pour enregistrer.",
-      "noChanges": "Aucun changement à enregistrer."
-    },
-    "settings": {
-      "description": "Les bons réglages pour garder le rythme.",
-      "layoutHelp": "Sert à calculer ta heatmap d'erreurs correctement",
-      "layout": "Disposition du clavier",
-      "language": "Langue de l'interface",
-      "title": "Préférences",
-      "theme": "Thème"
-    },
-    "note": "Ces réglages te suivent dans toutes tes courses. À tes touches, prêt, pars !"
-  }
+    "raceEntry":  {
+                      "title":  "Course",
+                      "pending":  "Tes réglages sont prêts. La course jouable sera disponible prochainement.",
+                      "invalid":  "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
+                      "back":  "Retour aux paramètres"
+                  },
+    "raceScreen":  {
+                       "roomName":  "Prairie des Blobs",
+                       "playerOne":  "joueur",
+                       "playerOther":  "joueurs",
+                       "pause":  "Pause",
+                       "resume":  "Reprendre",
+                       "status":  {
+                                      "countdown":  "DÉPART",
+                                      "racing":  "EN COURSE",
+                                      "paused":  "EN PAUSE",
+                                      "finished":  "TERMINÉE"
+                                  },
+                       "leaderboard":  "Classement",
+                       "you":  "Toi",
+                       "stats":  {
+                                     "title":  "Statistiques",
+                                     "time":  "Temps :",
+                                     "bestWpm":  "Meilleur MPM :",
+                                     "accuracy":  "Précision :"
+                                 },
+                       "kicker":  {
+                                      "countdown":  "LA COURSE VA COMMENCER",
+                                      "racing":  "LA COURSE EST LANCÉE",
+                                      "paused":  "COURSE EN PAUSE",
+                                      "finished":  "COURSE TERMINÉE"
+                                  },
+                       "headline":  {
+                                        "countdown":  "Prépare-toi !",
+                                        "racing":  "Garde le rythme !",
+                                        "paused":  "Reprends ton souffle",
+                                        "completed":  "Bravo, tu as fini !",
+                                        "timeout":  "Temps écoulé !"
+                                    },
+                       "rankOf":  "sur",
+                       "trackProgress":  "% du parcours",
+                       "typing":  {
+                                      "title":  "À tes touches, prêt, pars !",
+                                      "phrase":  "Phrase",
+                                      "characters":  "caractères",
+                                      "inputLabel":  "Tape la phrase ici",
+                                      "hint":  "Chaque caractère correct fait avancer ton Blob.",
+                                      "fix":  "pour corriger",
+                                      "autoValidate":  "Validation automatique"
+                                  }
+                   },
+    "site":  {
+                 "name":  "Typio"
+             },
+    "brand":  {
+                  "tagline":  "Petit à petit, plus vite au clavier."
+              },
+    "meta":  {
+                 "title":  "Typio : courses de dactylographie",
+                 "description":  "Typio, des courses de dactylographie multijoueur pour les 12-17 ans."
+             },
+    "language":  {
+                     "names":  {
+                                   "fr":  "Français",
+                                   "en":  "English"
+                               }
+                 },
+    "theme":  {
+                  "label":  "Thème",
+                  "light":  "Clair",
+                  "dark":  "Sombre",
+                  "system":  "Système"
+              },
+    "home":  {
+                 "tagline":  "Défie tes amis dans des courses de dactylographie et vois qui tape le plus vite.",
+                 "createRace":  "Créer une course",
+                 "joinWithCode":  "Rejoindre avec un code",
+                 "signIn":  "Se connecter",
+                 "playAsGuest":  "Jouer en invité",
+                 "signUp":  "Créer un compte",
+                 "navigation":  {
+                                    "why":  "Pourquoi Typio",
+                                    "preview":  "Aperçu",
+                                    "approach":  "Démarche"
+                                },
+                 "hero":  {
+                              "titleLine1":  "Petit à petit,",
+                              "titleLine2":  "plus à l’aise au clavier.",
+                              "description":  "Typio, une plateforme pour apprendre à taper au clavier et prendre de bonnes habitudes, à son rythme."
+                          },
+                 "media":  {
+                               "imageLabel":  "Image Typio",
+                               "videoLabel":  "Vidéo Typio",
+                               "replaceable":  "Emplacement remplaçable",
+                               "heroTitle":  "Un premier regard sur Typio",
+                               "heroDescription":  "Ajoute ici une vue d’ensemble de ton projet.",
+                               "videoTitle":  "Typio en quelques secondes",
+                               "videoDescription":  "Ton navigateur ne peut pas lire la vidéo de présentation de Typio.",
+                               "videoFormat":  "Lecture automatique · Son désactivé",
+                               "interfaceTitle":  "L’interface de Typio",
+                               "interfaceDescription":  "Cette zone accueillera une capture du projet.",
+                               "detailTitle":  "Un détail à partager",
+                               "detailDescription":  "Cette zone accueillera une image du projet."
+                           },
+                 "why":  {
+                             "eyebrow":  "Pourquoi Typio ?",
+                             "title":  "Le clavier fait partie du quotidien. L’apprendre aussi.",
+                             "description":  "Écrire un texte, préparer un devoir, partager une idée… Typio part d’une envie simple : aider les élèves à se familiariser avec la frappe."
+                         },
+                 "video":  {
+                               "eyebrow":  "En vidéo",
+                               "title":  "Typio, de plus près.",
+                               "description":  "Une place pour montrer le projet, son interface et son intention."
+                           },
+                 "preview":  {
+                                 "eyebrow":  "Un premier aperçu",
+                                 "title":  "Faire une place à l’apprentissage.",
+                                 "description":  "Découvre l’univers de Typio et la manière dont le projet aborde la dactylographie pour les élèves.",
+                                 "videoLink":  "Voir la présentation en vidéo"
+                             },
+                 "detail":  {
+                                "eyebrow":  "Dans les détails",
+                                "title":  "Une touche après l’autre.",
+                                "description":  "Prendre le temps de repérer les lettres, d’essayer et de recommencer. L’idée n’est pas d’aller vite tout de suite, mais de se sentir plus à l’aise.",
+                                "note":  "La précision avant la vitesse."
+                            },
+                 "approach":  {
+                                  "eyebrow":  "La démarche",
+                                  "title":  "Des gestes simples. Du temps pour apprendre.",
+                                  "steps":  [
+                                                {
+                                                    "title":  "Prendre ses repères",
+                                                    "description":  "Observer le clavier et trouver une position confortable avant de se lancer."
+                                                },
+                                                {
+                                                    "title":  "Pratiquer tranquillement",
+                                                    "description":  "Taper avec attention, sans chercher à accélérer à tout prix."
+                                                },
+                                                {
+                                                    "title":  "Revenir à son rythme",
+                                                    "description":  "Recommencer pour se familiariser avec les touches, petit à petit."
+                                                }
+                                            ]
+                              },
+                 "about":  {
+                               "eyebrow":  "Derrière Typio",
+                               "title":  "Un projet autour d’un geste quotidien.",
+                               "description":  "Typio est un projet d’apprentissage de la dactylographie destiné aux élèves. Cette page présente son intention, ses aperçus et sa démarche : rendre la pratique du clavier plus familière.",
+                               "signature":  "Petit à petit, plus vite au clavier."
+                           },
+                 "cta":  {
+                             "title":  "À ton tour de prendre le clavier.",
+                             "description":  "Le premier pas commence avec quelques touches.",
+                             "existingAccount":  "Déjà un compte ?"
+                         }
+             },
+    "header":  {
+                   "signIn":  "Se connecter",
+                   "signOut":  "Se déconnecter",
+                   "guest":  "invité",
+                   "signUp":  "Créer un compte"
+               },
+    "footer":  {
+                   "copyright":  "© 2026 Typio",
+                   "privacy":  "Confidentialité"
+               },
+    "promise":  {
+                    "badge":  "Apprendre. Jouer. Progresser.",
+                    "titleLine1":  "Deviens le boss",
+                    "titleLine2":  "du clavier.",
+                    "description":  "Des défis rigolos, des progrès bien réels.",
+                    "tipTitle":  "Pas besoin de 8 bras.",
+                    "tipText":  "10 minutes par jour et tes doigts font le reste !",
+                    "benefits":  {
+                                     "ownPace":  "À ton rythme",
+                                     "noPressure":  "Sans pression",
+                                     "playful":  "100 % ludique"
+                                 }
+                },
+    "illustration":  {
+                         "praise":  "Bien joué !",
+                         "spaceKey":  "espace"
+                     },
+    "island":  {
+                   "zoneTitle":  "Ta zone de progression",
+                   "zoneText":  "10 minutes par jour, c\u0027est tout ce qu\u0027il faut.",
+                   "progressTitle":  "Progrès en vue",
+                   "progressText":  "Des exercices courts, des récompenses sympas.",
+                   "perDay":  "10 min/jour",
+                   "rewards":  "Récompenses"
+               },
+    "oauth":  {
+                  "groupLabel":  "Connexion avec un autre service",
+                  "github":  "GitHub",
+                  "discord":  "Discord",
+                  "soon":  "bientôt",
+                  "ageNote":  "Discord et GitHub sont réservés aux 13 ans et plus."
+              },
+    "auth":  {
+                 "kicker":  "À tes touches, prêt…",
+                 "enterKey":  "Entrée",
+                 "showPassword":  "Afficher le mot de passe",
+                 "hidePassword":  "Masquer le mot de passe",
+                 "passwordLabel":  "Mot de passe",
+                 "passwordPlaceholder":  "Ton mot de passe",
+                 "errors":  {
+                                "INVALID_USERNAME":  "Le pseudo doit faire de 3 à 20 caractères : lettres sans accent, chiffres et _.",
+                                "INVALID_PASSWORD":  "Le mot de passe doit faire de 8 à 128 caractères, avec au moins une lettre et un chiffre.",
+                                "INVALID_PSEUDO":  "Choisis un pseudo de 2 à 20 caractères : lettres, chiffres, espaces, _ et -.",
+                                "USERNAME_TAKEN":  "Ce pseudo est déjà pris. Essaie-en un autre !",
+                                "INVALID_CREDENTIALS":  "Identifiant ou mot de passe incorrect.",
+                                "RATE_LIMITED":  "Trop d\u0027essais en peu de temps. Patiente un peu, puis réessaie.",
+                                "PASSWORD_MISMATCH":  "Les deux mots de passe ne sont pas identiques.",
+                                "TERMS_REQUIRED":  "Pour continuer, accepte la politique de confidentialité.",
+                                "UNKNOWN":  "Oups, quelque chose s\u0027est mal passé. Réessaie dans un instant.",
+                                "PSEUDO_TAKEN":  "Ce pseudo appartient à un membre."
+                            }
+             },
+    "login":  {
+                  "meta":  {
+                               "title":  "Connexion · Typio",
+                               "description":  "Connecte-toi à Typio pour retrouver tes défis et ton score."
+                           },
+                  "title":  "Content de te revoir !",
+                  "intro":  "Connecte-toi pour retrouver tes défis et faire grimper ton score. À ton rythme.",
+                  "divider":  "ou avec ton identifiant",
+                  "securityNote":  "Se connecter avec un identifiant est moins sécurisé qu\u0027avec un compte GitHub ou Discord.",
+                  "usernameLabel":  "Identifiant",
+                  "usernamePlaceholder":  "Ton identifiant",
+                  "remember":  "Rester connecté",
+                  "submit":  "Se connecter",
+                  "guestDivider":  "ou",
+                  "guestButton":  "Jouer en tant qu\u0027invité",
+                  "guestNote":  "Sans compte, tes résultats sont effacés après 24 h.",
+                  "noAccount":  "Pas encore de compte ?",
+                  "signUpLink":  "Rejoins l\u0027aventure",
+                  "sharedComputerNote":  "Sur un ordinateur partagé, ne coche pas « Rester connecté » et déconnecte-toi à la fin.",
+                  "oauthErrors":  {
+                                      "cancelled":  "Connexion annulée. Tu peux réessayer quand tu veux.",
+                                      "failed":  "La connexion avec ce service a échoué. Réessaie dans un instant.",
+                                      "unavailable":  "Ce service de connexion n\u0027est pas disponible pour le moment."
+                                  }
+              },
+    "register":  {
+                     "meta":  {
+                                  "title":  "Inscription · Typio",
+                                  "description":  "Crée ton compte Typio et fais tes premiers progrès au clavier."
+                              },
+                     "title":  "Rejoins l\u0027aventure !",
+                     "intro":  "Crée ton compte et fais tes premiers progrès.",
+                     "divider":  "ou avec un pseudo",
+                     "pseudoLabel":  "Pseudo",
+                     "pseudoPlaceholder":  "Ex. : PoulpeRapide",
+                     "pseudoHint":  "3 à 20 caractères : lettres, chiffres et _. C\u0027est aussi ton identifiant pour te connecter.",
+                     "passwordLabel":  "Mot de passe",
+                     "confirmLabel":  "Confirmation",
+                     "passwordPlaceholder":  "8+ caractères",
+                     "confirmPlaceholder":  "Retape-le",
+                     "passwordRule":  "Au moins 8 caractères, avec une lettre et un chiffre.",
+                     "termsBefore":  "J\u0027accepte la ",
+                     "privacyLink":  "politique de confidentialité",
+                     "termsAfter":  ".",
+                     "submit":  "Créer mon compte",
+                     "haveAccount":  "Déjà un compte ?",
+                     "signInLink":  "Connecte-toi",
+                     "newTab":  "(nouvel onglet)"
+                 },
+    "guest":  {
+                  "meta":  {
+                               "title":  "Jouer en invité · Typio",
+                               "description":  "Joue à Typio sans compte, avec un simple pseudo."
+                           },
+                  "title":  "Joue en invité",
+                  "intro":  "Choisis un pseudo et lance-toi, sans créer de compte.",
+                  "pseudoLabel":  "Pseudo",
+                  "pseudoPlaceholder":  "Ex. : PoulpeRapide",
+                  "pseudoHint":  "2 à 20 caractères : lettres, chiffres, espaces, _ et -.",
+                  "submit":  "Jouer en invité",
+                  "limits":  "Les données d\u0027un invité sont supprimées à sa déconnexion, ou après 24 h au plus tard, et un invité ne peut pas créer de course.",
+                  "haveAccount":  "Tu as déjà un compte ?",
+                  "signInLink":  "Connecte-toi"
+              },
+    "privacy":  {
+                    "meta":  {
+                                 "title":  "Confidentialité · Typio",
+                                 "description":  "Ce que Typio enregistre sur toi, et ce qu\u0027il ne fait jamais."
+                             },
+                    "title":  "Confidentialité",
+                    "intro":  "Voici, simplement, ce que Typio garde sur toi et pourquoi. Moins on garde de choses, mieux c\u0027est.",
+                    "storedTitle":  "Ce que Typio enregistre",
+                    "stored":  {
+                                   "identity":  "Ton pseudo (ton identifiant de connexion), ton nom affiché et la date de création de ton compte.",
+                                   "password":  "Ton mot de passe, uniquement sous forme hachée avec argon2id. Il n\u0027est jamais stocké en clair : personne ne peut le relire.",
+                                   "oauth":  "Si tu te connectes avec GitHub ou Discord : seulement l\u0027identifiant numérique de ton compte chez eux, pour te reconnaître la prochaine fois. Ton nom d\u0027utilisateur sur ce service sert une seule fois, à créer ton pseudo (ton nom affiché est le même), et n\u0027est pas conservé à part. Ton nom, ton adresse e-mail, ta photo et tes autres informations ne sont pas conservés, ni les jetons d\u0027accès : ils ne servent qu\u0027une fois, pendant la connexion, puis sont jetés.",
+                                   "preferences":  "Ta langue et la disposition de ton clavier.",
+                                   "session":  "Ta session sur le serveur : l\u0027empreinte du jeton de ta session et sa date d\u0027expiration. Le jeton lui-même n\u0027est pas stocké.",
+                                   "results":  "Tes résultats de course, quand les courses seront disponibles."
+                               },
+                    "cookiesTitle":  "Cookies et stockage",
+                    "cookies":  {
+                                    "session":  "Un cookie de session te garde connecté. Il contient seulement un jeton aléatoire : ton statut et tes informations restent sur le serveur.",
+                                    "duration":  "Avec « Rester connecté », ce cookie dure 30 jours. Sans cette case, et avec GitHub ou Discord, c\u0027est un cookie de session, et la session expire au plus tard après 24 h, même si ton navigateur la restaure.",
+                                    "oauth":  "Quand tu te connectes avec GitHub ou Discord, des cookies temporaires (un état de sécurité, un vérificateur et ta langue) sont posés pour 10 minutes, puis effacés dès ton retour sur Typio.",
+                                    "preferences":  "Ta langue est mémorisée dans un cookie pendant un an, et ton thème (clair ou sombre) dans le stockage de ton navigateur."
+                                },
+                    "guestsTitle":  "Les invités",
+                    "guests":  "Un invité est supprimé, avec toutes ses données, quand il se déconnecte, et au plus tard lors du nettoyage automatique qui suit l\u0027expiration de 24 h.",
+                    "securityTitle":  "Sécurité",
+                    "security":  {
+                                     "ip":  "Ton adresse IP sert au plus 1 h à bloquer les attaques. Elle reste seulement en mémoire, jusqu\u0027à son effacement automatique, et n\u0027est jamais enregistrée en base."
+                                 },
+                    "neverTitle":  "Ce que Typio ne fait pas",
+                    "never":  {
+                                  "email":  "Typio ne te demande aucune adresse e-mail.",
+                                  "tracking":  "Il n\u0027y a aucune publicité et aucun pistage.",
+                                  "resale":  "Tes données ne sont jamais revendues."
+                              }
+                },
+    "errorPage":  {
+                      "title":  "Oups, quelque chose s\u0027est mal passé",
+                      "text":  "Une erreur est survenue. Réessaie dans un instant.",
+                      "retry":  "Réessayer"
+                  },
+    "notFound":  {
+                     "eyebrow":  "Erreur 404",
+                     "title":  "Cette page a pris une mauvaise touche.",
+                     "text":  "Impossible de trouver cette adresse. Le poulpe te raccompagne à l\u0027accueil pour reprendre la course.",
+                     "home":  "Retour à l\u0027accueil"
+                 },
+    "raceSettings":  {
+                         "title":  "Paramètres de course",
+                         "subtitle":  "Un parcours à ton rythme. Choisis tes règles, puis à tes touches !",
+                         "reset":  "Réinitialiser",
+                         "textSection":  {
+                                             "title":  "Le texte à taper",
+                                             "subtitle":  "Compose le parcours de tes doigts."
+                                         },
+                         "textMode":  {
+                                          "label":  "Type de texte",
+                                          "sentences":  "Phrases",
+                                          "words":  "Mots"
+                                      },
+                         "language":  {
+                                          "label":  "Langue",
+                                          "fr":  "Français",
+                                          "en":  "Anglais"
+                                      },
+                         "accents":  {
+                                         "label":  "Accents",
+                                         "include":  "Inclus",
+                                         "exclude":  "Exclus"
+                                     },
+                         "length":  {
+                                        "label":  "Longueur du texte",
+                                        "short":  "Court",
+                                        "medium":  "Moyen",
+                                        "long":  "Long"
+                                    },
+                         "excludedChars":  {
+                                               "label":  "Caractères exclus",
+                                               "placeholder":  "@ # %",
+                                               "count":  "{count} caractères exclus",
+                                               "none":  "Aucun",
+                                               "help":  "Saisis les caractères à éviter, séparés par un espace. Laisse vide pour tout autoriser.",
+                                               "error":  "Trop de caractères exclus (max 100)."
+                                           },
+                         "rulesSection":  {
+                                              "title":  "Les règles du jeu",
+                                              "subtitle":  "Un peu de pression... ou juste le plaisir de taper."
+                                          },
+                         "timeLimit":  {
+                                           "label":  "Limite de temps",
+                                           "help":  "Sans limite personnalisée, la course s\u0027arrête après 5 minutes.",
+                                           "on":  "Activée",
+                                           "off":  "5 minutes par défaut",
+                                           "seconds":  "secondes",
+                                           "error":  "Entre 1 et 600 secondes."
+                                       },
+                         "inputMode":  {
+                                           "label":  "Mode de saisie",
+                                           "free":  "Libre",
+                                           "freeDesc":  "Continue même après une erreur. Seuls les caractères corrects te font avancer.",
+                                           "blocking":  "Bloquant",
+                                           "blockingDesc":  "Corrige chaque erreur pour pouvoir saisir le caractère suivant."
+                                       },
+                         "abilities":  {
+                                           "label":  "Capacités",
+                                           "help":  "Active les pouvoirs des Blobs pendant la course.",
+                                           "on":  "Activées",
+                                           "off":  "Désactivées",
+                                           "comingSoon":  "bientôt"
+                                       },
+                         "opponentsSection":  {
+                                                  "title":  "Tes adversaires",
+                                                  "subtitle":  "Les bots complètent la course et suivent les mêmes règles que toi."
+                                              },
+                         "botCount":  {
+                                          "decrease":  "Retirer un bot",
+                                          "increase":  "Ajouter un bot",
+                                          "label":  "Nombre de bots",
+                                          "help":  "De 0 à 7 bots · 0 pour jouer sans bot"
+                                      },
+                         "botDifficulty":  {
+                                               "label":  "Difficulté des bots",
+                                               "help":  "Un rythme régulier pour une course équilibrée.",
+                                               "easy":  "Facile",
+                                               "normal":  "Normale",
+                                               "hard":  "Difficile"
+                                           },
+                         "footer":  "Les mêmes règles s\u0027appliquent à tous les participants. Le départ sera donné après un compte à rebours.",
+                         "summary":  {
+                                         "title":  "Ta course, en bref",
+                                         "participants":  "Toi + {bots} bots · {total} participants",
+                                         "tip":  "La vitesse, c\u0027est bien. La précision fait avancer ton Blob !",
+                                         "start":  "Lancer la course",
+                                         "ready":  "Tout est prêt. À tes touches, prêt, pars !"
+                                     }
+                     },
+    "profile":  {
+                    "security":  {
+                                     "unlink":  "Délier",
+                                     "link":  "Relier",
+                                     "linkedAccounts":  "Comptes reliés",
+                                     "setPassword":  "Définir un mot de passe",
+                                     "description":  "Ton compte, bien à l\u0027abri.",
+                                     "changePassword":  "Changer le mot de passe",
+                                     "noPassword":  "Si ton compte a été créé via GitHub ou Discord, le mot de passe est facultatif. À la place :",
+                                     "linkedAccountsDesc":  "Tes autres portes d\u0027entrée dans Typio.",
+                                     "hasPassword":  "Un mot de passe est défini pour ce compte.",
+                                     "privacy":  "Seul l’identifiant du compte est conservé, sans e-mail ni avatar.",
+                                     "title":  "Sécurité"
+                                 },
+                    "title":  "Mon profil",
+                    "identity":  {
+                                     "displayName":  "Nom affiché",
+                                     "usernameHelp":  "Lecture seule · ton identifiant reste le même.",
+                                     "memberSince":  "Membre depuis le",
+                                     "username":  "Nom d\u0027utilisateur",
+                                     "displayNameHelp":  "40 caractères maximum",
+                                     "title":  "Identité"
+                                 },
+                    "description":  "Ton nom sur la piste, tes réglages aux touches. Fais de Typio ton terrain de jeu.",
+                    "backToCourses":  "Retour aux courses",
+                    "actions":  {
+                                    "cancel":  "Annuler",
+                                    "logout":  "Se déconnecter",
+                                    "save":  "Enregistrer",
+                                    "fixErrors":  "Corrige les erreurs pour enregistrer.",
+                                    "noChanges":  "Aucun changement à enregistrer."
+                                },
+                    "settings":  {
+                                     "description":  "Les bons réglages pour garder le rythme.",
+                                     "layoutHelp":  "Sert à calculer ta heatmap d\u0027erreurs correctement",
+                                     "layout":  "Disposition du clavier",
+                                     "language":  "Langue de l\u0027interface",
+                                     "title":  "Préférences",
+                                     "theme":  "Thème"
+                                 },
+                    "note":  "Ces réglages te suivent dans toutes tes courses. À tes touches, prêt, pars !"
+                },
+    "profileDropdown":  {
+                            "close":  "Fermer",
+                            "login":  "Se connecter",
+                            "viewFullProfile":  "Voir les param�tres",
+                            "stats":  {
+                                          "title":  "Statistiques",
+                                          "averageSpeed":  "Vitesse moyenne",
+                                          "comingSoon":  "Les statistiques arrivent bient�t !",
+                                          "victories":  "Victoires",
+                                          "racesPlayed":  "Courses jou�es"
+                                      },
+                            "guestWarning":  "Tu es actuellement invit�(e). Tes donn�es ne sont pas enregistr�es et seront perdues � la fin de la session.",
+                            "register":  "Cr�er un compte"
+                        }
 }
