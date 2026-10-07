@@ -5,6 +5,36 @@
     "invalid": "These settings are invalid. Return to settings to prepare your race.",
     "back": "Back to settings"
   },
+  "raceScreen": {
+    "roomName": "Blob Meadow",
+    "playerOne": "player",
+    "playerOther": "players",
+    "pause": "Pause",
+    "resume": "Resume",
+    "status": { "countdown": "STARTING", "racing": "RACING", "paused": "PAUSED", "finished": "FINISHED" },
+    "leaderboard": "Leaderboard",
+    "you": "You",
+    "stats": { "title": "Game Stats", "time": "Time:", "bestWpm": "Best WPM:", "accuracy": "Accuracy:" },
+    "kicker": { "countdown": "THE RACE IS ABOUT TO START", "racing": "THE RACE IS ON", "paused": "RACE PAUSED", "finished": "RACE OVER" },
+    "headline": {
+      "countdown": "Get ready!",
+      "racing": "Keep the rhythm!",
+      "paused": "Catch your breath",
+      "completed": "Well done, you finished!",
+      "timeout": "Time's up!"
+    },
+    "rankOf": "of",
+    "trackProgress": "% of the track",
+    "typing": {
+      "title": "On your keys, get set, go!",
+      "phrase": "Phrase",
+      "characters": "characters",
+      "inputLabel": "Type the phrase here",
+      "hint": "Every correct character moves your Blob forward.",
+      "fix": "to fix",
+      "autoValidate": "Automatic validation"
+    }
+  },
   "site": {
     "name": "Typio"
   },
@@ -371,5 +401,47 @@
       "start": "Start race",
       "ready": "Everything is ready. Ready, set, type!"
     }
+  },
+  "profile": {
+    "security": {
+      "unlink": "Unlink",
+      "link": "Link",
+      "linkedAccounts": "Linked Accounts",
+      "setPassword": "Set a password",
+      "description": "Your account, safe and sound.",
+      "changePassword": "Change Password",
+      "noPassword": "If your account was created via GitHub or Discord, the password is optional. Instead:",
+      "linkedAccountsDesc": "Your other entry doors to Typio.",
+      "hasPassword": "A password is set for this account.",
+      "privacy": "Only the account ID is kept, no email or avatar.",
+      "title": "Security"
+    },
+    "title": "My Profile",
+    "identity": {
+      "displayName": "Display Name",
+      "usernameHelp": "Read-only · your identifier remains the same.",
+      "memberSince": "Member since",
+      "username": "Username",
+      "displayNameHelp": "Maximum 40 characters",
+      "title": "Identity"
+    },
+    "description": "Your name on the track, your keyboard settings. Make Typio your playground.",
+    "backToCourses": "Back to races",
+    "actions": {
+      "cancel": "Cancel",
+      "logout": "Log out",
+      "save": "Save",
+      "fixErrors": "Fix errors to save.",
+      "noChanges": "No changes to save."
+    },
+    "settings": {
+      "description": "The right settings to keep the rhythm.",
+      "layoutHelp": "Used to correctly calculate your error heatmap",
+      "layout": "Keyboard Layout",
+      "language": "Interface Language",
+      "title": "Preferences",
+      "theme": "Theme"
+    },
+    "note": "These settings follow you in all your races. On your keys, get set, go!"
   }
 }
