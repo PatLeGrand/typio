@@ -5,6 +5,8 @@
     "invalid": "These settings are invalid. Return to settings to prepare your race.",
     "back": "Back to settings"
   },
+
+
   "raceScreen": {
     "roomName": "Blob Meadow",
     "playerOne": "player",
@@ -50,6 +52,7 @@
       "autoValidate": "Automatic validation"
     }
   },
+
   "site": {
     "name": "Typio"
   },

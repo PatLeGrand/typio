@@ -5,6 +5,8 @@
     "invalid": "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
     "back": "Retour aux paramètres"
   },
+
+
   "raceScreen": {
     "roomName": "Prairie des Blobs",
     "playerOne": "joueur",
@@ -50,6 +52,7 @@
       "autoValidate": "Validation automatique"
     }
   },
+
   "site": {
     "name": "Typio"
   },
