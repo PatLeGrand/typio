@@ -1,4 +1,10 @@
 {
+  "raceEntry": {
+    "title": "Race",
+    "pending": "Your settings are ready. The playable race is coming soon.",
+    "invalid": "These settings are invalid. Return to settings to prepare your race.",
+    "back": "Back to settings"
+  },
   "site": {
     "name": "Typio"
   },
@@ -276,5 +282,94 @@
     "title": "This page hit the wrong key.",
     "text": "We couldn't find this address. The octopus will take you home so you can get back in the race.",
     "home": "Back to home"
+  },
+  "raceSettings": {
+    "title": "Race settings",
+    "subtitle": "A race at your own pace. Pick your rules, then off you go!",
+    "reset": "Reset",
+    "textSection": {
+      "title": "Text to type",
+      "subtitle": "Set up your typing path."
+    },
+    "textMode": {
+      "label": "Text type",
+      "sentences": "Sentences",
+      "words": "Words"
+    },
+    "language": {
+      "label": "Language",
+      "fr": "French",
+      "en": "English"
+    },
+    "accents": {
+      "label": "Accents",
+      "include": "Included",
+      "exclude": "Excluded"
+    },
+    "length": {
+      "label": "Text length",
+      "short": "Short",
+      "medium": "Medium",
+      "long": "Long"
+    },
+    "excludedChars": {
+      "label": "Excluded characters",
+      "placeholder": "@ # %",
+      "count": "{count} characters excluded",
+      "none": "None",
+      "help": "Enter characters to avoid, separated by a space. Leave empty to allow all.",
+      "error": "Too many excluded characters (max 100)."
+    },
+    "rulesSection": {
+      "title": "Game rules",
+      "subtitle": "A little pressure... or just the pleasure of typing."
+    },
+    "timeLimit": {
+      "label": "Time limit",
+      "help": "Without a custom limit, the race ends after 5 minutes.",
+      "on": "On",
+      "off": "5 minutes by default",
+      "seconds": "seconds",
+      "error": "Between 1 and 600 seconds."
+    },
+    "inputMode": {
+      "label": "Input mode",
+      "free": "Free",
+      "freeDesc": "Keep going even after an error. Only correct keys move you forward.",
+      "blocking": "Blocking",
+      "blockingDesc": "Correct each error before you can type the next character."
+    },
+    "abilities": {
+      "label": "Abilities",
+      "help": "Enable Blob powers during the race.",
+      "on": "On",
+      "off": "Off",
+      "comingSoon": "soon"
+    },
+    "opponentsSection": {
+      "title": "Your opponents",
+      "subtitle": "Bots fill the race and follow the same rules as you."
+    },
+    "botCount": {
+      "decrease": "Remove a bot",
+      "increase": "Add a bot",
+      "label": "Bot count",
+      "help": "0 to 7 bots · 0 to play without bots"
+    },
+    "botDifficulty": {
+      "label": "Bot difficulty",
+      "help": "A steady pace for a balanced race.",
+      "easy": "Easy",
+      "normal": "Normal",
+      "hard": "Hard"
+    },
+    "footer": "The same rules apply to everyone. The race begins after a countdown.",
+    "summary": {
+      "title": "Your race, in short",
+      "participants": "You + {bots} bots · {total} participants",
+      "tip": "Speed is good. Accuracy moves your Blob forward!",
+      "start": "Start race",
+      "ready": "Everything is ready. Ready, set, type!"
+    }
   }
 }
