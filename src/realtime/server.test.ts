@@ -53,10 +53,12 @@ describe("realtime server", () => {
     const { token } = server.sessions.signIn("member");
     const client = server.client(token);
     expect(await waitForConnection(client)).toEqual({ connected: true });
-    client.emit("room:create", {});
-    client.emit("room:join", { code: "ABCDEF", role: "runner" });
-    client.emit("room:updateConfig", {});
-    client.emit("room:leave");
+    // Exercise a modified client that omits the typed acknowledgement callback.
+    const emitWithoutAck = client.emit.bind(client) as (event: string, payload?: unknown) => void;
+    emitWithoutAck("room:create", {});
+    emitWithoutAck("room:join", { code: "ABCDEF", role: "runner" });
+    emitWithoutAck("room:updateConfig", {});
+    emitWithoutAck("room:leave");
     await new Promise((resolve) => setTimeout(resolve, 25));
     expect((await fetch(`${server.url}/healthz`)).status).toBe(200);
   });
