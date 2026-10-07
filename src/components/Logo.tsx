@@ -3,14 +3,15 @@ import { Keyboard } from "lucide-react";
 type LogoProps = {
   /** Nom du produit affiché (texte du dictionnaire). */
   name: string;
-  /** Signature affichée après un séparateur vertical (texte traduit). */
+  /** Signature affichée aprÃ¨s un séparateur vertical (texte traduit). */
   tagline?: string;
+  className?: string;
 };
 
 /** Touche de clavier violette + nom du produit, avec signature optionnelle. */
-export function Logo({ name, tagline }: LogoProps) {
+export function Logo({ name, tagline, className = "" }: LogoProps) {
   return (
-    <div className="flex items-center gap-3">
+    <div className={`flex items-center gap-3 ${className}`.trim()}>
       <span className="inline-flex size-[42px] shrink-0 items-center justify-center rounded-[10px] bg-accent text-accent-foreground shadow-[0_4px_0_var(--accent-shadow)]">
         <Keyboard aria-hidden="true" className="size-[22px]" />
       </span>
