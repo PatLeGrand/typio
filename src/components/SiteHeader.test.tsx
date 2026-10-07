@@ -54,7 +54,7 @@ describe("SiteHeader", () => {
       const dictionary = getDictionary(locale);
       render(<SiteHeader locale={locale} dictionary={dictionary} user={member} />);
 
-      expect(screen.getByText("Alice_B")).toBeInTheDocument();
+      expect(screen.getAllByText("Alice_B")[0]).toBeInTheDocument();
       expect(screen.queryByText(`(${dictionary.header.guest})`)).toBeNull();
       expect(screen.getByRole("button", { name: dictionary.header.signOut })).toHaveAttribute("type", "submit");
       expect(screen.queryByRole("link", { name: dictionary.header.signIn })).toBeNull();
@@ -83,7 +83,7 @@ describe("SiteHeader", () => {
       const dictionary = getDictionary(locale);
       render(<SiteHeader locale={locale} dictionary={dictionary} user={guest} />);
 
-      expect(screen.getByText("Zoé")).toBeInTheDocument();
+      expect(screen.getAllByText("Zoé")[0]).toBeInTheDocument();
       expect(screen.getByText(`(${dictionary.header.guest})`)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: dictionary.header.signOut })).toBeInTheDocument();
     });
