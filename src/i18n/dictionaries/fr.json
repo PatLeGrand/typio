@@ -5,6 +5,39 @@
     "invalid": "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
     "back": "Retour aux paramètres"
   },
+
+
+  "raceScreen": {
+    "roomName": "Prairie des Blobs",
+    "playerOne": "joueur",
+    "playerOther": "joueurs",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "status": { "countdown": "DÉPART", "racing": "EN COURSE", "paused": "EN PAUSE", "finished": "TERMINÉE" },
+    "leaderboard": "Classement",
+    "you": "Toi",
+    "stats": { "title": "Statistiques", "time": "Temps :", "bestWpm": "Meilleur MPM :", "accuracy": "Précision :" },
+    "kicker": { "countdown": "LA COURSE VA COMMENCER", "racing": "LA COURSE EST LANCÉE", "paused": "COURSE EN PAUSE", "finished": "COURSE TERMINÉE" },
+    "headline": {
+      "countdown": "Prépare-toi !",
+      "racing": "Garde le rythme !",
+      "paused": "Reprends ton souffle",
+      "completed": "Bravo, tu as fini !",
+      "timeout": "Temps écoulé !"
+    },
+    "rankOf": "sur",
+    "trackProgress": "% du parcours",
+    "typing": {
+      "title": "À tes touches, prêt, pars !",
+      "phrase": "Phrase",
+      "characters": "caractères",
+      "inputLabel": "Tape la phrase ici",
+      "hint": "Chaque caractère correct fait avancer ton Blob.",
+      "fix": "pour corriger",
+      "autoValidate": "Validation automatique"
+    }
+  },
+
   "site": {
     "name": "Typio"
   },
@@ -371,5 +404,50 @@
       "start": "Lancer la course",
       "ready": "Tout est prêt. À tes touches, prêt, pars !"
     }
+
+
+  },
+  "profile": {
+    "security": {
+      "unlink": "Délier",
+      "link": "Relier",
+      "linkedAccounts": "Comptes reliés",
+      "setPassword": "Définir un mot de passe",
+      "description": "Ton compte, bien à l'abri.",
+      "changePassword": "Changer le mot de passe",
+      "noPassword": "Si ton compte a été créé via GitHub ou Discord, le mot de passe est facultatif. À la place :",
+      "linkedAccountsDesc": "Tes autres portes d'entrée dans Typio.",
+      "hasPassword": "Un mot de passe est défini pour ce compte.",
+      "privacy": "Seul l’identifiant du compte est conservé, sans e-mail ni avatar.",
+      "title": "Sécurité"
+    },
+    "title": "Mon profil",
+    "identity": {
+      "displayName": "Nom affiché",
+      "usernameHelp": "Lecture seule · ton identifiant reste le même.",
+      "memberSince": "Membre depuis le",
+      "username": "Nom d'utilisateur",
+      "displayNameHelp": "40 caractères maximum",
+      "title": "Identité"
+    },
+    "description": "Ton nom sur la piste, tes réglages aux touches. Fais de Typio ton terrain de jeu.",
+    "backToCourses": "Retour aux courses",
+    "actions": {
+      "cancel": "Annuler",
+      "logout": "Se déconnecter",
+      "save": "Enregistrer",
+      "fixErrors": "Corrige les erreurs pour enregistrer.",
+      "noChanges": "Aucun changement à enregistrer."
+    },
+    "settings": {
+      "description": "Les bons réglages pour garder le rythme.",
+      "layoutHelp": "Sert à calculer ta heatmap d'erreurs correctement",
+      "layout": "Disposition du clavier",
+      "language": "Langue de l'interface",
+      "title": "Préférences",
+      "theme": "Thème"
+    },
+    "note": "Ces réglages te suivent dans toutes tes courses. À tes touches, prêt, pars !"
+
   }
 }
