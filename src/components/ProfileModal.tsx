@@ -116,7 +116,7 @@ export function ProfileModal({ user, dictionary, locale, children }: ProfileModa
               </div>
 
               <div className="pt-2 border-t border-border mt-2">
-                <ButtonLink href={`/${locale}/profile`} variant="secondary" className="w-full justify-center" onClick={() => setIsOpen(false)}>
+                <ButtonLink href={`/${locale}/profile`} variant="secondary" onClick={() => setIsOpen(false)}>
                   {dict.viewFullProfile}
                 </ButtonLink>
               </div>

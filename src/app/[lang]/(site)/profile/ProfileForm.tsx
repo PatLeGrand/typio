@@ -88,7 +88,9 @@ export function ProfileForm({
 
   const handleLogout = () => {
     startTransition(async () => {
-      await logout();
+      const fd = new FormData();
+      fd.set("locale", locale);
+      await logout(fd);
     });
   };
 
@@ -136,7 +138,7 @@ export function ProfileForm({
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
                   <h2 className="text-2xl font-bold text-foreground">{user.displayName}</h2>
-                  <Badge variant="primary">{isGuest ? "Invité" : "Membre"}</Badge>
+                  <Badge>{isGuest ? "Invité" : "Membre"}</Badge>
                 </div>
                 <p className="text-sm text-muted">
                   {profile?.identity?.memberSince || "Membre depuis le"} {formatter.format(dbUser.createdAt)}
@@ -146,14 +148,11 @@ export function ProfileForm({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-foreground">
-                  {profile?.identity?.displayName || "Nom affiché"}
-                </label>
                 <TextField 
+                  label={profile?.identity?.displayName || "Nom affiché"}
                   value={displayName}
                   onChange={(e) => { setDisplayName(e.target.value); setStatus("idle"); }}
-                  error={isNameTooLong}
-                  aria-invalid={isNameTooLong}
+                  error={isNameTooLong ? "Nom trop long" : undefined}
                 />
                 <div className="flex justify-between text-xs text-muted mt-1">
                   <span className={isNameTooLong ? "text-key-coral font-medium" : ""}>
@@ -168,11 +167,9 @@ export function ProfileForm({
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold text-foreground">
-                  {profile?.identity?.username || "Nom d'utilisateur"}
-                </label>
                 <div className="relative">
                   <TextField 
+                    label={profile?.identity?.username || "Nom d'utilisateur"}
                     value={user.username ? `@${user.username}` : "Invité"} 
                     disabled 
                     readOnly 
@@ -269,7 +266,7 @@ export function ProfileForm({
               </div>
 
               <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between p-4 border border-border rounded-xl">
+                  <div className="flex items-center justify-between p-4 border border-border rounded-xl">
                   <div className="flex items-center gap-3">
                     <GithubIcon className="w-6 h-6 text-foreground" />
                     <div className="flex flex-col">
@@ -280,7 +277,7 @@ export function ProfileForm({
                       </div>
                     </div>
                   </div>
-                  <Button variant="secondary" size="sm" disabled>
+                  <Button variant="secondary" disabled>
                     {hasGithub ? profile?.security?.unlink || "Délier" : profile?.security?.link || "Relier"}
                   </Button>
                 </div>
@@ -296,7 +293,7 @@ export function ProfileForm({
                       </div>
                     </div>
                   </div>
-                  <Button variant="secondary" size="sm" disabled>
+                  <Button variant="secondary" disabled>
                     {hasDiscord ? profile?.security?.unlink || "Délier" : profile?.security?.link || "Relier"}
                   </Button>
                 </div>
@@ -310,7 +307,7 @@ export function ProfileForm({
 
             <Card className="p-6 md:p-8 flex flex-col gap-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-accent-soft text-accent rounded-[10px]">
+                 <div className="p-3 bg-accent-soft text-accent rounded-[10px]">
                   <LockKeyhole className="w-6 h-6" />
                 </div>
                 <div className="flex flex-col">
@@ -330,13 +327,13 @@ export function ProfileForm({
                   </>
                 ) : (
                   <div className="bg-accent-panel rounded-xl p-5 flex flex-col gap-4">
-                    <Badge variant="secondary" className="w-fit uppercase text-[10px] tracking-wider font-bold">
+                    <span className="w-fit uppercase text-[10px] tracking-wider font-bold p-2 bg-background rounded-full text-foreground border border-border">
                       État alternatif · GitHub ou Discord
-                    </Badge>
+                    </span>
                     <p className="text-sm text-muted-strong leading-relaxed">
                       {profile?.security?.noPassword || "Si ton compte a été créé via GitHub ou Discord, le mot de passe est facultatif. À la place :"}
                     </p>
-                    <Button variant="surface" className="w-fit flex gap-2 bg-surface hover:bg-surface/80 text-foreground" disabled>
+                    <Button variant="secondary" className="w-fit flex gap-2 bg-surface hover:bg-surface/80 text-foreground" disabled>
                       {profile?.security?.setPassword || "Définir un mot de passe"}
                     </Button>
                   </div>

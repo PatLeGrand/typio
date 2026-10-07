@@ -47,8 +47,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
           </div>
           <ButtonLink 
             href={prefixWithLocale("/race", locale)} 
-            variant="secondary" 
-            className="shrink-0 flex items-center gap-2"
+            variant="secondary"
           >
             <ArrowLeft className="w-4 h-4" />
             {profile.backToCourses}
