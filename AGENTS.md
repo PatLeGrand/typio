@@ -23,3 +23,15 @@ Trois points y sont contre-intuitifs et coûteux à redécouvrir seul :
   lancé hors de Next (migrations, futur serveur temps réel) doit être copié
   explicitement dans l'image `runner`, avec ses dépendances : voir le
   `Dockerfile` pour `scripts/migrate.ts`.
+
+# Travail délégué en cours — salle en temps réel
+
+Antigravity/Gemini : pour toute tâche qui modifie ce dépôt, appliquer la skill
+[`gemini-task-workflow`](.agents/skills/gemini-task-workflow/SKILL.md) : analyser le code et
+les contraintes, identifier le changement nécessaire, le réaliser, puis le tester et rendre
+compte des résultats. Les consultations via `scripts/gemini/run.ts` restent en lecture seule.
+
+Agents externes (Codex, Antigravity) : la tâche en cours est décrite lot par lot dans
+[docs/plan-salle-temps-reel.md](docs/plan-salle-temps-reel.md). Le contrat
+`src/realtime/protocol.ts` est figé : ne pas le modifier, signaler un manque. Aucun commit
+sur `develop` ou `main`, aucun push, aucun déploiement.

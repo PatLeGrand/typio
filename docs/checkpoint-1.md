@@ -38,7 +38,7 @@ Grille d'évaluation (100 points). Tout ce qui n'y figure pas attend après le c
   PostgreSQL (tables `users` et `sessions`), version `sha-ee2493e`.
 - ✅ Langue et thème : FR/EN, clair/sombre, direction artistique Figma.
 - ✅ Intégration continue : tests, lint, build, migrations et tests d'intégration PostgreSQL.
-- ⬜ Salle créée et rejointe par code, mise à jour en temps réel.
+- 🟡 Salle créée et rejointe par code, mise à jour en temps réel : protocole installé, implémentation déléguée, voir [plan-salle-temps-reel.md](plan-salle-temps-reel.md).
 - ⬜ Matrice des exigences.
 
 **Risque connu :** un élève qui connaît l'identifiant d'un camarade peut le bloquer 15 min
