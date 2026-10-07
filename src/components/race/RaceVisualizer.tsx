@@ -55,9 +55,11 @@ export function RaceVisualizer({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Toujours la dernière valeur, lisible depuis le ticker sans le recréer.
-  const racersRef = useRef(racers);`n  useEffect(() => { racersRef.current = racers; }, [racers]);
+  const racersRef = useRef(racers);
+  useEffect(() => { racersRef.current = racers; }, [racers]);
   
-  const trackLengthRef = useRef(trackLength);`n  useEffect(() => { trackLengthRef.current = trackLength; }, [trackLength]);
+  const trackLengthRef = useRef(trackLength);
+  useEffect(() => { trackLengthRef.current = trackLength; }, [trackLength]);
   
 
   useEffect(() => {

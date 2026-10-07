@@ -292,7 +292,7 @@ export function RaceScreen({ locale, labels, siteName, backLabel, settings, user
             const typed = value[index];
             const tone =
               typed === undefined ? (index === value.length ? "text-foreground underline decoration-accent-text decoration-2 underline-offset-4" : "text-muted")
-              : typed === char ? "text-emerald-700 dark:text-emerald-300"
+              : typed === char ? "text-success"
               : "bg-danger/15 text-danger";
             return <span key={index} className={tone}>{char}</span>;
           })}

@@ -275,7 +275,7 @@ export function ProfileForm({
                     <div className="flex flex-col">
                       <p className="font-semibold text-sm text-foreground">GitHub</p>
                       <div className="flex items-center gap-1.5 text-xs text-muted">
-                        <div className={`w-1.5 h-1.5 rounded-full ${hasGithub ? 'bg-green-500' : 'bg-muted'}`}></div>
+                        <div className={`w-1.5 h-1.5 rounded-full ${hasGithub ? 'bg-success' : 'bg-muted'}`}></div>
                         {hasGithub ? "Relié" : "Non relié"}
                       </div>
                     </div>
@@ -291,7 +291,7 @@ export function ProfileForm({
                     <div className="flex flex-col">
                       <p className="font-semibold text-sm text-foreground">Discord</p>
                       <div className="flex items-center gap-1.5 text-xs text-muted">
-                        <div className={`w-1.5 h-1.5 rounded-full ${hasDiscord ? 'bg-green-500' : 'bg-muted'}`}></div>
+                        <div className={`w-1.5 h-1.5 rounded-full ${hasDiscord ? 'bg-success' : 'bg-muted'}`}></div>
                         {hasDiscord ? "Relié" : "Non relié"}
                       </div>
                     </div>

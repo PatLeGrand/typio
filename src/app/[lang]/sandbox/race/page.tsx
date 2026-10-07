@@ -52,7 +52,7 @@ export default function SandboxRacePage() {
         </h1>
         
         <p className="text-center text-muted">
-          Tape n'importe quoi sur ton clavier pour faire avancer ton Blob ! L'adversaire avance tout seul.
+          Tape n&apos;importe quoi sur ton clavier pour faire avancer ton Blob ! L&apos;adversaire avance tout seul.
         </p>
 
         {/* Composant PixiJS */}
