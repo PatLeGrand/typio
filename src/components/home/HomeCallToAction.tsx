@@ -1,5 +1,4 @@
 import type { CurrentUser } from "@/auth/types";
-import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
@@ -25,7 +24,7 @@ export function HomeCallToAction({ home, locale, user }: HomeCallToActionProps) 
         {canRegister ? (
           <ButtonLink href={`/${locale}/register`}>{home.signUp}</ButtonLink>
         ) : (
-          <Button disabled>{home.createRace}</Button>
+          <ButtonLink href={`/${locale}/play`}>{home.createRace}</ButtonLink>
         )}
         {user === null ? (
           <p className="text-sm text-muted">

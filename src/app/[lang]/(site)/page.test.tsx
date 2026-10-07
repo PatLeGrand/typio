@@ -40,8 +40,8 @@ describe("Home", () => {
     expect(video).toHaveAttribute("loop");
     expect(video.querySelector("source")).toHaveAttribute("src", "/videos/typio-intro.mp4");
     expect(screen.getByText(home.approach.title)).toBeVisible();
-    expect(screen.getByRole("button", { name: home.createRace })).toBeDisabled();
-    expect(screen.getByRole("button", { name: home.joinWithCode })).toBeDisabled();
+    expect(screen.getByRole("link", { name: home.createRace })).toBeVisible();
+    expect(screen.getByRole("link", { name: home.joinWithCode })).toBeVisible();
   });
 
   it.each(["fr", "en"] as const)("un visiteur peut créer un compte ou se connecter (%s)", async (lang) => {

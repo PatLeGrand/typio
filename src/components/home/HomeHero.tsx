@@ -1,12 +1,14 @@
-import { Button } from "@/components/Button";
+import { ButtonLink } from "@/components/ButtonLink";
+import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { HomeMediaPlaceholder } from "./HomeMediaPlaceholder";
 
 type HomeHeroProps = {
   home: Dictionary["home"];
+  locale: Locale;
 };
 
-export function HomeHero({ home }: HomeHeroProps) {
+export function HomeHero({ home, locale }: HomeHeroProps) {
   return (
     <section className="bg-surface px-4 pb-10 pt-16 sm:px-8 sm:pt-20" aria-labelledby="home-title">
       <div className="mx-auto flex w-full max-w-[1264px] flex-col items-center gap-12 sm:gap-[52px]">
@@ -21,10 +23,10 @@ export function HomeHero({ home }: HomeHeroProps) {
           </h1>
           <p className="max-w-[610px] text-base leading-[1.65] text-muted sm:text-lg">{home.hero.description}</p>
           <div className="flex w-full flex-col justify-center gap-3 pt-1 sm:w-auto sm:flex-row sm:gap-4">
-            <Button disabled>{home.createRace}</Button>
-            <Button variant="secondary" disabled>
+            <ButtonLink href={`/${locale}/play`}>{home.createRace}</ButtonLink>
+            <ButtonLink variant="secondary" href={`/${locale}/play`}>
               {home.joinWithCode}
-            </Button>
+            </ButtonLink>
           </div>
         </div>
         <HomeMediaPlaceholder
