@@ -35,6 +35,9 @@ docker compose run --rm --no-deps web bun scripts/migrate.ts
 echo "── Redémarrage des conteneurs"
 docker compose up -d web realtime
 
+# `up -d` rend la main dès que Docker a lancé les conteneurs, pas quand ils
+# répondent. Sans cette attente, le script dirait « déployé » sur une application
+# qui plante au démarrage.
 echo "── Attente de l'état healthy (90 s au plus)"
 for _ in $(seq 1 45); do
 	ETAT_WEB="$(docker inspect --format '{{.State.Health.Status}}' typio-web-1 2>/dev/null || echo inconnu)"

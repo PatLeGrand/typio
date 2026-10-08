@@ -30,6 +30,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# URL du serveur Socket.IO temps réel : vide en production (même origine via Caddy),
+# http://localhost:3001 pour le compose local. Next inscrit cette valeur dans le
+# bundle client au moment du build : elle ne peut pas venir de l'environnement d'exécution.
+ARG NEXT_PUBLIC_REALTIME_URL=""
+ENV NEXT_PUBLIC_REALTIME_URL=$NEXT_PUBLIC_REALTIME_URL
+
 RUN bun run build
 RUN bun run build:realtime
 
