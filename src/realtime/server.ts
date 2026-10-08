@@ -10,6 +10,7 @@ import type { SessionRepository } from "@/auth/session";
 import { authenticateHandshake, isAllowedOrigin } from "./auth";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "./protocol";
 import { registerRoomHandlers } from "./roomHandlers";
+import { createRoomStore } from "./roomStore";
 
 export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
@@ -53,7 +54,9 @@ export function createRealtimeServer(options: RealtimeServerOptions): { io: Real
     }
   });
 
-  io.on("connection", (socket) => registerRoomHandlers(io, socket, { now }));
+  const store = createRoomStore();
+
+  io.on("connection", (socket) => registerRoomHandlers(io, socket, { now, store }));
 
   return { io, httpServer };
 }

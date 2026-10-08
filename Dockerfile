@@ -31,6 +31,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN bun run build
+RUN bun run build:realtime
 
 # ── 3. L'image servie ───────────────────────────────────────────────────────
 FROM oven/bun:1.4.1-alpine AS runner
@@ -56,6 +57,7 @@ RUN addgroup --system --gid 1001 typio \
 COPY --from=builder --chown=typio:typio /app/.next/standalone ./
 COPY --from=builder --chown=typio:typio /app/.next/static ./.next/static
 COPY --from=builder --chown=typio:typio /app/public ./public
+COPY --from=builder --chown=typio:typio /app/dist/realtime.js ./realtime.js
 
 # Le déploiement lance les migrations explicitement avant de redémarrer le
 # serveur. Le bundle standalone ne suit pas un script hors du graphe Next : on

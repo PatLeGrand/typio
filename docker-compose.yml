@@ -50,5 +50,23 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+  realtime:
+    build:
+      context: .
+    command: ["bun", "realtime.js"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-typio}:${POSTGRES_PASSWORD:-typio}@db:5432/${POSTGRES_DB:-typio}
+      APP_ORIGIN: http://localhost:3000
+      REALTIME_PORT: 3001
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
 volumes:
   db-data:
