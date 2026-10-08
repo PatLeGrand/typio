@@ -8,6 +8,7 @@
  */
 
 import type { Socket } from "socket.io";
+import type { RateLimiter } from "@/auth/rateLimit";
 import type { GraceTimers } from "./graceTimers";
 import {
   parseJoinPayload,
@@ -21,6 +22,7 @@ import {
 } from "./protocol";
 import type { createRoomStore } from "./roomStore";
 import type { RealtimeServer } from "./server";
+import type { UserSockets } from "./userSockets";
 
 export type RealtimeSocket = Socket<
   ClientToServerEvents,
@@ -36,6 +38,10 @@ export interface RoomHandlerDeps {
   timers: GraceTimers;
   /** Délai avant le retrait d'un participant déconnecté ; `RECONNECT_GRACE_MS` par défaut. */
   graceMs?: number;
+  /** Index des sockets ouverts par utilisateur. */
+  sockets: UserSockets;
+  /** Échecs de `room:join` par utilisateur (énumération des codes de salle). */
+  joinFailures: RateLimiter;
 }
 
 type AckFailure = Extract<Ack, { ok: false }>;
@@ -61,13 +67,12 @@ export function registerRoomHandlers(
   socket: RealtimeSocket,
   deps: RoomHandlerDeps,
 ): void {
-  const { store, now, timers } = deps;
+  const { store, now, timers, sockets, joinFailures } = deps;
   const graceMs = deps.graceMs ?? RECONNECT_GRACE_MS;
   const user = socket.data.user;
 
   /** Tous les sockets ouverts de l'utilisateur (un par onglet). */
-  const userSockets = (): RealtimeSocket[] =>
-    [...io.sockets.sockets.values()].filter((s) => s.data.user.id === user.id);
+  const userSockets = (): RealtimeSocket[] => sockets.of(user.id);
 
   const attachUser = (code: string): void => {
     for (const s of userSockets()) {
@@ -85,6 +90,21 @@ export function registerRoomHandlers(
 
   const broadcast = (state: RoomState): void => {
     io.to(state.code).emit("room:state", state);
+  };
+
+  /**
+   * D3 : l'état sans le partant part à toute la salle, ses autres onglets compris, puis ses
+   * sockets sortent de la room. Si la salle est supprimée (dernier humain), personne d'autre
+   * n'est à informer, mais les onglets du partant reçoivent l'état vide pour repasser à
+   * « hors salle ».
+   */
+  const publishDeparture = (code: string, state: RoomState): void => {
+    if (state.status === "closed") {
+      for (const s of userSockets()) s.emit("room:state", state);
+    } else {
+      broadcast(state);
+    }
+    detachUser(code);
   };
 
   /**
@@ -145,11 +165,20 @@ export function registerRoomHandlers(
 
   socket.on("room:join", (payloadInput, ack) => {
     respond(ack, () => {
+      // Énumération des codes (H-5) : au-delà de la limite d'échecs, on répond `INVALID_CODE`
+      // sans consulter le registre. Le protocole n'a pas de code « trop de tentatives » et
+      // `INVALID_CODE` ne révèle rien sur les salles existantes.
+      if (joinFailures.isLimited(user.id)) return failure("INVALID_CODE");
+
       const payload = parseJoinPayload(payloadInput);
+      if (payload === "INVALID_CODE") joinFailures.record(user.id);
       if (payload === "INVALID_PAYLOAD" || payload === "INVALID_CODE") return failure(payload);
 
       const res = store.join(user, payload.code, payload.role, now().getTime());
-      if (!res.ok) return failure(res.error);
+      if (!res.ok) {
+        if (res.error === "ROOM_NOT_FOUND") joinFailures.record(user.id);
+        return failure(res.error);
+      }
 
       const { state } = res;
       attachUser(state.code);
@@ -189,13 +218,7 @@ export function registerRoomHandlers(
       const { state } = res;
       return {
         reply: { ok: true },
-        publish: () => {
-          // D3 : l'état sans le partant part à toute la salle, ses autres onglets compris,
-          // puis ses sockets sortent de la room. Une salle supprimée n'a plus personne à
-          // informer : pas d'état « closed ».
-          if (state.status !== "closed") broadcast(state);
-          detachUser(code);
-        },
+        publish: () => publishDeparture(code, state),
       };
     });
   });
@@ -215,7 +238,7 @@ export function registerRoomHandlers(
       timers.arm(user.id, graceMs, () => {
         try {
           const expired = store.expire(user.id, code);
-          if (expired.ok && expired.state.status !== "closed") broadcast(expired.state);
+          if (expired.ok) publishDeparture(code, expired.state);
         } catch (e) {
           console.error("[realtime] expiry failed:", describeError(e));
         }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { createRoomStore } from "./roomStore";
+import { createRoomStore, MAX_SPECTATORS } from "./roomStore";
 import { DEFAULT_ROOM_CONFIG, MAX_RUNNERS } from "./protocol";
 
 describe("roomStore", () => {
@@ -262,5 +262,39 @@ describe("roomStore", () => {
       expect(res.state.participants[0]).toMatchObject({ connected: true, joinedAt: 100 });
     }
     expect(store.reconnect("unknown", code)).toEqual({ ok: false, error: "NOT_IN_ROOM" });
+  });
+
+  it("MAX_SPECTATORS: le 21e spectateur obtient ROOM_FULL, un coureur peut encore entrer", () => {
+    const createRes = store.create(member, {}, 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    const code = createRes.state.code;
+
+    for (let i = 0; i < MAX_SPECTATORS; i++) {
+      const res = store.join({ id: `s${i}`, displayName: `S${i}`, kind: "guest" }, code, "spectator", 100);
+      expect(res.ok).toBe(true);
+    }
+
+    expect(store.join(member2, code, "spectator", 100)).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.roomOf(member2.id)).toBeNull();
+    expect(store.join(member2, code, "runner", 100).ok).toBe(true);
+  });
+
+  it("l'index utilisateur vers salle suit create, join, leave et expire", () => {
+    const createRes = store.create(member, {}, 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    const code = createRes.state.code;
+
+    store.join(guest, code, "runner", 200);
+    expect(store.roomOf(guest.id)).toBe(code);
+
+    store.join(member2, "ABCDEF", "runner", 300); // salle inconnue : aucun effet
+    expect(store.roomOf(member2.id)).toBeNull();
+
+    store.expire(guest.id, code);
+    expect(store.roomOf(guest.id)).toBeNull();
+
+    store.leave(member.id, code);
+    expect(store.roomOf(member.id)).toBeNull();
+    expect(store.create(member, {}, 400).ok).toBe(true);
   });
 });

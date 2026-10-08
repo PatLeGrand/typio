@@ -9,9 +9,25 @@ import { Server } from "socket.io";
 import type { SessionRepository } from "@/auth/session";
 import { authenticateHandshake, isAllowedOrigin } from "./auth";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "./protocol";
+import { createRateLimiter } from "@/auth/rateLimit";
 import { createGraceTimers, type GraceTimers } from "./graceTimers";
 import { registerRoomHandlers } from "./roomHandlers";
 import { createRoomStore } from "./roomStore";
+import { createSessionExpiryWatcher, type SessionExpiryWatcher } from "./sessionExpiry";
+import { createUserSockets, MAX_SOCKETS_PER_USER } from "./userSockets";
+
+/**
+ * Taille maximale d'un message entrant, en octets. Les charges utiles légitimes (code, rôle,
+ * patch de configuration) tiennent en quelques dizaines d'octets ; la valeur par défaut de
+ * Socket.IO (1 Mo) laisserait un client faire allouer des mégaoctets par message.
+ */
+export const MAX_MESSAGE_BYTES = 8_192;
+
+/**
+ * Échecs de `room:join` tolérés par utilisateur et par minute (codes inconnus ou mal formés) :
+ * borne l'énumération des codes de salle (H-5).
+ */
+export const JOIN_FAILURE_LIMIT = { limit: 10, windowMs: 60_000 } as const;
 
 export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
@@ -29,6 +45,8 @@ export interface RealtimeServerHandle {
   httpServer: HttpServer;
   /** Minuteurs de grâce de ce serveur, vidés à sa fermeture. */
   timers: GraceTimers;
+  /** Suivi des échéances de session des sockets ouverts, vidé à la fermeture. */
+  sessionExpiry: SessionExpiryWatcher;
 }
 
 export function createRealtimeServer(options: RealtimeServerOptions): RealtimeServerHandle {
@@ -44,6 +62,7 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
   });
 
   const io: RealtimeServer = new Server(httpServer, {
+    maxHttpBufferSize: MAX_MESSAGE_BYTES,
     // En production, Caddy sert le site et le service sur la même origine : CORS ne sert
     // qu'au développement, où Next (3000) et ce service (3001) ont deux ports.
     cors: { origin: [...options.allowedOrigins], credentials: true },
@@ -52,12 +71,21 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     },
   });
 
+  const userSockets = createUserSockets();
+  const sessionExpiry = createSessionExpiryWatcher(now);
+  /** Échéance de session de chaque socket en cours de connexion, hors de `SocketData`. */
+  const handshakeExpiry = new WeakMap<object, Date>();
+
   io.use(async (socket, next) => {
     try {
-      const user = await authenticateHandshake(options.sessions, socket.request.headers.cookie, now());
-      if (!user) return next(new Error("UNAUTHENTICATED"));
-      socket.data.user = user;
+      const identity = await authenticateHandshake(options.sessions, socket.request.headers.cookie, now());
+      if (!identity) return next(new Error("UNAUTHENTICATED"));
+      if (userSockets.count(identity.user.id) >= MAX_SOCKETS_PER_USER) {
+        return next(new Error("TOO_MANY_CONNECTIONS"));
+      }
+      socket.data.user = identity.user;
       socket.data.roomCode = null;
+      handshakeExpiry.set(socket, identity.expiresAt);
       next();
     } catch {
       next(new Error("INTERNAL"));
@@ -66,13 +94,36 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
 
   const store = createRoomStore();
   const timers = createGraceTimers();
+  const joinFailures = createRateLimiter({ ...JOIN_FAILURE_LIMIT, now: () => now().getTime() });
 
-  // `io.close()` ferme le serveur HTTP : plus aucun minuteur de grâce ne doit survivre.
-  httpServer.on("close", () => timers.close());
+  // `io.close()` ferme le serveur HTTP : plus aucun minuteur ne doit survivre.
+  httpServer.on("close", () => {
+    timers.close();
+    sessionExpiry.close();
+  });
 
-  io.on("connection", (socket) =>
-    registerRoomHandlers(io, socket, { now, store, timers, graceMs: options.graceMs }),
-  );
+  io.on("connection", (socket) => {
+    // Des poignées de main simultanées passent toutes le contrôle du middleware avant que
+    // l'une d'elles soit comptée : le plafond est donc revérifié ici, de façon synchrone.
+    if (userSockets.count(socket.data.user.id) >= MAX_SOCKETS_PER_USER) {
+      socket.disconnect(true);
+      return;
+    }
+    userSockets.add(socket);
+    socket.on("disconnect", () => userSockets.remove(socket));
 
-  return { io, httpServer, timers };
+    const expiresAt = handshakeExpiry.get(socket);
+    if (expiresAt) sessionExpiry.watch(socket, expiresAt);
+
+    registerRoomHandlers(io, socket, {
+      now,
+      store,
+      timers,
+      graceMs: options.graceMs,
+      sockets: userSockets,
+      joinFailures,
+    });
+  });
+
+  return { io, httpServer, timers, sessionExpiry };
 }

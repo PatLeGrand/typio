@@ -396,21 +396,22 @@ describe("roomHandlers: reconnexion, onglets et départ (D1 à D4)", () => {
     expect(expectOk(await create(socketA))).not.toBe(code);
   });
 
-  it("S-4 (D3): le dernier humain qui part supprime la salle, sans état closed, sockets nettoyés", async () => {
+  it("S-4 (D3): le dernier humain qui part supprime la salle, ses onglets reçoivent l'état vide et sont nettoyés", async () => {
     const server = await start();
     const userA = server.sessions.signIn("member");
     const socketA = await open(server, userA.token);
     const otherTab = await open(server, userA.token);
     const code = expectOk(await create(socketA));
     await pause(25);
-    const seenByTab = recordStates(otherTab);
+    const emptied = waitForState(otherTab, (s) => s.participants.length === 0);
 
     expect(await leave(socketA)).toEqual({ ok: true });
-    await pause(50);
 
-    expect(seenByTab.filter((s) => s.status === "closed")).toEqual([]);
-    expect(seenByTab).toEqual([]);
+    expect((await emptied).status).toBe("closed");
+    const afterwards = recordStates(otherTab);
     expect(await join(otherTab, { code, role: "runner" })).toEqual({ ok: false, error: "ROOM_NOT_FOUND" });
+    await pause(25);
+    expect(afterwards).toEqual([]);
     expect(server.io.sockets.adapter.rooms.has(code)).toBe(false);
   });
 
@@ -463,5 +464,112 @@ describe("roomHandlers: reconnexion, onglets et départ (D1 à D4)", () => {
 
     expect(one.timers.size).toBe(1);
     expect(two.timers.size).toBe(0);
+  });
+});
+
+describe("roomHandlers: abus (énumération, connexions, taille, session)", () => {
+  it("limite les échecs de room:join par utilisateur, puis répond INVALID_CODE sans consulter le registre", async () => {
+    const server = await start();
+    const { code } = await roomWithTwo(server);
+    const attacker = await open(server, server.sessions.signIn("guest").token);
+
+    for (let i = 0; i < 10; i += 1) {
+      expect(await join(attacker, { code: "ZZZZZZ", role: "runner" })).toEqual({
+        ok: false,
+        error: "ROOM_NOT_FOUND",
+      });
+    }
+    // Même un code valide et existant est refusé : le registre n'est plus consulté.
+    expect(await join(attacker, { code, role: "runner" })).toEqual({ ok: false, error: "INVALID_CODE" });
+  });
+
+  it("compte aussi les codes mal formés, mais pas les charges utiles invalides", async () => {
+    const server = await start();
+    const { code } = await roomWithTwo(server);
+    const sloppy = await open(server, server.sessions.signIn("guest").token);
+
+    for (let i = 0; i < 20; i += 1) {
+      expect(await join(sloppy, { nope: true })).toEqual({ ok: false, error: "INVALID_PAYLOAD" });
+    }
+    expectOk(await join(sloppy, { code, role: "spectator" }));
+
+    const other = await open(server, server.sessions.signIn("guest").token);
+    for (let i = 0; i < 10; i += 1) {
+      expect(await join(other, { code: "abc", role: "runner" })).toEqual({ ok: false, error: "INVALID_CODE" });
+    }
+    expect(await join(other, { code, role: "spectator" })).toEqual({ ok: false, error: "INVALID_CODE" });
+  });
+
+  it("le plafond d'échecs est propre à chaque utilisateur", async () => {
+    const server = await start();
+    const { code } = await roomWithTwo(server);
+    const attacker = await open(server, server.sessions.signIn("guest").token);
+    for (let i = 0; i < 10; i += 1) await join(attacker, { code: "ZZZZZZ", role: "runner" });
+
+    const innocent = await open(server, server.sessions.signIn("guest").token);
+    expectOk(await join(innocent, { code, role: "spectator" }));
+  });
+
+  it("refuse la 6e connexion simultanée d'un utilisateur avec TOO_MANY_CONNECTIONS", async () => {
+    const server = await start();
+    const { token } = server.sessions.signIn("member");
+    const opened: TestClient[] = [];
+    for (let i = 0; i < 5; i += 1) opened.push(await open(server, token));
+
+    const sixth = server.client(token);
+    expect(await waitForConnection(sixth)).toEqual({ connected: false, error: "TOO_MANY_CONNECTIONS" });
+
+    // Un autre utilisateur n'est pas concerné, et fermer un onglet libère une place.
+    await open(server, server.sessions.signIn("member").token);
+    opened[0].disconnect();
+    await pause(50);
+    await open(server, token);
+  });
+
+  it("coupe un client qui envoie un message de plus de 8 Ko", async () => {
+    const server = await start();
+    const socket = await open(server, server.sessions.signIn("member").token);
+    const closed = new Promise<string>((resolve) => socket.once("disconnect", resolve));
+
+    socket.emit("room:create", { textMode: "x".repeat(20_000) }, () => undefined);
+
+    expect(await closed).toBeTruthy();
+  });
+
+  it("coupe un socket quand sa session expire, et nettoie le suivi", async () => {
+    const server = await start();
+    const { token } = server.sessions.signIn("member", "Zoé", { ttlMs: 150 });
+    const socket = await open(server, token);
+    expect(server.sessionExpiry.size).toBe(1);
+    const closed = new Promise<string>((resolve) => socket.once("disconnect", resolve));
+
+    expect(await closed).toBe("io server disconnect");
+
+    await pause(25);
+    expect(server.sessionExpiry.size).toBe(0);
+    expect(await waitForConnection(server.client(token))).toEqual({ connected: false, error: "UNAUTHENTICATED" });
+  });
+
+  it("l'expiration d'un invité suit l'échéance de son compte", async () => {
+    const server = await start();
+    const { token } = server.sessions.signIn("guest", "Zoé", { ttlMs: 60_000, accountTtlMs: 150 });
+    const socket = await open(server, token);
+    const closed = new Promise<string>((resolve) => socket.once("disconnect", resolve));
+    expect(await closed).toBe("io server disconnect");
+  });
+
+  it("le suivi d'échéance est annulé à la déconnexion et à la fermeture du serveur", async () => {
+    const server = await startTestServer();
+    const { token } = server.sessions.signIn("member");
+    const one = await open(server, token);
+    await open(server, token);
+    expect(server.sessionExpiry.size).toBe(2);
+
+    one.disconnect();
+    await pause(50);
+    expect(server.sessionExpiry.size).toBe(1);
+
+    await server.close();
+    expect(server.sessionExpiry.size).toBe(0);
   });
 });

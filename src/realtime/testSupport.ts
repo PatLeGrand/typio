@@ -32,21 +32,26 @@ export function createFakeSessions() {
   };
   return {
     repository,
-    signIn(kind: "member" | "guest", displayName?: string) {
+    /**
+     * `ttlMs` : durée de la session (1 h par défaut) ; `accountTtlMs` : durée du compte
+     * invité (égale à celle de la session par défaut).
+     */
+    signIn(kind: "member" | "guest", displayName?: string, options: { ttlMs?: number; accountTtlMs?: number } = {}) {
       counter += 1;
       const name = displayName ?? `${kind}-${counter}`;
       const token = generateToken();
       const id = `00000000-0000-4000-8000-${String(counter).padStart(12, "0")}`;
-      const inOneHour = new Date(Date.now() + 3_600_000);
+      const sessionExpiry = new Date(Date.now() + (options.ttlMs ?? 3_600_000));
+      const accountExpiry = new Date(Date.now() + (options.accountTtlMs ?? options.ttlMs ?? 3_600_000));
       rows.set(hashToken(token), {
-        session: { expiresAt: inOneHour },
+        session: { expiresAt: sessionExpiry },
         user: {
           id,
           kind,
           displayName: name,
           username: kind === "member" ? name : null,
           locale: "fr",
-          expiresAt: kind === "guest" ? inOneHour : null,
+          expiresAt: kind === "guest" ? accountExpiry : null,
         },
       });
       return { token, userId: id };
@@ -57,7 +62,7 @@ export function createFakeSessions() {
 /** Serveur sur un port libre ; `client(token)` ouvre une connexion avec le cookie de session. */
 export async function startTestServer(options: { graceMs?: number } = {}) {
   const sessions = createFakeSessions();
-  const { io, httpServer, timers } = createRealtimeServer({
+  const { io, httpServer, timers, sessionExpiry } = createRealtimeServer({
     sessions: sessions.repository,
     allowedOrigins: [TEST_ORIGIN],
     graceMs: options.graceMs,
@@ -72,6 +77,7 @@ export async function startTestServer(options: { graceMs?: number } = {}) {
     sessions,
     io,
     timers,
+    sessionExpiry,
     client(token: string | null, origin = TEST_ORIGIN): TestClient {
       const socket: TestClient = connect(url, {
         transports: ["websocket"],

@@ -27,6 +27,13 @@ function cloneState(state: RoomState): RoomState {
   };
 }
 
+/**
+ * Plafond de spectateurs par salle. Le protocole ne plafonne que les coureurs (H-16) ; sans
+ * borne, un client pourrait remplir la mémoire du service de spectateurs, et chaque
+ * `room:state` grossirait avec eux. Règle du serveur, hors du contrat.
+ */
+export const MAX_SPECTATORS = 20;
+
 export interface RoomStoreOptions {
   /** Tirage d'un code candidat ; injectable pour tester la collision (AC-10). */
   generateCode?: () => string;
@@ -35,13 +42,12 @@ export interface RoomStoreOptions {
 export function createRoomStore(options: RoomStoreOptions = {}) {
   const generateCode = options.generateCode ?? generateRoomCode;
   const rooms = new Map<string, RoomState>();
+  /** Index utilisateur → code de sa salle. Tenu à jour par `create`, `join` et `removeParticipant`, seuls à changer les participants. */
+  const roomByUser = new Map<string, string>();
 
   /** Code de la salle où se trouve l'utilisateur, ou `null`. */
   function roomOf(userId: string): string | null {
-    for (const [code, room] of rooms) {
-      if (room.participants.some((p) => p.userId === userId)) return code;
-    }
-    return null;
+    return roomByUser.get(userId) ?? null;
   }
 
   function removeParticipant(roomCode: string, userId: string): RoomResult {
@@ -52,6 +58,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     if (index === -1) return { ok: false, error: "NOT_IN_ROOM" };
 
     room.participants.splice(index, 1);
+    roomByUser.delete(userId);
 
     if (room.participants.length === 0) {
       rooms.delete(roomCode);
@@ -106,6 +113,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       };
 
       rooms.set(code, cloneState(state));
+      roomByUser.set(user.id, code);
       return { ok: true, state: cloneState(state) };
     },
 
@@ -138,8 +146,12 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
         if (runnersCount >= room.maxRunners) {
           return { ok: false, error: "ROOM_FULL" };
         }
+      } else {
+        const spectatorsCount = room.participants.filter((p) => p.role === "spectator").length;
+        if (spectatorsCount >= MAX_SPECTATORS) return { ok: false, error: "ROOM_FULL" };
       }
 
+      roomByUser.set(user.id, code);
       room.participants.push({
         userId: user.id,
         displayName: user.displayName,
