@@ -423,6 +423,9 @@
   "profile": {
     "security": {
       "unlink": "Délier",
+      "linked": "Relié",
+      "notLinked": "Non relié",
+      "alternativeState": "État alternatif · GitHub ou Discord",
       "link": "Relier",
       "linkedAccounts": "Comptes reliés",
       "setPassword": "Définir un mot de passe",
@@ -439,8 +442,10 @@
       "displayName": "Nom affiché",
       "usernameHelp": "Lecture seule · ton identifiant reste le même.",
       "memberSince": "Membre depuis le",
+      "member": "Membre",
+      "noUsername": "Aucun (invité)",
       "username": "Nom d'utilisateur",
-      "displayNameHelp": "40 caractères maximum",
+      "displayNameHelp": "Entre 2 et 20 caractères.",
       "title": "Identité"
     },
     "description": "Ton nom sur la piste, tes réglages aux touches. Fais de Typio ton terrain de jeu.",
@@ -456,9 +461,21 @@
       "description": "Les bons réglages pour garder le rythme.",
       "layoutHelp": "Sert à calculer ta heatmap d'erreurs correctement",
       "layout": "Disposition du clavier",
+      "layouts": {
+        "qwerty": "QWERTY",
+        "azerty": "AZERTY",
+        "cmf": "Canadien multilingue"
+      },
       "language": "Langue de l'interface",
       "title": "Préférences",
       "theme": "Thème"
+    },
+    "status": {
+      "saved": "Ton profil est à jour. Les modifications sont enregistrées."
+    },
+    "errors": {
+      "INVALID_SETTINGS": "Ces réglages ne sont pas valides. Recharge la page, puis réessaie.",
+      "UNAUTHORIZED": "Ta session a expiré. Reconnecte-toi pour modifier ton profil."
     },
     "note": "Ces réglages te suivent dans toutes tes courses. À tes touches, prêt, pars !"
   },
@@ -468,9 +485,6 @@
     "register": "Créer un compte",
     "stats": {
       "title": "Statistiques",
-      "racesPlayed": "Courses jouées",
-      "victories": "Victoires",
-      "averageSpeed": "Vitesse moyenne",
       "comingSoon": "Les statistiques arrivent bientôt !"
     },
     "viewFullProfile": "Voir le profil complet",

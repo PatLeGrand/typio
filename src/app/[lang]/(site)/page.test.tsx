@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 
 describe("Home", () => {
-  it.each(["fr", "en"] as const)("affiche la page de présentation traduite et ses actions futures (%s)", async (lang) => {
+  it.each(["fr", "en"] as const)("affiche la page de présentation traduite et ses accès à la salle de jeu (%s)", async (lang) => {
     const { home } = getDictionary(lang);
     render(await Home(props(lang)));
 
@@ -40,8 +40,12 @@ describe("Home", () => {
     expect(video).toHaveAttribute("loop");
     expect(video.querySelector("source")).toHaveAttribute("src", "/videos/typio-intro.mp4");
     expect(screen.getByText(home.approach.title)).toBeVisible();
-    expect(screen.getByRole("button", { name: home.createRace })).toBeDisabled();
-    expect(screen.getByRole("button", { name: home.joinWithCode })).toBeDisabled();
+    for (const link of screen.getAllByRole("link", { name: home.createRace })) {
+      expect(link).toHaveAttribute("href", `/${lang}/play`);
+    }
+    for (const link of screen.getAllByRole("link", { name: home.joinWithCode })) {
+      expect(link).toHaveAttribute("href", `/${lang}/play`);
+    }
   });
 
   it.each(["fr", "en"] as const)("un visiteur peut créer un compte ou se connecter (%s)", async (lang) => {

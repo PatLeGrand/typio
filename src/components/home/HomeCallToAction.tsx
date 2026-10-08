@@ -1,5 +1,4 @@
 import type { CurrentUser } from "@/auth/types";
-import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
