@@ -1,12 +1,13 @@
 import {
-  RoomState,
-  RoomErrorCode,
-  RoomConfigPatch,
-  ParticipantRole,
   DEFAULT_ROOM_CONFIG,
   MAX_RUNNERS,
+  type ParticipantRole,
+  type RoomConfigPatch,
+  type RoomErrorCode,
+  type RoomState,
+  type RoomStatus,
 } from "./protocol";
-import { generateUniqueRoomCode } from "./roomCode";
+import { generateRoomCode, generateUniqueRoomCode } from "./roomCode";
 
 export type RoomResult =
   | { ok: true; state: RoomState }
@@ -26,8 +27,22 @@ function cloneState(state: RoomState): RoomState {
   };
 }
 
-export function createRoomStore() {
+export interface RoomStoreOptions {
+  /** Tirage d'un code candidat ; injectable pour tester la collision (AC-10). */
+  generateCode?: () => string;
+}
+
+export function createRoomStore(options: RoomStoreOptions = {}) {
+  const generateCode = options.generateCode ?? generateRoomCode;
   const rooms = new Map<string, RoomState>();
+
+  /** Code de la salle où se trouve l'utilisateur, ou `null`. */
+  function roomOf(userId: string): string | null {
+    for (const [code, room] of rooms) {
+      if (room.participants.some((p) => p.userId === userId)) return code;
+    }
+    return null;
+  }
 
   function removeParticipant(roomCode: string, userId: string): RoomResult {
     const room = rooms.get(roomCode);
@@ -69,13 +84,9 @@ export function createRoomStore() {
         return { ok: false, error: "GUEST_CANNOT_CREATE" };
       }
 
-      for (const room of rooms.values()) {
-        if (room.participants.some((p) => p.userId === user.id)) {
-          return { ok: false, error: "ALREADY_IN_ROOM" };
-        }
-      }
+      if (roomOf(user.id)) return { ok: false, error: "ALREADY_IN_ROOM" };
 
-      const code = generateUniqueRoomCode((c) => rooms.has(c));
+      const code = generateUniqueRoomCode((c) => rooms.has(c), generateCode);
       const state: RoomState = {
         code,
         status: "waiting",
@@ -104,7 +115,7 @@ export function createRoomStore() {
       role: ParticipantRole,
       now: number
     ): RoomResult {
-      const currentRoomCode = this.roomOf(user.id);
+      const currentRoomCode = roomOf(user.id);
       if (currentRoomCode && currentRoomCode !== code) {
         return { ok: false, error: "ALREADY_IN_ROOM" };
       }
@@ -152,6 +163,7 @@ export function createRoomStore() {
       const p = room.participants.find((p) => p.userId === userId);
       if (!p) return { ok: false, error: "NOT_IN_ROOM" };
       if (room.hostId !== userId) return { ok: false, error: "NOT_HOST" };
+      if (room.status !== "waiting") return { ok: false, error: "CONFIG_LOCKED" };
 
       room.config = { ...room.config, ...patch };
       return { ok: true, state: cloneState(room) };
@@ -192,13 +204,17 @@ export function createRoomStore() {
       return room ? cloneState(room) : null;
     },
 
-    roomOf(userId: string): string | null {
-      for (const [code, room] of rooms.entries()) {
-        if (room.participants.some((p) => p.userId === userId)) {
-          return code;
-        }
-      }
-      return null;
+    roomOf,
+
+    /**
+     * Change le statut d'une salle. Au checkpoint 1 rien ne l'appelle hors tests : la course
+     * (COURSE-*) s'en servira ; il permet déjà de vérifier que la config se verrouille.
+     */
+    setStatus(code: string, status: RoomStatus): RoomResult {
+      const room = rooms.get(code);
+      if (!room) return { ok: false, error: "ROOM_NOT_FOUND" };
+      room.status = status;
+      return { ok: true, state: cloneState(room) };
     },
   };
 }

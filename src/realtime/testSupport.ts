@@ -55,11 +55,12 @@ export function createFakeSessions() {
 }
 
 /** Serveur sur un port libre ; `client(token)` ouvre une connexion avec le cookie de session. */
-export async function startTestServer() {
+export async function startTestServer(options: { graceMs?: number } = {}) {
   const sessions = createFakeSessions();
-  const { io, httpServer } = createRealtimeServer({
+  const { io, httpServer, timers } = createRealtimeServer({
     sessions: sessions.repository,
     allowedOrigins: [TEST_ORIGIN],
+    graceMs: options.graceMs,
   });
   await new Promise<void>((resolve) => httpServer.listen(0, "127.0.0.1", resolve));
   const { port } = httpServer.address() as AddressInfo;
@@ -70,6 +71,7 @@ export async function startTestServer() {
     url,
     sessions,
     io,
+    timers,
     client(token: string | null, origin = TEST_ORIGIN): TestClient {
       const socket: TestClient = connect(url, {
         transports: ["websocket"],

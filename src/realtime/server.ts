@@ -9,6 +9,7 @@ import { Server } from "socket.io";
 import type { SessionRepository } from "@/auth/session";
 import { authenticateHandshake, isAllowedOrigin } from "./auth";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "./protocol";
+import { createGraceTimers, type GraceTimers } from "./graceTimers";
 import { registerRoomHandlers } from "./roomHandlers";
 import { createRoomStore } from "./roomStore";
 
@@ -19,9 +20,18 @@ export interface RealtimeServerOptions {
   /** Origines autorisées à ouvrir une connexion, par exemple `https://typio.aether-manager.ca`. */
   allowedOrigins: readonly string[];
   now?: () => Date;
+  /** Délai de grâce avant le retrait d'un participant déconnecté ; `RECONNECT_GRACE_MS` par défaut. */
+  graceMs?: number;
 }
 
-export function createRealtimeServer(options: RealtimeServerOptions): { io: RealtimeServer; httpServer: HttpServer } {
+export interface RealtimeServerHandle {
+  io: RealtimeServer;
+  httpServer: HttpServer;
+  /** Minuteurs de grâce de ce serveur, vidés à sa fermeture. */
+  timers: GraceTimers;
+}
+
+export function createRealtimeServer(options: RealtimeServerOptions): RealtimeServerHandle {
   const now = options.now ?? (() => new Date());
 
   const httpServer = createServer((req, res) => {
@@ -55,8 +65,14 @@ export function createRealtimeServer(options: RealtimeServerOptions): { io: Real
   });
 
   const store = createRoomStore();
+  const timers = createGraceTimers();
 
-  io.on("connection", (socket) => registerRoomHandlers(io, socket, { now, store }));
+  // `io.close()` ferme le serveur HTTP : plus aucun minuteur de grâce ne doit survivre.
+  httpServer.on("close", () => timers.close());
 
-  return { io, httpServer };
+  io.on("connection", (socket) =>
+    registerRoomHandlers(io, socket, { now, store, timers, graceMs: options.graceMs }),
+  );
+
+  return { io, httpServer, timers };
 }

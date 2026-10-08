@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { createRoomStore } from "./roomStore";
 import { DEFAULT_ROOM_CONFIG, MAX_RUNNERS } from "./protocol";
 
@@ -169,5 +169,98 @@ describe("roomStore", () => {
     const getRes = store.get(state.code);
     expect(getRes?.config.language).toBe("fr"); // Toujours par défaut
     expect(getRes?.participants[0].role).toBe("runner"); // Toujours runner
+  });
+
+  it("AC-10: Le code d'une nouvelle salle n'est jamais celui d'une salle ouverte", () => {
+    // Le générateur propose d'abord un code déjà pris, puis un libre.
+    const candidates = ["AAAAAA", "AAAAAA", "BBBBBB"];
+    const seeded = createRoomStore({ generateCode: () => candidates.shift() ?? "CCCCCC" });
+
+    const first = seeded.create(member, {}, 100);
+    const second = seeded.create(member2, {}, 100);
+    if (!first.ok || !second.ok) throw new Error("failed to create");
+
+    expect(first.state.code).toBe("AAAAAA");
+    expect(second.state.code).toBe("BBBBBB");
+  });
+
+  it("AC-10: Le code d'une salle supprimée peut être réattribué", () => {
+    const seeded = createRoomStore({ generateCode: () => "AAAAAA" });
+    const first = seeded.create(member, {}, 100);
+    if (!first.ok) throw new Error("failed to create");
+    seeded.leave(member.id, "AAAAAA");
+
+    const second = seeded.create(member2, {}, 100);
+    expect(second.ok && second.state.code).toBe("AAAAAA");
+  });
+
+  it("roomOf: rend la salle de l'utilisateur, null sinon et après son départ", () => {
+    const createRes = store.create(member, {}, 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    const code = createRes.state.code;
+
+    expect(store.roomOf(member.id)).toBe(code);
+    expect(store.roomOf(guest.id)).toBeNull();
+
+    store.leave(member.id, code);
+    expect(store.roomOf(member.id)).toBeNull();
+  });
+
+  it("CONFIG_LOCKED: la config ne change plus hors de l'état waiting", () => {
+    const createRes = store.create(member, {}, 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    const code = createRes.state.code;
+
+    store.setStatus(code, "racing");
+    expect(store.updateConfig(member.id, code, { language: "en" })).toEqual({
+      ok: false,
+      error: "CONFIG_LOCKED",
+    });
+    expect(store.get(code)?.config.language).toBe(DEFAULT_ROOM_CONFIG.language);
+
+    store.setStatus(code, "waiting");
+    expect(store.updateConfig(member.id, code, { language: "en" }).ok).toBe(true);
+  });
+
+  it("CONFIG_LOCKED: un non-hôte reçoit NOT_HOST avant CONFIG_LOCKED", () => {
+    const createRes = store.create(member, {}, 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    store.join(guest, createRes.state.code, "runner", 200);
+    store.setStatus(createRes.state.code, "racing");
+
+    expect(store.updateConfig(guest.id, createRes.state.code, { language: "en" })).toEqual({
+      ok: false,
+      error: "NOT_HOST",
+    });
+  });
+
+  it("expire: retire un participant déconnecté et transfère l'hôte (SALLE-13, SALLE-15)", () => {
+    const createRes = store.create(member, {}, 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    const code = createRes.state.code;
+    store.join(guest, code, "runner", 200);
+
+    store.disconnect(member.id, code);
+    const res = store.expire(member.id, code);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.state.hostId).toBe(guest.id);
+      expect(res.state.participants.map((p) => p.userId)).toEqual([guest.id]);
+    }
+    expect(store.roomOf(member.id)).toBeNull();
+  });
+
+  it("reconnect: repasse connected à true et conserve joinedAt", () => {
+    const createRes = store.create(member, {}, 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    const code = createRes.state.code;
+
+    store.disconnect(member.id, code);
+    const res = store.reconnect(member.id, code);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.state.participants[0]).toMatchObject({ connected: true, joinedAt: 100 });
+    }
+    expect(store.reconnect("unknown", code)).toEqual({ ok: false, error: "NOT_IN_ROOM" });
   });
 });
