@@ -128,6 +128,30 @@ describe("updateProfile", () => {
     expect(mocks.memberUsernameExists).not.toHaveBeenCalled();
   });
 
+  it("compare le squelette : un nom accentué qui imite un autre membre est refusé", async () => {
+    mocks.memberUsernameExists.mockResolvedValue(true);
+
+    await expect(updateProfile(form({ displayName: "Bób" }))).resolves.toEqual({ ok: false, code: "PSEUDO_TAKEN" });
+    expect(mocks.memberUsernameExists).toHaveBeenCalledWith("bob");
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("laisse un membre accentuer son propre identifiant", async () => {
+    mocks.memberUsernameExists.mockResolvedValue(true);
+
+    await expect(updateProfile(form({ displayName: "Àlice" }))).resolves.toEqual({ ok: true, locale: "fr" });
+    expect(mocks.memberUsernameExists).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["un a cyrillique (U+0430)", String.fromCodePoint(0x430) + "lice"],
+    ["des lettres pleine chasse", String.fromCodePoint(0xff42, 0xff4f, 0xff42)],
+  ])("refuse un homoglyphe avec %s (INVALID_PSEUDO), sans requête en base", async (_label, displayName) => {
+    await expect(updateProfile(form({ displayName }))).resolves.toEqual({ ok: false, code: "INVALID_PSEUDO" });
+    expect(mocks.memberUsernameExists).not.toHaveBeenCalled();
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
   it("revalide la page du profil dans l'ancienne et la nouvelle langue", async () => {
     await updateProfile(form({ locale: "en" }));
 

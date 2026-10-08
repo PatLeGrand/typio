@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/auth/currentUser";
 import { getAuthDeps } from "@/auth/deps";
 import { describeError } from "@/auth/errors";
+import { pseudoSkeleton } from "@/auth/validation";
 import { getDb } from "@/db/shared";
 import { users } from "@/db/schema";
 import { prefixWithLocale } from "@/i18n/paths";
@@ -32,9 +33,10 @@ export async function updateProfile(formData: FormData): Promise<ProfileUpdateRe
     if (!parsed.ok) return parsed;
     const { displayName, keyboardLayout, locale } = parsed.value;
 
-    // Même règle que le pseudo d'invité : un nom affiché ne peut pas usurper l'identifiant
-    // d'un AUTRE membre (le sien reste permis : c'est le nom affiché par défaut).
-    const candidate = displayName.toLowerCase();
+    // Même règle que le pseudo d'invité : un nom affiché dont le squelette (sans casse ni
+    // accents) égale l'identifiant d'un AUTRE membre l'usurperait. Le sien reste permis :
+    // c'est le nom affiché par défaut.
+    const candidate = pseudoSkeleton(displayName);
     if (candidate !== user.username?.toLowerCase() && (await deps.users.memberUsernameExists(candidate))) {
       return { ok: false, code: "PSEUDO_TAKEN" };
     }

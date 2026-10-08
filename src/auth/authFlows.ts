@@ -7,7 +7,7 @@ import { QueueFullError } from "./semaphore";
 import { createSession, GUEST_LIFETIME_MS, type SessionGrant, type SessionRepository } from "./session";
 import type { AuthFailure } from "./types";
 import { UsernameTakenError, type UserRepository } from "./userRepository";
-import { validateNewPassword, validatePassword, validatePseudo, validateUsername } from "./validation";
+import { pseudoSkeleton, validateNewPassword, validatePassword, validatePseudo, validateUsername } from "./validation";
 
 /** Tout ce dont les parcours ont besoin, injecté pour les tester sans base ni horloge réelle. */
 export interface AuthDeps {
@@ -158,9 +158,9 @@ export async function createGuest(
   const pseudo = validatePseudo(input.pseudo);
   if (!pseudo.ok) return fail(pseudo.code, "pseudo");
 
-  // Un pseudo d'invité égal (sans casse, après NFC) à l'identifiant d'un membre usurperait ce
-  // membre dans une partie. Contrôlé après le limiteur : c'est une lecture en base.
-  if (await deps.users.memberUsernameExists(pseudo.value.toLowerCase())) return fail("PSEUDO_TAKEN", "pseudo");
+  // Un pseudo d'invité dont le squelette (sans casse ni accents) égale l'identifiant d'un membre
+  // usurperait ce membre dans une partie. Contrôlé après le limiteur : c'est une lecture en base.
+  if (await deps.users.memberUsernameExists(pseudoSkeleton(pseudo.value))) return fail("PSEUDO_TAKEN", "pseudo");
 
   const now = deps.now();
   const { id: userId } = await deps.users.createGuest({
