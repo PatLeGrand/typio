@@ -497,7 +497,8 @@
     "back": "Back to the room picker",
     "leave": "Leave",
     "connection": {
-      "offline": "Connection lost, retrying…"
+      "offline": "Connection lost, retrying…",
+      "tooManyConnections": "Too many tabs open: close one, then reload the page."
     },
     "code": {
       "label": "Room code",

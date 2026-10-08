@@ -259,7 +259,93 @@ describe("refus du serveur : message traduit, jamais le code brut", () => {
   });
 });
 
+describe("join en échec passager (P2)", () => {
+  it("TIMEOUT alors qu'on est en fait dans la salle : la salle s'affiche, pas « indisponible »", async () => {
+    const join = vi.fn<UseRoom["join"]>(async () => ({ ok: false, error: "TIMEOUT" }));
+    current = makeUseRoom({ join });
+    const view = renderRoom();
+    await waitFor(() => expect(join).toHaveBeenCalledTimes(1));
+    await screen.findByRole("alert");
+
+    setRoom(makeUseRoom({ join, room: hostRoom }), () => view.rerender(view.ui()));
+
+    expect(screen.queryByRole("link", { name: view.labels.back })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: view.labels.title })).toBeVisible();
+  });
+
+  it("réessaie une seule fois à la prochaine connexion", async () => {
+    const join = vi
+      .fn<UseRoom["join"]>()
+      .mockResolvedValueOnce({ ok: false, error: "TIMEOUT" })
+      .mockResolvedValueOnce({ ok: false, error: "OFFLINE" })
+      .mockResolvedValue({ ok: true, data: { code: "ABC234" } });
+    current = makeUseRoom({ join });
+    const view = renderRoom();
+    await waitFor(() => expect(join).toHaveBeenCalledTimes(1));
+
+    setRoom(makeUseRoom({ join, connection: "offline" }), () => view.rerender(view.ui()));
+    setRoom(makeUseRoom({ join, connection: "connected" }), () => view.rerender(view.ui()));
+    await waitFor(() => expect(join).toHaveBeenCalledTimes(2));
+    await screen.findByRole("alert");
+
+    setRoom(makeUseRoom({ join, connection: "offline" }), () => view.rerender(view.ui()));
+    setRoom(makeUseRoom({ join, connection: "connected" }), () => view.rerender(view.ui()));
+    expect(join).toHaveBeenCalledTimes(2);
+  });
+
+  it("un refus définitif (ROOM_FULL) n'est pas réessayé", async () => {
+    const join = vi.fn<UseRoom["join"]>(async () => ({ ok: false, error: "ROOM_FULL" }));
+    current = makeUseRoom({ join });
+    const view = renderRoom();
+    await screen.findByRole("alert");
+
+    setRoom(makeUseRoom({ join, connection: "offline" }), () => view.rerender(view.ui()));
+    setRoom(makeUseRoom({ join, connection: "connected" }), () => view.rerender(view.ui()));
+    expect(join).toHaveBeenCalledTimes(1);
+  });
+
+  it("un essai en attente ne rejoint plus une fois dans la salle ni après avoir quitté", async () => {
+    const join = vi.fn<UseRoom["join"]>(async () => ({ ok: false, error: "TIMEOUT" }));
+    const leave = vi.fn<UseRoom["leave"]>(async () => ({ ok: true, data: undefined }));
+    current = makeUseRoom({ join, leave });
+    const view = renderRoom();
+    await waitFor(() => expect(join).toHaveBeenCalledTimes(1));
+
+    setRoom(makeUseRoom({ join, leave, room: hostRoom }), () => view.rerender(view.ui()));
+    fireEvent.click(screen.getByRole("button", { name: view.labels.leave }));
+    await waitFor(() => expect(leave).toHaveBeenCalled());
+    setRoom(makeUseRoom({ join, leave, room: null, connection: "offline" }), () => view.rerender(view.ui()));
+    setRoom(makeUseRoom({ join, leave, room: null, connection: "connected" }), () => view.rerender(view.ui()));
+
+    expect(join).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("départ dont l'accusé se perd", () => {
+  it("TIMEOUT sur leave puis état sans l'élève : retour à /play, pas « NOT_IN_ROOM »", async () => {
+    const leave = vi.fn<UseRoom["leave"]>(async () => ({ ok: false, error: "TIMEOUT" }));
+    current = makeUseRoom({ leave, room: hostRoom });
+    const view = renderRoom();
+
+    fireEvent.click(screen.getByRole("button", { name: view.labels.leave }));
+    await waitFor(() => expect(leave).toHaveBeenCalled());
+    expect(mocks.replace).not.toHaveBeenCalled();
+
+    setRoom(makeUseRoom({ leave, room: null }), () => view.rerender(view.ui()));
+
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/fr/play"));
+    expect(mocks.replace).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(view.labels.errors.NOT_IN_ROOM)).not.toBeInTheDocument();
+  });
+});
+
 describe("connexion", () => {
+  it("trop d'onglets ouverts : bandeau traduit", () => {
+    current = makeUseRoom({ connection: "tooManyConnections" });
+    const { labels } = renderRoom({ locale: "en" });
+    expect(screen.getByRole("status")).toHaveTextContent(labels.connection.tooManyConnections);
+  });
+
   it("affiche le bandeau « Connexion perdue » quand le socket est hors ligne", () => {
     current = makeUseRoom({ room: hostRoom, connection: "offline" });
     const { labels } = renderRoom();

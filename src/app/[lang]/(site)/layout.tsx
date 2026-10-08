@@ -3,6 +3,7 @@ import { schedulePurge } from "@/auth/schedulePurge";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
+import { RoomSessionGuard } from "@/realtime/RoomSessionGuard";
 
 /**
  * Pages courantes du site (accueil, confidentialité) : elles partagent l'en-tête `SiteHeader`.
@@ -16,6 +17,7 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
   return (
     <>
       <SiteHeader locale={locale} dictionary={getDictionary(locale)} user={user} />
+      <RoomSessionGuard userId={user?.id ?? null} />
       {children}
     </>
   );

@@ -7,6 +7,11 @@ import { createRoomConnection, type RoomConnection, type RoomSnapshot } from "./
 /** Une seule connexion par onglet (D5) : toutes les pages lisent ce même store. */
 const roomConnection = createRoomConnection(getSocket);
 
+/** Coupe la connexion de cet onglet si elle n'appartient pas à `userId` (déconnexion, autre compte). */
+export function syncRoomUser(userId: string | null): void {
+  roomConnection.syncUser(userId);
+}
+
 export type UseRoom = RoomSnapshot &
   Pick<RoomConnection, "create" | "join" | "updateConfig" | "leave" | "clearError">;
 
@@ -22,9 +27,12 @@ export function useRoom(userId: string): UseRoom {
     roomConnection.getServerSnapshot,
   );
 
+  // `idle` après un début : la connexion a été coupée (`stop`), p. ex. par une panne passagère
+  // de lecture de la session ; la page toujours affichée rétablit alors la connexion.
+  const idle = snapshot.connection === "idle";
   useEffect(() => {
     roomConnection.start(userId);
-  }, [userId]);
+  }, [userId, idle]);
 
   return {
     ...snapshot,

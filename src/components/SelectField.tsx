@@ -10,12 +10,23 @@ export type SelectFieldProps = Omit<ComponentPropsWithoutRef<"select">, "classNa
   /** Libellé visible, texte déjà traduit. */
   label: string;
   options: readonly SelectOption[];
+  /** Message d'erreur déjà traduit ; marque la liste comme invalide. */
+  error?: string;
 };
 
 /** Libellé + liste déroulante native, dans le même style que `TextField`. */
-export function SelectField({ label, options, id, ...props }: SelectFieldProps) {
+export function SelectField({
+  label,
+  options,
+  error,
+  id,
+  "aria-describedby": describedBy,
+  ...props
+}: SelectFieldProps) {
   const generatedId = useId();
   const selectId = id ?? generatedId;
+  const errorId = `${selectId}-error`;
+  const describedByIds = [describedBy, error ? errorId : undefined].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className="flex flex-col gap-[9px]">
@@ -24,7 +35,11 @@ export function SelectField({ label, options, id, ...props }: SelectFieldProps) 
       </label>
       <select
         id={selectId}
-        className="h-12 w-full rounded-field border border-border bg-surface px-3 text-[15px] text-foreground disabled:cursor-not-allowed disabled:text-muted"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedByIds}
+        className={`h-14 w-full rounded-field border bg-surface px-4 text-[15px] text-foreground disabled:cursor-not-allowed disabled:text-muted ${
+          error ? "border-danger" : "border-border"
+        }`}
         {...props}
       >
         {options.map((option) => (
@@ -33,6 +48,11 @@ export function SelectField({ label, options, id, ...props }: SelectFieldProps) 
           </option>
         ))}
       </select>
+      {error ? (
+        <p id={errorId} className="text-[13px] font-semibold text-danger">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

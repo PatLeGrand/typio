@@ -78,6 +78,40 @@ describe.each(["fr", "en"] as const)("page de jeu, membre hors salle (%s)", (loc
   });
 });
 
+describe("opération en cours", () => {
+  it("pendant une création, « Rejoindre » est désactivé", async () => {
+    const create = vi.fn<UseRoom["create"]>(() => new Promise(() => undefined));
+    mocks.useRoom.mockImplementation(() => makeUseRoom({ create }));
+    const labels = renderPlay("fr");
+
+    fireEvent.click(screen.getByRole("button", { name: labels.play.create.button }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: labels.play.join.button })).toBeDisabled());
+    expect(screen.getByLabelText(labels.play.join.codeLabel)).toBeDisabled();
+  });
+
+  it("pendant un départ, « Rejoindre » est désactivé", async () => {
+    const leave = vi.fn<UseRoom["leave"]>(() => new Promise(() => undefined));
+    mocks.useRoom.mockImplementation(() => makeUseRoom({ room: inRoom, leave }));
+    const labels = renderPlay("fr");
+
+    fireEvent.click(screen.getByRole("button", { name: labels.play.inRoom.leave }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: labels.play.inRoom.leave })).toBeDisabled());
+    expect(screen.getByRole("button", { name: labels.play.join.button })).toBeDisabled();
+  });
+
+  it("une fois « Rejoindre » lancé, « Créer » est désactivé : pas deux navigations", () => {
+    const labels = renderPlay("fr");
+    fireEvent.change(screen.getByLabelText(labels.play.join.codeLabel), { target: { value: "ABC234" } });
+    fireEvent.click(screen.getByRole("button", { name: labels.play.join.button }));
+
+    expect(mocks.push).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: labels.play.create.button })).toBeDisabled();
+    expect(screen.getByRole("button", { name: labels.play.join.button })).toBeDisabled();
+  });
+});
+
 describe.each(["fr", "en"] as const)("déjà dans une salle (D7) (%s)", (locale) => {
   beforeEach(() => {
     mocks.useRoom.mockImplementation(() => makeUseRoom({ room: inRoom }));

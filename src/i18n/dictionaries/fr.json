@@ -497,7 +497,8 @@
     "back": "Retour au choix de salle",
     "leave": "Quitter",
     "connection": {
-      "offline": "Connexion perdue, nouvelle tentative…"
+      "offline": "Connexion perdue, nouvelle tentative…",
+      "tooManyConnections": "Trop d'onglets ouverts : ferme-en un, puis recharge la page."
     },
     "code": {
       "label": "Code de la salle",

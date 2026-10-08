@@ -19,7 +19,14 @@ import {
 /** Codes d'erreur propres au client (D8), traduits comme ceux du serveur. */
 export type ClientRoomErrorCode = RoomErrorCode | "OFFLINE" | "TIMEOUT";
 
-export type ConnectionStatus = "idle" | "connecting" | "connected" | "offline" | "unauthenticated";
+export type ConnectionStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "offline"
+  | "unauthenticated"
+  /** Le serveur refuse un onglet de plus (limite de connexions par utilisateur). */
+  | "tooManyConnections";
 
 export interface RoomSnapshot {
   connection: ConnectionStatus;
@@ -45,6 +52,7 @@ export const RETRY_MAX_MS = 15_000;
 export const RESYNC_TIMEOUT_MS = 3_000;
 
 const UNAUTHENTICATED_MESSAGE = "UNAUTHENTICATED";
+const TOO_MANY_CONNECTIONS_MESSAGE = "TOO_MANY_CONNECTIONS";
 
 export const IDLE_SNAPSHOT: RoomSnapshot = { connection: "idle", room: null, error: null };
 
@@ -60,8 +68,16 @@ export interface RoomConnection {
   subscribe(listener: () => void): () => void;
   getSnapshot(): RoomSnapshot;
   getServerSnapshot(): RoomSnapshot;
-  /** Connecte le socket pour cet utilisateur ; sans effet s'il l'est déjà. */
+  /**
+   * Connecte le socket pour cet utilisateur. Sans effet s'il est connecté ou en cours de
+   * connexion ; relance la connexion si elle est tombée sans qu'une relance soit prévue
+   * (session refusée puis rétablie, trop d'onglets).
+   */
   start(userId: string): void;
+  /** Coupe le socket et oublie la salle : déconnexion, changement d'utilisateur. */
+  stop(): void;
+  /** Coupe le socket s'il appartient à un autre utilisateur que `userId` (ou si `userId` est `null`). */
+  syncUser(userId: string | null): void;
   create(config?: RoomConfigPatch): Promise<ActionResult<{ code: string }>>;
   join(payload: JoinPayload): Promise<ActionResult<{ code: string }>>;
   updateConfig(patch: RoomConfigPatch): Promise<ActionResult>;
@@ -129,6 +145,12 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
         update({ connection: "unauthenticated" });
         return;
       }
+      if (error.message === TOO_MANY_CONNECTIONS_MESSAGE) {
+        // Pas de relance : une boucle de tentatives ne libérerait aucun onglet.
+        retryTimer = clearTimer(retryTimer);
+        update({ connection: "tooManyConnections" });
+        return;
+      }
       update({ connection: "offline" });
       // Un refus du middleware n'est pas relancé par Socket.IO (`active` est faux) : à nous de le faire.
       if (!target.active) scheduleReconnect(target);
@@ -136,7 +158,8 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
     const onState = (state: RoomState) => {
       resyncTimer = clearTimer(resyncTimer);
-      update({ room: userId === null ? null : roomForUser(state, userId), error: null });
+      // L'erreur n'est pas effacée ici : un refus doit rester lisible jusqu'à la prochaine action de l'élève.
+      update({ room: userId === null ? null : roomForUser(state, userId) });
     };
 
     const onRoomError = (error: RoomErrorCode) => update({ error });
@@ -168,6 +191,10 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     update({ ...IDLE_SNAPSHOT });
   }
 
+  function syncUser(nextUserId: string | null): void {
+    if (userId !== null && userId !== nextUserId) stop();
+  }
+
   function fail(error: ClientRoomErrorCode): { ok: false; error: ClientRoomErrorCode } {
     update({ error });
     return { ok: false, error };
@@ -188,8 +215,21 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     getSnapshot: () => snapshot,
     getServerSnapshot: () => IDLE_SNAPSHOT,
 
+    stop,
+    syncUser,
+
     start(nextUserId) {
-      if (userId === nextUserId && socket !== null) return;
+      if (userId === nextUserId && socket !== null) {
+        const dropped =
+          snapshot.connection === "unauthenticated" ||
+          snapshot.connection === "tooManyConnections" ||
+          (snapshot.connection === "offline" && retryTimer === null);
+        if (dropped && !socket.connected) {
+          update({ connection: "connecting" });
+          socket.connect();
+        }
+        return;
+      }
       // Autre utilisateur dans le même onglet : la session a changé, il faut une nouvelle poignée de main.
       if (socket !== null) stop();
       const target = getSocket();
@@ -203,13 +243,13 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
     create(config) {
       return new Promise((resolve) => {
+        update({ error: null });
         const target = connectedSocket();
         if (target === null) return resolve(fail("OFFLINE"));
         // `{}` et non `undefined` : un argument `undefined` arriverait en `null` côté serveur.
         target.timeout(ACK_TIMEOUT_MS).emit("room:create", config ?? {}, (timedOut, response) => {
           if (timedOut) return resolve(fail("TIMEOUT"));
           if (!response.ok) return resolve(fail(response.error));
-          update({ error: null });
           resolve({ ok: true, data: response.data });
         });
       });
@@ -217,12 +257,12 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
     join(payload) {
       return new Promise((resolve) => {
+        update({ error: null });
         const target = connectedSocket();
         if (target === null) return resolve(fail("OFFLINE"));
         target.timeout(ACK_TIMEOUT_MS).emit("room:join", payload, (timedOut, response) => {
           if (timedOut) return resolve(fail("TIMEOUT"));
           if (!response.ok) return resolve(fail(response.error));
-          update({ error: null });
           resolve({ ok: true, data: response.data });
         });
       });
@@ -230,12 +270,12 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
     updateConfig(patch) {
       return new Promise((resolve) => {
+        update({ error: null });
         const target = connectedSocket();
         if (target === null) return resolve(fail("OFFLINE"));
         target.timeout(ACK_TIMEOUT_MS).emit("room:updateConfig", patch, (timedOut, response) => {
           if (timedOut) return resolve(fail("TIMEOUT"));
           if (!response.ok) return resolve(fail(response.error));
-          update({ error: null });
           resolve({ ok: true, data: undefined });
         });
       });
@@ -243,6 +283,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
     leave() {
       return new Promise((resolve) => {
+        update({ error: null });
         const target = connectedSocket();
         if (target === null) return resolve(fail("OFFLINE"));
         target.timeout(ACK_TIMEOUT_MS).emit("room:leave", (timedOut, response) => {
@@ -250,7 +291,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
           // Déjà hors de la salle (un autre onglet est parti avant) : le but est atteint.
           if (!response.ok && response.error !== "NOT_IN_ROOM") return resolve(fail(response.error));
           resyncTimer = clearTimer(resyncTimer);
-          update({ room: null, error: null });
+          update({ room: null });
           resolve({ ok: true, data: undefined });
         });
       });

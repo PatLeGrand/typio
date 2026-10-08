@@ -50,6 +50,8 @@ export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps)
   }
 
   function handleJoin(code: string, role: ParticipantRole): void {
+    // La navigation est lancée : plus de création ni de second « rejoindre » tant qu'elle dure.
+    setBusy(true);
     router.push(roomPath(locale, code, role));
   }
 
@@ -57,7 +59,7 @@ export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps)
 
   return (
     <div className="flex flex-col gap-6">
-      <ConnectionBanner status={connection} offlineLabel={labels.connection.offline} />
+      <ConnectionBanner status={connection} labels={labels.connection} />
       {room ? (
         <InRoomNotice
           code={room.code}
@@ -78,7 +80,7 @@ export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps)
         <JoinRoomForm
           labels={labels.play.join}
           invalidCodeMessage={labels.errors.INVALID_CODE}
-          disabled={inRoom}
+          disabled={inRoom || busy}
           onJoin={handleJoin}
         />
       </div>

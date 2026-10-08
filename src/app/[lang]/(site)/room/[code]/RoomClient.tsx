@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { prefixWithLocale } from "@/i18n/paths";
@@ -38,10 +38,16 @@ export function RoomClient({ code, role, locale, userId, labels }: RoomClientPro
   const validCode = isRoomCode(code);
   const inThisRoom = room !== null && room.code === code;
 
-  const joinStarted = useRef(false);
+  // `joinPending` : un `join` reste à émettre (une fois par montage, D6). Il redevient vrai
+  // après un échec passager, pour un seul nouvel essai à la prochaine connexion.
+  const joinPending = useRef(true);
+  const joinRetriesLeft = useRef(1);
   const [joinError, setJoinError] = useState<ClientRoomErrorCode | null>(null);
   const [wasInRoom, setWasInRoom] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  // Le départ a été demandé, même si l'accusé s'est perdu : un état sans nous veut dire « parti ».
+  const [leaveRequested, setLeaveRequested] = useState(false);
+  const redirected = useRef(false);
 
   // « Ajustement d'état pendant le rendu » : retient qu'on a bien fait partie de cette salle,
   // pour distinguer « pas encore arrivé » de « n'en fait plus partie ».
@@ -52,18 +58,43 @@ export function RoomClient({ code, role, locale, userId, labels }: RoomClientPro
   }, [clearError]);
 
   useEffect(() => {
-    if (!validCode || connection !== "connected" || joinStarted.current) return;
-    joinStarted.current = true;
-    if (inThisRoom) return;
+    if (inThisRoom) {
+      // Déjà dedans (ré-attachement du serveur, accusé tardif) : rien à rejoindre.
+      joinPending.current = false;
+      return;
+    }
+    if (!validCode || connection !== "connected" || !joinPending.current) return;
+    joinPending.current = false;
     void join({ code, role }).then((result) => {
-      if (!result.ok) setJoinError(result.error);
+      if (result.ok) {
+        setJoinError(null);
+        return;
+      }
+      const transient = result.error === "OFFLINE" || result.error === "TIMEOUT";
+      if (transient && joinRetriesLeft.current > 0) {
+        joinRetriesLeft.current -= 1;
+        joinPending.current = true;
+      }
+      setJoinError(result.error);
     });
   }, [validCode, connection, inThisRoom, join, code, role]);
 
+  const goToPlay = useCallback(() => {
+    if (redirected.current) return;
+    redirected.current = true;
+    router.replace(playHref);
+  }, [router, playHref]);
+
+  useEffect(() => {
+    if (leaveRequested && wasInRoom && !inThisRoom) goToPlay();
+  }, [leaveRequested, wasInRoom, inThisRoom, goToPlay]);
+
   async function handleLeave(): Promise<void> {
     setLeaving(true);
+    setLeaveRequested(true);
+    joinPending.current = false;
     const result = await leave();
-    if (result.ok) router.replace(playHref);
+    if (result.ok) goToPlay();
     else setLeaving(false);
   }
 
@@ -71,14 +102,17 @@ export function RoomClient({ code, role, locale, userId, labels }: RoomClientPro
     void updateConfig(patch);
   }
 
+  // Une erreur de `join` ne compte plus dès qu'on est dans la salle.
   const unavailable: ClientRoomErrorCode | null = !validCode
     ? "INVALID_CODE"
-    : (joinError ??
-      (wasInRoom && !inThisRoom && !leaving && connection === "connected" ? "NOT_IN_ROOM" : null));
+    : inThisRoom
+      ? null
+      : (joinError ??
+        (wasInRoom && !leaveRequested && connection === "connected" ? "NOT_IN_ROOM" : null));
 
   return (
     <div className="flex flex-col gap-6">
-      <ConnectionBanner status={connection} offlineLabel={labels.connection.offline} />
+      <ConnectionBanner status={connection} labels={labels.connection} />
       {unavailable ? (
         <RoomUnavailable code={unavailable} labels={labels} playHref={playHref} />
       ) : inThisRoom ? (

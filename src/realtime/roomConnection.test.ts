@@ -181,7 +181,84 @@ describe("connexion", () => {
   });
 });
 
+describe("start() après une coupure", () => {
+  it("session refusée puis rétablie (même utilisateur) : relance la connexion", () => {
+    connection.start(ME);
+    socket.active = false;
+    socket.fire("connect_error", new Error("UNAUTHENTICATED"));
+    expect(connection.getSnapshot().connection).toBe("unauthenticated");
+
+    connection.start(ME);
+
+    expect(socket.connect).toHaveBeenCalledTimes(2);
+    expect(connection.getSnapshot().connection).toBe("connecting");
+    socket.open();
+    expect(connection.getSnapshot().connection).toBe("connected");
+  });
+
+  it("hors ligne sans relance prévue : relance ; avec une relance en attente : laisse faire", () => {
+    startConnected();
+    socket.connected = false;
+    socket.fire("disconnect", "io server disconnect");
+    expect(socket.connect).toHaveBeenCalledTimes(1);
+
+    connection.start(ME);
+    expect(socket.connect).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(RETRY_BASE_MS);
+    expect(socket.connect).toHaveBeenCalledTimes(2);
+  });
+
+  it("déjà connecté : ne touche à rien", () => {
+    startConnected();
+    connection.start(ME);
+    expect(socket.connect).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("stop() et syncUser()", () => {
+  it("stop coupe le socket et revient à l'état inactif, sans écouteur ni relance", () => {
+    startConnected();
+    socket.fire("room:state", roomState([ME]));
+    connection.stop();
+
+    expect(socket.disconnect).toHaveBeenCalledTimes(1);
+    expect(connection.getSnapshot()).toEqual({ connection: "idle", room: null, error: null });
+    expect(socket.listenerCount()).toBe(0);
+    connection.start(ME);
+    expect(socket.connect).toHaveBeenCalledTimes(2);
+  });
+
+  it("syncUser(null) ou un autre utilisateur coupe ; le même utilisateur ne change rien", () => {
+    startConnected();
+    connection.syncUser(ME);
+    expect(socket.disconnect).not.toHaveBeenCalled();
+
+    connection.syncUser(OTHER);
+    expect(socket.disconnect).toHaveBeenCalledTimes(1);
+
+    connection.start(ME);
+    connection.syncUser(null);
+    expect(socket.disconnect).toHaveBeenCalledTimes(2);
+  });
+
+  it("syncUser sans connexion ouverte ne fait rien", () => {
+    connection.syncUser(null);
+    expect(socket.disconnect).not.toHaveBeenCalled();
+  });
+});
+
 describe("connect_error (D9)", () => {
+  it("TOO_MANY_CONNECTIONS : état dédié, aucune relance en boucle", () => {
+    connection.start(ME);
+    socket.active = false;
+    socket.fire("connect_error", new Error("TOO_MANY_CONNECTIONS"));
+
+    expect(connection.getSnapshot().connection).toBe("tooManyConnections");
+    vi.advanceTimersByTime(RETRY_MAX_MS * 4);
+    expect(socket.connect).toHaveBeenCalledTimes(1);
+  });
+
   it("UNAUTHENTICATED : état unauthenticated, aucune nouvelle tentative", () => {
     connection.start(ME);
     socket.active = false;
@@ -233,7 +310,7 @@ describe("connect_error (D9)", () => {
 });
 
 describe("état de la salle", () => {
-  it("mémorise l'état reçu et efface l'erreur précédente", () => {
+  it("mémorise l'état reçu sans effacer une erreur que l'élève n'a pas encore lue", () => {
     startConnected();
     socket.fire("room:error", "ROOM_FULL");
     expect(connection.getSnapshot().error).toBe("ROOM_FULL");
@@ -242,6 +319,15 @@ describe("état de la salle", () => {
     socket.fire("room:state", state);
 
     expect(connection.getSnapshot().room).toBe(state);
+    expect(connection.getSnapshot().error).toBe("ROOM_FULL");
+  });
+
+  it("l'erreur s'efface à la prochaine action de l'élève", () => {
+    startConnected();
+    socket.fire("room:error", "NOT_HOST");
+
+    void connection.updateConfig({ length: "long" });
+
     expect(connection.getSnapshot().error).toBeNull();
   });
 
