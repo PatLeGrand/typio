@@ -423,6 +423,9 @@
   "profile": {
     "security": {
       "unlink": "Unlink",
+      "linked": "Linked",
+      "notLinked": "Not linked",
+      "alternativeState": "Alternative state · GitHub or Discord",
       "link": "Link",
       "linkedAccounts": "Linked Accounts",
       "setPassword": "Set a password",
@@ -439,8 +442,10 @@
       "displayName": "Display Name",
       "usernameHelp": "Read-only · your identifier remains the same.",
       "memberSince": "Member since",
+      "member": "Member",
+      "noUsername": "None (guest)",
       "username": "Username",
-      "displayNameHelp": "Maximum 40 characters",
+      "displayNameHelp": "Between 2 and 20 characters.",
       "title": "Identity"
     },
     "description": "Your name on the track, your keyboard settings. Make Typio your playground.",
@@ -456,9 +461,21 @@
       "description": "The right settings to keep the rhythm.",
       "layoutHelp": "Used to correctly calculate your error heatmap",
       "layout": "Keyboard Layout",
+      "layouts": {
+        "qwerty": "QWERTY",
+        "azerty": "AZERTY",
+        "cmf": "Canadian Multilingual"
+      },
       "language": "Interface Language",
       "title": "Preferences",
       "theme": "Theme"
+    },
+    "status": {
+      "saved": "Your profile is up to date. Your changes are saved."
+    },
+    "errors": {
+      "INVALID_SETTINGS": "These settings are not valid. Reload the page, then try again.",
+      "UNAUTHORIZED": "Your session has expired. Sign in again to edit your profile."
     },
     "note": "These settings follow you in all your races. On your keys, get set, go!"
   },
@@ -468,9 +485,6 @@
     "register": "Create account",
     "stats": {
       "title": "Statistics",
-      "racesPlayed": "Races played",
-      "victories": "Victories",
-      "averageSpeed": "Average speed",
       "comingSoon": "Statistics are coming soon!"
     },
     "viewFullProfile": "View full profile",

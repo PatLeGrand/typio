@@ -4,7 +4,8 @@ const PASSWORD_MIN_LENGTH = 8;
 /** La borne haute protège argon2 : le coût de hachage ne doit pas dépendre d'un envoi géant. */
 const PASSWORD_MAX_LENGTH = 128;
 const PSEUDO_MIN_LENGTH = 2;
-const PSEUDO_MAX_LENGTH = 20;
+/** Exporté pour le compteur « n / 20 » du profil. */
+export const PSEUDO_MAX_LENGTH = 20;
 
 /**
  * Testé sur la saisie rognée AVANT passage en minuscules : `toLowerCase()` transforme
