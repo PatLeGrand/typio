@@ -1,91 +1,37 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { socket } from "./client";
-import type {
-  RoomState,
-  RoomErrorCode,
-  RoomConfigPatch,
-  JoinPayload,
-} from "./protocol";
+import { useEffect, useSyncExternalStore } from "react";
+import { getSocket } from "./client";
+import { createRoomConnection, type RoomConnection, type RoomSnapshot } from "./roomConnection";
 
-export function useRoom() {
-  const [state, setState] = useState<RoomState | null>(null);
-  const [error, setError] = useState<RoomErrorCode | null>(null);
+/** Une seule connexion par onglet (D5) : toutes les pages lisent ce même store. */
+const roomConnection = createRoomConnection(getSocket);
+
+export type UseRoom = RoomSnapshot &
+  Pick<RoomConnection, "create" | "join" | "updateConfig" | "leave" | "clearError">;
+
+/**
+ * Salle de l'utilisateur courant. `userId` vient de la session lue côté serveur : le client
+ * s'en sert pour savoir s'il fait encore partie de l'état reçu, jamais pour s'identifier
+ * auprès du serveur (celui-ci lit le cookie de session).
+ */
+export function useRoom(userId: string): UseRoom {
+  const snapshot = useSyncExternalStore(
+    roomConnection.subscribe,
+    roomConnection.getSnapshot,
+    roomConnection.getServerSnapshot,
+  );
 
   useEffect(() => {
-    socket.connect();
+    roomConnection.start(userId);
+  }, [userId]);
 
-    const onState = (newState: RoomState) => {
-      setState(newState);
-      setError(null);
-    };
-
-    const onError = (err: RoomErrorCode) => {
-      setError(err);
-    };
-
-    socket.on("room:state", onState);
-    socket.on("room:error", onError);
-
-    return () => {
-      socket.off("room:state", onState);
-      socket.off("room:error", onError);
-    };
-  }, []);
-
-  const create = useCallback((config?: RoomConfigPatch) => {
-    return new Promise<{ code: string }>((resolve, reject) => {
-      socket.emit("room:create", config, (res) => {
-        if (res.ok) {
-          resolve(res.data);
-        } else {
-          setError(res.error);
-          reject(new Error(res.error));
-        }
-      });
-    });
-  }, []);
-
-  const join = useCallback((payload: JoinPayload) => {
-    return new Promise<{ code: string }>((resolve, reject) => {
-      socket.emit("room:join", payload, (res) => {
-        if (res.ok) {
-          resolve(res.data);
-        } else {
-          setError(res.error);
-          reject(new Error(res.error));
-        }
-      });
-    });
-  }, []);
-
-  const updateConfig = useCallback((patch: RoomConfigPatch) => {
-    return new Promise<void>((resolve, reject) => {
-      socket.emit("room:updateConfig", patch, (res) => {
-        if (res.ok) {
-          resolve();
-        } else {
-          setError(res.error);
-          reject(new Error(res.error));
-        }
-      });
-    });
-  }, []);
-
-  const leave = useCallback(() => {
-    return new Promise<void>((resolve, reject) => {
-      socket.emit("room:leave", (res) => {
-        if (res.ok) {
-          setState(null);
-          resolve();
-        } else {
-          setError(res.error);
-          reject(new Error(res.error));
-        }
-      });
-    });
-  }, []);
-
-  return { state, error, create, join, updateConfig, leave };
+  return {
+    ...snapshot,
+    create: roomConnection.create,
+    join: roomConnection.join,
+    updateConfig: roomConnection.updateConfig,
+    leave: roomConnection.leave,
+    clearError: roomConnection.clearError,
+  };
 }
