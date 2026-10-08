@@ -15,12 +15,14 @@ export const TEST_ORIGIN = "http://localhost:3000";
 export type TestClient = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 /** Sessions en mémoire ; `signIn` crée un utilisateur et renvoie le jeton de son cookie. */
-export function createFakeSessions() {
+export function createFakeSessions(gate: { current: Promise<void> | null } = { current: null }) {
   const rows = new Map<string, SessionWithUser>();
   let counter = 0;
   const repository: SessionRepository = {
     async insert() {},
     async findWithUser(id) {
+      // Poignées de main suspendues : toutes reprennent d'un coup (voir `holdAuth`).
+      if (gate.current) await gate.current;
       return rows.get(id) ?? null;
     },
     async delete(id) {
@@ -61,8 +63,10 @@ export function createFakeSessions() {
 
 /** Serveur sur un port libre ; `client(token)` ouvre une connexion avec le cookie de session. */
 export async function startTestServer(options: { graceMs?: number } = {}) {
-  const sessions = createFakeSessions();
-  const { io, httpServer, timers, sessionExpiry } = createRealtimeServer({
+  const gate: { current: Promise<void> | null } = { current: null };
+  let releaseGate = () => {};
+  const sessions = createFakeSessions(gate);
+  const { io, httpServer, timers, sessionExpiry, userSockets } = createRealtimeServer({
     sessions: sessions.repository,
     allowedOrigins: [TEST_ORIGIN],
     graceMs: options.graceMs,
@@ -78,6 +82,17 @@ export async function startTestServer(options: { graceMs?: number } = {}) {
     io,
     timers,
     sessionExpiry,
+    userSockets,
+    /** Suspend l'authentification des poignées de main jusqu'à `releaseAuth` (pour les rendre simultanées). */
+    holdAuth() {
+      gate.current = new Promise<void>((resolve) => {
+        releaseGate = resolve;
+      });
+    },
+    releaseAuth() {
+      releaseGate();
+      gate.current = null;
+    },
     client(token: string | null, origin = TEST_ORIGIN): TestClient {
       const socket: TestClient = connect(url, {
         transports: ["websocket"],

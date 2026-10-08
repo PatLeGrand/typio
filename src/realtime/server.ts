@@ -14,7 +14,7 @@ import { createGraceTimers, type GraceTimers } from "./graceTimers";
 import { registerRoomHandlers } from "./roomHandlers";
 import { createRoomStore } from "./roomStore";
 import { createSessionExpiryWatcher, type SessionExpiryWatcher } from "./sessionExpiry";
-import { createUserSockets, MAX_SOCKETS_PER_USER } from "./userSockets";
+import { createUserSockets, MAX_SOCKETS_PER_USER, type UserSockets } from "./userSockets";
 
 /**
  * Taille maximale d'un message entrant, en octets. Les charges utiles légitimes (code, rôle,
@@ -47,6 +47,8 @@ export interface RealtimeServerHandle {
   timers: GraceTimers;
   /** Suivi des échéances de session des sockets ouverts, vidé à la fermeture. */
   sessionExpiry: SessionExpiryWatcher;
+  /** Index des sockets ouverts par utilisateur. */
+  userSockets: UserSockets;
 }
 
 export function createRealtimeServer(options: RealtimeServerOptions): RealtimeServerHandle {
@@ -112,9 +114,6 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     userSockets.add(socket);
     socket.on("disconnect", () => userSockets.remove(socket));
 
-    const expiresAt = handshakeExpiry.get(socket);
-    if (expiresAt) sessionExpiry.watch(socket, expiresAt);
-
     registerRoomHandlers(io, socket, {
       now,
       store,
@@ -123,7 +122,12 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       sockets: userSockets,
       joinFailures,
     });
+
+    // Après les gestionnaires : une échéance déjà passée coupe le socket tout de suite, et
+    // le `disconnect` des gestionnaires doit alors le voir (marquer déconnecté, armer la grâce).
+    const expiresAt = handshakeExpiry.get(socket);
+    if (expiresAt) sessionExpiry.watch(socket, expiresAt);
   });
 
-  return { io, httpServer, timers, sessionExpiry };
+  return { io, httpServer, timers, sessionExpiry, userSockets };
 }

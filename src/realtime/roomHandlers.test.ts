@@ -526,6 +526,37 @@ describe("roomHandlers: abus (énumération, connexions, taille, session)", () =
     await open(server, token);
   });
 
+  it("6 poignées de main simultanées : 5 sockets restent, 1 est coupée, l'index en compte 5", async () => {
+    const server = await start();
+    const { token, userId } = server.sessions.signIn("member");
+    // Toutes passent le middleware avant qu'aucune soit comptée : seule la revérification
+    // synchrone dans `connection` tient le plafond.
+    server.holdAuth();
+    const clients = Array.from({ length: 6 }, () => server.client(token));
+    const settled = Promise.all(clients.map((c) => waitForConnection(c)));
+    await pause(150); // les six poignées de main attendent à l'authentification
+    server.releaseAuth();
+    await settled;
+    await pause(100);
+
+    expect(clients.filter((c) => c.connected)).toHaveLength(5);
+    expect(server.userSockets.count(userId)).toBe(5);
+  });
+
+  it("une session qui expire pendant qu'on est dans une salle marque le participant déconnecté", async () => {
+    const server = await start();
+    const socketA = await open(server, server.sessions.signIn("member").token);
+    const code = expectOk(await create(socketA));
+    const userB = server.sessions.signIn("guest", "Zoé", { ttlMs: 400 });
+    const socketB = await open(server, userB.token);
+    expectOk(await join(socketB, { code, role: "runner" }));
+
+    const state = await waitForState(socketA, (s) => participant(s, userB.userId)?.connected === false);
+
+    expect(participant(state, userB.userId)).toBeDefined();
+    expect(server.timers.size).toBe(1);
+  });
+
   it("coupe un client qui envoie un message de plus de 8 Ko", async () => {
     const server = await start();
     const socket = await open(server, server.sessions.signIn("member").token);

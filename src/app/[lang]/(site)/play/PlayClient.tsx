@@ -36,6 +36,18 @@ export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps)
     clearError();
   }, [clearError]);
 
+  // La navigation lancée par « Rejoindre » peut ne pas aboutir, ou la page être réaffichée telle
+  // quelle (retour arrière, cache de page) : `busy` est alors remis à zéro, sinon créer et
+  // rejoindre resteraient bloqués. Le démontage (cleanup) couvre aussi la page mise en veille.
+  useEffect(() => {
+    const reset = () => setBusy(false);
+    window.addEventListener("pageshow", reset);
+    return () => {
+      window.removeEventListener("pageshow", reset);
+      reset();
+    };
+  }, []);
+
   async function handleCreate(): Promise<void> {
     setBusy(true);
     const result = await create();

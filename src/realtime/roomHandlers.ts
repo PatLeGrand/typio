@@ -176,6 +176,9 @@ export function registerRoomHandlers(
 
       const res = store.join(user, payload.code, payload.role, now().getTime());
       if (!res.ok) {
+        // Seul `ROOM_NOT_FOUND` compte comme échec, avec `INVALID_CODE`. `ROOM_FULL` et
+        // `ALREADY_IN_ROOM` ne comptent pas, par choix : ils ne font pas oracle. Le premier
+        // exige déjà un code exact ; le second ne consulte pas le registre des salles.
         if (res.error === "ROOM_NOT_FOUND") joinFailures.record(user.id);
         return failure(res.error);
       }

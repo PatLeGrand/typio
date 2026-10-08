@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { UseRoom } from "@/realtime/useRoom";
@@ -109,6 +109,30 @@ describe("opération en cours", () => {
     expect(mocks.push).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: labels.play.create.button })).toBeDisabled();
     expect(screen.getByRole("button", { name: labels.play.join.button })).toBeDisabled();
+  });
+});
+
+describe("page réaffichée après « Rejoindre »", () => {
+  it("un retour sur la même page (pageshow) réactive créer et rejoindre", () => {
+    const labels = renderPlay("fr");
+    fireEvent.change(screen.getByLabelText(labels.play.join.codeLabel), { target: { value: "ABC234" } });
+    fireEvent.click(screen.getByRole("button", { name: labels.play.join.button }));
+    expect(screen.getByRole("button", { name: labels.play.create.button })).toBeDisabled();
+
+    act(() => {
+      window.dispatchEvent(new Event("pageshow"));
+    });
+
+    expect(screen.getByRole("button", { name: labels.play.create.button })).toBeEnabled();
+    expect(screen.getByRole("button", { name: labels.play.join.button })).toBeEnabled();
+  });
+
+  it("la double soumission reste bloquée avant ce retour", () => {
+    const labels = renderPlay("fr");
+    fireEvent.change(screen.getByLabelText(labels.play.join.codeLabel), { target: { value: "ABC234" } });
+    fireEvent.click(screen.getByRole("button", { name: labels.play.join.button }));
+    fireEvent.click(screen.getByRole("button", { name: labels.play.join.button }));
+    expect(mocks.push).toHaveBeenCalledTimes(1);
   });
 });
 

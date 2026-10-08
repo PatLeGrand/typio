@@ -321,6 +321,23 @@ describe("join en échec passager (P2)", () => {
   });
 });
 
+describe("départ échoué pour une autre raison que TIMEOUT", () => {
+  it("OFFLINE sur leave puis éviction : « NOT_IN_ROOM » affiché, pas de redirection silencieuse", async () => {
+    const leave = vi.fn<UseRoom["leave"]>(async () => ({ ok: false, error: "OFFLINE" }));
+    current = makeUseRoom({ leave, room: hostRoom });
+    const view = renderRoom();
+
+    fireEvent.click(screen.getByRole("button", { name: view.labels.leave }));
+    await waitFor(() => expect(leave).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByRole("button", { name: view.labels.leave })).toBeEnabled());
+
+    setRoom(makeUseRoom({ leave, room: null }), () => view.rerender(view.ui()));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(view.labels.errors.NOT_IN_ROOM);
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+});
+
 describe("départ dont l'accusé se perd", () => {
   it("TIMEOUT sur leave puis état sans l'élève : retour à /play, pas « NOT_IN_ROOM »", async () => {
     const leave = vi.fn<UseRoom["leave"]>(async () => ({ ok: false, error: "TIMEOUT" }));

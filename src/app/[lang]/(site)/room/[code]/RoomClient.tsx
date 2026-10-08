@@ -95,7 +95,12 @@ export function RoomClient({ code, role, locale, userId, labels }: RoomClientPro
     joinPending.current = false;
     const result = await leave();
     if (result.ok) goToPlay();
-    else setLeaving(false);
+    else {
+      setLeaving(false);
+      // Accusé perdu : le départ a peut-être eu lieu, on garde l'intention (un état sans nous mène à /play).
+      // Tout autre échec (OFFLINE…) : rien n'est parti, une éviction ultérieure doit rester visible.
+      if (result.error !== "TIMEOUT") setLeaveRequested(false);
+    }
   }
 
   function handleConfigChange(patch: RoomConfigPatch): void {
