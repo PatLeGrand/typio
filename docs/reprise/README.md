@@ -7,7 +7,7 @@ d'acceptation (AC-n) et une case à cocher par tâche.
 | Étape | Fiche | Branche | État |
 |---|---|---|---|
 | 0 | [Remettre `develop` au vert](etape-0-develop-au-vert.md) | `fix/develop-green` | ✅ fait sauf T8 (suppression à autoriser) |
-| 1 | [Salle par code en temps réel (checkpoint 1)](etape-1-salle-temps-reel.md) | `feat/realtime-room` | 🟡 en cours |
+| 1 | [Salle par code en temps réel (checkpoint 1)](etape-1-salle-temps-reel.md) | `feat/realtime-room` | ✅ fait, validé ; reste les PR et le feu vert mémoire VPS |
 | 2 | [Course solo propre](etape-2-course-solo.md) | `fix/race-screen` | ⬜ après le checkpoint |
 
 Mets à jour la colonne « État » et les cases des fiches à chaque commit.
@@ -143,3 +143,16 @@ bun run dev:realtime              # Socket.IO sur http://localhost:3001
   confiance à un `bun run build` local.
 - Si deux agents (Claude, Codex, Gemini) travaillent dans le même checkout en même temps,
   leurs fichiers se mélangent. Donne à chacun son worktree.
+
+## 7. Où en est la session du 8 octobre (limite d'usage atteinte)
+
+- Étapes 0 et 1 commitées et poussées (`fix/develop-green`, `feat/realtime-room`).
+- **En cours, non commité :** la revalidation périodique de la session sur chaque
+  socket (toutes les 90 s). Elle coupe l'onglet resté ouvert après un logout sur un
+  poste partagé. Un agent la codait dans `src/realtime/sessionExpiry.ts` au moment de
+  l'arrêt. À la reprise, lance `git status`. Si des changements sont présents dans
+  `src/realtime/`, valide-les avec `bunx vitest run src/realtime` (3 fois),
+  `bunx eslint src/realtime` et `bun run build:realtime`, puis commite-les.
+- Ensuite : PR `fix/develop-green` → `develop` ; rebase de `feat/realtime-room` et sa PR ;
+  autoriser la suppression de `fr_profile.json` et de `src/app/[lang]/sandbox/` ;
+  donner le feu vert mémoire du VPS.
