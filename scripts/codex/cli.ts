@@ -24,6 +24,7 @@ export const USAGE = `Usage :
   bun scripts/codex/run.ts verify <branche codex/*> [--checks lint,test,build]
   bun scripts/codex/run.ts clean <branche codex/*>
   bun scripts/codex/run.ts clean --work <id>
+  bun scripts/codex/run.ts clean --deps
 Options communes :
   --model <id>          impose un modèle (sinon celui du tableau tâche/niveau)
   --effort <niveau>     impose l'effort (low, medium, high, xhigh, max)
@@ -36,7 +37,7 @@ Lecture (search, review, tests, ui) :
   --brief <fichier.md>  brief de la tâche, inclus tel quel dans le prompt
   --from <ref>          point de départ de la copie de travail et du worktree (défaut : HEAD)
   --branch <codex/nom>  branche du worktree (défaut : codex/<tâche>-<date>-<heure>)
-  --checks <liste>      implement/qa : lint (défaut, dans le bac à sable) ou none ; avec --sortie-bac-a-sable : lint,test,build (défaut) ou none
+  --checks <liste>      implement/qa : none (défaut) ou lint (dans le bac à sable) ; avec --sortie-bac-a-sable : lint,test,build (défaut) ou none
                         verify : lint,test,build (défaut), hors bac à sable, après relecture du diff
   --sortie-bac-a-sable "<raison>"
                         lève le bac à sable (danger-full-access) ; à n'utiliser qu'avec l'accord de l'utilisateur`;
@@ -61,10 +62,11 @@ export type CleanCommand = { kind: "clean"; branch: string };
 
 /** `clean --work <id>` : supprime un dossier `~/.typio-codex/work/<id>` gardé (`--keep` ou ALERTE). */
 export type CleanWorkCommand = { kind: "cleanWork"; id: string };
+export type CleanDepsCommand = { kind: "cleanDeps" };
 
 export type VerifyCommand = { kind: "verify"; branch: string; checks: string[] };
 
-export type Command = ReadCommand | WriteCommand | CleanCommand | CleanWorkCommand | VerifyCommand;
+export type Command = ReadCommand | WriteCommand | CleanCommand | CleanWorkCommand | CleanDepsCommand | VerifyCommand;
 
 function parseThreshold(value: string | undefined): number {
   if (value === undefined) return DEFAULT_QUOTA_THRESHOLD;
@@ -117,6 +119,7 @@ export function parseCli(argv: readonly string[]): Command {
         branch: { type: "string" },
         checks: { type: "string" },
         work: { type: "string" },
+        deps: { type: "boolean", default: false },
         "sortie-bac-a-sable": { type: "string" },
         "seuil-quota": { type: "string" },
       },
@@ -133,7 +136,7 @@ export function parseCli(argv: readonly string[]): Command {
 
   if (taskName === "verify") {
     const extra = used(["base", "model", "effort", "level", "brief", "from", "branch", "work", "sortie-bac-a-sable", "seuil-quota"]);
-    if (extra.length > 0 || values.keep) throw new UsageError("verify n'accepte que --checks.");
+    if (extra.length > 0 || values.keep || values.deps) throw new UsageError("verify n'accepte que --checks.");
     const [branch, ...surplus] = rest;
     if (!branch || surplus.length > 0) throw new UsageError(`verify demande une seule branche ${BRANCH_PREFIX}*.`);
     if (!branch.startsWith(BRANCH_PREFIX)) throw new UsageError(`verify n'accepte que les branches ${BRANCH_PREFIX}* (reçu : ${branch}).`);
@@ -143,6 +146,10 @@ export function parseCli(argv: readonly string[]): Command {
   if (taskName === "clean") {
     const extra = used(["base", "model", "effort", "level", "brief", "from", "branch", "checks", "sortie-bac-a-sable", "seuil-quota"]);
     if (extra.length > 0 || values.keep) throw new UsageError(`clean n'accepte aucune option (reçu : ${[...extra, ...(values.keep ? ["keep"] : [])].map((name) => `--${name}`).join(", ")}).`);
+    if (values.deps) {
+      if (values.work !== undefined || rest.length > 0) throw new UsageError("clean --deps ne prend ni branche ni autre option.");
+      return { kind: "cleanDeps" };
+    }
     if (values.work !== undefined) {
       if (rest.length > 0) throw new UsageError("clean --work demande un identifiant, pas de branche.");
       if (!WORK_ID.test(values.work) || values.work.includes("..")) throw new UsageError(`--work : identifiant invalide « ${values.work} » (nom simple, comme run-AbC123).`);
@@ -154,6 +161,7 @@ export function parseCli(argv: readonly string[]): Command {
     return { kind: "clean", branch };
   }
 
+  if (values.deps) throw new UsageError("--deps ne concerne que clean.");
   if (values.work !== undefined) throw new UsageError("--work ne concerne que clean.");
   refuseDash("base", values.base);
   refuseDash("from", values.from);

@@ -15,7 +15,7 @@ import {
   type SandboxMode,
 } from "./codex";
 import { TamperedWorkError, UnavailableError, UsageError } from "./errors";
-import { installDependencies } from "./install";
+import { cleanDependencyModels, copyDependencies, type DependencyDeps } from "./deps";
 import { ensureQuota } from "./limits";
 import { makeScratchDir, stateDir } from "./paths";
 import { buildNoChangeReport, buildWriteReport, formatFooter, priorityReviewFiles } from "./report";
@@ -40,14 +40,14 @@ import { changedLines, defaultBranchName, preflightWorktree, statusLines, type W
  * Le dossier appelant n'est jamais modifié : son `git status` est comparé avant et après.
  */
 
-/** Ce qui se remplace dans les tests de `runWrite` : binaire, canaris, installation, Codex, lint, dossiers. */
+/** Ce qui se remplace dans les tests de `runWrite` : binaire, canaris, dépendances, Codex, lint, dossiers. */
 export type WriteDeps = {
   cwd?: string;
   resolveBinary?: () => string | null;
   ensureQuota?: (bin: string, threshold: number) => Promise<void>;
   verifyWriteCanary?: (bin: string) => Promise<string | null>;
   verifySandboxCanary?: (bin: string) => Promise<string | null>;
-  install?: (cwd: string) => void;
+  copyDependencies?: (cwd: string, stateParent: string, deps?: DependencyDeps) => void;
   runCodex?: typeof runCodex;
   /** Exécuteur du lint dans le bac à sable de Codex, sur `src`. */
   runLint?: (bin: string, names: readonly string[], src: string) => CheckResult[];
@@ -144,7 +144,7 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
 
     tempDir = realpathSync.native(makeScratchDir(stateParent, "run-"));
     const lastMessageFile = path.join(tempDir, "dernier-message.txt");
-    (deps.install ?? installDependencies)(dir.src);
+    if (command.task === "qa" || command.level !== 1) (deps.copyDependencies ?? copyDependencies)(dir.src, stateParent);
     throwIfInterrupted(interrupts.signal());
 
     const isIgnored = (deps.ignoreCheck ?? gitIgnoreCheck)(root);
@@ -159,9 +159,11 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
         env: safeEnv(process.env, { localDatabase: sandbox === "danger-full-access" }),
       });
     } finally {
-      // Sans bac à sable, Codex a pu écrire partout, y compris dans les caches des canaris : on les refait.
+      // Sans bac à sable, Codex a pu écrire partout, y compris dans les caches des canaris et dans les
+      // modèles de dépendances que `verify` copie hors bac à sable : on les refait.
       if (sandbox === "danger-full-access") {
         clearCanaryCaches(stateParent);
+        cleanDependencyModels(stateParent);
         canariesReset = true;
       }
     }
@@ -229,8 +231,8 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
 
     let checksText: string;
     if (sandbox === "danger-full-access") {
-      // Bac à sable levé : toutes les vérifications tournent ici, dans le worktree neuf, après une installation neuve.
-      (deps.install ?? installDependencies)(created.path);
+      // Bac à sable levé : toutes les vérifications tournent ici, dans le worktree neuf, après une copie neuve.
+      (deps.copyDependencies ?? copyDependencies)(created.path, stateParent);
       throwIfInterrupted(interrupts.signal());
       const baseline = afterTask(() => statusLines(created.path));
       const results = runChecks(command.checks, created.path, deps.execute);

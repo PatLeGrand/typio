@@ -51,6 +51,7 @@ describe("parseCli : verify", () => {
     [["verify", "main"]],
     [["verify", "codex/a", "codex/b"]],
     [["verify", "codex/a", "--checks", "none"]],
+    [["verify", "codex/a", "--deps"]],
     [["verify", "codex/a", "--checks", "lint;rm"]],
     [["verify", "codex/a", "--level", "1"]],
     [["verify", "codex/a", "--keep"]],
@@ -114,8 +115,8 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
       { kind: "verify", branch: "codex/implement-1", checks: ["lint", "test"] },
       {
         worktreesRoot: root,
-        install: (cwd) => {
-          events.push(`install@${path.resolve(cwd) === path.resolve(worktree.path)}`);
+        copyDependencies: (cwd) => {
+          events.push(`copy@${path.resolve(cwd) === path.resolve(worktree.path)}`);
           // À ce stade, rien de ce que Codex aurait pu laisser n'existe plus.
           events.push(`node_modules:${existsSync(path.join(cwd, "node_modules"))}`);
           events.push(`.next:${existsSync(path.join(cwd, ".next"))}`);
@@ -127,7 +128,7 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
       },
     );
     expect(code).toBe(0);
-    expect(events).toEqual(["install@true", "node_modules:false", ".next:false", "lint@true", "test@true"]);
+    expect(events).toEqual(["copy@true", "node_modules:false", ".next:false", "lint@true", "test@true"]);
   });
 
   it("l'installation échoue : code 2 (UnavailableError) et aucune vérification", () => {
@@ -140,7 +141,7 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
         { kind: "verify", branch: "codex/implement-1", checks: ["lint"] },
         {
           worktreesRoot: root,
-          install: () => {
+          copyDependencies: () => {
             throw new UnavailableError("bun install a échoué");
           },
           execute,
@@ -153,9 +154,9 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
   it("une branche qui n'est pas du wrapper est refusée avant toute suppression ou installation", () => {
     const repo = makeRepo();
     git(repo, "branch", "codex/venue-d-ailleurs");
-    const install = vi.fn();
-    expect(() => runVerify(repo, { kind: "verify", branch: "codex/venue-d-ailleurs", checks: ["lint"] }, { worktreesRoot: tempDir(), install })).toThrow(UsageError);
-    expect(install).not.toHaveBeenCalled();
+    const copyDependencies = vi.fn();
+    expect(() => runVerify(repo, { kind: "verify", branch: "codex/venue-d-ailleurs", checks: ["lint"] }, { worktreesRoot: tempDir(), copyDependencies })).toThrow(UsageError);
+    expect(copyDependencies).not.toHaveBeenCalled();
   });
 
   it("le rapport donne le code de sortie réel de chaque vérification", () => {
@@ -164,7 +165,7 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
     runVerify(
       repo,
       { kind: "verify", branch: "codex/implement-1", checks: ["lint", "build"] },
-      { worktreesRoot: root, install: () => {}, execute: (name) => ({ exitCode: name === "build" ? 3 : 0, output: "boum" }) },
+      { worktreesRoot: root, copyDependencies: () => {}, execute: (name) => ({ exitCode: name === "build" ? 3 : 0, output: "boum" }) },
     );
     const text = String(log.mock.calls[0]?.[0]);
     expect(text).toContain("- bun run lint : code 0");
@@ -188,12 +189,12 @@ describe("runVerify : fichiers cachés par un .gitignore de Codex", () => {
   it("F-1 : ALERTE (code 2) sans rien exécuter, ni supprimer, ni installer", () => {
     const { repo, root, worktree } = setupHidden();
     mkdirSync(path.join(worktree.path, "node_modules"));
-    const install = vi.fn();
+    const copyDependencies = vi.fn();
     const execute = vi.fn(() => ({ exitCode: 0, output: "" }));
-    const run = () => runVerify(repo, { kind: "verify", branch: "codex/implement-1", checks: ["lint"] }, { worktreesRoot: root, install, execute });
+    const run = () => runVerify(repo, { kind: "verify", branch: "codex/implement-1", checks: ["lint"] }, { worktreesRoot: root, copyDependencies, execute });
     expect(run).toThrow(TamperedWorkError);
     expect(run).toThrow(/^ALERTE.*secret\//);
-    expect(install).not.toHaveBeenCalled();
+    expect(copyDependencies).not.toHaveBeenCalled();
     expect(execute).not.toHaveBeenCalled();
     expect(existsSync(path.join(worktree.path, "node_modules"))).toBe(true);
     expect(existsSync(path.join(worktree.path, "secret", "script.js"))).toBe(true);

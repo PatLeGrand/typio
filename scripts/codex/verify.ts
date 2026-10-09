@@ -156,8 +156,8 @@ export function parseVerifyChecks(value: string | undefined): string[] {
  */
 export function parseAutoChecks(value: string | undefined, sandboxExit: boolean): string[] {
   if (sandboxExit) return parseChecks(value);
-  if (value === undefined || value.trim() === "lint") return ["lint"];
-  if (value.trim() === "none") return [];
+  if (value === undefined || value.trim() === "none") return [];
+  if (value.trim() === "lint") return ["lint"];
   throw new UsageError(
     `--checks : seuls lint ou none tournent automatiquement (reçu : ${value}). test et build se lancent après relecture : bun scripts/codex/run.ts verify <branche>.`,
   );

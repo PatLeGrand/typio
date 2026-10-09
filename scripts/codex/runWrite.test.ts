@@ -54,14 +54,14 @@ function setup(overrides: Partial<WriteCommand> = {}, depsOverrides: WriteDeps =
   const stateParent = tempDir();
   const lint = vi.fn((): ReturnType<NonNullable<WriteDeps["runLint"]>> => [{ name: "lint", exitCode: 0, seconds: 1, output: "" }]);
   const ignoreCheck = vi.fn((): IgnoreCheck => () => new Set<string>());
-  const install = vi.fn();
+  const copyDependencies = vi.fn();
   const deps: WriteDeps = {
     cwd: repo,
     resolveBinary: () => "codex-faux",
     ensureQuota: async () => {},
     verifyWriteCanary: async () => null,
     verifySandboxCanary: async () => null,
-    install,
+    copyDependencies,
     runLint: lint,
     execute: () => ({ exitCode: 0, output: "" }),
     ignoreCheck,
@@ -87,7 +87,7 @@ function setup(overrides: Partial<WriteCommand> = {}, depsOverrides: WriteDeps =
   const err = vi.spyOn(console, "error").mockImplementation(() => {});
   const stdout = (): string => out.mock.calls.map((call) => String(call[0])).join("\n");
   const stderr = (): string => err.mock.calls.map((call) => String(call[0])).join("\n");
-  return { repo, command, deps, workParent, worktreesRoot, stateParent, lint, ignoreCheck, install, stdout, stderr };
+  return { repo, command, deps, workParent, worktreesRoot, stateParent, lint, ignoreCheck, copyDependencies, stdout, stderr };
 }
 
 /** Un Codex factice : `act` reçoit le dossier de travail (`-C`), le message final est écrit dans `-o`. */
@@ -109,6 +109,17 @@ const put = (src: string, rel: string, content: string): void => {
 const entries = (dir: string): string[] => readdirSync(dir);
 
 describe("runWrite : succès", () => {
+  it("copie le modèle dans src pour les niveaux 2 et 4 et pour qa, mais pas pour le niveau 1", async () => {
+    for (const overrides of [{ level: 1 }, { level: 2 }, { level: 4 }, { task: "qa", level: undefined }] as Partial<WriteCommand>[]) {
+      const t = setup(overrides);
+      t.deps.runCodex = fakeCodex(() => {});
+      await runWrite(t.command, t.deps);
+      expect(t.copyDependencies.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(
+        overrides.level === 1 ? [] : ["src"],
+      );
+    }
+  });
+
   it("crée le worktree avec les seuls fichiers changés, supprime work/ et ne touche pas au dossier appelant", async () => {
     const t = setup();
     const callerBefore = git(t.repo, "status", "--porcelain");
@@ -346,7 +357,7 @@ describe("runWrite : --sortie-bac-a-sable", () => {
     };
     expect(await runWrite(t.command, t.deps)).toBe(0);
     expect(t.lint).not.toHaveBeenCalled();
-    expect(t.install.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(["src", "codex-test-1"]);
+    expect(t.copyDependencies.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(["codex-test-1"]);
     expect(executed).toEqual(["lint@codex-test-1", "test@codex-test-1"]);
     expect(entries(t.stateParent).filter((name) => name.endsWith(".json"))).toEqual(["autre.json"]);
     expect(t.stdout()).toContain("canary-*.json");

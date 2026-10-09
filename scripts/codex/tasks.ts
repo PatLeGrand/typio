@@ -157,8 +157,12 @@ export function buildWritePrompt({ task, level, brief, sandboxExitReason }: Writ
   const exit = sandboxExitReason
     ? `\nLe bac à sable est levé exceptionnellement, pour cette raison : « ${sandboxExitReason} ». N'utilise cette liberté que pour cela.`
     : "";
+  const withoutDependencies = task === "implement" && level === 1;
+  const dependencies = withoutDependencies
+    ? "sans dépendances (node_modules absent : ne lance ni lint, ni tsc, ni tests ; les types des paquets ne sont pas disponibles)"
+    : "dépendances installées";
   return `Tu es l'exécutant de l'orchestrateur Claude du projet Typio. ${role}
-Ton dossier de travail est une copie du dépôt créée pour cette tâche, sans historique git, dépendances installées : les commandes git n'y marchent pas. Modifie des fichiers de ce dossier, et seulement de ce dossier. Ne crée ni dossier ou fichier \`.git\`, ni \`.gitmodules\`, ni lien symbolique, ni jonction, ni dossier \`.codex\`, ni nouveau fichier \`.env*\` ou clé : l'orchestrateur refuse tout le travail qui en contient. Ne lis rien hors de ton dossier de travail, en particulier aucun fichier \`.env*\` ni aucun dossier \`~/.codex\`.
+Ton dossier de travail est une copie du dépôt créée pour cette tâche, sans historique git, ${dependencies} : les commandes git n'y marchent pas. Modifie des fichiers de ce dossier, et seulement de ce dossier. Ne crée ni dossier ou fichier \`.git\`, ni \`.gitmodules\`, ni lien symbolique, ni jonction, ni dossier \`.codex\`, ni nouveau fichier \`.env*\` ou clé : l'orchestrateur refuse tout le travail qui en contient. Ne lis rien hors de ton dossier de travail, en particulier aucun fichier \`.env*\` ni aucun dossier \`~/.codex\`.
 ${skills}${qaRules}
 Interdits : git commit, push, checkout, branch, stash, reset et worktree. L'orchestrateur commite lui-même.
 Ne modifie pas CLAUDE.md, AGENTS.md, .claude/**, .agents/**, scripts/codex/** ni scripts/gemini/**, sauf si le brief le demande explicitement.

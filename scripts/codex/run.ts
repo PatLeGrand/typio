@@ -14,7 +14,8 @@ import {
 } from "./codex";
 import { describeExit, UnavailableError, UsageError } from "./errors";
 import { ensureQuota } from "./limits";
-import { makeScratchDir, readDir } from "./paths";
+import { makeScratchDir, readDir, stateDir } from "./paths";
+import { cleanDependencyModels } from "./deps";
 import { formatFooter } from "./report";
 import {
   copySnapshot,
@@ -157,6 +158,11 @@ async function main(): Promise<number> {
   }
   if (command.kind === "cleanWork") {
     console.log(`Supprimé : ${cleanWorkdir(command.id)}`);
+    return 0;
+  }
+  if (command.kind === "cleanDeps") {
+    cleanDependencyModels(stateDir());
+    console.log("Modèles de dépendances supprimés.");
     return 0;
   }
   if (command.kind === "verify") {
