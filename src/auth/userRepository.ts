@@ -19,7 +19,8 @@ export interface UserRepository {
   findMemberByUsername(username: string): Promise<MemberRecord | null>;
   /**
    * Vrai si un MEMBRE a cet identifiant, sans tenir compte de la casse. `username` est déjà
-   * en minuscules. Sert à refuser un pseudo d'invité qui usurperait un membre.
+   * en minuscules. Sert à refuser un pseudo d'invité qui usurperait un membre : l'appelant passe
+   * le squelette du pseudo (`pseudoSkeleton`), pas sa forme affichée.
    */
   memberUsernameExists(username: string): Promise<boolean>;
   /** Lève `UsernameTakenError` si l'identifiant existe déjà. */
