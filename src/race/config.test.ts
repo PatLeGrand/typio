@@ -5,7 +5,7 @@ import { DEFAULT_RACE_SETTINGS, deserializeRaceSettings, getEffectiveTimeLimitSe
 
 describe("race settings boundary (CONFIG-1..9)", () => {
   it("round-trips accents and URL-sensitive exclusions without changing settings", () => {
-    const settings = { ...DEFAULT_RACE_SETTINGS, excludedCharacters: "é&#+%?", botCount: 0 };
+    const settings = { ...DEFAULT_RACE_SETTINGS, excludedCharacters: "#%&+?é", botCount: 0 };
     const query = new URLSearchParams(serializeRaceSettings(settings));
     expect(deserializeRaceSettings(query.get("config") ?? undefined)).toEqual(settings);
   });

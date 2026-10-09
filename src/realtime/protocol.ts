@@ -177,23 +177,26 @@ const CONFIG_KEYS: ReadonlyArray<keyof RoomConfig> = [
 ];
 
 /**
- * Caractères exclus (CONFIG-5, B-D1) : uniques, sans espaces ni caractères de contrôle, 30 au
- * plus. La salle diffuse des caractères, jamais une phrase écrite par l'hôte. `null` si trop long.
+ * Caractères qu'il est utile d'exclure : ceux que le générateur de textes peut produire.
+ * Lettres latines (avec les accents du français), chiffres, ponctuation ASCII et française.
+ */
+const EXCLUDABLE_CHARACTER = /^[A-Za-z0-9À-ÖØ-öø-ÿŒœ!-/:-@[-`{-~«»’…–—]$/u;
+
+/**
+ * Caractères exclus (CONFIG-5, B-D1) : uniques, pris dans la liste ci-dessus, 30 au plus, puis
+ * **triés**. L'hôte ne choisit ni les glyphes ni l'ordre : la salle diffuse un jeu de
+ * caractères, jamais un mot lisible. Les surrogates isolés ne sont pas dans la liste. `null` si l'entrée brute est trop longue.
  */
 export function normalizeExcludedCharacters(input: string): string | null {
   if (input.length > MAX_EXCLUDED_INPUT_LENGTH) return null;
 
-  const seen = new Set<string>();
-  const characters: string[] = [];
+  const kept = new Set<string>();
   for (const character of Array.from(input.normalize("NFC"))) {
-    if (/\s/u.test(character) || /[\p{Cc}\p{Cf}]/u.test(character) || seen.has(character)) {
-      continue;
-    }
-    seen.add(character);
-    characters.push(character);
-    if (characters.length === MAX_EXCLUDED_CHARACTERS) break;
+    if (!EXCLUDABLE_CHARACTER.test(character)) continue;
+    kept.add(character);
+    if (kept.size === MAX_EXCLUDED_CHARACTERS) break;
   }
-  return characters.join("");
+  return [...kept].sort().join("");
 }
 
 /**
@@ -244,7 +247,7 @@ export function parseRoomConfigPatch(input: unknown): RoomConfigPatch | null {
         if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > MAX_BOTS) {
           return null;
         }
-        patch.botCount = value;
+        patch.botCount = value + 0; // -0 devient 0
         break;
       case "botDifficulty":
         if (!isOneOf(BOT_DIFFICULTIES, value)) return null;
