@@ -1,9 +1,10 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parseCli } from "./cli";
+import { ensureDependencyModel } from "./deps";
 import { TamperedWorkError, UnavailableError, UsageError } from "./errors";
 import { formatSandboxChecks, type CheckResult } from "./verify";
 import { findHiddenFiles, runVerify } from "./verifyCommand";
@@ -94,7 +95,7 @@ describe("openOwnedWorktree : garde-fous de verify", () => {
   });
 });
 
-describe("runVerify : réinstalle les dépendances avant les vérifications", () => {
+describe("runVerify : refait les dépendances avant les vérifications", () => {
   function setup() {
     const repo = makeRepo();
     const root = tempDir();
@@ -106,7 +107,7 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
     return { repo, root, worktree };
   }
 
-  it("supprime node_modules/ et .next/, installe, puis lance les vérifications dans cet ordre", () => {
+  it("supprime node_modules/ et .next/, installe directement sans modèle, puis lance les vérifications dans cet ordre", () => {
     const { repo, root, worktree } = setup();
     vi.spyOn(console, "log").mockImplementation(() => {});
     const events: string[] = [];
@@ -115,11 +116,15 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
       { kind: "verify", branch: "codex/implement-1", checks: ["lint", "test"] },
       {
         worktreesRoot: root,
-        copyDependencies: (cwd) => {
+        copyExistingModel: (cwd) => {
           events.push(`copy@${path.resolve(cwd) === path.resolve(worktree.path)}`);
           // À ce stade, rien de ce que Codex aurait pu laisser n'existe plus.
           events.push(`node_modules:${existsSync(path.join(cwd, "node_modules"))}`);
           events.push(`.next:${existsSync(path.join(cwd, ".next"))}`);
+          return false;
+        },
+        installDependencies: (cwd) => {
+          events.push(`install@${path.resolve(cwd) === path.resolve(worktree.path)}`);
         },
         execute: (name, cwd) => {
           events.push(`${name}@${path.resolve(cwd) === path.resolve(worktree.path)}`);
@@ -128,7 +133,55 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
       },
     );
     expect(code).toBe(0);
-    expect(events).toEqual(["copy@true", "node_modules:false", ".next:false", "lint@true", "test@true"]);
+    expect(events).toEqual(["copy@true", "node_modules:false", ".next:false", "install@true", "lint@true", "test@true"]);
+  });
+
+  it("sans modèle correspondant : installe dans le worktree et ne crée rien sous state/deps/", () => {
+    const { repo, root, worktree } = setup();
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const stateParent = tempDir();
+    writeFileSync(path.join(worktree.path, "package.json"), '{ "name": "verify" }\n');
+    writeFileSync(path.join(worktree.path, "bun.lock"), "lock-verify");
+    const install = vi.fn();
+    runVerify(
+      repo,
+      { kind: "verify", branch: "codex/implement-1", checks: ["lint"] },
+      { worktreesRoot: root, stateParent, installDependencies: install, execute: () => ({ exitCode: 0, output: "" }) },
+    );
+    expect(install).toHaveBeenCalledTimes(1);
+    expect(path.resolve(String(install.mock.calls[0]?.[0]))).toBe(path.resolve(worktree.path));
+    expect(existsSync(path.join(stateParent, "deps"))).toBe(false);
+  });
+
+  it("avec un modèle correspondant : copie (exécuteurs injectés), sans installer ni construire", () => {
+    const { repo, root, worktree } = setup();
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const stateParent = tempDir();
+    writeFileSync(path.join(worktree.path, "package.json"), '{ "name": "verify" }\n');
+    writeFileSync(path.join(worktree.path, "bun.lock"), "lock-verify");
+    ensureDependencyModel(worktree.path, stateParent, {
+      install: (cwd) => {
+        mkdirSync(path.join(cwd, "node_modules", "paquet"), { recursive: true });
+        writeFileSync(path.join(cwd, "node_modules", "paquet", "index.js"), "// sain\n");
+        return { status: 0, output: "" };
+      },
+    });
+    const install = vi.fn();
+    const robocopy = vi.fn((source: string, destination: string) => {
+      cpSync(source, destination, { recursive: true });
+      return { status: 1, output: "" };
+    });
+    runVerify(
+      repo,
+      { kind: "verify", branch: "codex/implement-1", checks: ["lint"] },
+      { worktreesRoot: root, stateParent, installDependencies: install, dependencyDeps: { robocopy }, execute: () => ({ exitCode: 0, output: "" }) },
+    );
+    expect(install).not.toHaveBeenCalled();
+    // Le piège laissé par Codex a été supprimé, puis remplacé par la copie du modèle.
+    expect(existsSync(path.join(worktree.path, "node_modules", "paquet", "index.js"))).toBe(true);
+    expect(readFileSync(path.join(worktree.path, "node_modules", "paquet", "index.js"), "utf8")).toBe("// sain\n");
   });
 
   it("l'installation échoue : code 2 (UnavailableError) et aucune vérification", () => {
@@ -141,7 +194,8 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
         { kind: "verify", branch: "codex/implement-1", checks: ["lint"] },
         {
           worktreesRoot: root,
-          copyDependencies: () => {
+          copyExistingModel: () => false,
+          installDependencies: () => {
             throw new UnavailableError("bun install a échoué");
           },
           execute,
@@ -154,9 +208,13 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
   it("une branche qui n'est pas du wrapper est refusée avant toute suppression ou installation", () => {
     const repo = makeRepo();
     git(repo, "branch", "codex/venue-d-ailleurs");
-    const copyDependencies = vi.fn();
-    expect(() => runVerify(repo, { kind: "verify", branch: "codex/venue-d-ailleurs", checks: ["lint"] }, { worktreesRoot: tempDir(), copyDependencies })).toThrow(UsageError);
-    expect(copyDependencies).not.toHaveBeenCalled();
+    const copyExistingModel = vi.fn(() => false);
+    const installDependencies = vi.fn();
+    expect(() =>
+      runVerify(repo, { kind: "verify", branch: "codex/venue-d-ailleurs", checks: ["lint"] }, { worktreesRoot: tempDir(), copyExistingModel, installDependencies }),
+    ).toThrow(UsageError);
+    expect(copyExistingModel).not.toHaveBeenCalled();
+    expect(installDependencies).not.toHaveBeenCalled();
   });
 
   it("le rapport donne le code de sortie réel de chaque vérification", () => {
@@ -165,7 +223,7 @@ describe("runVerify : réinstalle les dépendances avant les vérifications", ()
     runVerify(
       repo,
       { kind: "verify", branch: "codex/implement-1", checks: ["lint", "build"] },
-      { worktreesRoot: root, copyDependencies: () => {}, execute: (name) => ({ exitCode: name === "build" ? 3 : 0, output: "boum" }) },
+      { worktreesRoot: root, copyExistingModel: () => true, execute: (name) => ({ exitCode: name === "build" ? 3 : 0, output: "boum" }) },
     );
     const text = String(log.mock.calls[0]?.[0]);
     expect(text).toContain("- bun run lint : code 0");
@@ -189,12 +247,15 @@ describe("runVerify : fichiers cachés par un .gitignore de Codex", () => {
   it("F-1 : ALERTE (code 2) sans rien exécuter, ni supprimer, ni installer", () => {
     const { repo, root, worktree } = setupHidden();
     mkdirSync(path.join(worktree.path, "node_modules"));
-    const copyDependencies = vi.fn();
+    const copyExistingModel = vi.fn(() => false);
+    const installDependencies = vi.fn();
     const execute = vi.fn(() => ({ exitCode: 0, output: "" }));
-    const run = () => runVerify(repo, { kind: "verify", branch: "codex/implement-1", checks: ["lint"] }, { worktreesRoot: root, copyDependencies, execute });
+    const run = () =>
+      runVerify(repo, { kind: "verify", branch: "codex/implement-1", checks: ["lint"] }, { worktreesRoot: root, copyExistingModel, installDependencies, execute });
     expect(run).toThrow(TamperedWorkError);
     expect(run).toThrow(/^ALERTE.*secret\//);
-    expect(copyDependencies).not.toHaveBeenCalled();
+    expect(copyExistingModel).not.toHaveBeenCalled();
+    expect(installDependencies).not.toHaveBeenCalled();
     expect(execute).not.toHaveBeenCalled();
     expect(existsSync(path.join(worktree.path, "node_modules"))).toBe(true);
     expect(existsSync(path.join(worktree.path, "secret", "script.js"))).toBe(true);

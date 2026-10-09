@@ -42,6 +42,7 @@ import { runWrite } from "./write";
  *   bun scripts/codex/run.ts verify <codex/branche>                               lint, test, build du worktree
  *   bun scripts/codex/run.ts clean <codex/branche>                                supprime worktree et branche
  *   bun scripts/codex/run.ts clean --work <id>                                    supprime un dossier work gardé
+ *   bun scripts/codex/run.ts clean --deps                                         supprime les modèles de dépendances (pas en parallèle d'autres tâches)
  *
  * Codes de sortie :
  *   0  réponse de Codex (ou rapport) sur stdout ; en écriture, même si une vérification échoue ;

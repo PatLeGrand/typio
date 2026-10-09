@@ -24,7 +24,7 @@ export const USAGE = `Usage :
   bun scripts/codex/run.ts verify <branche codex/*> [--checks lint,test,build]
   bun scripts/codex/run.ts clean <branche codex/*>
   bun scripts/codex/run.ts clean --work <id>
-  bun scripts/codex/run.ts clean --deps
+  bun scripts/codex/run.ts clean --deps          supprime tous les modèles de dépendances ; à ne pas lancer en parallèle d'autres tâches Codex
 Options communes :
   --model <id>          impose un modèle (sinon celui du tableau tâche/niveau)
   --effort <niveau>     impose l'effort (low, medium, high, xhigh, max)
@@ -40,7 +40,8 @@ Lecture (search, review, tests, ui) :
   --checks <liste>      implement/qa : none (défaut) ou lint (dans le bac à sable) ; avec --sortie-bac-a-sable : lint,test,build (défaut) ou none
                         verify : lint,test,build (défaut), hors bac à sable, après relecture du diff
   --sortie-bac-a-sable "<raison>"
-                        lève le bac à sable (danger-full-access) ; à n'utiliser qu'avec l'accord de l'utilisateur`;
+                        lève le bac à sable (danger-full-access) ; à n'utiliser qu'avec l'accord de l'utilisateur.
+                        Supprime aussi tous les modèles de dépendances (state/deps) après Codex : à ne pas lancer en parallèle d'autres tâches Codex`;
 
 type Common = { model?: string; effort?: Effort; quotaThreshold: number; keep: boolean };
 

@@ -15,7 +15,8 @@ import {
   type SandboxMode,
 } from "./codex";
 import { TamperedWorkError, UnavailableError, UsageError } from "./errors";
-import { cleanDependencyModels, copyDependencies, type DependencyDeps } from "./deps";
+import { copyDependencies, type DependencyDeps, removeAllDependencyModels } from "./deps";
+import { installDependencies } from "./install";
 import { ensureQuota } from "./limits";
 import { makeScratchDir, stateDir } from "./paths";
 import { buildNoChangeReport, buildWriteReport, formatFooter, priorityReviewFiles } from "./report";
@@ -47,7 +48,10 @@ export type WriteDeps = {
   ensureQuota?: (bin: string, threshold: number) => Promise<void>;
   verifyWriteCanary?: (bin: string) => Promise<string | null>;
   verifySandboxCanary?: (bin: string) => Promise<string | null>;
+  /** Construit le modèle de dépendances de `src` puis le copie dedans, avant Codex : seul endroit où un modèle se construit. */
   copyDependencies?: (cwd: string, stateParent: string, deps?: DependencyDeps) => void;
+  /** Installation directe (sans modèle) dans le worktree neuf, pour les vérifications du mode `--sortie-bac-a-sable`. */
+  installDependencies?: (cwd: string) => void;
   runCodex?: typeof runCodex;
   /** Exécuteur du lint dans le bac à sable de Codex, sur `src`. */
   runLint?: (bin: string, names: readonly string[], src: string) => CheckResult[];
@@ -84,6 +88,20 @@ function afterTask<T>(action: () => T): T {
   } catch (error) {
     if (error instanceof UsageError) throw new UnavailableError(error.message);
     throw error;
+  }
+}
+
+/**
+ * Supprime tous les modèles de dépendances (après un Codex sans bac à sable ou une ALERTE). Ne lève jamais : ce
+ * nettoyage ne doit pas masquer le résultat ni l'erreur de la tâche.
+ */
+function discardDependencyModels(stateParent: string): void {
+  try {
+    removeAllDependencyModels(stateParent);
+  } catch (error) {
+    console.error(
+      `AVERTISSEMENT : les modèles de dépendances n'ont pas pu être supprimés (${error instanceof Error ? error.message : String(error)}). Nettoyage : bun scripts/codex/run.ts clean --deps`,
+    );
   }
 }
 
@@ -145,6 +163,7 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
     tempDir = realpathSync.native(makeScratchDir(stateParent, "run-"));
     const lastMessageFile = path.join(tempDir, "dernier-message.txt");
     // Niveau 1 sans dépendances (changement mécanique), sauf si un lint est demandé dans le bac à sable : eslint en a besoin.
+    // Le modèle se construit ici, sur le commit de départ extrait et avant Codex : c'est le seul endroit où il se construit.
     const needsDependencies = command.task === "qa" || command.level !== 1 || (sandbox === "workspace-write" && command.checks.length > 0);
     if (needsDependencies) (deps.copyDependencies ?? copyDependencies)(dir.src, stateParent);
     throwIfInterrupted(interrupts.signal());
@@ -156,7 +175,13 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
       run = await (deps.runCodex ?? runCodex)({
         bin,
         args: buildCodexArgs({ cwd: dir.src, lastMessageFile, effort: profile.effort, model: profile.model, sandbox }),
-        prompt: buildWritePrompt({ task: command.task, level: command.level, brief, sandboxExitReason: command.sandboxExitReason }),
+        prompt: buildWritePrompt({
+          task: command.task,
+          level: command.level,
+          brief,
+          sandboxExitReason: command.sandboxExitReason,
+          withDependencies: needsDependencies,
+        }),
         timeoutMinutes: profile.timeoutMinutes,
         env: safeEnv(process.env, { localDatabase: sandbox === "danger-full-access" }),
       });
@@ -165,7 +190,7 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
       // modèles de dépendances que `verify` copie hors bac à sable : on les refait.
       if (sandbox === "danger-full-access") {
         clearCanaryCaches(stateParent);
-        cleanDependencyModels(stateParent);
+        discardDependencyModels(stateParent);
         canariesReset = true;
       }
     }
@@ -233,8 +258,9 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
 
     let checksText: string;
     if (sandbox === "danger-full-access") {
-      // Bac à sable levé : toutes les vérifications tournent ici, dans le worktree neuf, après une copie neuve.
-      (deps.copyDependencies ?? copyDependencies)(created.path, stateParent);
+      // Bac à sable levé : toutes les vérifications tournent ici, dans le worktree neuf, après une installation
+      // directe (aucun modèle : ceux de state/deps viennent d'être supprimés).
+      (deps.installDependencies ?? installDependencies)(created.path);
       throwIfInterrupted(interrupts.signal());
       const baseline = afterTask(() => statusLines(created.path));
       const results = runChecks(command.checks, created.path, deps.execute);
@@ -265,8 +291,12 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
     );
     return 0;
   } catch (error) {
-    // Une ALERTE garde le dossier brut comme preuve : rien n'y est supprimé ni lu par git.
-    if (error instanceof TamperedWorkError) keepWork = true;
+    // Une ALERTE garde le dossier brut comme preuve : rien n'y est supprimé ni lu par git. Une jonction créée par
+    // Codex aurait pu supprimer ou altérer des fichiers d'un modèle : ils sont tous refaits.
+    if (error instanceof TamperedWorkError) {
+      keepWork = true;
+      discardDependencyModels(stateParent);
+    }
     // Entre la réussite de Codex et le worktree, tout échec garderait un travail perdu : on le garde.
     if (unreported) {
       keepWork = true;
