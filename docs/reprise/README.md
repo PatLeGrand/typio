@@ -6,8 +6,8 @@ d'acceptation (AC-n) et une case à cocher par tâche.
 
 | Étape | Fiche | Branche | État |
 |---|---|---|---|
-| 0 | [Remettre `develop` au vert](etape-0-develop-au-vert.md) | `fix/develop-green` | ✅ fusionnée dans `develop` (PR #38), sauf T8 (suppression à autoriser) |
-| 1 | [Salle par code en temps réel (checkpoint 1)](etape-1-salle-temps-reel.md) | `feat/realtime-room` | ✅ validée, PR vers `develop` ouverte ; feu vert mémoire VPS à donner |
+| 0 | [Remettre `develop` au vert](etape-0-develop-au-vert.md) | `fix/develop-green` | ✅ fusionnée (#38, ménage #41) et en production |
+| 1 | [Salle par code en temps réel (checkpoint 1)](etape-1-salle-temps-reel.md) | `feat/realtime-room` | ✅ fusionnée (#40) et en production (`sha-7338783`) |
 | 2 | [Course solo propre](etape-2-course-solo.md) | `fix/race-screen` | ⬜ après le checkpoint |
 
 Mets à jour la colonne « État » et les cases des fiches à chaque commit.

@@ -35,10 +35,14 @@ Grille d'évaluation (100 points). Tout ce qui n'y figure pas attend après le c
 - ✅ Architecture validée par Patrick : arrondis, invité héritier du rôle d'hôte, fermeture
   des résultats après 10 min.
 - ✅ Déploiement en production : HTTPS (Caddy), authentification des membres et des invités,
-  PostgreSQL (tables `users` et `sessions`), version `sha-ee2493e`.
+  PostgreSQL (tables `users` et `sessions`). Version en ligne : `sha-7338783` (9 octobre 2026),
+  avec le service `realtime` derrière Caddy (`/socket.io/*`).
 - ✅ Langue et thème : FR/EN, clair/sombre, direction artistique Figma.
 - ✅ Intégration continue : tests, lint, build, migrations et tests d'intégration PostgreSQL.
-- 🟡 Salle créée et rejointe par code, mise à jour en temps réel : protocole installé, implémentation déléguée, voir [plan-salle-temps-reel.md](plan-salle-temps-reel.md).
+- ✅ Salle créée et rejointe par code, mise à jour en temps réel (PR #40) : création par un
+  membre, jonction par code (membre ou invité), liste et configuration en direct, reprise
+  après rechargement, départ et transfert d'hôte. Détails et suites reportées :
+  [reprise/etape-1-salle-temps-reel.md](reprise/etape-1-salle-temps-reel.md).
 - ⬜ Matrice des exigences.
 
 **Risque connu :** un élève qui connaît l'identifiant d'un camarade peut le bloquer 15 min
