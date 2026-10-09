@@ -23,7 +23,7 @@ export function HomeHero({ home, locale }: HomeHeroProps) {
           </h1>
           <p className="max-w-[610px] text-base leading-[1.65] text-muted sm:text-lg">{home.hero.description}</p>
           <div className="flex w-full flex-col justify-center gap-3 pt-1 sm:w-auto sm:flex-row sm:gap-4">
-            <ButtonLink href={`/${locale}/play`}>{home.createRace}</ButtonLink>
+            <ButtonLink href={`/${locale}/race/settings`}>{home.createRace}</ButtonLink>
             <ButtonLink href={`/${locale}/play`} variant="secondary">
               {home.joinWithCode}
             </ButtonLink>

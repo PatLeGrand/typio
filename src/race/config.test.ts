@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { TIME_LIMITS_SECONDS } from "@/realtime/protocol";
 import { DEFAULT_RACE_SETTINGS, deserializeRaceSettings, getEffectiveTimeLimitSeconds,
   parseRaceSettings, serializeRaceSettings } from "./config";
 
@@ -9,8 +10,17 @@ describe("race settings boundary (CONFIG-1..9)", () => {
     expect(deserializeRaceSettings(query.get("config") ?? undefined)).toEqual(settings);
   });
 
-  it.each([0, -1, 601, 1.5, NaN, Infinity, "120"])("rejects invalid duration %s", (timeLimitSeconds) => {
+  it.each([0, 1, 90, -1, 601, 1.5, NaN, Infinity, "120"])("rejects duration %s outside the protocol list", (timeLimitSeconds) => {
     expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds })).toBeNull();
+  });
+
+  it.each([null, ...TIME_LIMITS_SECONDS])("accepts duration %s", (timeLimitSeconds) => {
+    expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds })).toMatchObject({ timeLimitSeconds });
+  });
+
+  it("refuses an old URL whose duration is not in the list", () => {
+    const config = JSON.stringify({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds: 90 });
+    expect(deserializeRaceSettings(config)).toBeNull();
   });
 
   it.each([-1, 8, 0.5, "2"])("rejects invalid bot count %s", (botCount) => {

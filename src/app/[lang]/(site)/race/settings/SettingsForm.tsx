@@ -6,82 +6,47 @@ import { RadioCard } from "@/components/race/RadioCard";
 import { Switch } from "@/components/race/Switch";
 import { Button } from "@/components/Button";
 import { Settings2, Type, SlidersHorizontal, Bot } from "lucide-react";
-import { Logo } from "@/components/Logo";
-import Link from "next/link";
-import { DEFAULT_RACE_SETTINGS, getEffectiveTimeLimitSeconds, serializeRaceSettings } from "@/race/config";
+import { DEFAULT_RACE_SETTINGS, serializeRaceSettings } from "@/race/config";
 import type { RaceSettings } from "@/race/config";
+import { TIME_LIMITS_SECONDS } from "@/realtime/protocol";
+import type { TimeLimitSeconds } from "@/realtime/protocol";
 import type { Dictionary } from "@/i18n/dictionaries";
 
 interface SettingsFormProps {
-  siteName: string;
   lang: string;
   dict: Dictionary["raceSettings"];
 }
 
-export function SettingsForm({ lang, dict, siteName }: SettingsFormProps) {
+/** Fills the localized "{minutes} min" template from a duration in seconds. */
+function formatMinutes(template: string, seconds: TimeLimitSeconds): string {
+  return template.replace("{minutes}", String(seconds / 60));
+}
+
+export function SettingsForm({ lang, dict }: SettingsFormProps) {
   const router = useRouter();
 
   const [settings, setSettings] = useState<RaceSettings>({ ...DEFAULT_RACE_SETTINGS });
-  const [hasTimeLimit, setHasTimeLimit] = useState<boolean>(DEFAULT_RACE_SETTINGS.timeLimitSeconds !== null);
-  const [timeLimitInputValue, setTimeLimitInputValue] = useState<number>(DEFAULT_RACE_SETTINGS.timeLimitSeconds ?? 120);
-
-  const [timeLimitError, setTimeLimitError] = useState<string | null>(null);
   const [excludedError, setExcludedError] = useState<string | null>(null);
 
   const handleReset = () => {
     setSettings({ ...DEFAULT_RACE_SETTINGS });
-    setHasTimeLimit(DEFAULT_RACE_SETTINGS.timeLimitSeconds !== null);
-    setTimeLimitInputValue(DEFAULT_RACE_SETTINGS.timeLimitSeconds ?? 120);
-    setTimeLimitError(null);
     setExcludedError(null);
   };
 
   const excludedCount = new Set(Array.from(settings.excludedCharacters).filter((character) => !/\s/u.test(character))).size;
 
   const handleLaunch = () => {
-    let isValid = true;
-
     if (settings.excludedCharacters.length > 100) {
       setExcludedError(dict.excludedChars.error);
-      isValid = false;
-    } else {
-      setExcludedError(null);
+      return;
     }
+    setExcludedError(null);
 
-    if (hasTimeLimit) {
-      if (!Number.isInteger(timeLimitInputValue) || timeLimitInputValue < 1 || timeLimitInputValue > 600) {
-        setTimeLimitError(dict.timeLimit.error);
-        isValid = false;
-      } else {
-        setTimeLimitError(null);
-      }
-    } else {
-      setTimeLimitError(null);
-    }
-
-    if (!isValid) return;
-
-    const finalSettings = {
-      ...settings,
-      timeLimitSeconds: hasTimeLimit ? timeLimitInputValue : null,
-    };
-
-    router.push(`/${lang}/race?${serializeRaceSettings(finalSettings)}`);
+    router.push(`/${lang}/race?${serializeRaceSettings(settings)}`);
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
-      {/* HEADER */}
-      <header className="flex items-center justify-between px-8 py-4 border-b border-border bg-background">
-        <div className="flex items-center gap-6">
-          <Link href={`/${lang}`} aria-label={dict.title}>
-            <Logo name={siteName} />
-          </Link>
-        </div>
-      </header>
-
-      {/* MAIN LAYOUT */}
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-8 py-10">
+    <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-10 text-foreground sm:px-8">
 
         {/* PAGE HEADER */}
         <div className="flex flex-col sm:flex-row gap-4 items-start justify-between mb-8">
@@ -231,40 +196,27 @@ export function SettingsForm({ lang, dict, siteName }: SettingsFormProps) {
 
               <div className="flex flex-col gap-8">
                 {/* Limite de temps */}
-                <div className="flex flex-col gap-4 items-start justify-between border-b border-border pb-8">
-                  <div>
-                    <h3 className="text-[15px] font-semibold">{dict.timeLimit.label}</h3>
-                    <p className="text-sm text-muted mt-1">{dict.timeLimit.help}</p>
-                    {timeLimitError && (
-                      <p role="alert" className="text-sm text-danger mt-1">{timeLimitError}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4">
-                    <span className="text-sm font-semibold text-accent-text">
-                      {hasTimeLimit ? dict.timeLimit.on : dict.timeLimit.off}
-                    </span>
-                    <Switch aria-label={dict.timeLimit.label} checked={hasTimeLimit} onChange={(v) => {
-                      setHasTimeLimit(v);
-                      if (timeLimitError) setTimeLimitError(null);
-                    }} />
-                    <div className="flex items-center gap-2 border border-border rounded-field px-3 h-10 ml-2">
-                      <span className="text-muted">⏱</span>
-                      <input
-                        type="number" aria-label={dict.timeLimit.label} aria-invalid={Boolean(timeLimitError)}
-                        value={timeLimitInputValue}
-                        onChange={(e) => {
-                          setTimeLimitInputValue(Number(e.target.value));
-                          if (timeLimitError) setTimeLimitError(null);
-                        }}
-                        disabled={!hasTimeLimit}
-                        className="w-12 text-center font-bold outline-none bg-transparent disabled:opacity-50"
-                        min={1}
-                        max={600}
+                <fieldset className="border-b border-border pb-8">
+                  <legend id="time-limit-label" className="text-[15px] font-semibold">{dict.timeLimit.label}</legend>
+                  <p className="text-sm text-muted mt-1 mb-3">{dict.timeLimit.help}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3" role="radiogroup" aria-labelledby="time-limit-label">
+                    <RadioCard
+                      checked={settings.timeLimitSeconds === null}
+                      onChange={() => setSettings({ ...settings, timeLimitSeconds: null })}
+                      label={dict.timeLimit.none}
+                      className="justify-center text-center"
+                    />
+                    {TIME_LIMITS_SECONDS.map((seconds) => (
+                      <RadioCard
+                        key={seconds}
+                        checked={settings.timeLimitSeconds === seconds}
+                        onChange={() => setSettings({ ...settings, timeLimitSeconds: seconds })}
+                        label={formatMinutes(dict.timeLimit.minutes, seconds)}
+                        className="justify-center text-center"
                       />
-                      <span className="text-sm text-muted">{dict.timeLimit.seconds}</span>
-                    </div>
+                    ))}
                   </div>
-                </div>
+                </fieldset>
 
                 {/* Mode de saisie */}
                 <div>
@@ -402,7 +354,7 @@ export function SettingsForm({ lang, dict, siteName }: SettingsFormProps) {
                   </li>
                   <li className="flex justify-between border-b border-border pb-3">
                     <span className="text-muted">{dict.timeLimit.label}</span>
-                    <span className="font-semibold">{getEffectiveTimeLimitSeconds({ ...settings, timeLimitSeconds: hasTimeLimit ? timeLimitInputValue : null })} {dict.timeLimit.seconds}</span>
+                    <span className="font-semibold">{settings.timeLimitSeconds === null ? dict.timeLimit.noneShort : formatMinutes(dict.timeLimit.minutes, settings.timeLimitSeconds)}</span>
                   </li>
                   <li className="flex justify-between border-b border-border pb-3">
                     <span className="text-muted">{dict.inputMode.label}</span>
@@ -438,7 +390,6 @@ export function SettingsForm({ lang, dict, siteName }: SettingsFormProps) {
           </aside>
 
         </div>
-      </main>
-    </div>
+    </main>
   );
 }

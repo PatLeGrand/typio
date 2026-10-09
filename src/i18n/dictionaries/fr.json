@@ -375,10 +375,9 @@
     "timeLimit": {
       "label": "Limite de temps",
       "help": "Sans limite personnalisée, la course s'arrête après 5 minutes.",
-      "on": "Activée",
-      "off": "5 minutes par défaut",
-      "seconds": "secondes",
-      "error": "Entre 1 et 600 secondes."
+      "none": "Aucune (5 min par défaut)",
+      "noneShort": "Aucune",
+      "minutes": "{minutes} min"
     },
     "inputMode": {
       "label": "Mode de saisie",

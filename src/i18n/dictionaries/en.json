@@ -375,10 +375,9 @@
     "timeLimit": {
       "label": "Time limit",
       "help": "Without a custom limit, the race ends after 5 minutes.",
-      "on": "On",
-      "off": "5 minutes by default",
-      "seconds": "seconds",
-      "error": "Between 1 and 600 seconds."
+      "none": "None (5 min by default)",
+      "noneShort": "None",
+      "minutes": "{minutes} min"
     },
     "inputMode": {
       "label": "Input mode",

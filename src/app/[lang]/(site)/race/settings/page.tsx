@@ -14,5 +14,5 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function RaceSettingsPage({ params }: { params: Promise<{ lang: string }> }) {
   const locale = requireLocale((await params).lang);
   const dict = getDictionary(locale);
-  return <SettingsForm lang={locale} dict={dict.raceSettings} siteName={dict.site.name} />;
+  return <SettingsForm lang={locale} dict={dict.raceSettings} />;
 }
