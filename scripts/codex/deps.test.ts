@@ -173,7 +173,8 @@ describe("modèles de dépendances", () => {
     expect(() => copyDependencies(project(), state, { robocopy: () => ({ status: 8, output: "échec" }) })).toThrow(UnavailableError);
   });
 
-  it("garde les trois modèles les plus récemment utilisés et clean refuse une jonction", () => {
+  it("garde les trois modèles les plus récemment utilisés et clean ne suit pas une jonction", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     const state = tempDir();
     const deps = path.join(state, "deps");
     mkdirSync(deps);
@@ -189,12 +190,16 @@ describe("modèles de dépendances", () => {
     }
     pruneDependencyModels(state);
     expect(hashes.filter((hash) => existsSync(path.join(deps, hash)))).toEqual(hashes.slice(1));
+    // La jonction vise un dossier hors de deps/ : clean la laisse en place, sans rien supprimer de sa cible.
+    const outside = tempDir();
+    writeFileSync(path.join(outside, "garde.txt"), "ok\n");
     const link = path.join(deps, "a".repeat(64));
-    symlinkSync(path.join(deps, hashes[1]), link, "junction");
-    expect(() => cleanDependencyModels(state)).toThrow(UnavailableError);
+    symlinkSync(outside, link, "junction");
+    expect(() => cleanDependencyModels(state)).not.toThrow();
     expect(existsSync(link)).toBe(true);
+    expect(existsSync(path.join(outside, "garde.txt"))).toBe(true);
+    expect(hashes.filter((hash) => existsSync(path.join(deps, hash)))).toEqual([]);
     rmSync(link);
-    cleanDependencyModels(state);
     expect(existsSync(path.join(deps, "ne-pas-supprimer"))).toBe(true);
   });
 });

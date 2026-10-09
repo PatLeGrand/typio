@@ -26,20 +26,22 @@ Codex never replaces `code-reviewer` or `security-reviewer`, and Gemini keeps it
 Write the brief to a Markdown file (scratchpad), self-contained as CLAUDE.md rule 2 requires: requirement IDs, files, AC-n, decisions taken, what not to touch. Then, from the checkout whose `HEAD` Codex should start from:
 
 ```bash
-bun scripts/codex/run.ts implement --level <1|2|4> --brief <brief.md> [--checks lint|none] [--from <ref>] [--branch codex/<name>]
+bun scripts/codex/run.ts implement --level <1|2|4> --brief <brief.md> [--checks none|lint] [--from <ref>] [--branch codex/<name>]
 bun scripts/codex/run.ts qa --brief <brief.md> [--from <ref>]
 bun scripts/codex/run.ts verify codex/<branch> [--checks lint,test,build]
 bun scripts/codex/run.ts search "<question>"
 bun scripts/codex/run.ts clean codex/<branch>
 bun scripts/codex/run.ts clean --work <id>
+bun scripts/codex/run.ts clean --deps
 ```
 
 Other options: `--model`, `--effort`, `--seuil-quota <percent>` (default 90), `--keep` (keep the work folder `work/<id>`, removed later with `clean --work <id>`; for a read task, keep the copy), `--sortie-bac-a-sable "<reason>"`.
 
-- Codex never writes in a git repository. It works in a plain extraction of `--from` (default `HEAD`) under `~/.typio-codex/work/<id>/src/`, with no `.git` and dependencies installed by copy (`bun install --backend=copyfile`). Uncommitted changes of the calling checkout are **not** visible to it: commit them first (WIP commit if needed).
-- After Codex finishes, the wrapper runs **only `lint`, inside the Codex sandbox** (`VERIFICATIONS (bac à sable) : lint OK|ECHEC`), with a throwaway `CODEX_HOME`. On Windows the sandbox forbids Node and Bun child processes, so `test` and `build` cannot run there.
+- Codex never writes in a git repository. It works in a plain extraction of `--from` (default `HEAD`) under `~/.typio-codex/work/<id>/src/`, and no `.git`. Uncommitted changes of the calling checkout are **not** visible to it: commit them first (WIP commit if needed).
+- **Dependencies.** Level 1 gets no `node_modules`: mechanical changes do not need them, and Codex is told not to run lint, tsc or tests. Levels 2 and 4 and `qa` get a copy of a dependency model kept under `~/.typio-codex/state/deps/<sha256 of bun.lock>/`. That model is installed once per lockfile (`bun install --backend=copyfile`, about 2.5 minutes), then copied with `robocopy` (about 30 seconds). It is never linked: a junction would let Codex delete files in it. The three most recently used models are kept; `clean --deps` removes them all. They are also deleted after a `--sortie-bac-a-sable` run.
+- **No automatic check by default** (`VERIFICATIONS (bac à sable) : AUCUNE`). `--checks lint` still runs `lint` inside the Codex sandbox after Codex finishes, with a throwaway `CODEX_HOME`, but it costs 2 to 4 minutes on fresh files and `verify` runs it again anyway. On Windows the sandbox forbids Node and Bun child processes, so `test` and `build` can never run there.
 - Then it compares the extraction with a pristine copy, without running git on it, and refuses (`ALERTE`) any `.git` entry, `.gitmodules`, link, new sensitive file or `.codex/` folder. Only the added, modified and deleted files that git would track are copied into a fresh worktree under `~/.typio-codex/worktrees/`, on a `codex/*` branch: Codex never saw that worktree. Ignored files Codex created are listed in the report but not copied. If nothing changed, no worktree is created.
-- **`test` and `build` run with `verify`, and only after you have read the full diff**: they execute code written by Codex outside the sandbox, with the network and a local `DATABASE_URL` (never `AUTH_*`). `verify` reinstalls the dependencies first, then prints each real exit code, then `VERIFICATIONS : OK` or `ECHEC (...)`.
+- **`lint`, `test` and `build` run with `verify`, and only after you have read the full diff**: they execute code written by Codex outside the sandbox, with the network and a local `DATABASE_URL` (never `AUTH_*`). `verify` first replaces `node_modules/` with a fresh copy of the model that matches the worktree's `bun.lock` (building it if Codex changed the lockfile), then prints each real exit code, then `VERIFICATIONS : OK` or `ECHEC (...)`.
 - The report ends with the worktree diff (`git status`, `git diff --stat`), its path and branch, and a footer with model, effort, sandbox mode, tokens and duration.
 - Long tasks fit well as background commands while Claude agents work on other files.
 
