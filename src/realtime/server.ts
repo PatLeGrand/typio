@@ -38,6 +38,8 @@ export interface RealtimeServerOptions {
   now?: () => Date;
   /** Délai de grâce avant le retrait d'un participant déconnecté ; `RECONNECT_GRACE_MS` par défaut. */
   graceMs?: number;
+  /** Intervalle de relecture de la session de chaque socket ; `SESSION_REVALIDATE_MS` par défaut. */
+  revalidateMs?: number;
 }
 
 export interface RealtimeServerHandle {
@@ -74,7 +76,7 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
   });
 
   const userSockets = createUserSockets();
-  const sessionExpiry = createSessionExpiryWatcher(now);
+  const sessionExpiry = createSessionExpiryWatcher(now, { revalidateMs: options.revalidateMs });
   /** Échéance de session de chaque socket en cours de connexion, hors de `SocketData`. */
   const handshakeExpiry = new WeakMap<object, Date>();
 
@@ -126,7 +128,17 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     // Après les gestionnaires : une échéance déjà passée coupe le socket tout de suite, et
     // le `disconnect` des gestionnaires doit alors le voir (marquer déconnecté, armer la grâce).
     const expiresAt = handshakeExpiry.get(socket);
-    if (expiresAt) sessionExpiry.watch(socket, expiresAt);
+    if (expiresAt) {
+      // Même lecture que la poignée de main, sur le cookie qu'elle portait : la session doit
+      // exister toujours et appartenir au même utilisateur. Une erreur de base lève, et le
+      // suivi garde alors le socket.
+      const cookie = socket.request.headers.cookie;
+      const userId = socket.data.user.id;
+      sessionExpiry.watch(socket, expiresAt, async () => {
+        const identity = await authenticateHandshake(options.sessions, cookie, now());
+        return identity?.user.id === userId;
+      });
+    }
   });
 
   return { io, httpServer, timers, sessionExpiry, userSockets };

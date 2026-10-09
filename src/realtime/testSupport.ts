@@ -18,11 +18,13 @@ export type TestClient = Socket<ServerToClientEvents, ClientToServerEvents>;
 export function createFakeSessions(gate: { current: Promise<void> | null } = { current: null }) {
   const rows = new Map<string, SessionWithUser>();
   let counter = 0;
+  let failing = false;
   const repository: SessionRepository = {
     async insert() {},
     async findWithUser(id) {
       // Poignées de main suspendues : toutes reprennent d'un coup (voir `holdAuth`).
       if (gate.current) await gate.current;
+      if (failing) throw new Error("database unavailable");
       return rows.get(id) ?? null;
     },
     async delete(id) {
@@ -34,6 +36,14 @@ export function createFakeSessions(gate: { current: Promise<void> | null } = { c
   };
   return {
     repository,
+    /** Supprime la session, comme une déconnexion faite dans un autre onglet. */
+    revoke(token: string) {
+      rows.delete(hashToken(token));
+    },
+    /** Fait échouer toute lecture de session, comme une base indisponible. */
+    setDatabaseDown(down: boolean) {
+      failing = down;
+    },
     /**
      * `ttlMs` : durée de la session (1 h par défaut) ; `accountTtlMs` : durée du compte
      * invité (égale à celle de la session par défaut).
@@ -62,7 +72,7 @@ export function createFakeSessions(gate: { current: Promise<void> | null } = { c
 }
 
 /** Serveur sur un port libre ; `client(token)` ouvre une connexion avec le cookie de session. */
-export async function startTestServer(options: { graceMs?: number } = {}) {
+export async function startTestServer(options: { graceMs?: number; revalidateMs?: number } = {}) {
   const gate: { current: Promise<void> | null } = { current: null };
   let releaseGate = () => {};
   const sessions = createFakeSessions(gate);
@@ -70,6 +80,7 @@ export async function startTestServer(options: { graceMs?: number } = {}) {
     sessions: sessions.repository,
     allowedOrigins: [TEST_ORIGIN],
     graceMs: options.graceMs,
+    revalidateMs: options.revalidateMs,
   });
   await new Promise<void>((resolve) => httpServer.listen(0, "127.0.0.1", resolve));
   const { port } = httpServer.address() as AddressInfo;

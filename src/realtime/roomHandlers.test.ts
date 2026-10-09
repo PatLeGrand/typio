@@ -13,8 +13,8 @@ const LONG_GRACE_MS = 5000;
 
 const servers: TestServer[] = [];
 
-async function start(graceMs = LONG_GRACE_MS): Promise<TestServer> {
-  const server = await startTestServer({ graceMs });
+async function start(graceMs = LONG_GRACE_MS, revalidateMs?: number): Promise<TestServer> {
+  const server = await startTestServer({ graceMs, revalidateMs });
   servers.push(server);
   return server;
 }
@@ -602,5 +602,64 @@ describe("roomHandlers: abus (énumération, connexions, taille, session)", () =
 
     await server.close();
     expect(server.sessionExpiry.size).toBe(0);
+  });
+
+  it("coupe un socket dont la session a été supprimée (déconnexion dans un autre onglet)", async () => {
+    const server = await start(LONG_GRACE_MS, 100);
+    const { token } = server.sessions.signIn("member");
+    const socket = await open(server, token);
+    const closed = new Promise<string>((resolve) => socket.once("disconnect", resolve));
+
+    server.sessions.revoke(token);
+
+    expect(await closed).toBe("io server disconnect");
+    await pause(25);
+    expect(server.sessionExpiry.size).toBe(0);
+    expect(await waitForConnection(server.client(token))).toEqual({ connected: false, error: "UNAUTHENTICATED" });
+  });
+
+  it("après une déconnexion ailleurs, le participant est marqué déconnecté pour la salle", async () => {
+    const server = await start(LONG_GRACE_MS, 100);
+    const socketA = await open(server, server.sessions.signIn("member").token);
+    const code = expectOk(await create(socketA));
+    const userB = server.sessions.signIn("guest");
+    const socketB = await open(server, userB.token);
+    expectOk(await join(socketB, { code, role: "runner" }));
+    const offline = waitForState(socketA, (s) => participant(s, userB.userId)?.connected === false);
+
+    server.sessions.revoke(userB.token);
+
+    expect(participant(await offline, userB.userId)).toBeDefined();
+    expect(server.timers.size).toBe(1);
+  });
+
+  it("une erreur de base pendant la revalidation ne coupe pas le socket", async () => {
+    const server = await start(LONG_GRACE_MS, 80);
+    const { token } = server.sessions.signIn("member");
+    const socket = await open(server, token);
+    let disconnected = false;
+    socket.once("disconnect", () => {
+      disconnected = true;
+    });
+
+    server.sessions.setDatabaseDown(true);
+    await pause(300); // plusieurs tours en échec
+    expect(disconnected).toBe(false);
+    expect(socket.connected).toBe(true);
+
+    // La base revient, la session a disparu entre-temps : le tour suivant coupe.
+    server.sessions.setDatabaseDown(false);
+    server.sessions.revoke(token);
+    const closed = new Promise<string>((resolve) => socket.once("disconnect", resolve));
+    expect(await closed).toBe("io server disconnect");
+  });
+
+  it("garde un socket dont la session reste valide, et un seul minuteur par socket", async () => {
+    const server = await start(LONG_GRACE_MS, 60);
+    const socket = await open(server, server.sessions.signIn("member").token);
+    await pause(300);
+
+    expect(socket.connected).toBe(true);
+    expect(server.sessionExpiry.size).toBe(1);
   });
 });
