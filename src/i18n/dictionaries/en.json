@@ -505,6 +505,7 @@
     "playerNametag": "Player nametag",
     "host": "Host",
     "spectator": "Spectator",
+    "guest": "Guest",
     "disconnected": "Disconnected",
     "play": {
       "create": {
