@@ -46,6 +46,7 @@ describe("parseRoomConfigPatch", () => {
     { botCount: -1 },
     { botCount: 1.5 },
     { botCount: "2" },
+    { botCount: Infinity },
     { botDifficulty: "expert" },
     { excludedCharacters: "x".repeat(101) },
     { excludedCharacters: 1 },
@@ -55,23 +56,41 @@ describe("parseRoomConfigPatch", () => {
 });
 
 describe("normalizeExcludedCharacters", () => {
-  it("removes spaces and duplicates while preserving the first occurrence", () => {
+  it("removes spaces and duplicates, then sorts the characters", () => {
     expect(normalizeExcludedCharacters("a b a")).toBe("ab");
+    // L'h\u00f4te ne choisit pas l'ordre : un mot ne reste pas lisible.
+    expect(normalizeExcludedCharacters("salope")).toBe("aelops");
   });
 
-  it("normalizes Unicode to NFC", () => {
-    const input = "\u00e9\u0301";
-    expect(normalizeExcludedCharacters(input)).toBe(input.normalize("NFC"));
+  it("keeps French accents in NFC form", () => {
+    expect(normalizeExcludedCharacters("e\u0301 \u00e0")).toBe("\u00e0\u00e9");
+  });
+
+  it("drops characters the text generator never produces", () => {
+    // Pleine chasse, gras math\u00e9matique, blancs visibles, \u00e9moji, contr\u00f4les bidi, surrogate isol\u00e9.
+    expect(normalizeExcludedCharacters("\uff46\uff55\uff43\uff4b\ud835\udc13\ud835\udc14\u2800\u3164\ud83d\udd95\u202e\u2066\uD800")).toBe("");
+    // Les diacritiques combinants ne s'empilent pas.
+    expect(normalizeExcludedCharacters("a\u0301\u0302\u0303")).toBe("\u00e1");
+  });
+
+  it("keeps ASCII and French punctuation", () => {
+    expect(normalizeExcludedCharacters("\u00ab \u00bb \u2019 \u2026 \u2013 \u2014 ? & #")).toBe("#&?\u00ab\u00bb\u2013\u2014\u2019\u2026");
   });
 
   it("rejects inputs longer than the raw length limit", () => {
     expect(normalizeExcludedCharacters("x".repeat(101))).toBeNull();
   });
 
-  it("keeps only the first 30 unique characters", () => {
-    const input = Array.from({ length: 40 }, (_, index) => String.fromCodePoint(0x1000 + index)).join("");
-    expect(Array.from(normalizeExcludedCharacters(input) ?? "")).toHaveLength(MAX_EXCLUDED_CHARACTERS);
-    expect(normalizeExcludedCharacters(input)).toBe(Array.from(input).slice(0, MAX_EXCLUDED_CHARACTERS).join(""));
+  it("keeps at most 30 unique characters", () => {
+    const input = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJ";
+    expect(normalizeExcludedCharacters(input)).toHaveLength(MAX_EXCLUDED_CHARACTERS);
+    expect(normalizeExcludedCharacters(input)).toBe([...input.slice(0, MAX_EXCLUDED_CHARACTERS)].sort().join(""));
+  });
+});
+
+describe("parseRoomConfigPatch botCount", () => {
+  it("turns -0 into 0", () => {
+    expect(Object.is(parseRoomConfigPatch({ botCount: -0 })?.botCount, 0)).toBe(true);
   });
 });
 
