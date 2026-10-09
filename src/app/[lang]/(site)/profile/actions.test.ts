@@ -2,14 +2,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAuthLimiters, type AuthLimiters } from "@/auth/rateLimit";
 import type { CurrentUser } from "@/auth/types";
+import { usernameSkeleton } from "@/auth/validation";
 
 const mocks = vi.hoisted(() => {
   const where = vi.fn<(condition: unknown) => Promise<void>>();
   const set = vi.fn<(values: Record<string, unknown>) => { where: typeof where }>(() => ({ where }));
   return {
     getCurrentUser: vi.fn<() => Promise<CurrentUser | null>>(),
-    memberUsernameExists: vi.fn<(username: string) => Promise<boolean>>(),
-    deps: {} as { users: { memberUsernameExists: (username: string) => Promise<boolean> }; limiters: AuthLimiters },
+    memberUsernameExists: vi.fn<(skeleton: string, options?: { exceptUserId?: string }) => Promise<boolean>>(),
+    deps: {} as {
+      users: { memberUsernameExists: (skeleton: string, options?: { exceptUserId?: string }) => Promise<boolean> };
+      limiters: AuthLimiters;
+    },
     revalidatePath: vi.fn<(path: string) => void>(),
     where,
     set,
@@ -51,6 +55,13 @@ function form(fields: Record<string, string | undefined>): FormData {
     if (value !== undefined) data.set(name, value);
   }
   return data;
+}
+
+/** Un faux dépôt de membres : même comparaison de squelettes que les vrais dépôts, `exceptUserId` compris. */
+function useMembers(members: readonly { id: string; username: string }[]): void {
+  mocks.memberUsernameExists.mockImplementation(async (skeleton, options) =>
+    members.some((m) => m.id !== options?.exceptUserId && usernameSkeleton(m.username) === skeleton),
+  );
 }
 
 beforeEach(() => {
@@ -114,33 +125,100 @@ describe("updateProfile", () => {
   });
 
   it("refuse un nom affiché qui usurpe l'identifiant d'un autre membre, sans casse", async () => {
-    mocks.memberUsernameExists.mockResolvedValue(true);
+    useMembers([{ id: "bob-id", username: "bob" }]);
 
     await expect(updateProfile(form({ displayName: "BOB" }))).resolves.toEqual({ ok: false, code: "PSEUDO_TAKEN" });
-    expect(mocks.memberUsernameExists).toHaveBeenCalledWith("bob");
+    expect(mocks.memberUsernameExists).toHaveBeenCalledWith("bob", { exceptUserId: member.id });
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
-  it("laisse un membre garder son propre identifiant comme nom affiché", async () => {
+  it("laisse un membre garder son propre identifiant comme nom affiché, sans interroger la base", async () => {
     mocks.memberUsernameExists.mockResolvedValue(true);
 
     await expect(updateProfile(form({ displayName: "Alice" }))).resolves.toEqual({ ok: true, locale: "fr" });
+    await expect(updateProfile(form({ displayName: "ALICE" }))).resolves.toEqual({ ok: true, locale: "fr" });
     expect(mocks.memberUsernameExists).not.toHaveBeenCalled();
   });
 
   it("compare le squelette : un nom accentué qui imite un autre membre est refusé", async () => {
-    mocks.memberUsernameExists.mockResolvedValue(true);
+    useMembers([{ id: "bob-id", username: "bob" }]);
 
     await expect(updateProfile(form({ displayName: "Bób" }))).resolves.toEqual({ ok: false, code: "PSEUDO_TAKEN" });
-    expect(mocks.memberUsernameExists).toHaveBeenCalledWith("bob");
+    expect(mocks.memberUsernameExists).toHaveBeenCalledWith("bob", { exceptUserId: member.id });
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
-  it("laisse un membre accentuer son propre identifiant", async () => {
-    mocks.memberUsernameExists.mockResolvedValue(true);
+  it("laisse un membre accentuer son propre identifiant : sa propre ligne est exclue", async () => {
+    useMembers([{ id: member.id, username: "alice" }]);
 
     await expect(updateProfile(form({ displayName: "Àlice" }))).resolves.toEqual({ ok: true, locale: "fr" });
-    expect(mocks.memberUsernameExists).not.toHaveBeenCalled();
+    expect(mocks.memberUsernameExists).toHaveBeenCalledWith("allce", { exceptUserId: member.id });
+  });
+
+  it.each(["bob0", "BOB0"])(
+    "laisse le membre bob0 garder « %s » sans interroger la base, même si un membre bobo existe",
+    async (displayName) => {
+      const bob0: CurrentUser = { ...member, id: "bob0-id", username: "bob0", displayName: "bob0" };
+      mocks.getCurrentUser.mockResolvedValue(bob0);
+      useMembers([
+        { id: bob0.id, username: "bob0" },
+        { id: "bobo-id", username: "bobo" },
+      ]);
+
+      await expect(updateProfile(form({ displayName }))).resolves.toEqual({ ok: true, locale: "fr" });
+      expect(mocks.memberUsernameExists).not.toHaveBeenCalled();
+    },
+  );
+
+  it("refuse au membre a1ice le nom « alice » tant que le membre alice existe", async () => {
+    const a1ice: CurrentUser = { ...member, id: "a1ice-id", username: "a1ice", displayName: "a1ice" };
+    mocks.getCurrentUser.mockResolvedValue(a1ice);
+    useMembers([
+      { id: member.id, username: "alice" },
+      { id: a1ice.id, username: "a1ice" },
+    ]);
+
+    await expect(updateProfile(form({ displayName: "alice" }))).resolves.toEqual({ ok: false, code: "PSEUDO_TAKEN" });
+    expect(mocks.memberUsernameExists).toHaveBeenCalledWith("allce", { exceptUserId: a1ice.id });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("laisse a1ice prendre « Alice » si alice n'existe pas : seule sa propre ligne partage le squelette", async () => {
+    const a1ice: CurrentUser = { ...member, id: "a1ice-id", username: "a1ice", displayName: "a1ice" };
+    mocks.getCurrentUser.mockResolvedValue(a1ice);
+    useMembers([{ id: a1ice.id, username: "a1ice" }]);
+
+    await expect(updateProfile(form({ displayName: "Alice" }))).resolves.toEqual({ ok: true, locale: "fr" });
+  });
+
+  it("refuse un nom affiché dont le squelette est celui d'un AUTRE membre, « ALICE » compris", async () => {
+    const a1ice: CurrentUser = { ...member, id: "a1ice-id", username: "a1ice", displayName: "a1ice" };
+    mocks.getCurrentUser.mockResolvedValue(a1ice);
+    useMembers([{ id: member.id, username: "alice" }]);
+
+    await expect(updateProfile(form({ displayName: "ALICE" }))).resolves.toEqual({ ok: false, code: "PSEUDO_TAKEN" });
+    expect(mocks.memberUsernameExists).toHaveBeenCalledWith("allce", { exceptUserId: a1ice.id });
+  });
+
+  it("refuse un nom affiché confusable avec un AUTRE membre (PSEUDO_TAKEN)", async () => {
+    useMembers([
+      { id: "bob-id", username: "bob" },
+      { id: "mario-id", username: "mario" },
+    ]);
+
+    for (const displayName of ["B0b", "rnario", "BOB"]) {
+      await expect(updateProfile(form({ displayName }))).resolves.toEqual({ ok: false, code: "PSEUDO_TAKEN" });
+    }
+    expect(mocks.update).not.toHaveBeenCalled();
+
+    await expect(updateProfile(form({ displayName: "Bobby" }))).resolves.toEqual({ ok: true, locale: "fr" });
+  });
+
+  it("un invité n'a pas d'identifiant à exempter : il est contrôlé sur son propre id", async () => {
+    mocks.getCurrentUser.mockResolvedValue(guest);
+
+    await updateProfile(form({ displayName: "ALICE" }));
+    expect(mocks.memberUsernameExists).toHaveBeenCalledWith("allce", { exceptUserId: guest.id });
   });
 
   it.each([

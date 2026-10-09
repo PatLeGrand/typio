@@ -8,6 +8,7 @@ import { createAuthLimiters } from "./rateLimit";
 import type { NewSession, SessionRepository, SessionWithUser } from "./session";
 import type { UserKind } from "./types";
 import { UsernameTakenError, type MemberRecord, type UserRepository } from "./userRepository";
+import { usernameSkeleton } from "./validation";
 
 export interface StoredUser {
   id: string;
@@ -31,8 +32,14 @@ export class MemoryUserRepository implements UserRepository {
     return { id: user.id, passwordHash: user.passwordHash };
   }
 
-  async memberUsernameExists(username: string): Promise<boolean> {
-    return this.users.some((user) => user.kind === "member" && user.username?.toLowerCase() === username);
+  async memberUsernameExists(skeleton: string, options?: { exceptUserId?: string }): Promise<boolean> {
+    return this.users.some(
+      (user) =>
+        user.kind === "member" &&
+        user.username !== null &&
+        user.id !== options?.exceptUserId &&
+        usernameSkeleton(user.username) === skeleton,
+    );
   }
 
   async createMember(params: {

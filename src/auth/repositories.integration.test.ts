@@ -19,6 +19,7 @@ import { createSession, destroySession, GUEST_LIFETIME_MS, validateSession } fro
 import { createDrizzleSessionRepository } from "./sessionRepository";
 import { hashToken } from "./token";
 import { UsernameTakenError } from "./userRepository";
+import { pseudoSkeleton, usernameSkeleton } from "./validation";
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -86,7 +87,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
     expect(found).toMatchObject({ id, passwordHash: expect.any(String) });
   });
 
-  it("memberUsernameExists finds a member by lowercase username, and ignores guests", async () => {
+  it("memberUsernameExists finds a member by skeleton, and ignores guests", async () => {
     await newMember(`Bob${suffix}`);
     const guest = await userRepository.createGuest({
       displayName: `Guest2${suffix}`,
@@ -95,9 +96,52 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
     });
     createdUserIds.push(guest.id);
 
-    expect(await userRepository.memberUsernameExists(`bob${suffix}`)).toBe(true);
-    expect(await userRepository.memberUsernameExists(`nobody${suffix}`)).toBe(false);
-    expect(await userRepository.memberUsernameExists(`guest2${suffix}`)).toBe(false);
+    expect(await userRepository.memberUsernameExists(usernameSkeleton(`bob${suffix}`))).toBe(true);
+    expect(await userRepository.memberUsernameExists(pseudoSkeleton(`BOB${suffix}`))).toBe(true);
+    expect(await userRepository.memberUsernameExists(usernameSkeleton(`nobody${suffix}`))).toBe(false);
+    expect(await userRepository.memberUsernameExists(usernameSkeleton(`guest2${suffix}`))).toBe(false);
+  });
+
+  it("memberUsernameExists folds ASCII confusables on the member side like usernameSkeleton", async () => {
+    await newMember(`B0b${suffix}`);
+    await newMember(`rnario${suffix}`);
+    await newMember(`vvill${suffix}`);
+    await newMember(`Al1ce${suffix}`);
+    await newMember(`ilyes${suffix}`);
+
+    expect(await userRepository.memberUsernameExists(pseudoSkeleton(`bob${suffix}`))).toBe(true);
+    expect(await userRepository.memberUsernameExists(pseudoSkeleton(`mario${suffix}`))).toBe(true);
+    expect(await userRepository.memberUsernameExists(pseudoSkeleton(`will${suffix}`))).toBe(true);
+    // « I » majuscule et `i` valent `l` : « AIice » ressemble au membre « Al1ce ».
+    expect(await userRepository.memberUsernameExists(pseudoSkeleton(`AIice${suffix}`))).toBe(true);
+    expect(await userRepository.memberUsernameExists(pseudoSkeleton(`IIyes${suffix}`))).toBe(true);
+    expect(await userRepository.memberUsernameExists(pseudoSkeleton(`nobody${suffix}`))).toBe(false);
+  });
+
+  it("memberUsernameExists: the SQL folding equals usernameSkeleton on edge sequences (QA parity)", async () => {
+    // Séquences où l'ordre des remplacements et le chevauchement comptent, avec des `i` et des
+    // `w`. Chaque membre doit être retrouvé par son propre `usernameSkeleton` calculé en TypeScript.
+    const names = ["vvv", "rnrn", "rrn", "1rn0w", "RNAR1O", "VV1LL", "a|b", "0rn0", "x_1_I", "wiwi", "avw", "vwa", "rnw"];
+    for (const name of names) {
+      await newMember(`${name}${suffix}`);
+      const skeleton = usernameSkeleton(`${name}${suffix}`);
+      expect(await userRepository.memberUsernameExists(skeleton), name).toBe(true);
+      // Un squelette légèrement différent ne doit pas correspondre.
+      expect(await userRepository.memberUsernameExists(`${skeleton}z`), `${name} + z`).toBe(false);
+    }
+  });
+
+  it("memberUsernameExists excludes the member given as exceptUserId, but finds another member with the same skeleton", async () => {
+    const miaId = await newMember(`Mia${suffix}`);
+    const skeleton = usernameSkeleton(`mia${suffix}`);
+
+    expect(await userRepository.memberUsernameExists(skeleton, { exceptUserId: miaId })).toBe(false);
+    expect(await userRepository.memberUsernameExists(skeleton, { exceptUserId: randomUUID() })).toBe(true);
+
+    const m1aId = await newMember(`m1a${suffix}`);
+    expect(usernameSkeleton(`m1a${suffix}`)).toBe(skeleton);
+    expect(await userRepository.memberUsernameExists(skeleton, { exceptUserId: miaId })).toBe(true);
+    expect(await userRepository.memberUsernameExists(skeleton, { exceptUserId: m1aId })).toBe(true);
   });
 
   it("deleteGuest removes a guest and its sessions, and never a member", async () => {
