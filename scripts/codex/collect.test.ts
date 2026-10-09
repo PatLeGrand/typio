@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { collectChanges, gitIgnoreCheck, hasChanges, listTree, scanSrc, type IgnoreCheck } from "./collect";
 import { TamperedWorkError, UnavailableError } from "./errors";
 
+// Ces tests montent de vrais dépôts git : sous la charge de la suite complète, ils dépassent les 5 s par défaut.
+vi.setConfig({ testTimeout: 30_000 });
+
 const temps: string[] = [];
 
 function tempDir(): string {

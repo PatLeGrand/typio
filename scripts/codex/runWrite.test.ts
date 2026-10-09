@@ -9,6 +9,9 @@ import type { IgnoreCheck } from "./collect";
 import { TamperedWorkError, UnavailableError } from "./errors";
 import { runWrite, type WriteDeps } from "./write";
 
+// Ces tests montent de vrais dépôts git : sous la charge de la suite complète, ils dépassent les 5 s par défaut.
+vi.setConfig({ testTimeout: 30_000 });
+
 /**
  * `runWrite` de bout en bout avec un faux Codex : un vrai dépôt git temporaire, de vraies copies de travail
  * et de vrais worktrees, mais ni Codex, ni quota, ni `bun install`, ni lint réels. Le faux Codex agit sur le

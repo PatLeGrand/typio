@@ -2,11 +2,14 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { applyChanges, summarizeAdded } from "./apply";
 import { collectChanges } from "./collect";
 import { UnavailableError } from "./errors";
 import { createWorktree, diffStat, statusLines } from "./worktree";
+
+// Ces tests montent de vrais dépôts git : sous la charge de la suite complète, ils dépassent les 5 s par défaut.
+vi.setConfig({ testTimeout: 30_000 });
 
 const temps: string[] = [];
 

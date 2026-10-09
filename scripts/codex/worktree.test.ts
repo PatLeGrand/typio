@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { UsageError } from "./errors";
 import { GIT_HARDENING } from "./snapshot";
 import {
@@ -17,6 +17,9 @@ import {
   validateBranchName,
   worktreePath,
 } from "./worktree";
+
+// Ces tests montent de vrais dépôts git : sous la charge de la suite complète, ils dépassent les 5 s par défaut.
+vi.setConfig({ testTimeout: 30_000 });
 
 describe("defaultBranchName", () => {
   it("codex/<tâche>-AAAAMMJJ-HHMMSS en heure locale", () => {

@@ -9,6 +9,9 @@ import { formatSandboxChecks, type CheckResult } from "./verify";
 import { findHiddenFiles, runVerify } from "./verifyCommand";
 import { createWorktree, openOwnedWorktree } from "./worktree";
 
+// Ces tests montent de vrais dépôts git : sous la charge de la suite complète, ils dépassent les 5 s par défaut.
+vi.setConfig({ testTimeout: 30_000 });
+
 const temps: string[] = [];
 
 function tempDir(): string {

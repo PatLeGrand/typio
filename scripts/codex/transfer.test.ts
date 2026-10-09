@@ -8,6 +8,9 @@ import { UnavailableError } from "./errors";
 import { transferToWorktree } from "./transfer";
 import { extractBase, prepareWorkdir } from "./workdir";
 
+// Ces tests montent de vrais dépôts git : sous la charge de la suite complète, ils dépassent les 5 s par défaut.
+vi.setConfig({ testTimeout: 30_000 });
+
 const temps: string[] = [];
 
 function tempDir(): string {
