@@ -14,7 +14,8 @@ import {
 } from "./codex";
 import { describeExit, UnavailableError, UsageError } from "./errors";
 import { ensureQuota } from "./limits";
-import { makeScratchDir, readDir } from "./paths";
+import { makeScratchDir, readDir, stateDir } from "./paths";
+import { removeAllDependencyModels } from "./deps";
 import { formatFooter } from "./report";
 import {
   copySnapshot,
@@ -41,6 +42,7 @@ import { runWrite } from "./write";
  *   bun scripts/codex/run.ts verify <codex/branche>                               lint, test, build du worktree
  *   bun scripts/codex/run.ts clean <codex/branche>                                supprime worktree et branche
  *   bun scripts/codex/run.ts clean --work <id>                                    supprime un dossier work gardé
+ *   bun scripts/codex/run.ts clean --deps                                         supprime les modèles de dépendances (pas en parallèle d'autres tâches)
  *
  * Codes de sortie :
  *   0  réponse de Codex (ou rapport) sur stdout ; en écriture, même si une vérification échoue ;
@@ -157,6 +159,12 @@ async function main(): Promise<number> {
   }
   if (command.kind === "cleanWork") {
     console.log(`Supprimé : ${cleanWorkdir(command.id)}`);
+    return 0;
+  }
+  if (command.kind === "cleanDeps") {
+    // Suppression totale : modèles, temporaires et entrées étrangères, sans suivre de lien.
+    removeAllDependencyModels(stateDir());
+    console.log("Modèles de dépendances supprimés.");
     return 0;
   }
   if (command.kind === "verify") {
