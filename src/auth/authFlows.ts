@@ -158,8 +158,9 @@ export async function createGuest(
   const pseudo = validatePseudo(input.pseudo);
   if (!pseudo.ok) return fail(pseudo.code, "pseudo");
 
-  // Un pseudo d'invité dont le squelette (sans casse ni accents) égale l'identifiant d'un membre
-  // usurperait ce membre dans une partie. Contrôlé après le limiteur : c'est une lecture en base.
+  // Un pseudo d'invité dont le squelette (sans casse ni accents, confusables ASCII pliés : « 1 »
+  // et « I » pour « l », « rn » pour « m ») égale celui d'un membre usurperait ce membre dans une
+  // partie. Contrôlé après le limiteur : c'est une lecture en base.
   if (await deps.users.memberUsernameExists(pseudoSkeleton(pseudo.value))) return fail("PSEUDO_TAKEN", "pseudo");
 
   const now = deps.now();

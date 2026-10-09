@@ -6,7 +6,7 @@
     "dev": "next dev",
     "dev:realtime": "bun --watch src/realtime/main.ts",
     "build": "next build",
-    "build:realtime": "bun build src/realtime/main.ts --target=bun --outfile=dist/realtime.js",
+    "build:realtime": "bun build src/realtime/main.ts --target=bun --define process.env.NODE_ENV='\"production\"' --outfile=dist/realtime.js",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

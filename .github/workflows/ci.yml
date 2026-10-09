@@ -37,6 +37,14 @@ jobs:
         run: bun run lint
       - name: Production build
         run: bun run build
+      - name: Realtime build
+        run: bun run build:realtime
+      # `bun build` fige process.env.NODE_ENV dans le bundle (« development » par défaut) :
+      # le service lirait alors `typio_session` au lieu de `__Host-typio_session` et
+      # refuserait toute session en production. Le script définit NODE_ENV=production ;
+      # ce contrôle échoue si ce n'est plus le cas.
+      - name: Realtime bundle reads the production session cookie
+        run: grep -q 'getSessionCookieName(nodeEnv = "production")' dist/realtime.js
 
   database:
     name: PostgreSQL migrations

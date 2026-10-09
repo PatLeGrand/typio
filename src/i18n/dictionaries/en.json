@@ -491,50 +491,100 @@
     "close": "Close"
   },
   "room": {
+    "metaTitle": "Waiting room",
+    "loading": "Loading the room…",
     "title": "Waiting room",
-    "createRoom": "Create room",
-    "join": "Join",
+    "back": "Back to the room picker",
     "leave": "Leave",
-    "start": "Start race",
-    "roomCode": "Race code",
-    "copyCode": "Copy",
-    "codeCopied": "Copied!",
-    "participants": "Participants",
-    "addPlayer": "Add player (Nametag)",
-    "add": "Add",
-    "playerNametag": "Player nametag",
-    "host": "Host",
-    "spectator": "Spectator",
-    "disconnected": "Disconnected",
+    "connection": {
+      "offline": "Connection lost, retrying…",
+      "tooManyConnections": "Too many tabs open: close one, then reload the page."
+    },
+    "code": {
+      "label": "Room code",
+      "copy": "Copy code",
+      "copied": "Copied",
+      "copyFallback": "Code selected: copy it with Ctrl+C."
+    },
+    "participants": {
+      "title": "Participants",
+      "runnersCount": "{count}/{max} runners",
+      "guest": "Guest",
+      "host": "Host",
+      "you": "You",
+      "runner": "Runner",
+      "spectator": "Spectator",
+      "disconnected": "Disconnected"
+    },
+    "config": {
+      "title": "Settings",
+      "hostOnly": "Only the host can change the settings.",
+      "textMode": {
+        "label": "Text type",
+        "sentences": "Sentences",
+        "words": "Words"
+      },
+      "language": {
+        "label": "Text language",
+        "fr": "French",
+        "en": "English"
+      },
+      "length": {
+        "label": "Text length",
+        "short": "Short",
+        "medium": "Medium",
+        "long": "Long"
+      },
+      "timeLimit": {
+        "label": "Time limit",
+        "none": "None (5 minutes by default)",
+        "60": "1 minute",
+        "120": "2 minutes",
+        "180": "3 minutes",
+        "300": "5 minutes",
+        "600": "10 minutes"
+      }
+    },
     "play": {
+      "metaTitle": "Play",
+      "title": "Play",
+      "inRoom": {
+        "message": "You are in room {code}.",
+        "return": "Go back",
+        "leave": "Leave",
+        "disabledNote": "Leave this room to create or join another one."
+      },
       "create": {
         "title": "Create a room",
-        "description": "Invite friends with a code.",
-        "button": "Create"
+        "description": "Invite your friends with a code.",
+        "button": "Create a room",
+        "guestNotice": "Guests cannot create a room. Sign up to do it, or join a room with a code."
       },
       "join": {
         "title": "Join with a code",
+        "description": "Enter the 6-character code the host gave you.",
         "codeLabel": "Room code",
-        "codePlaceholder": "Ex.: ABCDEF",
+        "codePlaceholder": "E.g. ABC234",
         "roleLabel": "Join as",
         "runner": "Runner",
         "spectator": "Spectator",
         "button": "Join"
-      },
-      "guestCannotCreate": "Guests cannot create rooms."
+      }
     },
     "errors": {
-      "UNAUTHENTICATED": "You must be signed in.",
-      "INVALID_PAYLOAD": "Invalid payload.",
-      "INVALID_CODE": "Invalid room code.",
-      "GUEST_CANNOT_CREATE": "Guests cannot create rooms.",
-      "ROOM_NOT_FOUND": "Room not found.",
-      "ROOM_FULL": "Room is full.",
-      "ALREADY_IN_ROOM": "You are already in a room.",
-      "NOT_IN_ROOM": "You are not in this room.",
-      "NOT_HOST": "Only the host can edit settings.",
-      "CONFIG_LOCKED": "Settings are locked.",
-      "INTERNAL": "Internal error."
+      "UNAUTHENTICATED": "You must be signed in to do that.",
+      "INVALID_PAYLOAD": "The data sent was invalid.",
+      "INVALID_CODE": "Invalid room code: it must be 6 characters long.",
+      "GUEST_CANNOT_CREATE": "Guests cannot create a room.",
+      "ROOM_NOT_FOUND": "No room matches this code.",
+      "ROOM_FULL": "This room is already full.",
+      "ALREADY_IN_ROOM": "You are already in another room.",
+      "NOT_IN_ROOM": "You are no longer in this room.",
+      "NOT_HOST": "Only the host can change the settings.",
+      "CONFIG_LOCKED": "The settings are locked.",
+      "INTERNAL": "Something went wrong, please try again in a moment.",
+      "OFFLINE": "You are not connected to the game server. Try again in a moment.",
+      "TIMEOUT": "The game server is not answering. Try again in a moment."
     }
   }
 }

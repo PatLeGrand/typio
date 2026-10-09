@@ -18,11 +18,11 @@ export interface UserRepository {
   /** `username` est déjà en minuscules. Ne renvoie que des membres. */
   findMemberByUsername(username: string): Promise<MemberRecord | null>;
   /**
-   * Vrai si un MEMBRE a cet identifiant, sans tenir compte de la casse. `username` est déjà
-   * en minuscules. Sert à refuser un pseudo d'invité qui usurperait un membre : l'appelant passe
-   * le squelette du pseudo (`pseudoSkeleton`), pas sa forme affichée.
+   * Vrai si un MEMBRE a ce `usernameSkeleton`. Sert à refuser un pseudo d'invité ou un nom
+   * affiché qui usurperait un membre : l'appelant passe `pseudoSkeleton(pseudo)`, pas la forme
+   * affichée. `exceptUserId` exclut la ligne de ce membre (il ne s'usurpe pas lui-même).
    */
-  memberUsernameExists(username: string): Promise<boolean>;
+  memberUsernameExists(skeleton: string, options?: { exceptUserId?: string }): Promise<boolean>;
   /** Lève `UsernameTakenError` si l'identifiant existe déjà. */
   createMember(params: {
     username: string;

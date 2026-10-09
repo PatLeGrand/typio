@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AUTH_ERROR_CODES } from "@/auth/types";
+import { ROOM_ERROR_CODES } from "@/realtime/protocol";
 import { locales } from "./config";
 import { getDictionary } from "./dictionaries";
 import en from "./dictionaries/en.json";
@@ -60,5 +61,16 @@ describe("messages d'erreur d'authentification", () => {
     ["en", en],
   ])("le dictionnaire n'a aucun message sans code correspondant (%s)", (_locale, dictionary) => {
     expect(Object.keys(dictionary.auth.errors).sort()).toEqual([...AUTH_ERROR_CODES].sort());
+  });
+});
+
+describe("messages d'erreur de la salle", () => {
+  const expectedCodes = [...ROOM_ERROR_CODES, "OFFLINE", "TIMEOUT"];
+
+  it.each([
+    ["fr", fr],
+    ["en", en],
+  ])("un message par code du protocole, plus OFFLINE et TIMEOUT, et aucun en trop (%s)", (_locale, dictionary) => {
+    expect(Object.keys(dictionary.room.errors).sort()).toEqual([...expectedCodes].sort());
   });
 });

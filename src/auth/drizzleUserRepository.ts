@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, ne, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { users } from "@/db/schema";
 import { postgresErrorCode, UNIQUE_VIOLATION } from "./errors";
@@ -19,12 +19,20 @@ export function createDrizzleUserRepository(db: PostgresJsDatabase): UserReposit
       return { id: row.id, passwordHash: row.passwordHash };
     },
 
-    async memberUsernameExists(username: string): Promise<boolean> {
+    async memberUsernameExists(skeleton: string, options?: { exceptUserId?: string }): Promise<boolean> {
       const [row] = await db
         .select({ id: users.id })
         .from(users)
-        // Même expression que l'index unique `lower(username)`, pour qu'il serve.
-        .where(sql`${users.kind} = 'member' and lower(${users.username}) = ${username}`)
+        // L'expression doit rester identique à `usernameSkeleton` (validation.ts). Pas d'index :
+        // l'index `lower(username)` ne sert plus ici (`findMemberByUsername` le garde), la table
+        // est petite et la création d'invité est limitée par IP.
+        .where(
+          and(
+            eq(users.kind, "member"),
+            sql`replace(replace(translate(lower(${users.username}), 'i1|0', 'lllo'), 'rn', 'm'), 'w', 'vv') = ${skeleton}`,
+            options?.exceptUserId === undefined ? undefined : ne(users.id, options.exceptUserId),
+          ),
+        )
         .limit(1);
       return row !== undefined;
     },

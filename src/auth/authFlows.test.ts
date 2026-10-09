@@ -24,6 +24,15 @@ function credentials(overrides: Partial<RegistrationInput> = {}): RegistrationIn
   };
 }
 
+/** Des membres créés directement dans le faux dépôt : seul `createGuest` est sous test. */
+async function withMembers(usernames: readonly string[]) {
+  const test = createTestDeps();
+  for (const username of usernames) {
+    await test.users.createMember({ username, displayName: username, passwordHash: "hash", locale: "fr" });
+  }
+  return test;
+}
+
 async function withAlice() {
   const test = createTestDeps();
   const registered = await registerMember(test.deps, credentials({ ip: "10.0.0.1" }));
@@ -697,6 +706,50 @@ describe("createGuest: pseudo equal to a member username", () => {
   });
 
   it.each([
+    ["AIice", "a capital I standing for l"],
+    ["a1ice", "a digit 1 standing for l"],
+    ["b0b", "a digit 0 standing for o"],
+    ["rnario", "rn standing for m"],
+    ["ALICE", "capitals only"],
+    ["Àlice", "an accented lookalike"],
+    ["aIice", "a capital I in lowercase text"],
+  ])("refuses %j (%s) when the members alice, bob and mario exist", async (pseudo) => {
+    const { deps } = await withMembers(["alice", "bob", "mario"]);
+
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo, locale: "fr" })).toEqual({
+      ok: false,
+      error: { code: "PSEUDO_TAKEN", field: "pseudo" },
+    });
+  });
+
+  it.each([
+    ["b0b", "bob"],
+    ["rnario", "mario"],
+    ["vvill", "will"],
+    ["ilyes", "IIyes"],
+    ["ines", "lnes"],
+    ["avw", "avvv"],
+    ["vwa", "vvva"],
+    ["ella", "Elia"],
+  ])("folds both sides: with the member %j, the guest %j is refused", async (username, pseudo) => {
+    const { deps } = await withMembers([username]);
+
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo, locale: "fr" })).toEqual({
+      ok: false,
+      error: { code: "PSEUDO_TAKEN", field: "pseudo" },
+    });
+  });
+
+  it.each(["alice 2", "Zoé", "Aline", "Lucas10", "Inès", "Bernard"])(
+    "accepts the legitimate pseudo %j when the members alice, bob and mario exist",
+    async (pseudo) => {
+      const { deps } = await withMembers(["alice", "bob", "mario"]);
+
+      expect(await createGuest(deps, { ip: "203.0.113.7", pseudo, locale: "fr" })).toMatchObject({ ok: true });
+    },
+  );
+
+  it.each([
     ["Cyrillic a (U+0430)", String.fromCodePoint(0x430) + "lice"],
     ["fullwidth", String.fromCodePoint(0xff41, 0xff4c, 0xff49, 0xff43, 0xff45)],
   ])("refuses a %s homoglyph of a member username with INVALID_PSEUDO and creates nothing", async (_label, pseudo) => {
@@ -733,9 +786,9 @@ describe("createGuest: pseudo equal to a member username", () => {
     const { deps } = await withAlice();
     let lookups = 0;
     const lookup = deps.users.memberUsernameExists.bind(deps.users);
-    deps.users.memberUsernameExists = async (username) => {
+    deps.users.memberUsernameExists = async (skeleton, options) => {
       lookups += 1;
-      return lookup(username);
+      return lookup(skeleton, options);
     };
 
     await createGuest(deps, { ip: "203.0.113.7", pseudo: "<b>", locale: "fr" });

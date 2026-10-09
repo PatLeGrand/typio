@@ -5,7 +5,7 @@
  */
 
 import { getSessionCookieName } from "@/auth/cookie";
-import { validateSession, type SessionRepository } from "@/auth/session";
+import { validateSession, type SessionRepository, type SessionWithUser } from "@/auth/session";
 import type { SocketData } from "./protocol";
 
 /** Valeur du cookie `name` dans un en-tête `Cookie`, ou `null`. */
@@ -35,15 +35,37 @@ export function isAllowedOrigin(origin: string | undefined, allowedOrigins: read
   return origin === undefined || allowedOrigins.includes(origin);
 }
 
-/** Utilisateur de la poignée de main, ou `null` si le cookie est absent, invalide ou échu. */
+export interface HandshakeIdentity {
+  user: SocketData["user"];
+  /** Fin de validité : la plus proche de l'échéance de la session et de celle du compte invité. */
+  expiresAt: Date;
+}
+
+/** Utilisateur de la poignée de main et échéance de sa session, ou `null` si le cookie est absent, invalide ou échu. */
 export async function authenticateHandshake(
   sessions: SessionRepository,
   cookieHeader: string | undefined,
   now: Date,
   nodeEnv: string | undefined = process.env.NODE_ENV,
-): Promise<SocketData["user"] | null> {
+): Promise<HandshakeIdentity | null> {
   const token = readCookie(cookieHeader, getSessionCookieName(nodeEnv));
-  const user = await validateSession(sessions, token, now);
-  if (!user) return null;
-  return { id: user.id, kind: user.kind, displayName: user.displayName };
+
+  // `validateSession` lit la session une seule fois : on garde cette lecture pour l'échéance.
+  const captured: { record: SessionWithUser | null } = { record: null };
+  const capturing: SessionRepository = {
+    ...sessions,
+    findWithUser: async (id) => {
+      captured.record = await sessions.findWithUser(id);
+      return captured.record;
+    },
+  };
+
+  const user = await validateSession(capturing, token, now);
+  const { record } = captured;
+  if (!user || !record) return null;
+
+  const accountExpiry = record.user.expiresAt;
+  const sessionExpiry = record.session.expiresAt;
+  const expiresAt = accountExpiry && accountExpiry < sessionExpiry ? accountExpiry : sessionExpiry;
+  return { user: { id: user.id, kind: user.kind, displayName: user.displayName }, expiresAt };
 }

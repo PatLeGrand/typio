@@ -32,7 +32,7 @@ describe("authenticateHandshake", () => {
     const sessions = createFakeSessions();
     const { token, userId } = sessions.signIn("guest", "Zoé");
     const user = await authenticateHandshake(sessions.repository, `typio_session=${token}`, now, "development");
-    expect(user).toEqual({ id: userId, kind: "guest", displayName: "Zoé" });
+    expect(user?.user).toEqual({ id: userId, kind: "guest", displayName: "Zoé" });
   });
 
   it("reads the __Host- cookie in production and ignores the development name", async () => {
@@ -44,5 +44,26 @@ describe("authenticateHandshake", () => {
     expect(
       await authenticateHandshake(sessions.repository, `typio_session=${token}`, now, "production"),
     ).toBeNull();
+  });
+
+  it("returns the session expiry", async () => {
+    const sessions = createFakeSessions();
+    const { token } = sessions.signIn("member", "Zoé", { ttlMs: 5_000 });
+    const identity = await authenticateHandshake(sessions.repository, `typio_session=${token}`, now, "development");
+    expect(identity?.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    expect(identity?.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + 5_000);
+  });
+
+  it("uses the guest account expiry when it comes before the session's", async () => {
+    const sessions = createFakeSessions();
+    const { token } = sessions.signIn("guest", "Zoé", { ttlMs: 60_000, accountTtlMs: 2_000 });
+    const identity = await authenticateHandshake(sessions.repository, `typio_session=${token}`, now, "development");
+    expect(identity?.expiresAt.getTime()).toBeLessThanOrEqual(Date.now() + 2_000);
+  });
+
+  it("refuses an expired session", async () => {
+    const sessions = createFakeSessions();
+    const { token } = sessions.signIn("member", "Zoé", { ttlMs: -1_000 });
+    expect(await authenticateHandshake(sessions.repository, `typio_session=${token}`, now, "development")).toBeNull();
   });
 });

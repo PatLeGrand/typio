@@ -27,38 +27,38 @@ AVANT="$(docker image inspect --format '{{index .RepoDigests 0}}' \
 echo "── Version en place : ${AVANT}"
 
 echo "── Récupération de l'image"
-docker compose pull web
+docker compose pull web realtime
 
 echo "── Application des migrations PostgreSQL"
 docker compose run --rm --no-deps web bun scripts/migrate.ts
 
-echo "── Redémarrage du conteneur"
-docker compose up -d web
+echo "── Redémarrage des conteneurs"
+docker compose up -d web realtime
 
-# `up -d` rend la main dès que Docker a lancé le conteneur, pas quand Next
-# répond. Sans cette attente, le script dirait « déployé » sur une application
+# `up -d` rend la main dès que Docker a lancé les conteneurs, pas quand ils
+# répondent. Sans cette attente, le script dirait « déployé » sur une application
 # qui plante au démarrage.
 echo "── Attente de l'état healthy (90 s au plus)"
 for _ in $(seq 1 45); do
-	ETAT="$(docker inspect --format '{{.State.Health.Status}}' typio-web-1 2>/dev/null || echo inconnu)"
-	case "$ETAT" in
-		healthy)
-			echo
-			echo "Typio répond.  https://typio.aether-manager.ca"
-			docker compose ps
-			exit 0
-			;;
-		unhealthy)
-			echo
-			echo "Le conteneur démarre mais ne répond pas. Journal :" >&2
-			docker compose logs --tail 40 web >&2
-			exit 1
-			;;
-	esac
+	ETAT_WEB="$(docker inspect --format '{{.State.Health.Status}}' typio-web-1 2>/dev/null || echo inconnu)"
+	ETAT_REALTIME="$(docker inspect --format '{{.State.Health.Status}}' typio-realtime-1 2>/dev/null || echo inconnu)"
+
+	if [ "$ETAT_WEB" = "healthy" ] && [ "$ETAT_REALTIME" = "healthy" ]; then
+		echo
+		echo "Typio répond.  https://typio.aether-manager.ca"
+		docker compose ps
+		exit 0
+	elif [ "$ETAT_WEB" = "unhealthy" ] || [ "$ETAT_REALTIME" = "unhealthy" ]; then
+		echo
+		echo "Un conteneur démarre mais ne répond pas. Journal :" >&2
+		docker compose logs --tail 40 web realtime >&2
+		exit 1
+	fi
+
 	sleep 2
 done
 
 echo
 echo "Toujours pas healthy après 90 s. Journal :" >&2
-docker compose logs --tail 40 web >&2
+docker compose logs --tail 40 web realtime >&2
 exit 1
