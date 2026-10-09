@@ -120,6 +120,17 @@ describe("liste des participants (SALLE-7)", () => {
     renderRoom({ locale: "en" });
     expect(screen.getByText("1/20 runners")).toBeVisible();
   });
+
+  it.each(["fr", "en"] as const)("affiche le badge invité pour un participant invité (%s)", (locale) => {
+    const guestRoom = makeRoom([makeParticipant(ME), makeParticipant(OTHER, { kind: "guest" })]);
+    current = makeUseRoom({ room: guestRoom });
+    const { labels } = renderRoom({ locale });
+
+    const list = screen.getByRole("list", { name: labels.participants.title });
+    const [alice, bob] = within(list).getAllByRole("listitem");
+    expect(alice).not.toHaveTextContent(labels.participants.guest);
+    expect(bob).toHaveTextContent(labels.participants.guest);
+  });
 });
 
 describe("rejoindre au chargement (D6)", () => {

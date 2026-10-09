@@ -31,6 +31,7 @@ export function ParticipantList({ room, currentUserId, labels }: ParticipantList
             className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-field border border-border px-4 py-3"
           >
             <span className="font-semibold text-foreground">{participant.displayName}</span>
+            {participant.kind === "guest" ? <Badge>{labels.guest}</Badge> : null}
             {participant.userId === room.hostId ? <Badge>{labels.host}</Badge> : null}
             {participant.userId === currentUserId ? <Badge tone="surface">{labels.you}</Badge> : null}
             <span className="text-sm text-muted-strong">

@@ -509,6 +509,7 @@
     "participants": {
       "title": "Participants",
       "runnersCount": "{count}/{max} runners",
+      "guest": "Guest",
       "host": "Host",
       "you": "You",
       "runner": "Runner",
