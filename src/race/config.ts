@@ -1,11 +1,17 @@
-/** CONFIG-1..9: local race preparation, separate from the frozen room protocol. */
+import { TIME_LIMITS_SECONDS } from "@/realtime/protocol";
+import type { RoomConfig, TimeLimitSeconds } from "@/realtime/protocol";
+
+/**
+ * CONFIG-1..9: local race preparation. The four fields shared with the room reuse the protocol's
+ * types so the solo page and the future room settings cannot drift apart (A-D4).
+ */
 export interface RaceSettings {
-  textMode: "sentences" | "words";
-  language: "fr" | "en";
+  textMode: RoomConfig["textMode"];
+  language: RoomConfig["language"];
   accents: boolean;
-  length: "short" | "medium" | "long";
+  length: RoomConfig["length"];
   excludedCharacters: string;
-  timeLimitSeconds: number | null;
+  timeLimitSeconds: TimeLimitSeconds | null;
   inputMode: "free" | "blocking";
   botCount: number;
   botDifficulty: "easy" | "normal" | "hard";
@@ -25,6 +31,10 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze({
   abilities: false,
 });
 
+function isTimeLimitSeconds(value: unknown): value is TimeLimitSeconds {
+  return TIME_LIMITS_SECONDS.some((allowed) => allowed === value);
+}
+
 export function parseRaceSettings(value: unknown): RaceSettings | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const keys = Object.keys(DEFAULT_RACE_SETTINGS);
@@ -38,8 +48,7 @@ export function parseRaceSettings(value: unknown): RaceSettings | null {
     typeof accents !== "boolean" ||
     (length !== "short" && length !== "medium" && length !== "long") ||
     typeof excludedCharacters !== "string" || excludedCharacters.length > 100 ||
-    (timeLimitSeconds !== null && (typeof timeLimitSeconds !== "number" ||
-      !Number.isInteger(timeLimitSeconds) || timeLimitSeconds < 1 || timeLimitSeconds > 600)) ||
+    (timeLimitSeconds !== null && !isTimeLimitSeconds(timeLimitSeconds)) ||
     (inputMode !== "free" && inputMode !== "blocking") ||
     typeof botCount !== "number" || !Number.isInteger(botCount) || botCount < 0 || botCount > 7 ||
     (botDifficulty !== "easy" && botDifficulty !== "normal" && botDifficulty !== "hard") ||

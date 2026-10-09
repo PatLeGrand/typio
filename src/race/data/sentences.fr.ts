@@ -1,0 +1,52 @@
+/**
+ * Phrases françaises écrites pour Typio (TEXTE-1, H-10) : sujets de la vie courante d'un
+ * collégien ou d'un lycéen, ponctuation simple, 40 à 140 caractères. Une partie est sans
+ * aucune lettre accentuée pour que l'option « sans accents » reste jouable.
+ */
+export const SENTENCES_FR: readonly string[] = [
+  // Avec accents.
+  "Le soleil se lève doucement sur la ville encore endormie.",
+  "Après l'école, nous avons joué au football jusqu'à la tombée de la nuit.",
+  "Mon frère prépare un gâteau au chocolat pour l'anniversaire de ma sœur.",
+  "Il pleut depuis ce matin, alors je reste à la maison avec un bon livre.",
+  "Les élèves ont préparé un exposé sur les planètes du système solaire.",
+  "Elle a découvert un vieux carnet caché derrière l'armoire du grenier.",
+  "Le professeur nous a donné une énigme difficile à résoudre avant demain.",
+  "Pendant les vacances d'été, nous irons camper au bord d'un grand lac.",
+  "Mon équipe a gagné le match grâce à un but marqué à la dernière minute.",
+  "Je préfère écouter de la musique en révisant mes leçons de mathématiques.",
+  "La bibliothèque du quartier propose des ateliers d'écriture chaque mercredi.",
+  "Hier soir, nous avons regardé un film d'aventure avec toute la famille.",
+  "Un petit chat gris s'est glissé dans le jardin pour échapper à la pluie.",
+  "Léa dessine des paysages fantastiques dans les marges de son cahier.",
+  "Ce week-end, je vais réviser mon exposé puis retrouver mes amis au parc.",
+  "Le train est arrivé en retard, mais personne n'a été trop pressé.",
+  "Apprendre à taper vite demande de la patience et un peu d'entraînement.",
+  "Mon grand-père raconte toujours des histoires incroyables sur sa jeunesse.",
+  "La fête du collège se déroulera samedi prochain dans la cour de récréation.",
+  "Avec un peu de concentration, tu peux améliorer ta vitesse chaque semaine.",
+  "Sur la plage, les enfants construisent un énorme château de sable.",
+  "Le vent d'automne fait tourbillonner les feuilles rouges et dorées.",
+  "Nous avons passé l'après-midi à réparer un vieux vélo trouvé dans le garage.",
+  "Même quand c'est difficile, il faut garder le sourire et continuer d'essayer.",
+  "Le robot de l'atelier de technologie sait désormais suivre une ligne noire.",
+  "Dans la forêt, un écureuil cache ses noisettes pour l'hiver qui arrive.",
+  // Sans aucune lettre accentuée.
+  "Le chat dort sur le lit pendant que la pluie tombe dehors.",
+  "Mon ami joue de la guitare tous les soirs dans sa chambre.",
+  "Le petit train traverse la montagne sous un grand ciel bleu.",
+  "Nous mangeons une pizza au fromage chaque vendredi soir.",
+  "Un oiseau chante sur la branche du vieux pommier.",
+  "Le bus passe devant le parc toutes les dix minutes.",
+  "Paul range ses livres sur la grande table du salon.",
+  "La lune brille sur la mer et les vagues sont calmes.",
+  "Tu peux lire ce livre si tu aimes les histoires d'aventure.",
+  "Mon oncle construit un bateau dans son garage.",
+  "Le vent souffle fort sur la grande plage vide.",
+  "Chaque matin, Lucie prend son sac et court vers le bus.",
+  "Sur la route, un renard traverse devant notre voiture.",
+  "Il suffit de pratiquer chaque jour pour taper plus vite.",
+  "Mes amis et moi construisons une cabane dans le bois.",
+  "Quand le soleil se couche, le ciel devient rouge et orange.",
+  "Ma soeur aime dessiner des chevaux sur tous ses cahiers.",
+];

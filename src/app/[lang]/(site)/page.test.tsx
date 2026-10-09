@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 
 describe("Home", () => {
-  it.each(["fr", "en"] as const)("affiche la page de présentation traduite et ses accès à la salle de jeu (%s)", async (lang) => {
+  it.each(["fr", "en"] as const)("affiche la page de présentation traduite : « Créer une course » ouvre les paramètres, « Rejoindre » ouvre /play (%s)", async (lang) => {
     const { home } = getDictionary(lang);
     render(await Home(props(lang)));
 
@@ -41,7 +41,7 @@ describe("Home", () => {
     expect(video.querySelector("source")).toHaveAttribute("src", "/videos/typio-intro.mp4");
     expect(screen.getByText(home.approach.title)).toBeVisible();
     for (const link of screen.getAllByRole("link", { name: home.createRace })) {
-      expect(link).toHaveAttribute("href", `/${lang}/play`);
+      expect(link).toHaveAttribute("href", `/${lang}/race/settings`);
     }
     for (const link of screen.getAllByRole("link", { name: home.joinWithCode })) {
       expect(link).toHaveAttribute("href", `/${lang}/play`);
@@ -58,6 +58,16 @@ describe("Home", () => {
     for (const link of screen.getAllByRole("link", { name: home.signUp })) {
       expect(link).toHaveAttribute("href", `/${lang}/register`);
     }
+  });
+
+  it("un membre connecté retrouve « Créer une course » dans le hero et l'appel final, vers les paramètres", async () => {
+    mocks.getCurrentUserForDisplay.mockResolvedValue(member);
+    const { home } = getDictionary("fr");
+    render(await Home(props("fr")));
+
+    const links = screen.getAllByRole("link", { name: home.createRace });
+    expect(links).toHaveLength(2);
+    for (const link of links) expect(link).toHaveAttribute("href", "/fr/race/settings");
   });
 
   it("un membre connecté ne voit pas les liens de connexion et d'inscription", async () => {

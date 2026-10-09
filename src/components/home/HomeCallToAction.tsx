@@ -24,7 +24,7 @@ export function HomeCallToAction({ home, locale, user }: HomeCallToActionProps) 
         {canRegister ? (
           <ButtonLink href={`/${locale}/register`}>{home.signUp}</ButtonLink>
         ) : (
-          <ButtonLink href={`/${locale}/play`}>{home.createRace}</ButtonLink>
+          <ButtonLink href={`/${locale}/race/settings`}>{home.createRace}</ButtonLink>
         )}
         {user === null ? (
           <p className="text-sm text-muted">

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
+import { useIsDarkTheme } from "@/theme/useIsDarkTheme";
 
 export interface Racer {
   id: string;
@@ -17,8 +18,6 @@ interface RaceVisualizerProps {
   trackLength?: number;
   /** Classes du conteneur ; par défaut une boîte de 350 px avec bordure (bac à sable). */
   className?: string;
-  /** Affiche la pastille « Arrivée : N px » (utile en bac à sable, inutile dans l'écran de course). */
-  showHud?: boolean;
 }
 
 /** État d'animation d'un coureur, vivant uniquement dans la boucle Pixi. */
@@ -33,6 +32,7 @@ interface RacerView {
 }
 
 interface Layer {
+  alias: LayerAlias;
   sprite: PIXI.TilingSprite;
   speed: number;
   yOffset: number;
@@ -46,13 +46,30 @@ const CAMERA_RATE = 5; // la caméra est plus lente que le Blob → effet d'éla
 const HOP_HEIGHT = 20; // hauteur max du saut en px
 const CAMERA_ANCHOR = 0.22; // position du joueur local à l'écran (fraction de largeur)
 
+/** Vrai quand les décors sont déjà déclarés auprès de `PIXI.Assets` (partagé par toutes les scènes). */
+let assetsRegistered = false;
+// Un coureur très en avance ou en retard sur le joueur local reste visible, collé au bord de l'écran
+// (la caméra suit le joueur local, la piste est bien plus longue que l'écran).
+const EDGE_MARGIN = 70; // px entre le Blob et le bord de l'écran
+
+// Couleurs de la scène par thème (UI-3). Les décors sont des SVG clairs : en thème sombre on
+// assombrit le fond et on teinte (multiplie) chaque calque.
+const SCENE_COLORS = {
+  light: { background: 0xdcf2fa, layers: { cloud: 0xffffff, "meadow-distant": 0xffffff, meadow: 0xffffff, track: 0xffffff } },
+  dark: { background: 0x15122b, layers: { cloud: 0x6f7396, "meadow-distant": 0x4c5a7a, meadow: 0x48607a, track: 0x6a6480 } },
+} as const;
+type LayerAlias = keyof (typeof SCENE_COLORS)["light"]["layers"];
+
 export function RaceVisualizer({
   racers,
   trackLength = 5000,
   className = "relative h-[350px] w-full overflow-hidden rounded-xl border border-border shadow-inner",
-  showHud = true,
 }: RaceVisualizerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const dark = useIsDarkTheme();
+  const darkRef = useRef(dark);
+  // Appliquée par la scène une fois prête ; rappelée à chaque changement de thème.
+  const applyThemeRef = useRef<((isDark: boolean) => void) | null>(null);
 
   // Toujours la dernière valeur, lisible depuis le ticker sans le recréer.
   const racersRef = useRef(racers);
@@ -60,7 +77,11 @@ export function RaceVisualizer({
   
   const trackLengthRef = useRef(trackLength);
   useEffect(() => { trackLengthRef.current = trackLength; }, [trackLength]);
-  
+
+  useEffect(() => {
+    darkRef.current = dark;
+    applyThemeRef.current?.(dark);
+  }, [dark]);
 
   useEffect(() => {
     const host = containerRef.current;
@@ -74,6 +95,12 @@ export function RaceVisualizer({
     let cameraReady = false;
     let elapsed = 0;
     let initialized = false;
+
+    const applyTheme = (isDark: boolean) => {
+      const colors = SCENE_COLORS[isDark ? "dark" : "light"];
+      app.renderer.background.color = colors.background;
+      for (const { alias, sprite } of layers) sprite.tint = colors.layers[alias];
+    };
 
     const layoutLayers = () => {
       for (const { sprite, yOffset } of layers) {
@@ -110,7 +137,7 @@ export function RaceVisualizer({
 
     const init = async () => {
       await app.init({
-        backgroundColor: 0xdcf2fa,
+        backgroundColor: SCENE_COLORS[darkRef.current ? "dark" : "light"].background,
         resizeTo: host,
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
@@ -130,21 +157,27 @@ export function RaceVisualizer({
         meadow: "/race/meadow.svg",
         track: "/race/track.svg",
       };
-      for (const [alias, src] of Object.entries(assets)) PIXI.Assets.add({ alias, src });
+      // Les alias ne s'enregistrent qu'une fois : « Rejouer » remonte la scène à chaque manche.
+      if (!assetsRegistered) {
+        for (const [alias, src] of Object.entries(assets)) PIXI.Assets.add({ alias, src });
+        assetsRegistered = true;
+      }
       await PIXI.Assets.load(Object.keys(assets));
       if (!isMounted) return;
 
-      const addLayer = (alias: string, speed: number, yOffset: number) => {
+      const addLayer = (alias: LayerAlias, speed: number, yOffset: number) => {
         const texture = PIXI.Assets.get<PIXI.Texture>(alias);
         const sprite = new PIXI.TilingSprite({ texture, width: app.screen.width, height: texture.height });
         app.stage.addChild(sprite);
-        layers.push({ sprite, speed, yOffset });
+        layers.push({ alias, sprite, speed, yOffset });
       };
       addLayer("cloud", 0.1, 300);
       addLayer("meadow-distant", 0.2, 100);
       addLayer("meadow", 0.5, 50);
       addLayer("track", 1, 0);
       layoutLayers();
+      applyTheme(darkRef.current);
+      applyThemeRef.current = applyTheme;
 
       const world = new PIXI.Container();
       world.sortableChildren = true; // les coureurs du bas passent devant
@@ -159,8 +192,18 @@ export function RaceVisualizer({
         const list = racersRef.current;
         const length = trackLengthRef.current;
 
+        // Distances aux autres coureurs, bornées à ce que l'écran peut montrer.
+        const localRacer = list.find((r) => r.isLocal) ?? list[0];
+        const localRaw = localRacer ? (localRacer.progress / 100) * length : 0;
+        const localX = (localRacer && views.get(localRacer.id)?.x) ?? localRaw;
+        const maxAhead = Math.max(0, app.screen.width * (1 - CAMERA_ANCHOR) - EDGE_MARGIN);
+        const maxBehind = Math.max(0, app.screen.width * CAMERA_ANCHOR - EDGE_MARGIN / 2);
+
         list.forEach((racer, index) => {
-          const target = (racer.progress / 100) * length;
+          const raw = (racer.progress / 100) * length;
+          const target = racer === localRacer
+            ? raw
+            : localX + Math.max(-maxBehind, Math.min(maxAhead, raw - localRaw));
           let view = views.get(racer.id);
           if (!view) {
             view = createView(racer, blobTexture, target, world);
@@ -227,6 +270,7 @@ export function RaceVisualizer({
 
     return () => {
       isMounted = false;
+      applyThemeRef.current = null;
       views.clear();
       if (initialized) app.destroy(true, { children: true });
     };
@@ -234,13 +278,7 @@ export function RaceVisualizer({
 
   return (
     <div className={className}>
-      <div ref={containerRef} className="absolute inset-0" />
-      {/* HUD React par dessus le Canvas */}
-      {showHud ? (
-        <div className="absolute right-4 top-4 rounded-full bg-background/80 px-4 py-2 font-bold text-foreground shadow-sm backdrop-blur-sm">
-          Arrivée : {trackLength}px
-        </div>
-      ) : null}
+      <div ref={containerRef} className="absolute inset-0" aria-hidden="true" />
     </div>
   );
 }

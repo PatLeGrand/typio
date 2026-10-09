@@ -7,12 +7,13 @@ export type RaceLifecycle =
   | { phase: "preparing"; settings: Readonly<RaceSettings> }
   | { phase: "countdown"; settings: Readonly<RaceSettings>; startsAt: number }
   | { phase: "racing"; settings: Readonly<RaceSettings>; startsAt: number; endsAt: number }
-  | { phase: "results"; settings: Readonly<RaceSettings>; startsAt: number; finishedAt: number; reason: "completed" | "timeout" };
+  | { phase: "results"; settings: Readonly<RaceSettings>; startsAt: number; finishedAt: number; reason: "completed" | "timeout" | "abandoned" };
 
 export type RaceLifecycleEvent =
   | { type: "start" }
   | { type: "tick" }
   | { type: "complete" }
+  | { type: "abandon" }
   | { type: "reset" };
 
 export function createRaceLifecycle(settings: RaceSettings): RaceLifecycle {
@@ -21,7 +22,7 @@ export function createRaceLifecycle(settings: RaceSettings): RaceLifecycle {
   return { phase: "preparing", settings: Object.freeze(parsed) };
 }
 
-/** COURSE-1, COURSE-3, H-9. Multiplayer callers must check host and runner guards first. */
+/** COURSE-1, COURSE-3, COURSE-5, H-9. Multiplayer callers must check host and runner guards first. */
 export function transitionRace(state: RaceLifecycle, event: RaceLifecycleEvent, now: number): RaceLifecycle {
   if (!Number.isFinite(now) || now < 0) throw new Error("INVALID_RACE_TIME");
   if (event.type === "reset") return state.phase === "results" ? createRaceLifecycle(state.settings) : state;
@@ -39,9 +40,9 @@ export function transitionRace(state: RaceLifecycle, event: RaceLifecycleEvent, 
     return { phase: "results", settings: state.settings, startsAt: state.startsAt,
       finishedAt: state.endsAt, reason: "timeout" };
   }
-  if (event.type === "complete") {
+  if (event.type === "complete" || event.type === "abandon") {
     return { phase: "results", settings: state.settings, startsAt: state.startsAt,
-      finishedAt: now, reason: "completed" };
+      finishedAt: now, reason: event.type === "complete" ? "completed" : "abandoned" };
   }
   return state;
 }

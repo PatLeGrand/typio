@@ -11,45 +11,82 @@
     "roomName": "Prairie des Blobs",
     "playerOne": "joueur",
     "playerOther": "joueurs",
-    "pause": "Pause",
-    "resume": "Reprendre",
+    "abandon": "Abandonner",
+    "go": "Partez !",
     "status": {
       "countdown": "DÉPART",
       "racing": "EN COURSE",
-      "paused": "EN PAUSE",
       "finished": "TERMINÉE"
     },
     "leaderboard": "Classement",
     "you": "Toi",
+    "botNames": [
+      "Milo",
+      "Nino",
+      "Luna",
+      "Poppy",
+      "Zoé",
+      "Max",
+      "Lia"
+    ],
     "stats": {
       "title": "Statistiques",
+      "timeLeft": "Temps restant :",
       "time": "Temps :",
-      "bestWpm": "Meilleur MPM :",
+      "wpm": "MPM :",
       "accuracy": "Précision :"
     },
     "kicker": {
       "countdown": "LA COURSE VA COMMENCER",
       "racing": "LA COURSE EST LANCÉE",
-      "paused": "COURSE EN PAUSE",
       "finished": "COURSE TERMINÉE"
     },
     "headline": {
       "countdown": "Prépare-toi !",
       "racing": "Garde le rythme !",
-      "paused": "Reprends ton souffle",
       "completed": "Bravo, tu as fini !",
-      "timeout": "Temps écoulé !"
+      "timeout": "Temps écoulé !",
+      "abandoned": "Course abandonnée"
     },
     "rankOf": "sur",
+    "ordinal": {
+      "one": "{rank}er",
+      "two": "{rank}e",
+      "few": "{rank}e",
+      "other": "{rank}e"
+    },
     "trackProgress": "% du parcours",
     "typing": {
       "title": "À tes touches, prêt, pars !",
-      "phrase": "Phrase",
       "characters": "caractères",
-      "inputLabel": "Tape la phrase ici",
+      "inputLabel": "Tape le texte ici",
       "hint": "Chaque caractère correct fait avancer ton Blob.",
       "fix": "pour corriger",
-      "autoValidate": "Validation automatique"
+      "autoValidate": "Fin automatique au dernier caractère"
+    },
+    "noText": {
+      "title": "Aucun texte disponible",
+      "message": "Les réglages choisis ne laissent aucun texte (langue, accents, caractères exclus). Assouplis-les pour lancer la course.",
+      "back": "Modifier les réglages"
+    },
+    "results": {
+      "podium": "Podium",
+      "tableTitle": "Résultats de la course",
+      "columns": {
+        "rank": "Rang",
+        "name": "Nom",
+        "wpm": "MPM",
+        "accuracy": "Précision",
+        "time": "Temps",
+        "status": "Statut"
+      },
+      "statuses": {
+        "finished": "Arrivé",
+        "unfinished": "Non arrivé",
+        "abandoned": "Abandon"
+      },
+      "replay": "Rejouer",
+      "editSettings": "Modifier les réglages"
     }
   },
 
@@ -363,7 +400,10 @@
     "excludedChars": {
       "label": "Caractères exclus",
       "placeholder": "@ # %",
-      "count": "{count} caractères exclus",
+      "count": {
+        "one": "{count} caractère exclu",
+        "other": "{count} caractères exclus"
+      },
       "none": "Aucun",
       "help": "Saisis les caractères à éviter, séparés par un espace. Laisse vide pour tout autoriser.",
       "error": "Trop de caractères exclus (max 100)."
@@ -375,10 +415,9 @@
     "timeLimit": {
       "label": "Limite de temps",
       "help": "Sans limite personnalisée, la course s'arrête après 5 minutes.",
-      "on": "Activée",
-      "off": "5 minutes par défaut",
-      "seconds": "secondes",
-      "error": "Entre 1 et 600 secondes."
+      "none": "Aucune (5 min par défaut)",
+      "noneShort": "Aucune",
+      "minutes": "{minutes} min"
     },
     "inputMode": {
       "label": "Mode de saisie",
