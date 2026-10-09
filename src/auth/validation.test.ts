@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { pseudoSkeleton, validateNewPassword, validatePassword, validatePseudo, validateUsername } from "./validation";
+import {
+  foldAsciiConfusables,
+  pseudoSkeleton,
+  usernameSkeleton,
+  validateNewPassword, validatePassword,
+  validatePseudo,
+  validateUsername,
+} from "./validation";
 
 describe("validateUsername", () => {
   it("normalizes to lowercase and trims, keeping the typed form as display name", () => {
@@ -211,24 +218,100 @@ describe("validatePseudo: homoglyphs (AUTH-4)", () => {
   });
 });
 
+describe("foldAsciiConfusables", () => {
+  it.each([
+    ["a1ice", "allce"],
+    ["b0b", "bob"],
+    ["a|ice", "allce"],
+    ["rnario", "marlo"],
+    ["will", "vvlll"],
+    ["", ""],
+  ])("folds %j to %j", (input, folded) => {
+    expect(foldAsciiConfusables(input)).toBe(folded);
+  });
+
+  it("unfolds w into vv, so vvv stays vvv", () => {
+    expect(foldAsciiConfusables("vvv")).toBe("vvv");
+    expect(foldAsciiConfusables("w")).toBe("vv");
+    expect(foldAsciiConfusables("avw")).toBe(foldAsciiConfusables("avvv"));
+    expect(foldAsciiConfusables("vwa")).toBe(foldAsciiConfusables("vvva"));
+  });
+
+  it("replaces left to right without overlap, in a fixed order", () => {
+    expect(foldAsciiConfusables("rnrn")).toBe("mm");
+    expect(foldAsciiConfusables("rrn")).toBe("rm");
+    expect(foldAsciiConfusables("rnw")).toBe("mvv");
+    expect(foldAsciiConfusables("1rn0w")).toBe("lmovv");
+  });
+});
+
+describe("usernameSkeleton", () => {
+  it.each([
+    ["alice", "allce"],
+    ["Alice", "allce"],
+    ["B0B_2", "bob_2"],
+    ["Rnario", "marlo"],
+    ["VVill", "vvlll"],
+    ["will", "vvlll"],
+  ])("maps %j to %j", (username, skeleton) => {
+    expect(usernameSkeleton(username)).toBe(skeleton);
+  });
+});
+
 describe("pseudoSkeleton", () => {
   it.each([
-    ["Alice", "alice"],
-    ["Àlice", "alice"],
-    ["ALICÉ", "alice"],
-    ["Éloïse", "eloise"],
-    ["Lætitia", "laetitia"],
-    ["Cœur de lion", "coeur de lion"],
-    ["ŒDIPE_2", "oedipe_2"],
+    ["Alice", "allce"],
+    ["Àlice", "allce"],
+    ["ALICÉ", "allce"],
+    ["AIice", "allce"],
+    ["a1ice", "allce"],
+    ["Éloïse", "elolse"],
+    ["Lætitia", "laetltla"],
+    ["Cœur de lion", "coeur de llon"],
+    ["ŒDIPE_2", "oedlpe_2"],
+    ["II", "ll"],
+    ["IlI", "lll"],
+    ["Ìlice", "lllce"],
   ])("maps %j to %j", (pseudo, skeleton) => {
     expect(pseudoSkeleton(pseudo)).toBe(skeleton);
   });
 
+  it("merges i and l, so a capital I never needs two readings", () => {
+    expect(pseudoSkeleton("IIyes")).toBe(usernameSkeleton("ilyes"));
+    expect(pseudoSkeleton("lnes")).toBe(usernameSkeleton("ines"));
+    expect(pseudoSkeleton("ALICE")).toBe(pseudoSkeleton("AIice"));
+  });
+
+  it("folds ASCII confusables", () => {
+    expect(pseudoSkeleton("B0b")).toBe("bob");
+    expect(pseudoSkeleton("rnario")).toBe(usernameSkeleton("mario"));
+    expect(pseudoSkeleton("VVill")).toBe(usernameSkeleton("will"));
+    expect(pseudoSkeleton("avvv")).toBe(usernameSkeleton("avw"));
+  });
+
+  it("keeps the folding order", () => {
+    expect(pseudoSkeleton("vvv")).toBe("vvv");
+    expect(pseudoSkeleton("w")).toBe("vv");
+    expect(pseudoSkeleton("rnrn")).toBe("mm");
+    expect(pseudoSkeleton("rnw")).toBe("mvv");
+  });
+
+  it("documents the accepted cost: elia and ella share a skeleton", () => {
+    expect(pseudoSkeleton("Elia")).toBe(usernameSkeleton("ella"));
+  });
+
   it("returns ASCII for every pseudo validatePseudo accepts", () => {
-    for (const value of ["Zoé", "Éloïse", "Ãngel_ñ-2", "Ŵŷ Ç"]) {
+    for (const value of ["Zoé", "Éloïse", "Ãngel_ñ-2", "Ŵŷ Ç", "ÎÏle 10", "Œil", "Wiwi"]) {
       const result = validatePseudo(value);
       if (!result.ok) throw new Error(`expected ${value} to be valid`);
       expect(pseudoSkeleton(result.value)).toMatch(/^[a-z0-9 _-]+$/);
+    }
+  });
+
+  it("equals usernameSkeleton(u) for every valid username u", () => {
+    for (const username of ["alice", "Alice", "B0b", "rnario", "VVill", "x_1_I", "ILIAS", "Mario10", "a_b_c", "Wiwi"]) {
+      expect(validateUsername(username).ok).toBe(true);
+      expect(pseudoSkeleton(username)).toBe(usernameSkeleton(username));
     }
   });
 });
