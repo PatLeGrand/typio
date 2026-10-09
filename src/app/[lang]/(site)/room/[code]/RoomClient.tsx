@@ -147,9 +147,14 @@ export function RoomClient({ code, lang, dict, user }: { code: string, lang: str
             
             <ul className="flex flex-col gap-2">
               {state.participants.map((p) => (
-                <li key={p.userId} className={`flex items-center justify-between p-3 rounded-lg border ${p.userId === user.id ? 'border-accent-text bg-accent-soft' : 'border-border bg-background'}`}>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold">{p.displayName}</span>
+                <li key={p.userId} className={`flex items-center justify-between gap-3 p-3 rounded-lg border ${p.userId === user.id ? 'border-accent-text bg-accent-soft' : 'border-border bg-background'}`}>
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="min-w-0 break-words font-semibold">{p.displayName}</span>
+                    {p.kind === "guest" && (
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-muted-strong border border-border px-2 py-0.5 rounded-full">
+                        {dict.room.guest}
+                      </span>
+                    )}
                     {p.userId === state.hostId && (
                       <span className="text-[10px] uppercase font-bold tracking-wider text-island-mint bg-island-mint/10 px-2 py-0.5 rounded-full">
                         {dict.room.host}
@@ -162,7 +167,7 @@ export function RoomClient({ code, lang, dict, user }: { code: string, lang: str
                     )}
                   </div>
                   {!p.connected && (
-                    <span className="text-xs text-danger">{dict.room.disconnected}</span>
+                    <span className="shrink-0 text-xs text-danger">{dict.room.disconnected}</span>
                   )}
                 </li>
               ))}

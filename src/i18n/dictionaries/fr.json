@@ -505,6 +505,7 @@
     "playerNametag": "Nametag du joueur",
     "host": "Hôte",
     "spectator": "Spectateur",
+    "guest": "Invité",
     "disconnected": "Déconnecté",
     "play": {
       "create": {
