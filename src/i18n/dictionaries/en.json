@@ -5,8 +5,6 @@
     "invalid": "These settings are invalid. Return to settings to prepare your race.",
     "back": "Back to settings"
   },
-
-
   "raceScreen": {
     "roomName": "Blob Meadow",
     "playerOne": "player",
@@ -89,7 +87,6 @@
       "editSettings": "Change settings"
     }
   },
-
   "site": {
     "name": "Typio"
   },
@@ -457,6 +454,12 @@
       "tip": "Speed is good. Accuracy moves your Blob forward!",
       "start": "Start race",
       "ready": "Everything is ready. Ready, set, type!"
+    },
+    "invite": {
+      "button": "Invite friends",
+      "guestNotice": "Guests cannot create a room. Create an account to invite friends.",
+      "anonymousNotice": "You need to be signed in to invite friends.",
+      "loginLink": "Sign in"
     }
   },
   "profile": {
@@ -557,32 +560,7 @@
     },
     "config": {
       "title": "Settings",
-      "hostOnly": "Only the host can change the settings.",
-      "textMode": {
-        "label": "Text type",
-        "sentences": "Sentences",
-        "words": "Words"
-      },
-      "language": {
-        "label": "Text language",
-        "fr": "French",
-        "en": "English"
-      },
-      "length": {
-        "label": "Text length",
-        "short": "Short",
-        "medium": "Medium",
-        "long": "Long"
-      },
-      "timeLimit": {
-        "label": "Time limit",
-        "none": "None (5 minutes by default)",
-        "60": "1 minute",
-        "120": "2 minutes",
-        "180": "3 minutes",
-        "300": "5 minutes",
-        "600": "10 minutes"
-      }
+      "hostOnly": "Only the host can change the settings."
     },
     "play": {
       "metaTitle": "Play",

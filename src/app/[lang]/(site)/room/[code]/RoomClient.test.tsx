@@ -25,9 +25,11 @@ function setRoom(next: UseRoom, rerender?: () => void): void {
 
 function renderRoom(options: { locale?: "fr" | "en"; userId?: string; code?: string; role?: "runner" | "spectator" } = {}) {
   const { locale = "fr", userId = ME, code = "ABC234", role = "runner" } = options;
-  const labels = getDictionary(locale).room;
-  const ui = () => <RoomClient code={code} role={role} locale={locale} userId={userId} labels={labels} />;
-  return { ...render(ui()), ui, labels };
+  const { room: labels, raceSettings: settingsLabels } = getDictionary(locale);
+  const ui = () => (
+    <RoomClient code={code} role={role} locale={locale} userId={userId} labels={labels} settingsLabels={settingsLabels} />
+  );
+  return { ...render(ui()), ui, labels, settingsLabels };
 }
 
 const hostRoom = makeRoom([makeParticipant(ME), makeParticipant(OTHER, { role: "spectator", connected: false })]);
@@ -40,34 +42,25 @@ beforeEach(() => {
 });
 
 describe("vue de l'hôte (SALLE-10)", () => {
-  it.each(["fr", "en"] as const)("quatre listes étiquetées et actives, avec toutes les valeurs du protocole (%s)", (locale) => {
+  it.each(["fr", "en"] as const)("réglages modifiables, sans note « hôte seulement » (%s)", (locale) => {
     current = makeUseRoom({ room: hostRoom });
-    const { labels } = renderRoom({ locale });
+    const { labels, settingsLabels } = renderRoom({ locale });
 
-    const selects = [
-      screen.getByRole("combobox", { name: labels.config.textMode.label }),
-      screen.getByRole("combobox", { name: labels.config.language.label }),
-      screen.getByRole("combobox", { name: labels.config.length.label }),
-      screen.getByRole("combobox", { name: labels.config.timeLimit.label }),
-    ];
-    for (const select of selects) expect(select).toBeEnabled();
-    expect(within(selects[3]).getAllByRole("option")).toHaveLength(6);
-    expect(within(selects[2]).getAllByRole("option").map((o) => o.textContent)).toEqual([
-      labels.config.length.short,
-      labels.config.length.medium,
-      labels.config.length.long,
-    ]);
+    const timeLimit = screen.getByRole("radiogroup", { name: settingsLabels.timeLimit.label });
+    for (const radio of within(timeLimit).getAllByRole("radio")) expect(radio).toBeEnabled();
+    expect(screen.getByRole("textbox", { name: settingsLabels.excludedChars.label })).not.toHaveAttribute("readonly");
     expect(screen.queryByText(labels.config.hostOnly)).not.toBeInTheDocument();
   });
 
   it("envoie le patch du protocole quand l'hôte change une valeur", () => {
     const updateConfig = vi.fn<UseRoom["updateConfig"]>(async () => ({ ok: true, data: undefined }));
     current = makeUseRoom({ room: hostRoom, updateConfig });
-    const { labels } = renderRoom();
+    const { settingsLabels } = renderRoom();
 
-    fireEvent.change(screen.getByRole("combobox", { name: labels.config.timeLimit.label }), { target: { value: "120" } });
-    fireEvent.change(screen.getByRole("combobox", { name: labels.config.timeLimit.label }), { target: { value: "none" } });
-    fireEvent.change(screen.getByRole("combobox", { name: labels.config.language.label }), { target: { value: "en" } });
+    const timeLimit = screen.getByRole("radiogroup", { name: settingsLabels.timeLimit.label });
+    fireEvent.click(within(timeLimit).getByRole("radio", { name: "2 min" }));
+    fireEvent.click(within(timeLimit).getByRole("radio", { name: settingsLabels.timeLimit.none }));
+    fireEvent.click(screen.getByRole("radio", { name: settingsLabels.language.en }));
 
     expect(updateConfig.mock.calls).toEqual([
       [{ timeLimitSeconds: 120 }],
@@ -85,12 +78,14 @@ describe("vue de l'hôte (SALLE-10)", () => {
 });
 
 describe("vue d'un participant", () => {
-  it("configuration en lecture seule : aucune liste, valeurs affichées et note", () => {
+  it("configuration en lecture seule : contrôles inactifs, valeur affichée et note", () => {
     current = makeUseRoom({ room: makeRoom(guestRoom.participants, { config: { ...guestRoom.config, language: "en" } }) });
-    const { labels } = renderRoom();
+    const { labels, settingsLabels } = renderRoom();
 
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
-    expect(screen.getByText(labels.config.language.label).closest("div")).toHaveTextContent(labels.config.language.en);
+    const english = screen.getByRole("radio", { name: settingsLabels.language.en });
+    expect(english).toHaveAttribute("aria-checked", "true");
+    expect(english).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: settingsLabels.excludedChars.label })).toHaveAttribute("readonly");
     expect(screen.getByText(labels.config.hostOnly)).toBeVisible();
   });
 });

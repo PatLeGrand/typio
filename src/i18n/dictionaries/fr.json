@@ -5,8 +5,6 @@
     "invalid": "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
     "back": "Retour aux paramètres"
   },
-
-
   "raceScreen": {
     "roomName": "Prairie des Blobs",
     "playerOne": "joueur",
@@ -89,7 +87,6 @@
       "editSettings": "Modifier les réglages"
     }
   },
-
   "site": {
     "name": "Typio"
   },
@@ -457,6 +454,12 @@
       "tip": "La vitesse, c'est bien. La précision fait avancer ton Blob !",
       "start": "Lancer la course",
       "ready": "Tout est prêt. À tes touches, prêt, pars !"
+    },
+    "invite": {
+      "button": "Inviter des amis",
+      "guestNotice": "Les invités ne peuvent pas créer de salle. Crée un compte pour inviter des amis.",
+      "anonymousNotice": "Pour inviter des amis, tu dois être connecté.",
+      "loginLink": "Se connecter"
     }
   },
   "profile": {
@@ -557,32 +560,7 @@
     },
     "config": {
       "title": "Configuration",
-      "hostOnly": "Seul l'hôte peut modifier la configuration.",
-      "textMode": {
-        "label": "Type de texte",
-        "sentences": "Phrases",
-        "words": "Mots"
-      },
-      "language": {
-        "label": "Langue du texte",
-        "fr": "Français",
-        "en": "Anglais"
-      },
-      "length": {
-        "label": "Longueur du texte",
-        "short": "Court",
-        "medium": "Moyen",
-        "long": "Long"
-      },
-      "timeLimit": {
-        "label": "Limite de temps",
-        "none": "Aucune (5 minutes par défaut)",
-        "60": "1 minute",
-        "120": "2 minutes",
-        "180": "3 minutes",
-        "300": "5 minutes",
-        "600": "10 minutes"
-      }
+      "hostOnly": "Seul l'hôte peut modifier la configuration."
     },
     "play": {
       "metaTitle": "Jouer",
