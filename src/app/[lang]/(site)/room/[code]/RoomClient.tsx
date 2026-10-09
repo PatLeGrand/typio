@@ -23,13 +23,14 @@ type RoomClientProps = {
   /** `users.id` de la session, lue côté serveur par la page. */
   userId: string;
   labels: Dictionary["room"];
+  settingsLabels: Dictionary["raceSettings"];
 };
 
 /**
  * Salle d'attente (SALLE-7, SALLE-10, SALLE-13, SALLE-15). Rejoint la salle de l'URL une
  * seule fois par montage (D6) ; quitter la page sans « Quitter » ne quitte pas la salle (D7).
  */
-export function RoomClient({ code, role, locale, userId, labels }: RoomClientProps) {
+export function RoomClient({ code, role, locale, userId, labels, settingsLabels }: RoomClientProps) {
   const router = useRouter();
   const { connection, room, error, join, updateConfig, leave, clearError } = useRoom(userId);
   useLoginRedirect(connection, locale);
@@ -103,8 +104,8 @@ export function RoomClient({ code, role, locale, userId, labels }: RoomClientPro
     }
   }
 
-  function handleConfigChange(patch: RoomConfigPatch): void {
-    void updateConfig(patch);
+  function handleConfigChange(patch: RoomConfigPatch): Promise<unknown> {
+    return updateConfig(patch);
   }
 
   // Une erreur de `join` ne compte plus dès qu'on est dans la salle.
@@ -125,6 +126,8 @@ export function RoomClient({ code, role, locale, userId, labels }: RoomClientPro
           room={room}
           userId={userId}
           labels={labels}
+          settingsLabels={settingsLabels}
+          lang={locale}
           error={error}
           leaving={leaving}
           onLeave={() => void handleLeave()}

@@ -2,6 +2,50 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createRoomStore, MAX_SPECTATORS } from "./roomStore";
 import { DEFAULT_ROOM_CONFIG, MAX_RUNNERS } from "./protocol";
 
+describe("roomStore bot capacity", () => {
+  const host = { id: "host", displayName: "Host", kind: "member" as const };
+  const nextRunner = { id: "next-runner", displayName: "Next runner", kind: "guest" as const };
+
+  it("rejects an update whose bots exceed the remaining runner capacity", () => {
+    const store = createRoomStore();
+    const createRes = store.create(host, {}, 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    const code = createRes.state.code;
+
+    for (let index = 0; index < 17; index++) {
+      expect(store.join(
+        { id: `runner-${index}`, displayName: `Runner ${index}`, kind: "guest" },
+        code,
+        "runner",
+        100
+      ).ok).toBe(true);
+    }
+
+    expect(store.updateConfig(host.id, code, { botCount: 3 })).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.get(code)?.config.botCount).toBe(0);
+    expect(store.updateConfig(host.id, code, { botCount: 2 }).ok).toBe(true);
+  });
+
+  it("reserves runner places for bots while spectators can still join", () => {
+    const store = createRoomStore();
+    const createRes = store.create(host, { botCount: 5 }, 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    const code = createRes.state.code;
+
+    for (let index = 0; index < 14; index++) {
+      expect(store.join(
+        { id: `runner-${index}`, displayName: `Runner ${index}`, kind: "guest" },
+        code,
+        "runner",
+        100
+      ).ok).toBe(true);
+    }
+
+    expect(store.join(nextRunner, code, "runner", 100)).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.join(nextRunner, code, "spectator", 100).ok).toBe(true);
+  });
+});
+
 describe("roomStore", () => {
   let store: ReturnType<typeof createRoomStore>;
 

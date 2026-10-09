@@ -31,32 +31,21 @@ beforeEach(() => {
 describe.each(["fr", "en"] as const)("page de jeu, membre hors salle (%s)", (locale) => {
   it("propose de créer et de rejoindre, sans bandeau", () => {
     const labels = renderPlay(locale);
-    expect(screen.getByRole("button", { name: labels.play.create.button })).toBeEnabled();
+    expect(screen.getByRole("link", { name: labels.play.create.button })).toBeVisible();
     expect(screen.getByRole("button", { name: labels.play.join.button })).toBeEnabled();
     expect(screen.queryByText(labels.play.inRoom.return)).not.toBeInTheDocument();
   });
 
-  it("crée une salle puis ouvre sa page", async () => {
-    const create = vi.fn<UseRoom["create"]>(async () => ({ ok: true, data: { code: "XYZ789" } }));
+  it("« Créer une salle » est un lien vers les paramètres de course (B-D4)", () => {
+    const create = vi.fn<UseRoom["create"]>();
     mocks.useRoom.mockImplementation(() => makeUseRoom({ create }));
     const labels = renderPlay(locale);
 
-    fireEvent.click(screen.getByRole("button", { name: labels.play.create.button }));
-
-    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(`/${locale}/room/XYZ789`));
-  });
-
-  it("création refusée : reste sur la page et affiche l'erreur traduite", async () => {
-    const create = vi.fn<UseRoom["create"]>(async () => ({ ok: false, error: "OFFLINE" }));
-    mocks.useRoom.mockImplementation(() => makeUseRoom({ create, error: "OFFLINE" }));
-    const labels = renderPlay(locale);
-
-    fireEvent.click(screen.getByRole("button", { name: labels.play.create.button }));
-    await waitFor(() => expect(create).toHaveBeenCalled());
-
-    expect(mocks.push).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent(labels.errors.OFFLINE);
-    expect(screen.queryByText("OFFLINE")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: labels.play.create.button })).toHaveAttribute(
+      "href",
+      `/${locale}/race/settings`,
+    );
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("rejoint avec un code valide : ouvre la page de la salle avec le rôle", () => {
@@ -79,17 +68,6 @@ describe.each(["fr", "en"] as const)("page de jeu, membre hors salle (%s)", (loc
 });
 
 describe("opération en cours", () => {
-  it("pendant une création, « Rejoindre » est désactivé", async () => {
-    const create = vi.fn<UseRoom["create"]>(() => new Promise(() => undefined));
-    mocks.useRoom.mockImplementation(() => makeUseRoom({ create }));
-    const labels = renderPlay("fr");
-
-    fireEvent.click(screen.getByRole("button", { name: labels.play.create.button }));
-
-    await waitFor(() => expect(screen.getByRole("button", { name: labels.play.join.button })).toBeDisabled());
-    expect(screen.getByLabelText(labels.play.join.codeLabel)).toBeDisabled();
-  });
-
   it("pendant un départ, « Rejoindre » est désactivé", async () => {
     const leave = vi.fn<UseRoom["leave"]>(() => new Promise(() => undefined));
     mocks.useRoom.mockImplementation(() => makeUseRoom({ room: inRoom, leave }));
@@ -123,7 +101,7 @@ describe("page réaffichée après « Rejoindre »", () => {
       window.dispatchEvent(new Event("pageshow"));
     });
 
-    expect(screen.getByRole("button", { name: labels.play.create.button })).toBeEnabled();
+    expect(screen.getByRole("link", { name: labels.play.create.button })).toBeVisible();
     expect(screen.getByRole("button", { name: labels.play.join.button })).toBeEnabled();
   });
 

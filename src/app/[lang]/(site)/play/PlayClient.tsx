@@ -28,7 +28,7 @@ type PlayClientProps = {
  */
 export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps) {
   const router = useRouter();
-  const { connection, room, error, create, leave, clearError } = useRoom(userId);
+  const { connection, room, error, leave, clearError } = useRoom(userId);
   useLoginRedirect(connection, locale);
   const [busy, setBusy] = useState(false);
 
@@ -47,13 +47,6 @@ export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps)
       reset();
     };
   }, []);
-
-  async function handleCreate(): Promise<void> {
-    setBusy(true);
-    const result = await create();
-    if (result.ok) router.push(roomPath(locale, result.data.code));
-    else setBusy(false);
-  }
 
   async function handleLeave(): Promise<void> {
     setBusy(true);
@@ -84,10 +77,10 @@ export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps)
       {error ? <RoomError code={error} messages={labels.errors} /> : null}
       <div className="grid gap-6 md:grid-cols-2">
         <CreateRoomPanel
+          locale={locale}
           labels={labels.play.create}
           isGuest={isGuest}
           disabled={inRoom || busy}
-          onCreate={() => void handleCreate()}
         />
         <JoinRoomForm
           labels={labels.play.join}
