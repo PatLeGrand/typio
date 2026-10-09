@@ -114,6 +114,34 @@ describe("RoomConfigPanel, host", () => {
     expect(excludedField()).toHaveValue(DEFAULT_ROOM_CONFIG.excludedCharacters);
   });
 
+  it("leaving the field while the timer's send is in flight keeps the draft until the answer", async () => {
+    let answer: (value: unknown) => void = () => undefined;
+    const onChange = vi.fn<Send>(() => new Promise((resolve) => { answer = resolve; }));
+    const { rerender } = setup({ onChange });
+
+    fireEvent.change(excludedField(), { target: { value: "k" } });
+    act(() => void vi.advanceTimersByTime(EXCLUDED_SEND_DELAY_MS));
+    fireEvent.blur(excludedField());
+    expect(excludedField()).toHaveValue("k");
+
+    rerender({ ...DEFAULT_ROOM_CONFIG, excludedCharacters: "k" });
+    await act(async () => answer({ ok: true }));
+    expect(excludedField()).toHaveValue("k");
+  });
+
+  it("losing the host role drops the unsent draft and shows the room value", () => {
+    const onChange = vi.fn<Send>(async () => undefined);
+    const props = { lang: "fr", labels: roomLabels.config, settingsLabels: raceSettings, onChange };
+    const view = render(<RoomConfigPanel config={DEFAULT_ROOM_CONFIG} editable {...props} />);
+
+    fireEvent.change(excludedField(), { target: { value: "q" } });
+    view.rerender(<RoomConfigPanel config={DEFAULT_ROOM_CONFIG} editable={false} {...props} />);
+    act(() => void vi.advanceTimersByTime(EXCLUDED_SEND_DELAY_MS));
+
+    expect(excludedField()).toHaveValue(DEFAULT_ROOM_CONFIG.excludedCharacters);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it("more than 100 characters: local error, nothing sent", () => {
     const { onChange } = setup();
     fireEvent.change(excludedField(), { target: { value: "a".repeat(101) } });

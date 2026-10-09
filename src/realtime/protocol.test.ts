@@ -60,6 +60,9 @@ describe("normalizeExcludedCharacters", () => {
     expect(normalizeExcludedCharacters("a b a")).toBe("ab");
     // L'h\u00f4te ne choisit pas l'ordre : un mot ne reste pas lisible.
     expect(normalizeExcludedCharacters("salope")).toBe("aelops");
+    // Ni la casse : les majuscules ne passent plus devant les minuscules.
+    expect(normalizeExcludedCharacters("FUck")).toBe("cfku");
+    expect(normalizeExcludedCharacters("ÉŒ")).toBe("éœ");
   });
 
   it("keeps French accents in NFC form", () => {
@@ -82,9 +85,9 @@ describe("normalizeExcludedCharacters", () => {
   });
 
   it("keeps at most 30 unique characters", () => {
-    const input = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJ";
+    const input = "zyxwvutsrqponmlkjihgfedcba0123456789";
     expect(normalizeExcludedCharacters(input)).toHaveLength(MAX_EXCLUDED_CHARACTERS);
-    expect(normalizeExcludedCharacters(input)).toBe([...input.slice(0, MAX_EXCLUDED_CHARACTERS)].sort().join(""));
+    expect(normalizeExcludedCharacters(input)).toBe("0123abcdefghijklmnopqrstuvwxyz");
   });
 });
 

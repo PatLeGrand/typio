@@ -402,7 +402,7 @@
         "other": "{count} characters excluded"
       },
       "none": "None",
-      "help": "Enter characters to avoid, separated by a space. Leave empty to allow all.",
+      "help": "Enter characters to avoid, separated by a space (30 at most, upper and lower case alike). Leave empty to allow all.",
       "error": "Too many excluded characters (max 100)."
     },
     "rulesSection": {

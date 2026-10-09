@@ -402,7 +402,7 @@
         "other": "{count} caractères exclus"
       },
       "none": "Aucun",
-      "help": "Saisis les caractères à éviter, séparés par un espace. Laisse vide pour tout autoriser.",
+      "help": "Saisis les caractères à éviter, séparés par un espace (30 au plus, majuscules et minuscules confondues). Laisse vide pour tout autoriser.",
       "error": "Trop de caractères exclus (max 100)."
     },
     "rulesSection": {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/Button";
 import { toRoomConfig } from "@/components/race/roomSettings";
 import type { Locale } from "@/i18n/config";
@@ -29,6 +29,13 @@ export function InviteFriendsButton({ lang, userId, settings, validate, labels, 
   const { create } = useRoom(userId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ClientRoomErrorCode | null>(null);
+
+  // Retour arrière après la création : la page réaffichée depuis le cache garderait le bouton bloqué.
+  useEffect(() => {
+    const reset = () => setBusy(false);
+    window.addEventListener("pageshow", reset);
+    return () => window.removeEventListener("pageshow", reset);
+  }, []);
 
   async function handleInvite(): Promise<void> {
     if (!validate()) return;

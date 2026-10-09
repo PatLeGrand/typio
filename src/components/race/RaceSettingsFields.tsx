@@ -22,6 +22,8 @@ interface RaceSettingsFieldsProps {
   excludedError?: string | null;
   /** Le champ des caractères exclus perd le focus (la salle envoie alors son patch). */
   onExcludedBlur?: () => void;
+  /** Niveau des titres de section : 2 sur la page de paramètres, 3 sous le titre de la salle. */
+  headingLevel?: 2 | 3;
 }
 
 /** Fills the localized "{minutes} min" template from a duration in seconds. */
@@ -41,7 +43,10 @@ export function RaceSettingsFields({
   lang,
   excludedError = null,
   onExcludedBlur,
+  headingLevel = 2,
 }: RaceSettingsFieldsProps) {
+  const SectionHeading = headingLevel === 3 ? "h3" : "h2";
+  const FieldHeading = headingLevel === 3 ? "h4" : "h3";
   const uid = useId();
   const id = (name: string) => `${uid}-${name}`;
 
@@ -56,7 +61,7 @@ export function RaceSettingsFields({
             <Type className="w-6 h-6" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">{dict.textSection.title}</h2>
+            <SectionHeading className="text-xl font-bold text-foreground">{dict.textSection.title}</SectionHeading>
             <p className="text-sm text-muted">{dict.textSection.subtitle}</p>
           </div>
         </div>
@@ -64,7 +69,7 @@ export function RaceSettingsFields({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8">
           {/* Type de texte */}
           <div>
-            <h3 id={id("text-mode-label")} className="text-[15px] font-semibold mb-3">{dict.textMode.label}</h3>
+            <FieldHeading id={id("text-mode-label")} className="text-[15px] font-semibold mb-3">{dict.textMode.label}</FieldHeading>
             <div className="flex gap-3" role="radiogroup" aria-labelledby={id("text-mode-label")}>
               <RadioCard
                 disabled={readOnly}
@@ -83,7 +88,7 @@ export function RaceSettingsFields({
 
           {/* Langue */}
           <div>
-            <h3 id={id("language-label")} className="text-[15px] font-semibold mb-3">{dict.language.label}</h3>
+            <FieldHeading id={id("language-label")} className="text-[15px] font-semibold mb-3">{dict.language.label}</FieldHeading>
             <div className="flex gap-3" role="radiogroup" aria-labelledby={id("language-label")}>
               <RadioCard
                 disabled={readOnly}
@@ -102,7 +107,7 @@ export function RaceSettingsFields({
 
           {/* Accents */}
           <div>
-            <h3 id={id("accents-label")} className="text-[15px] font-semibold mb-3">{dict.accents.label}</h3>
+            <FieldHeading id={id("accents-label")} className="text-[15px] font-semibold mb-3">{dict.accents.label}</FieldHeading>
             <div className="flex gap-3" role="radiogroup" aria-labelledby={id("accents-label")}>
               <RadioCard
                 disabled={readOnly}
@@ -121,7 +126,7 @@ export function RaceSettingsFields({
 
           {/* Longueur */}
           <div>
-            <h3 id={id("length-label")} className="text-[15px] font-semibold mb-3">{dict.length.label}</h3>
+            <FieldHeading id={id("length-label")} className="text-[15px] font-semibold mb-3">{dict.length.label}</FieldHeading>
             <div className="flex gap-3" role="radiogroup" aria-labelledby={id("length-label")}>
               <RadioCard
                 disabled={readOnly}
@@ -146,7 +151,7 @@ export function RaceSettingsFields({
 
           {/* Caractères exclus */}
           <div className="sm:col-span-2">
-            <h3 className="text-[15px] font-semibold mb-3">{dict.excludedChars.label}</h3>
+            <FieldHeading className="text-[15px] font-semibold mb-3">{dict.excludedChars.label}</FieldHeading>
             <div className="relative">
               <input
                 type="text"
@@ -181,7 +186,7 @@ export function RaceSettingsFields({
             <SlidersHorizontal className="w-6 h-6" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">{dict.rulesSection.title}</h2>
+            <SectionHeading className="text-xl font-bold text-foreground">{dict.rulesSection.title}</SectionHeading>
             <p className="text-sm text-muted">{dict.rulesSection.subtitle}</p>
           </div>
         </div>
@@ -219,7 +224,7 @@ export function RaceSettingsFields({
 
           {/* Mode de saisie */}
           <div>
-            <h3 id={id("input-mode-label")} className="text-[15px] font-semibold mb-3">{dict.inputMode.label}</h3>
+            <FieldHeading id={id("input-mode-label")} className="text-[15px] font-semibold mb-3">{dict.inputMode.label}</FieldHeading>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="radiogroup" aria-labelledby={id("input-mode-label")}>
               <RadioCard
                 layout="vertical"
@@ -247,7 +252,7 @@ export function RaceSettingsFields({
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
               </div>
               <div>
-                <h3 className="text-[15px] font-semibold">{dict.abilities.label}</h3>
+                <FieldHeading className="text-[15px] font-semibold">{dict.abilities.label}</FieldHeading>
                 <p id={id("abilities-help")} className="text-sm text-muted mt-1">{dict.abilities.help}</p>
               </div>
             </div>
@@ -275,14 +280,14 @@ export function RaceSettingsFields({
             <Bot className="w-6 h-6" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">{dict.opponentsSection.title}</h2>
+            <SectionHeading className="text-xl font-bold text-foreground">{dict.opponentsSection.title}</SectionHeading>
             <p className="text-sm text-muted">{dict.opponentsSection.subtitle}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] gap-x-6 gap-y-2">
           <div>
-            <h3 className="text-[15px] font-semibold mb-3">{dict.botCount.label}</h3>
+            <FieldHeading className="text-[15px] font-semibold mb-3">{dict.botCount.label}</FieldHeading>
             <div className="flex items-center justify-between px-4 h-11 border border-border rounded-field mb-2">
               <button
                 type="button"
@@ -307,7 +312,7 @@ export function RaceSettingsFields({
             <p className="text-xs text-muted">{dict.botCount.help}</p>
           </div>
           <div>
-            <h3 id={id("bot-difficulty-label")} className="text-[15px] font-semibold mb-3">{dict.botDifficulty.label}</h3>
+            <FieldHeading id={id("bot-difficulty-label")} className="text-[15px] font-semibold mb-3">{dict.botDifficulty.label}</FieldHeading>
             <div className="flex gap-3 mb-2" role="radiogroup" aria-labelledby={id("bot-difficulty-label")}>
               <RadioCard disabled={readOnly} checked={value.botDifficulty === "easy"} onChange={() => onChange({ botDifficulty: "easy" })} label={dict.botDifficulty.easy} className="justify-center text-center" />
               <RadioCard disabled={readOnly} checked={value.botDifficulty === "normal"} onChange={() => onChange({ botDifficulty: "normal" })} label={dict.botDifficulty.normal} className="justify-center text-center" />

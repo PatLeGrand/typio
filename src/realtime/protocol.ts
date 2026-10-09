@@ -183,15 +183,16 @@ const CONFIG_KEYS: ReadonlyArray<keyof RoomConfig> = [
 const EXCLUDABLE_CHARACTER = /^[A-Za-z0-9À-ÖØ-öø-ÿŒœ!-/:-@[-`{-~«»’…–—]$/u;
 
 /**
- * Caractères exclus (CONFIG-5, B-D1) : uniques, pris dans la liste ci-dessus, 30 au plus, puis
- * **triés**. L'hôte ne choisit ni les glyphes ni l'ordre : la salle diffuse un jeu de
- * caractères, jamais un mot lisible. Les surrogates isolés ne sont pas dans la liste. `null` si l'entrée brute est trop longue.
+ * Caractères exclus (CONFIG-5, B-D1) : en minuscules (le générateur ignore la casse), uniques,
+ * pris dans la liste ci-dessus, 30 au plus, puis **triés**. L'hôte ne choisit ni les glyphes, ni
+ * la casse, ni l'ordre : la salle diffuse un jeu de caractères, jamais un mot lisible. Les
+ * surrogates isolés ne sont pas dans la liste. `null` si l'entrée brute est trop longue.
  */
 export function normalizeExcludedCharacters(input: string): string | null {
   if (input.length > MAX_EXCLUDED_INPUT_LENGTH) return null;
 
   const kept = new Set<string>();
-  for (const character of Array.from(input.normalize("NFC"))) {
+  for (const character of Array.from(input.normalize("NFC").toLowerCase())) {
     if (!EXCLUDABLE_CHARACTER.test(character)) continue;
     kept.add(character);
     if (kept.size === MAX_EXCLUDED_CHARACTERS) break;

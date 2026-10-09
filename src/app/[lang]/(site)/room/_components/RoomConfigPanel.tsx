@@ -35,6 +35,8 @@ export function RoomConfigPanel({ config, editable, lang, labels, settingsLabels
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typing = useRef(false);
   const unsent = useRef(false);
+  // Un envoi attend la réponse du serveur : le brouillon reste affiché jusque-là.
+  const sending = useRef(false);
   const latestDraft = useRef("");
   const onChangeRef = useRef(onChange);
 
@@ -49,6 +51,18 @@ export function RoomConfigPanel({ config, editable, lang, labels, settingsLabels
     [],
   );
 
+  // Plus hôte (rôle transféré) : le champ passe en lecture seule sans blur, le brouillon est abandonné.
+  useEffect(() => {
+    if (editable) return;
+    if (timer.current !== null) clearTimeout(timer.current);
+    timer.current = null;
+    typing.current = false;
+    unsent.current = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- remise à zéro sur changement de rôle
+    setDraft(null);
+    setExcludedError(null);
+  }, [editable]);
+
   function sendDraft(): void {
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = null;
@@ -58,7 +72,9 @@ export function RoomConfigPanel({ config, editable, lang, labels, settingsLabels
       return;
     }
     unsent.current = false;
+    sending.current = true;
     void onChangeRef.current({ excludedCharacters: latestDraft.current }).then(() => {
+      sending.current = false;
       // Fin de la saisie et rien de plus récent à envoyer : retour à la valeur de la salle.
       if (!typing.current && !unsent.current) setDraft(null);
     });
@@ -67,7 +83,7 @@ export function RoomConfigPanel({ config, editable, lang, labels, settingsLabels
   function handleExcludedBlur(): void {
     typing.current = false;
     if (unsent.current) sendDraft();
-    else if (!excludedError) setDraft(null);
+    else if (!excludedError && !sending.current) setDraft(null);
   }
 
   function handleChange(patch: Partial<RaceSettings>): void {
@@ -98,6 +114,7 @@ export function RoomConfigPanel({ config, editable, lang, labels, settingsLabels
         lang={lang}
         excludedError={excludedError}
         onExcludedBlur={editable ? handleExcludedBlur : undefined}
+        headingLevel={3}
       />
       {editable ? null : <p className="text-sm text-muted-strong">{labels.hostOnly}</p>}
     </Card>
