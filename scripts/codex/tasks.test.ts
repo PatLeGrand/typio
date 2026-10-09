@@ -82,11 +82,14 @@ describe("buildWritePrompt", () => {
     }
   });
 
-  it("niveau 1 signale l'absence de dépendances et l'interdiction des vérifications", () => {
+  it("niveau 1 signale node_modules absent et le niveau 2 les dépendances installées", () => {
     const prompt = buildWritePrompt({ task: "implement", level: 1, brief });
-    expect(prompt).toContain("node_modules est absent");
+    expect(prompt).toContain("node_modules absent");
+    expect(prompt).not.toContain("dépendances installées");
     expect(prompt).toContain("ne lance ni lint, ni tsc, ni tests");
-    expect(buildWritePrompt({ task: "implement", level: 2, brief })).not.toContain("node_modules est absent");
+    const levelTwo = buildWritePrompt({ task: "implement", level: 2, brief });
+    expect(levelTwo).toContain("dépendances installées");
+    expect(levelTwo).not.toContain("node_modules absent");
   });
 
   it("qa demande les tests manquants et le rapport fidèle des échecs", () => {

@@ -111,13 +111,21 @@ const entries = (dir: string): string[] => readdirSync(dir);
 describe("runWrite : succès", () => {
   it("copie le modèle dans src pour les niveaux 2 et 4 et pour qa, mais pas pour le niveau 1", async () => {
     for (const overrides of [{ level: 1 }, { level: 2 }, { level: 4 }, { task: "qa", level: undefined }] as Partial<WriteCommand>[]) {
-      const t = setup(overrides);
+      // Sans --checks (le défaut est none) : seul le niveau change la décision.
+      const t = setup({ checks: [], ...overrides });
       t.deps.runCodex = fakeCodex(() => {});
       await runWrite(t.command, t.deps);
       expect(t.copyDependencies.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(
         overrides.level === 1 ? [] : ["src"],
       );
     }
+  });
+
+  it("copie quand même le modèle au niveau 1 si un lint est demandé dans le bac à sable", async () => {
+    const t = setup({ level: 1, checks: ["lint"] });
+    t.deps.runCodex = fakeCodex(() => {});
+    await runWrite(t.command, t.deps);
+    expect(t.copyDependencies.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(["src"]);
   });
 
   it("crée le worktree avec les seuls fichiers changés, supprime work/ et ne touche pas au dossier appelant", async () => {
@@ -349,6 +357,9 @@ describe("runWrite : --sortie-bac-a-sable", () => {
     writeFileSync(path.join(t.stateParent, "canary-write.json"), "{}");
     writeFileSync(path.join(t.stateParent, "canary-sandbox.json"), "{}");
     writeFileSync(path.join(t.stateParent, "autre.json"), "{}");
+    const model = path.join(t.stateParent, "deps", "a".repeat(64));
+    mkdirSync(path.join(model, "node_modules"), { recursive: true });
+    writeFileSync(path.join(model, ".complet"), "ok\n");
     t.deps.runCodex = fakeCodex((src) => put(src, "docs/nouveau.md", "n\n"));
     const executed: string[] = [];
     t.deps.execute = (name, cwd) => {
@@ -360,6 +371,7 @@ describe("runWrite : --sortie-bac-a-sable", () => {
     expect(t.copyDependencies.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(["codex-test-1"]);
     expect(executed).toEqual(["lint@codex-test-1", "test@codex-test-1"]);
     expect(entries(t.stateParent).filter((name) => name.endsWith(".json"))).toEqual(["autre.json"]);
+    expect(existsSync(model)).toBe(false);
     expect(t.stdout()).toContain("canary-*.json");
     expect(entries(t.workParent)).toEqual([]);
   });
@@ -367,9 +379,13 @@ describe("runWrite : --sortie-bac-a-sable", () => {
   it("les caches sont supprimés même si Codex échoue", async () => {
     const t = setup({ sandboxExitReason: "base locale" });
     writeFileSync(path.join(t.stateParent, "canary-write.json"), "{}");
+    const model = path.join(t.stateParent, "deps", "b".repeat(64));
+    mkdirSync(path.join(model, "node_modules"), { recursive: true });
+    writeFileSync(path.join(model, ".complet"), "ok\n");
     t.deps.runCodex = fakeCodex(() => {}, { exitCode: 1, message: "" });
     await expect(runWrite(t.command, t.deps)).rejects.toThrow(UnavailableError);
     expect(entries(t.stateParent).filter((name) => name.startsWith("canary-"))).toEqual([]);
+    expect(existsSync(model)).toBe(false);
   });
 
   it("dans le bac à sable, les caches des canaris ne sont pas touchés", async () => {

@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -29,6 +29,94 @@ function installWithModule(cwd: string): { status: number; output: string } {
 afterEach(() => {
   vi.restoreAllMocks();
   for (const directory of temps.splice(0)) rmSync(directory, { recursive: true, force: true, maxRetries: 3 });
+});
+
+describe("nettoyage des modèles de dépendances", () => {
+  it("supprime les temporaires vieux de plus d'une heure, sans toucher aux récents ni aux modèles complets", () => {
+    const state = tempDir();
+    const deps = path.join(state, "deps");
+    mkdirSync(deps);
+    const stale = path.join(deps, `${"a".repeat(64)}.tmp-x`);
+    const recent = path.join(deps, `${"b".repeat(64)}.tmp-x`);
+    const complete = path.join(deps, "c".repeat(64));
+    mkdirSync(stale);
+    mkdirSync(recent);
+    mkdirSync(path.join(complete, "node_modules"), { recursive: true });
+    writeFileSync(path.join(complete, ".complet"), "ok\n");
+    const old = new Date(Date.now() - 60 * 60_000 - 1);
+    utimesSync(stale, old, old);
+
+    pruneDependencyModels(state);
+
+    expect(existsSync(stale)).toBe(false);
+    expect(existsSync(recent)).toBe(true);
+    expect(existsSync(complete)).toBe(true);
+  });
+
+  it("laisse en place, avec un avertissement, les liens nommés comme une empreinte, sans supprimer leur cible", (context) => {
+    const warn = vi.spyOn(console, "error").mockImplementation(() => {});
+    const state = tempDir();
+    const deps = path.join(state, "deps");
+    const target = path.join(tempDir(), "model-target");
+    mkdirSync(deps);
+    mkdirSync(target);
+    const targetFile = path.join(target, "do-not-delete");
+    writeFileSync(targetFile, "ok\n");
+
+    for (const operation of [pruneDependencyModels, cleanDependencyModels]) {
+      const hash = operation === pruneDependencyModels ? "a".repeat(64) : "b".repeat(64);
+      const link = path.join(deps, hash);
+      try {
+        symlinkSync(target, link, "junction");
+      } catch (error) {
+        if (["EPERM", "EACCES"].includes((error as NodeJS.ErrnoException).code ?? "")) {
+          context.skip();
+          return;
+        }
+        throw error;
+      }
+
+      expect(() => operation(state)).not.toThrow();
+      expect(existsSync(targetFile)).toBe(true);
+      expect(existsSync(link)).toBe(true);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("n'est pas un dossier de modèle"));
+      rmSync(link);
+    }
+  });
+
+  it("un fichier nommé comme une empreinte n'interrompt pas le nettoyage des vrais modèles", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const state = tempDir();
+    const deps = path.join(state, "deps");
+    mkdirSync(deps);
+    writeFileSync(path.join(deps, "d".repeat(64)), "pas un dossier\n");
+    const model = path.join(deps, "e".repeat(64));
+    mkdirSync(path.join(model, "node_modules"), { recursive: true });
+    writeFileSync(path.join(model, ".complet"), "ok\n");
+
+    expect(() => cleanDependencyModels(state)).not.toThrow();
+    expect(existsSync(model)).toBe(false);
+  });
+
+  // robocopy (injectable) n'est utilisé que sous Windows ; ailleurs, la copie passe par cpSync.
+  it.runIf(process.platform === "win32")("marque le modèle utilisé avant de le copier, pour qu'un nettoyage concurrent ne le supprime pas", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const state = tempDir();
+    const directory = project("lock-utilise");
+    const model = ensureDependencyModel(directory, state, { install: installWithModule });
+    const used = path.join(model, ".utilise");
+    const old = new Date(Date.now() - 24 * 60 * 60_000);
+    utimesSync(used, old, old);
+    let markedBeforeCopy = false;
+    copyDependencies(directory, state, {
+      robocopy: (source, destination) => {
+        markedBeforeCopy = Date.now() - statSync(used).mtimeMs < 60_000;
+        cpSync(source, destination, { recursive: true });
+        return { status: 1, output: "" };
+      },
+    });
+    expect(markedBeforeCopy).toBe(true);
+  });
 });
 
 describe("modèles de dépendances", () => {

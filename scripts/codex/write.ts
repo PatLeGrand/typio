@@ -144,7 +144,9 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
 
     tempDir = realpathSync.native(makeScratchDir(stateParent, "run-"));
     const lastMessageFile = path.join(tempDir, "dernier-message.txt");
-    if (command.task === "qa" || command.level !== 1) (deps.copyDependencies ?? copyDependencies)(dir.src, stateParent);
+    // Niveau 1 sans dépendances (changement mécanique), sauf si un lint est demandé dans le bac à sable : eslint en a besoin.
+    const needsDependencies = command.task === "qa" || command.level !== 1 || (sandbox === "workspace-write" && command.checks.length > 0);
+    if (needsDependencies) (deps.copyDependencies ?? copyDependencies)(dir.src, stateParent);
     throwIfInterrupted(interrupts.signal());
 
     const isIgnored = (deps.ignoreCheck ?? gitIgnoreCheck)(root);

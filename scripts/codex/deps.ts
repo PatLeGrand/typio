@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import { cpSync, type Dirent, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { type InstallRunner, installDependencies } from "./install";
@@ -57,6 +57,21 @@ export function dependencyHash(lockfile: string): string {
   return createHash("sha256").update(readFileSync(lockfile)).digest("hex");
 }
 
+/**
+ * Les vrais dossiers de modèle. Un lien, une jonction ou un fichier au nom d'empreinte est laissé en place avec
+ * un avertissement : lever ici interromprait le nettoyage des autres modèles (après `--sortie-bac-a-sable`, il
+ * tourne dans un `finally`), et `ensureDependencyModel` refuse de toute façon de copier depuis une telle entrée.
+ */
+function modelDirectories(directory: string, entries: readonly Dirent[]): string[] {
+  const directories: string[] = [];
+  for (const entry of entries.filter((candidate) => MODEL_HASH.test(candidate.name))) {
+    const candidate = path.join(directory, entry.name);
+    if (isDirectoryNotLink(candidate)) directories.push(candidate);
+    else console.error(`AVERTISSEMENT : ${candidate} n'est pas un dossier de modèle (lien, jonction ou fichier) : laissé en place, sans le suivre.`);
+  }
+  return directories;
+}
+
 /** Supprime les modèles excédentaires, sans jamais suivre un lien ou une jonction. */
 export function pruneDependencyModels(stateParent: string, keep = 3): void {
   const directory = depsDir(stateParent);
@@ -68,13 +83,7 @@ export function pruneDependencyModels(stateParent: string, keep = 3): void {
     const candidate = path.join(directory, entry.name);
     if (isDirectoryNotLink(candidate) && Date.now() - statSync(candidate).mtimeMs > STALE_TEMPORARY_MS) removeModel(candidate);
   }
-  const candidates = models
-    .filter((entry) => MODEL_HASH.test(entry.name))
-    .map((entry) => path.join(directory, entry.name));
-  for (const candidate of candidates) {
-    if (!isDirectoryNotLink(candidate)) throw new UnavailableError(`Refus de suivre un lien de modèle : ${candidate}`);
-  }
-  candidates
+  modelDirectories(directory, models)
     .sort((left, right) => {
       const leftUsed = path.join(left, USED);
       const rightUsed = path.join(right, USED);
@@ -90,13 +99,7 @@ export function pruneDependencyModels(stateParent: string, keep = 3): void {
 export function cleanDependencyModels(stateParent: string): void {
   const directory = depsDir(stateParent);
   if (!existsSync(directory)) return;
-  const candidates = readdirSync(directory, { withFileTypes: true })
-    .filter((entry) => MODEL_HASH.test(entry.name))
-    .map((entry) => path.join(directory, entry.name));
-  for (const candidate of candidates) {
-    if (!isDirectoryNotLink(candidate)) throw new UnavailableError(`Refus de suivre un lien de modèle : ${candidate}`);
-  }
-  candidates.forEach(removeModel);
+  modelDirectories(directory, readdirSync(directory, { withFileTypes: true })).forEach(removeModel);
 }
 
 /** Construit une seule fois le modèle correspondant au bun.lock du dossier demandé. */
@@ -143,6 +146,12 @@ export function copyDependencies(projectDir: string, stateParent: string, deps: 
   const model = ensureDependencyModel(projectDir, stateParent, deps);
   const source = path.join(model, "node_modules");
   const destination = path.join(projectDir, "node_modules");
+  // Marqué utilisé AVANT la copie : une construction concurrente qui fait le ménage ne doit pas le supprimer
+  // pendant qu'on le lit.
+  const used = path.join(model, USED);
+  writeFileSync(used, "utilisé\n");
+  const now = new Date();
+  utimesSync(used, now, now);
   console.error(`Copie des dépendances dans ${projectDir}…`);
   const started = Date.now();
   if (process.platform === "win32") {
@@ -157,9 +166,5 @@ export function copyDependencies(projectDir: string, stateParent: string, deps: 
       throw new UnavailableError(`Copie des dépendances impossible : ${error instanceof Error ? error.message : String(error)}`);
     }
   }
-  const used = path.join(model, USED);
-  writeFileSync(used, "utilisé\n");
-  const now = new Date();
-  utimesSync(used, now, now);
   console.error(`Dépendances copiées en ${Math.round((Date.now() - started) / 1000)} s.`);
 }
