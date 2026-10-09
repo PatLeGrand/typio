@@ -247,6 +247,7 @@ describe("createAuthLimiters", () => {
     expect(AUTH_RATE_LIMITS.guests).toEqual({ limit: 120, windowMs: 60 * MINUTE });
     expect(AUTH_RATE_LIMITS.oauthStarts).toEqual({ limit: 300, windowMs: 15 * MINUTE });
     expect(AUTH_RATE_LIMITS.oauthCallbacks).toEqual({ limit: 300, windowMs: 15 * MINUTE });
+    expect(AUTH_RATE_LIMITS.profileUpdates).toEqual({ limit: 20, windowMs: 15 * MINUTE });
   });
 
   it.each(["oauthStarts", "oauthCallbacks"] as const)("limits %s at 300 per IP per 15 minutes", (name) => {

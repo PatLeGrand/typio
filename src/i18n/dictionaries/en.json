@@ -5,17 +5,34 @@
     "invalid": "These settings are invalid. Return to settings to prepare your race.",
     "back": "Back to settings"
   },
+
+
   "raceScreen": {
     "roomName": "Blob Meadow",
     "playerOne": "player",
     "playerOther": "players",
     "pause": "Pause",
     "resume": "Resume",
-    "status": { "countdown": "STARTING", "racing": "RACING", "paused": "PAUSED", "finished": "FINISHED" },
+    "status": {
+      "countdown": "STARTING",
+      "racing": "RACING",
+      "paused": "PAUSED",
+      "finished": "FINISHED"
+    },
     "leaderboard": "Leaderboard",
     "you": "You",
-    "stats": { "title": "Game Stats", "time": "Time:", "bestWpm": "Best WPM:", "accuracy": "Accuracy:" },
-    "kicker": { "countdown": "THE RACE IS ABOUT TO START", "racing": "THE RACE IS ON", "paused": "RACE PAUSED", "finished": "RACE OVER" },
+    "stats": {
+      "title": "Game Stats",
+      "time": "Time:",
+      "bestWpm": "Best WPM:",
+      "accuracy": "Accuracy:"
+    },
+    "kicker": {
+      "countdown": "THE RACE IS ABOUT TO START",
+      "racing": "THE RACE IS ON",
+      "paused": "RACE PAUSED",
+      "finished": "RACE OVER"
+    },
     "headline": {
       "countdown": "Get ready!",
       "racing": "Keep the rhythm!",
@@ -35,6 +52,7 @@
       "autoValidate": "Automatic validation"
     }
   },
+
   "site": {
     "name": "Typio"
   },
@@ -405,6 +423,9 @@
   "profile": {
     "security": {
       "unlink": "Unlink",
+      "linked": "Linked",
+      "notLinked": "Not linked",
+      "alternativeState": "Alternative state · GitHub or Discord",
       "link": "Link",
       "linkedAccounts": "Linked Accounts",
       "setPassword": "Set a password",
@@ -421,8 +442,10 @@
       "displayName": "Display Name",
       "usernameHelp": "Read-only · your identifier remains the same.",
       "memberSince": "Member since",
+      "member": "Member",
+      "noUsername": "None (guest)",
       "username": "Username",
-      "displayNameHelp": "Maximum 40 characters",
+      "displayNameHelp": "Between 2 and 20 characters.",
       "title": "Identity"
     },
     "description": "Your name on the track, your keyboard settings. Make Typio your playground.",
@@ -438,10 +461,130 @@
       "description": "The right settings to keep the rhythm.",
       "layoutHelp": "Used to correctly calculate your error heatmap",
       "layout": "Keyboard Layout",
+      "layouts": {
+        "qwerty": "QWERTY",
+        "azerty": "AZERTY",
+        "cmf": "Canadian Multilingual"
+      },
       "language": "Interface Language",
       "title": "Preferences",
       "theme": "Theme"
     },
+    "status": {
+      "saved": "Your profile is up to date. Your changes are saved."
+    },
+    "errors": {
+      "INVALID_SETTINGS": "These settings are not valid. Reload the page, then try again.",
+      "UNAUTHORIZED": "Your session has expired. Sign in again to edit your profile."
+    },
     "note": "These settings follow you in all your races. On your keys, get set, go!"
+  },
+  "profileDropdown": {
+    "guestWarning": "You are currently a guest. Your data (including statistics) is not saved and will be lost at the end of the session.",
+    "login": "Sign in",
+    "register": "Create account",
+    "stats": {
+      "title": "Statistics",
+      "comingSoon": "Statistics are coming soon!"
+    },
+    "viewFullProfile": "View full profile",
+    "close": "Close"
+  },
+  "room": {
+    "metaTitle": "Waiting room",
+    "loading": "Loading the room…",
+    "title": "Waiting room",
+    "back": "Back to the room picker",
+    "leave": "Leave",
+    "connection": {
+      "offline": "Connection lost, retrying…",
+      "tooManyConnections": "Too many tabs open: close one, then reload the page."
+    },
+    "code": {
+      "label": "Room code",
+      "copy": "Copy code",
+      "copied": "Copied",
+      "copyFallback": "Code selected: copy it with Ctrl+C."
+    },
+    "participants": {
+      "title": "Participants",
+      "runnersCount": "{count}/{max} runners",
+      "guest": "Guest",
+      "host": "Host",
+      "you": "You",
+      "runner": "Runner",
+      "spectator": "Spectator",
+      "disconnected": "Disconnected"
+    },
+    "config": {
+      "title": "Settings",
+      "hostOnly": "Only the host can change the settings.",
+      "textMode": {
+        "label": "Text type",
+        "sentences": "Sentences",
+        "words": "Words"
+      },
+      "language": {
+        "label": "Text language",
+        "fr": "French",
+        "en": "English"
+      },
+      "length": {
+        "label": "Text length",
+        "short": "Short",
+        "medium": "Medium",
+        "long": "Long"
+      },
+      "timeLimit": {
+        "label": "Time limit",
+        "none": "None (5 minutes by default)",
+        "60": "1 minute",
+        "120": "2 minutes",
+        "180": "3 minutes",
+        "300": "5 minutes",
+        "600": "10 minutes"
+      }
+    },
+    "play": {
+      "metaTitle": "Play",
+      "title": "Play",
+      "inRoom": {
+        "message": "You are in room {code}.",
+        "return": "Go back",
+        "leave": "Leave",
+        "disabledNote": "Leave this room to create or join another one."
+      },
+      "create": {
+        "title": "Create a room",
+        "description": "Invite your friends with a code.",
+        "button": "Create a room",
+        "guestNotice": "Guests cannot create a room. Sign up to do it, or join a room with a code."
+      },
+      "join": {
+        "title": "Join with a code",
+        "description": "Enter the 6-character code the host gave you.",
+        "codeLabel": "Room code",
+        "codePlaceholder": "E.g. ABC234",
+        "roleLabel": "Join as",
+        "runner": "Runner",
+        "spectator": "Spectator",
+        "button": "Join"
+      }
+    },
+    "errors": {
+      "UNAUTHENTICATED": "You must be signed in to do that.",
+      "INVALID_PAYLOAD": "The data sent was invalid.",
+      "INVALID_CODE": "Invalid room code: it must be 6 characters long.",
+      "GUEST_CANNOT_CREATE": "Guests cannot create a room.",
+      "ROOM_NOT_FOUND": "No room matches this code.",
+      "ROOM_FULL": "This room is already full.",
+      "ALREADY_IN_ROOM": "You are already in another room.",
+      "NOT_IN_ROOM": "You are no longer in this room.",
+      "NOT_HOST": "Only the host can change the settings.",
+      "CONFIG_LOCKED": "The settings are locked.",
+      "INTERNAL": "Something went wrong, please try again in a moment.",
+      "OFFLINE": "You are not connected to the game server. Try again in a moment.",
+      "TIMEOUT": "The game server is not answering. Try again in a moment."
+    }
   }
 }

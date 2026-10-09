@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateNewPassword, validatePassword, validatePseudo, validateUsername } from "./validation";
+import { pseudoSkeleton, validateNewPassword, validatePassword, validatePseudo, validateUsername } from "./validation";
 
 describe("validateUsername", () => {
   it("normalizes to lowercase and trims, keeping the typed form as display name", () => {
@@ -171,5 +171,64 @@ describe("validatePseudo", () => {
   it("rejects a blank pseudo and non-string values", () => {
     expect(validatePseudo("    ").ok).toBe(false);
     expect(validatePseudo(undefined).ok).toBe(false);
+  });
+});
+
+/** Construit une chaîne à partir de points de code, pour que les homoglyphes restent lisibles ici. */
+function codePoints(...values: Array<number | string>): string {
+  return values.map((value) => (typeof value === "number" ? String.fromCodePoint(value) : value)).join("");
+}
+
+describe("validatePseudo: homoglyphs (AUTH-4)", () => {
+  it.each([
+    ["Cyrillic а (U+0430) in place of a", codePoints(0x430, "lice")],
+    ["fullwidth ａｌｉｃｅ (U+FF41…)", codePoints(0xff41, 0xff4c, 0xff49, 0xff43, 0xff45)],
+    ["Greek ο (U+03BF) in place of o", codePoints("b", 0x3bf, "b")],
+    ["Greek Α (U+0391) in place of A", codePoints(0x391, "lice")],
+    ["Cyrillic й, accented but not Latin", codePoints(0x439, "ura")],
+    ["Latin alpha ɑ (U+0251)", codePoints(0x251, "lice")],
+    ["dotless ı (U+0131)", codePoints("al", 0x131, "ce")],
+    ["small capital ᴀ (U+1D00)", codePoints(0x1d00, "lice")],
+    ["mathematical bold 𝐚 (U+1D41A)", codePoints(0x1d41a, "lice")],
+    ["non-ASCII digit ٣ (U+0663)", codePoints("bob", 0x663)],
+    ["superscript ² (U+00B2)", codePoints("bob", 0xb2)],
+    ["stray combining mark after an accented letter", codePoints("Zo", 0xe9, 0x301)],
+    ["combining mark outside the Latin diacritics", codePoints("a", 0x20dd, "b")],
+    ["a diacritic with no precomposed form (q + U+0301)", codePoints("bq", 0x301)],
+  ])("rejects %s", (_label, value) => {
+    expect(validatePseudo(value)).toEqual({ ok: false, code: "INVALID_PSEUDO" });
+  });
+
+  it.each(["Zoé", "Éloïse", "François", "Noël", "Lætitia", "Cœur de lion", "Ãngel_ñ-2"])(
+    "accepts the legitimate Latin pseudo %j",
+    (value) => {
+      expect(validatePseudo(value)).toEqual({ ok: true, value });
+    },
+  );
+
+  it("folds the Kelvin sign (U+212A) into K through NFC", () => {
+    expect(validatePseudo(codePoints(0x212a, "evin"))).toEqual({ ok: true, value: "Kevin" });
+  });
+});
+
+describe("pseudoSkeleton", () => {
+  it.each([
+    ["Alice", "alice"],
+    ["Àlice", "alice"],
+    ["ALICÉ", "alice"],
+    ["Éloïse", "eloise"],
+    ["Lætitia", "laetitia"],
+    ["Cœur de lion", "coeur de lion"],
+    ["ŒDIPE_2", "oedipe_2"],
+  ])("maps %j to %j", (pseudo, skeleton) => {
+    expect(pseudoSkeleton(pseudo)).toBe(skeleton);
+  });
+
+  it("returns ASCII for every pseudo validatePseudo accepts", () => {
+    for (const value of ["Zoé", "Éloïse", "Ãngel_ñ-2", "Ŵŷ Ç"]) {
+      const result = validatePseudo(value);
+      if (!result.ok) throw new Error(`expected ${value} to be valid`);
+      expect(pseudoSkeleton(result.value)).toMatch(/^[a-z0-9 _-]+$/);
+    }
   });
 });

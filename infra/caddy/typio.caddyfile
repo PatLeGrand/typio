@@ -28,6 +28,9 @@ typio.aether-manager.ca {
 		-Server
 	}
 
+	# Le service temps réel écoute sur 8019. Caddy gère l'upgrade WebSocket tout seul.
+	reverse_proxy /socket.io/* 127.0.0.1:8019
+
 	# Le serveur de Next n'écoute que sur 127.0.0.1:8018 : depuis internet, il
 	# est injoignable autrement que par ce proxy, en TLS.
 	reverse_proxy 127.0.0.1:8018

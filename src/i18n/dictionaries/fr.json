@@ -5,17 +5,34 @@
     "invalid": "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
     "back": "Retour aux paramètres"
   },
+
+
   "raceScreen": {
     "roomName": "Prairie des Blobs",
     "playerOne": "joueur",
     "playerOther": "joueurs",
     "pause": "Pause",
     "resume": "Reprendre",
-    "status": { "countdown": "DÉPART", "racing": "EN COURSE", "paused": "EN PAUSE", "finished": "TERMINÉE" },
+    "status": {
+      "countdown": "DÉPART",
+      "racing": "EN COURSE",
+      "paused": "EN PAUSE",
+      "finished": "TERMINÉE"
+    },
     "leaderboard": "Classement",
     "you": "Toi",
-    "stats": { "title": "Statistiques", "time": "Temps :", "bestWpm": "Meilleur MPM :", "accuracy": "Précision :" },
-    "kicker": { "countdown": "LA COURSE VA COMMENCER", "racing": "LA COURSE EST LANCÉE", "paused": "COURSE EN PAUSE", "finished": "COURSE TERMINÉE" },
+    "stats": {
+      "title": "Statistiques",
+      "time": "Temps :",
+      "bestWpm": "Meilleur MPM :",
+      "accuracy": "Précision :"
+    },
+    "kicker": {
+      "countdown": "LA COURSE VA COMMENCER",
+      "racing": "LA COURSE EST LANCÉE",
+      "paused": "COURSE EN PAUSE",
+      "finished": "COURSE TERMINÉE"
+    },
     "headline": {
       "countdown": "Prépare-toi !",
       "racing": "Garde le rythme !",
@@ -35,6 +52,7 @@
       "autoValidate": "Validation automatique"
     }
   },
+
   "site": {
     "name": "Typio"
   },
@@ -405,6 +423,9 @@
   "profile": {
     "security": {
       "unlink": "Délier",
+      "linked": "Relié",
+      "notLinked": "Non relié",
+      "alternativeState": "État alternatif · GitHub ou Discord",
       "link": "Relier",
       "linkedAccounts": "Comptes reliés",
       "setPassword": "Définir un mot de passe",
@@ -421,8 +442,10 @@
       "displayName": "Nom affiché",
       "usernameHelp": "Lecture seule · ton identifiant reste le même.",
       "memberSince": "Membre depuis le",
+      "member": "Membre",
+      "noUsername": "Aucun (invité)",
       "username": "Nom d'utilisateur",
-      "displayNameHelp": "40 caractères maximum",
+      "displayNameHelp": "Entre 2 et 20 caractères.",
       "title": "Identité"
     },
     "description": "Ton nom sur la piste, tes réglages aux touches. Fais de Typio ton terrain de jeu.",
@@ -438,10 +461,130 @@
       "description": "Les bons réglages pour garder le rythme.",
       "layoutHelp": "Sert à calculer ta heatmap d'erreurs correctement",
       "layout": "Disposition du clavier",
+      "layouts": {
+        "qwerty": "QWERTY",
+        "azerty": "AZERTY",
+        "cmf": "Canadien multilingue"
+      },
       "language": "Langue de l'interface",
       "title": "Préférences",
       "theme": "Thème"
     },
+    "status": {
+      "saved": "Ton profil est à jour. Les modifications sont enregistrées."
+    },
+    "errors": {
+      "INVALID_SETTINGS": "Ces réglages ne sont pas valides. Recharge la page, puis réessaie.",
+      "UNAUTHORIZED": "Ta session a expiré. Reconnecte-toi pour modifier ton profil."
+    },
     "note": "Ces réglages te suivent dans toutes tes courses. À tes touches, prêt, pars !"
+  },
+  "profileDropdown": {
+    "guestWarning": "Tu es actuellement invité(e). Tes données (dont les statistiques) ne sont pas enregistrées et seront perdues à la fin de la session.",
+    "login": "Se connecter",
+    "register": "Créer un compte",
+    "stats": {
+      "title": "Statistiques",
+      "comingSoon": "Les statistiques arrivent bientôt !"
+    },
+    "viewFullProfile": "Voir le profil complet",
+    "close": "Fermer"
+  },
+  "room": {
+    "metaTitle": "Salle d'attente",
+    "loading": "Chargement de la salle…",
+    "title": "Salle d'attente",
+    "back": "Retour au choix de salle",
+    "leave": "Quitter",
+    "connection": {
+      "offline": "Connexion perdue, nouvelle tentative…",
+      "tooManyConnections": "Trop d'onglets ouverts : ferme-en un, puis recharge la page."
+    },
+    "code": {
+      "label": "Code de la salle",
+      "copy": "Copier le code",
+      "copied": "Copié",
+      "copyFallback": "Code sélectionné : copie-le avec Ctrl+C."
+    },
+    "participants": {
+      "title": "Participants",
+      "runnersCount": "{count}/{max} coureurs",
+      "guest": "Invité",
+      "host": "Hôte",
+      "you": "Toi",
+      "runner": "Coureur",
+      "spectator": "Spectateur",
+      "disconnected": "Déconnecté"
+    },
+    "config": {
+      "title": "Configuration",
+      "hostOnly": "Seul l'hôte peut modifier la configuration.",
+      "textMode": {
+        "label": "Type de texte",
+        "sentences": "Phrases",
+        "words": "Mots"
+      },
+      "language": {
+        "label": "Langue du texte",
+        "fr": "Français",
+        "en": "Anglais"
+      },
+      "length": {
+        "label": "Longueur du texte",
+        "short": "Court",
+        "medium": "Moyen",
+        "long": "Long"
+      },
+      "timeLimit": {
+        "label": "Limite de temps",
+        "none": "Aucune (5 minutes par défaut)",
+        "60": "1 minute",
+        "120": "2 minutes",
+        "180": "3 minutes",
+        "300": "5 minutes",
+        "600": "10 minutes"
+      }
+    },
+    "play": {
+      "metaTitle": "Jouer",
+      "title": "Jouer",
+      "inRoom": {
+        "message": "Tu es dans la salle {code}.",
+        "return": "Y retourner",
+        "leave": "Quitter",
+        "disabledNote": "Quitte cette salle pour en créer ou en rejoindre une autre."
+      },
+      "create": {
+        "title": "Créer une salle",
+        "description": "Invite tes amis avec un code.",
+        "button": "Créer une salle",
+        "guestNotice": "Les invités ne peuvent pas créer de salle. Crée un compte pour le faire, ou rejoins une salle avec un code."
+      },
+      "join": {
+        "title": "Rejoindre avec un code",
+        "description": "Saisis le code à 6 caractères donné par l'hôte.",
+        "codeLabel": "Code de la salle",
+        "codePlaceholder": "Ex. : ABC234",
+        "roleLabel": "Rejoindre en tant que",
+        "runner": "Coureur",
+        "spectator": "Spectateur",
+        "button": "Rejoindre"
+      }
+    },
+    "errors": {
+      "UNAUTHENTICATED": "Tu dois être connecté pour faire ça.",
+      "INVALID_PAYLOAD": "Les données envoyées sont invalides.",
+      "INVALID_CODE": "Code de salle invalide : il doit faire 6 caractères.",
+      "GUEST_CANNOT_CREATE": "Les invités ne peuvent pas créer de salle.",
+      "ROOM_NOT_FOUND": "Aucune salle ne correspond à ce code.",
+      "ROOM_FULL": "Cette salle est déjà pleine.",
+      "ALREADY_IN_ROOM": "Tu es déjà dans une autre salle.",
+      "NOT_IN_ROOM": "Tu n'es plus dans cette salle.",
+      "NOT_HOST": "Seul l'hôte peut modifier la configuration.",
+      "CONFIG_LOCKED": "La configuration est verrouillée.",
+      "INTERNAL": "Une erreur est survenue, réessaie dans un instant.",
+      "OFFLINE": "Tu n'es pas connecté au serveur de jeu. Réessaie dans un instant.",
+      "TIMEOUT": "Le serveur de jeu ne répond pas. Réessaie dans un instant."
+    }
   }
 }

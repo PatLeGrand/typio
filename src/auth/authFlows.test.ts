@@ -683,6 +683,39 @@ describe("createGuest: pseudo equal to a member username", () => {
     });
   });
 
+  it.each([
+    ["Àlice", "an accented lookalike"],
+    ["ALICÉ", "an accented lookalike in capitals"],
+    ["A" + String.fromCodePoint(0x300) + "lice", "an accented lookalike typed decomposed (NFD)"],
+  ])("refuses %j (%s) with PSEUDO_TAKEN: the comparison uses the skeleton", async (pseudo) => {
+    const { deps } = await withAlice();
+
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo, locale: "fr" })).toEqual({
+      ok: false,
+      error: { code: "PSEUDO_TAKEN", field: "pseudo" },
+    });
+  });
+
+  it.each([
+    ["Cyrillic a (U+0430)", String.fromCodePoint(0x430) + "lice"],
+    ["fullwidth", String.fromCodePoint(0xff41, 0xff4c, 0xff49, 0xff43, 0xff45)],
+  ])("refuses a %s homoglyph of a member username with INVALID_PSEUDO and creates nothing", async (_label, pseudo) => {
+    const { deps, users } = await withAlice();
+
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo, locale: "fr" })).toEqual({
+      ok: false,
+      error: { code: "INVALID_PSEUDO", field: "pseudo" },
+    });
+    expect(users.users.filter((user) => user.kind === "guest")).toHaveLength(0);
+  });
+
+  it("accepts French accented pseudos when no member has their skeleton", async () => {
+    const { deps } = await withAlice();
+
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo: "Éloïse", locale: "fr" })).toMatchObject({ ok: true });
+    expect(await createGuest(deps, { ip: "203.0.113.7", pseudo: "Lætitia", locale: "fr" })).toMatchObject({ ok: true });
+  });
+
   it("allows a pseudo that only resembles a member username", async () => {
     const { deps } = await withAlice();
 

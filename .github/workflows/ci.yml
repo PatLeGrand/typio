@@ -37,6 +37,8 @@ jobs:
         run: bun run lint
       - name: Production build
         run: bun run build
+      - name: Realtime build
+        run: bun run build:realtime
 
   database:
     name: PostgreSQL migrations

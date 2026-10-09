@@ -77,6 +77,44 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  realtime:
+    # Même image et politique que web : le bundle est autonome et le conteneur l'est aussi.
+    image: ghcr.io/patlegrand/typio:${TYPIO_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+    command: ["bun", "realtime.js"]
+
+    environment:
+      DATABASE_URL: postgresql://typio:${MDP_TYPIO:?MDP_TYPIO doit etre defini dans infra/.env}@db:5432/typio
+      APP_ORIGIN: ${APP_ORIGIN:-https://typio.aether-manager.ca}
+      REALTIME_PORT: 3001
+      HOSTNAME: 0.0.0.0
+
+    networks:
+      - default
+      - carte
+
+    # 8019 : port libre suivant le 8018 de web, exposé sur localhost seulement.
+    ports:
+      - "127.0.0.1:8019:3001"
+
+    # Socket.IO est très léger ; 128 Mo suffisent largement pour le salon d'attente.
+    mem_limit: 128m
+    memswap_limit: 128m
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3001/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 networks:
   carte:
     external: true

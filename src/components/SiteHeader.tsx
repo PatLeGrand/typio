@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { logout } from "@/auth/actions";
 import { AUTH_FIELDS, type CurrentUser } from "@/auth/types";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -11,6 +12,7 @@ import { ButtonLink } from "./ButtonLink";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
+import { ProfileModal } from "./ProfileModal";
 
 type SiteHeaderProps = {
   locale: Locale;
@@ -53,12 +55,15 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
           <ThemeToggle labels={dictionary.theme} compact />
           {user ? (
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold text-foreground">
-                {user.displayName}
-                {user.kind === "guest" ? (
-                  <span className="ml-1.5 text-xs font-normal text-muted">({dictionary.header.guest})</span>
-                ) : null}
-              </p>
+              <ProfileModal user={user} dictionary={dictionary} locale={locale}>
+                <span className="text-sm font-semibold text-foreground flex items-center gap-1">
+                  {user.displayName}
+                  {user.kind === "guest" ? (
+                    <span className="text-xs font-normal text-muted ml-0.5">({dictionary.header.guest})</span>
+                  ) : null}
+                  <ChevronDown aria-hidden="true" className="size-4 opacity-50" />
+                </span>
+              </ProfileModal>
               {user.kind === "guest" ? (
                 <ButtonLink href={`/${locale}/register`} variant="ghost">
                   {dictionary.header.signUp}
