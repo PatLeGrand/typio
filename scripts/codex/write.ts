@@ -15,7 +15,7 @@ import {
   type SandboxMode,
 } from "./codex";
 import { TamperedWorkError, UnavailableError, UsageError } from "./errors";
-import { copyDependencies, type DependencyDeps, removeAllDependencyModels } from "./deps";
+import { copyDependencies, type DependencyDeps, ensureDependencyModel, removeAllDependencyModels } from "./deps";
 import { installDependencies } from "./install";
 import { ensureQuota } from "./limits";
 import { makeScratchDir, stateDir } from "./paths";
@@ -50,6 +50,8 @@ export type WriteDeps = {
   verifySandboxCanary?: (bin: string) => Promise<string | null>;
   /** Construit le modèle de dépendances de `src` puis le copie dedans, avant Codex : seul endroit où un modèle se construit. */
   copyDependencies?: (cwd: string, stateParent: string, deps?: DependencyDeps) => void;
+  /** Construit seulement le modèle de `src` (sans le copier), quand la tâche n'a pas besoin de dépendances. */
+  prepareDependencyModel?: (cwd: string, stateParent: string) => unknown;
   /** Installation directe (sans modèle) dans le worktree neuf, pour les vérifications du mode `--sortie-bac-a-sable`. */
   installDependencies?: (cwd: string) => void;
   runCodex?: typeof runCodex;
@@ -166,6 +168,15 @@ export async function runWrite(command: WriteCommand, deps: WriteDeps = {}): Pro
     // Le modèle se construit ici, sur le commit de départ extrait et avant Codex : c'est le seul endroit où il se construit.
     const needsDependencies = command.task === "qa" || command.level !== 1 || (sandbox === "workspace-write" && command.checks.length > 0);
     if (needsDependencies) (deps.copyDependencies ?? copyDependencies)(dir.src, stateParent);
+    else {
+      // Sans copie, le modèle est quand même préparé : le `verify` qui suit le trouvera si Codex ne touche pas aux
+      // fichiers de dépendances. Facultatif : un échec n'empêche pas une tâche qui n'en a pas besoin.
+      try {
+        (deps.prepareDependencyModel ?? ensureDependencyModel)(dir.src, stateParent);
+      } catch (error) {
+        console.error(`AVERTISSEMENT : modèle de dépendances non préparé (${error instanceof Error ? error.message : String(error)}) ; verify installera.`);
+      }
+    }
     throwIfInterrupted(interrupts.signal());
 
     const isIgnored = (deps.ignoreCheck ?? gitIgnoreCheck)(root);

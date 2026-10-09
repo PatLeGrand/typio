@@ -55,6 +55,7 @@ function setup(overrides: Partial<WriteCommand> = {}, depsOverrides: WriteDeps =
   const lint = vi.fn((): ReturnType<NonNullable<WriteDeps["runLint"]>> => [{ name: "lint", exitCode: 0, seconds: 1, output: "" }]);
   const ignoreCheck = vi.fn((): IgnoreCheck => () => new Set<string>());
   const copyDependencies = vi.fn();
+  const prepareDependencyModel = vi.fn();
   const installDependencies = vi.fn();
   const deps: WriteDeps = {
     cwd: repo,
@@ -63,6 +64,7 @@ function setup(overrides: Partial<WriteCommand> = {}, depsOverrides: WriteDeps =
     verifyWriteCanary: async () => null,
     verifySandboxCanary: async () => null,
     copyDependencies,
+    prepareDependencyModel,
     installDependencies,
     runLint: lint,
     execute: () => ({ exitCode: 0, output: "" }),
@@ -89,7 +91,7 @@ function setup(overrides: Partial<WriteCommand> = {}, depsOverrides: WriteDeps =
   const err = vi.spyOn(console, "error").mockImplementation(() => {});
   const stdout = (): string => out.mock.calls.map((call) => String(call[0])).join("\n");
   const stderr = (): string => err.mock.calls.map((call) => String(call[0])).join("\n");
-  return { repo, command, deps, workParent, worktreesRoot, stateParent, lint, ignoreCheck, copyDependencies, installDependencies, stdout, stderr };
+  return { repo, command, deps, workParent, worktreesRoot, stateParent, lint, ignoreCheck, copyDependencies, prepareDependencyModel, installDependencies, stdout, stderr };
 }
 
 /** Un Codex factice : `act` reçoit le dossier de travail (`-C`), le message final est écrit dans `-o`. */
@@ -136,7 +138,21 @@ describe("runWrite : succès", () => {
       expect(t.copyDependencies.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(
         overrides.level === 1 ? [] : ["src"],
       );
+      // Le niveau 1 prépare quand même le modèle (sans le copier), pour le verify qui suit.
+      expect(t.prepareDependencyModel.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(
+        overrides.level === 1 ? ["src"] : [],
+      );
     }
+  });
+
+  it("un échec de préparation du modèle au niveau 1 n'arrête pas la tâche", async () => {
+    const t = setup({ level: 1, checks: [] });
+    t.prepareDependencyModel.mockImplementation(() => {
+      throw new Error("réseau indisponible");
+    });
+    t.deps.runCodex = fakeCodex((src) => put(src, "docs/nouveau.md", "n\n"));
+    await expect(runWrite(t.command, t.deps)).resolves.toBe(0);
+    expect(t.stderr()).toContain("modèle de dépendances non préparé");
   });
 
   it("copie quand même le modèle au niveau 1 si un lint est demandé dans le bac à sable", async () => {

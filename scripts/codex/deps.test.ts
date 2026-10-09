@@ -459,3 +459,40 @@ describe("modèles de dépendances", () => {
     expect(existsSync(path.join(deps, "ne-pas-supprimer"))).toBe(true);
   });
 });
+
+describe("garde-fous de la copie", () => {
+  it("refuse un state/deps remplacé par une jonction, sans rien lire ni écrire à travers", (context) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const state = tempDir();
+    const outside = tempDir();
+    writeFileSync(path.join(outside, "garde.txt"), "ok\n");
+    if (!tryLink(outside, path.join(state, "deps"))) {
+      context.skip();
+      return;
+    }
+    const directory = project("lock-jonction");
+    expect(() => ensureDependencyModel(directory, state, { install: installWithModule })).toThrow(UnavailableError);
+    expect(() => copyExistingModel(directory, state)).toThrow(UnavailableError);
+    expect(readdirSync(outside)).toEqual(["garde.txt"]);
+    rmSync(path.join(state, "deps"));
+  });
+
+  it("lève si le modèle disparaît pendant la copie (suppression totale concurrente)", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const state = tempDir();
+    const directory = project("lock-disparu");
+    const model = ensureDependencyModel(directory, state, { install: installWithModule });
+    const robocopy = (source: string, destination: string) => {
+      cpSync(source, destination, { recursive: true });
+      rmSync(model, { recursive: true, force: true });
+      return { status: 1, output: "" };
+    };
+    if (process.platform === "win32") {
+      expect(() => copyExistingModel(directory, state, { robocopy })).toThrow(UnavailableError);
+    } else {
+      // Hors Windows, la copie passe par cpSync : on simule la disparition juste avant la vérification finale.
+      rmSync(path.join(model, ".complet"));
+      expect(copyExistingModel(directory, state)).toBe(false);
+    }
+  });
+});

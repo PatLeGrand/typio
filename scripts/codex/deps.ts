@@ -52,6 +52,14 @@ function depsDir(stateParent: string): string {
   return path.join(stateParent, "deps");
 }
 
+/** `state/deps` remplacé par un lien ou une jonction : on ne lit ni n'écrit à travers. */
+function assertDepsDirNotLink(stateParent: string): void {
+  const directory = depsDir(stateParent);
+  if (existsSync(directory) && !isDirectoryNotLink(directory)) {
+    throw new UnavailableError(`${directory} n'est pas un dossier (lien ou jonction) : modèles de dépendances refusés.`);
+  }
+}
+
 function modelDir(stateParent: string, hash: string): string {
   return path.join(depsDir(stateParent), hash);
 }
@@ -245,6 +253,7 @@ export function ensureDependencyModel(projectDir: string, stateParent: string, d
   if (!existsSync(lockfile) || !existsSync(packageJson)) throw new UnavailableError(`package.json ou bun.lock est absent de ${projectDir}.`);
   const hash = dependencyHash(projectDir);
   const destination = modelDir(stateParent, hash);
+  assertDepsDirNotLink(stateParent);
   // Une entrée au nom en majuscules n'est jamais utilisée (sous Windows, elle masquerait le modèle attendu).
   removeCaseVariants(stateParent, hash);
   if (isComplete(destination)) return destination;
@@ -287,6 +296,7 @@ export function copyExistingModel(projectDir: string, stateParent: string, deps:
   if (!existsSync(path.join(projectDir, "package.json")) || !existsSync(path.join(projectDir, "bun.lock"))) return false;
   const hash = dependencyHash(projectDir);
   const directory = depsDir(stateParent);
+  assertDepsDirNotLink(stateParent);
   if (!existsSync(directory) || !readdirSync(directory).includes(hash)) return false;
   const model = modelDir(stateParent, hash);
   if (!isComplete(model)) return false;
@@ -312,6 +322,9 @@ export function copyExistingModel(projectDir: string, stateParent: string, deps:
       throw new UnavailableError(`Copie des dépendances impossible : ${describeError(error)}`);
     }
   }
+  // Une suppression totale concurrente (ALERTE, sortie du bac à sable, clean --deps) a pu vider le modèle pendant
+  // la copie sans que robocopy le signale : la copie serait incomplète.
+  if (!isComplete(model)) throw new UnavailableError(`Le modèle de dépendances a été supprimé pendant la copie : ${model}`);
   console.error(`Dépendances copiées en ${Math.round((Date.now() - started) / 1000)} s.`);
   return true;
 }

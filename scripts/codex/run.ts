@@ -15,7 +15,7 @@ import {
 import { describeExit, UnavailableError, UsageError } from "./errors";
 import { ensureQuota } from "./limits";
 import { makeScratchDir, readDir, stateDir } from "./paths";
-import { cleanDependencyModels } from "./deps";
+import { removeAllDependencyModels } from "./deps";
 import { formatFooter } from "./report";
 import {
   copySnapshot,
@@ -162,7 +162,8 @@ async function main(): Promise<number> {
     return 0;
   }
   if (command.kind === "cleanDeps") {
-    cleanDependencyModels(stateDir());
+    // Suppression totale : modèles, temporaires et entrées étrangères, sans suivre de lien.
+    removeAllDependencyModels(stateDir());
     console.log("Modèles de dépendances supprimés.");
     return 0;
   }
