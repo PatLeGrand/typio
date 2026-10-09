@@ -310,7 +310,13 @@ export function saveProof(cacheFile: string, print: string): void {
     writeFileSync(temp, JSON.stringify({ fingerprint: print, checkedAt: Date.now() }));
     renameSync(temp, cacheFile);
   } catch (error) {
-    rmSync(temp, { force: true });
+    // `force` n'ignore que l'absence du fichier : sous Linux, un parent qui n'est pas un dossier
+    // lève ENOTDIR, et ce nettoyage ne doit pas masquer l'avertissement.
+    try {
+      rmSync(temp, { force: true });
+    } catch {
+      // Rien à nettoyer : le fichier temporaire n'a pas pu être créé.
+    }
     console.error(`AVERTISSEMENT : cache du canari non écrit (${error instanceof Error ? error.message : String(error)}) ; il sera rejoué à la prochaine tâche.`);
   }
 }
