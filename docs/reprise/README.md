@@ -6,8 +6,8 @@ d'acceptation (AC-n) et une case à cocher par tâche.
 
 | Étape | Fiche | Branche | État |
 |---|---|---|---|
-| 0 | [Remettre `develop` au vert](etape-0-develop-au-vert.md) | `fix/develop-green` | ✅ fait sauf T8 (suppression à autoriser) |
-| 1 | [Salle par code en temps réel (checkpoint 1)](etape-1-salle-temps-reel.md) | `feat/realtime-room` | ✅ fait, validé ; reste les PR et le feu vert mémoire VPS |
+| 0 | [Remettre `develop` au vert](etape-0-develop-au-vert.md) | `fix/develop-green` | ✅ fusionnée dans `develop` (PR #38), sauf T8 (suppression à autoriser) |
+| 1 | [Salle par code en temps réel (checkpoint 1)](etape-1-salle-temps-reel.md) | `feat/realtime-room` | ✅ validée, PR vers `develop` ouverte ; feu vert mémoire VPS à donner |
 | 2 | [Course solo propre](etape-2-course-solo.md) | `fix/race-screen` | ⬜ après le checkpoint |
 
 Mets à jour la colonne « État » et les cases des fiches à chaque commit.
@@ -144,15 +144,23 @@ bun run dev:realtime              # Socket.IO sur http://localhost:3001
 - Si deux agents (Claude, Codex, Gemini) travaillent dans le même checkout en même temps,
   leurs fichiers se mélangent. Donne à chacun son worktree.
 
-## 7. Où en est la session du 8 octobre (limite d'usage atteinte)
+## 7. Point de reprise (8 octobre, fin de session)
 
-- Étapes 0 et 1 commitées et poussées (`fix/develop-green`, `feat/realtime-room`).
-- **En cours, non commité :** la revalidation périodique de la session sur chaque
-  socket (toutes les 90 s). Elle coupe l'onglet resté ouvert après un logout sur un
-  poste partagé. Un agent la codait dans `src/realtime/sessionExpiry.ts` au moment de
-  l'arrêt. À la reprise, lance `git status`. Si des changements sont présents dans
-  `src/realtime/`, valide-les avec `bunx vitest run src/realtime` (3 fois),
-  `bunx eslint src/realtime` et `bun run build:realtime`, puis commite-les.
-- Ensuite : PR `fix/develop-green` → `develop` ; rebase de `feat/realtime-room` et sa PR ;
-  autoriser la suppression de `fr_profile.json` et de `src/app/[lang]/sandbox/` ;
-  donner le feu vert mémoire du VPS.
+- `fix/develop-green` (étape 0) et `fix/pseudo-homoglyphs` sont fusionnées dans `develop`.
+- `feat/realtime-room` (étape 1) : `develop` y est fusionnée, sans conflit. Depuis la
+  validation, deux ajouts :
+  - revalidation de la session de chaque socket toutes les 90 s (`8550aed`) ;
+  - badge « Invité » dans la liste des participants (`085f461`).
+  Le tout passe : 1484 tests, lint, build et `build:realtime`.
+- La branche `fix/room-guest-badge` (autre session) modifie l'**ancienne** interface de
+  salle, que `feat/realtime-room` remplace : elle est obsolète, son intention est reprise
+  dans `085f461`. Ne pas la fusionner.
+- La PR #36 (`feat/realtime-room-ui-gemini`) est remplacée par `feat/realtime-room` : à
+  fermer.
+- Codex (`scripts/codex/run.ts`, branche `chore/codex-routing`, non commité) : son canari
+  échoue avec « The 'undefined' model is not supported when using Codex with a ChatGPT
+  account ». Il faut lui donner un modèle par défaut explicite.
+- Reste pour Patrick :
+  - autoriser la suppression de `fr_profile.json` et de `src/app/[lang]/sandbox/` ;
+  - donner le feu vert mémoire du VPS ;
+  - faire la mise en production.
