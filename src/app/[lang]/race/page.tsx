@@ -4,8 +4,12 @@ import { RaceScreen } from "@/components/race/RaceScreen";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
 import { deserializeRaceSettings } from "@/race/config";
+import { createRaceText } from "@/race/raceText";
 
-/** Entry boundary: validates the settings, then hands them to the playable race screen. */
+/**
+ * Entry boundary: validates the settings, draws the first text on the server (so the client
+ * hydrates the same text, TEXTE-2) and hands both to the playable race screen.
+ */
 export default async function RacePage({ params, searchParams }: {
   params: Promise<{ lang: string }>;
   searchParams: Promise<{ config?: string | string[] }>;
@@ -31,9 +35,9 @@ export default async function RacePage({ params, searchParams }: {
       locale={locale}
       labels={dictionary.raceScreen}
       siteName={dictionary.site.name}
-      backLabel={copy.back}
       settings={settings}
       userName={user?.displayName ?? null}
+      initialText={createRaceText(settings, Math.random)}
     />
   );
 }

@@ -11,45 +11,82 @@
     "roomName": "Blob Meadow",
     "playerOne": "player",
     "playerOther": "players",
-    "pause": "Pause",
-    "resume": "Resume",
+    "abandon": "Give up",
     "status": {
       "countdown": "STARTING",
       "racing": "RACING",
-      "paused": "PAUSED",
       "finished": "FINISHED"
     },
     "leaderboard": "Leaderboard",
     "you": "You",
+    "botNames": [
+      "Milo",
+      "Nino",
+      "Luna",
+      "Poppy",
+      "Zoe",
+      "Max",
+      "Lia"
+    ],
     "stats": {
       "title": "Game Stats",
+      "timeLeft": "Time left:",
       "time": "Time:",
-      "bestWpm": "Best WPM:",
+      "wpm": "WPM:",
       "accuracy": "Accuracy:"
     },
     "kicker": {
       "countdown": "THE RACE IS ABOUT TO START",
       "racing": "THE RACE IS ON",
-      "paused": "RACE PAUSED",
       "finished": "RACE OVER"
     },
     "headline": {
       "countdown": "Get ready!",
       "racing": "Keep the rhythm!",
-      "paused": "Catch your breath",
       "completed": "Well done, you finished!",
-      "timeout": "Time's up!"
+      "timeout": "Time's up!",
+      "abandoned": "Race abandoned"
     },
     "rankOf": "of",
+    "ordinal": {
+      "one": "{rank}st",
+      "two": "{rank}nd",
+      "few": "{rank}rd",
+      "other": "{rank}th"
+    },
     "trackProgress": "% of the track",
     "typing": {
       "title": "On your keys, get set, go!",
-      "phrase": "Phrase",
       "characters": "characters",
-      "inputLabel": "Type the phrase here",
+      "inputLabel": "Type the text here",
       "hint": "Every correct character moves your Blob forward.",
       "fix": "to fix",
-      "autoValidate": "Automatic validation"
+      "autoValidate": "Ends automatically at the last character"
+    },
+    "noText": {
+      "title": "No text available",
+      "message": "The chosen settings leave no text (language, accents, excluded characters). Loosen them to start the race.",
+      "back": "Change settings"
+    },
+    "results": {
+      "podium": "Podium",
+      "tableTitle": "Race results",
+      "columns": {
+        "rank": "Rank",
+        "name": "Name",
+        "wpm": "WPM",
+        "accuracy": "Accuracy",
+        "time": "Time",
+        "status": "Status"
+      },
+      "statuses": {
+        "finished": "Finished",
+        "unfinished": "Did not finish",
+        "abandoned": "Gave up"
+      },
+      "notAvailable": "Not available",
+      "replay": "Play again",
+      "editSettings": "Change settings"
     }
   },
 

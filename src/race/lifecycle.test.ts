@@ -30,6 +30,12 @@ describe("race lifecycle (COURSE-1, COURSE-3, H-9)", () => {
     expect(result).toMatchObject({ phase: "results", finishedAt: 10000, reason: "completed" });
     expect(transitionRace(result, { type: "reset" }, 11000)).toEqual(prepare());
   });
+  it("lets a runner abandon only while racing, and expiry still wins (COURSE-5)", () => {
+    const waiting = countdown();
+    expect(transitionRace(waiting, { type: "abandon" }, 2000)).toBe(waiting);
+    expect(transitionRace(racing(), { type: "abandon" }, 12000)).toMatchObject({ phase: "results", finishedAt: 12000, reason: "abandoned" });
+    expect(transitionRace(racing(), { type: "abandon" }, 304000)).toMatchObject({ reason: "timeout" });
+  });
   it("copies settings so later form edits cannot change an active race", () => {
     const settings = { ...DEFAULT_RACE_SETTINGS };
     const state = createRaceLifecycle(settings);
