@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -54,14 +54,18 @@ function setup(overrides: Partial<WriteCommand> = {}, depsOverrides: WriteDeps =
   const stateParent = tempDir();
   const lint = vi.fn((): ReturnType<NonNullable<WriteDeps["runLint"]>> => [{ name: "lint", exitCode: 0, seconds: 1, output: "" }]);
   const ignoreCheck = vi.fn((): IgnoreCheck => () => new Set<string>());
-  const install = vi.fn();
+  const copyDependencies = vi.fn();
+  const prepareDependencyModel = vi.fn();
+  const installDependencies = vi.fn();
   const deps: WriteDeps = {
     cwd: repo,
     resolveBinary: () => "codex-faux",
     ensureQuota: async () => {},
     verifyWriteCanary: async () => null,
     verifySandboxCanary: async () => null,
-    install,
+    copyDependencies,
+    prepareDependencyModel,
+    installDependencies,
     runLint: lint,
     execute: () => ({ exitCode: 0, output: "" }),
     ignoreCheck,
@@ -87,7 +91,7 @@ function setup(overrides: Partial<WriteCommand> = {}, depsOverrides: WriteDeps =
   const err = vi.spyOn(console, "error").mockImplementation(() => {});
   const stdout = (): string => out.mock.calls.map((call) => String(call[0])).join("\n");
   const stderr = (): string => err.mock.calls.map((call) => String(call[0])).join("\n");
-  return { repo, command, deps, workParent, worktreesRoot, stateParent, lint, ignoreCheck, install, stdout, stderr };
+  return { repo, command, deps, workParent, worktreesRoot, stateParent, lint, ignoreCheck, copyDependencies, prepareDependencyModel, installDependencies, stdout, stderr };
 }
 
 /** Un Codex factice : `act` reçoit le dossier de travail (`-C`), le message final est écrit dans `-o`. */
@@ -108,7 +112,77 @@ const put = (src: string, rel: string, content: string): void => {
 
 const entries = (dir: string): string[] => readdirSync(dir);
 
+/** Un modèle de dépendances complet (au sens de `deps.ts`) sous `state/deps/<nom>`. */
+function putModel(stateParent: string, name: string): string {
+  const model = path.join(stateParent, "deps", name);
+  mkdirSync(path.join(model, "node_modules"), { recursive: true });
+  writeFileSync(path.join(model, ".complet"), "ok\n");
+  return model;
+}
+
+/** Enveloppe un faux Codex pour garder le prompt qu'il reçoit. */
+function recordPrompts(prompts: string[], inner: WriteDeps["runCodex"]): WriteDeps["runCodex"] {
+  return async (options: RunOptions) => {
+    prompts.push(options.prompt);
+    return (inner as NonNullable<WriteDeps["runCodex"]>)(options);
+  };
+}
+
 describe("runWrite : succès", () => {
+  it("copie le modèle dans src pour les niveaux 2 et 4 et pour qa, mais pas pour le niveau 1", async () => {
+    for (const overrides of [{ level: 1 }, { level: 2 }, { level: 4 }, { task: "qa", level: undefined }] as Partial<WriteCommand>[]) {
+      // Sans --checks (le défaut est none) : seul le niveau change la décision.
+      const t = setup({ checks: [], ...overrides });
+      t.deps.runCodex = fakeCodex(() => {});
+      await runWrite(t.command, t.deps);
+      expect(t.copyDependencies.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(
+        overrides.level === 1 ? [] : ["src"],
+      );
+      // Le niveau 1 prépare quand même le modèle (sans le copier), pour le verify qui suit.
+      expect(t.prepareDependencyModel.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(
+        overrides.level === 1 ? ["src"] : [],
+      );
+    }
+  });
+
+  it("un échec de préparation du modèle au niveau 1 n'arrête pas la tâche", async () => {
+    const t = setup({ level: 1, checks: [] });
+    t.prepareDependencyModel.mockImplementation(() => {
+      throw new Error("réseau indisponible");
+    });
+    t.deps.runCodex = fakeCodex((src) => put(src, "docs/nouveau.md", "n\n"));
+    await expect(runWrite(t.command, t.deps)).resolves.toBe(0);
+    expect(t.stderr()).toContain("modèle de dépendances non préparé");
+  });
+
+  it("copie quand même le modèle au niveau 1 si un lint est demandé dans le bac à sable", async () => {
+    const t = setup({ level: 1, checks: ["lint"] });
+    t.deps.runCodex = fakeCodex(() => {});
+    await runWrite(t.command, t.deps);
+    expect(t.copyDependencies.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(["src"]);
+  });
+
+  it("le prompt suit la décision de copier les dépendances, pas le niveau", async () => {
+    // Le prompt reprend la décision de copier (needsDependencies), y compris là où le niveau seul dirait l'inverse.
+    const cases = [
+      { overrides: { level: 1, checks: [] }, installed: false },
+      { overrides: { level: 1, checks: ["lint"] }, installed: true },
+      { overrides: { level: 2, checks: [] }, installed: true },
+      { overrides: { task: "qa", level: undefined, checks: [] }, installed: true },
+      { overrides: { level: 1, checks: ["lint"], sandboxExitReason: "base locale" }, installed: false },
+    ] as { overrides: Partial<WriteCommand>; installed: boolean }[];
+    for (const { overrides, installed } of cases) {
+      const t = setup(overrides);
+      const prompts: string[] = [];
+      t.deps.runCodex = recordPrompts(prompts, fakeCodex(() => {}));
+      await runWrite(t.command, t.deps);
+      expect(prompts).toHaveLength(1);
+      expect(prompts[0]).toContain(installed ? "dépendances installées" : "node_modules absent");
+      expect(prompts[0]).not.toContain(installed ? "node_modules absent" : "dépendances installées");
+      expect(t.copyDependencies).toHaveBeenCalledTimes(installed ? 1 : 0);
+    }
+  });
+
   it("crée le worktree avec les seuls fichiers changés, supprime work/ et ne touche pas au dossier appelant", async () => {
     const t = setup();
     const callerBefore = git(t.repo, "status", "--porcelain");
@@ -279,6 +353,19 @@ describe("runWrite : ALERTE", () => {
     expect(t.stderr()).toContain("clean --work");
   });
 
+  it("les modèles de dépendances sont supprimés (majuscules comprises), pour une ALERTE après succès ou après échec de Codex", async () => {
+    for (const exit of [{}, { exitCode: 1, message: "" }]) {
+      const t = setup();
+      const lower = putModel(t.stateParent, "e".repeat(64));
+      const upper = putModel(t.stateParent, "F".repeat(64));
+      t.deps.runCodex = fakeCodex((src) => put(src, "evil/.git/config", "x\n"), exit);
+      await expect(runWrite(t.command, t.deps)).rejects.toThrow(TamperedWorkError);
+      expect(existsSync(lower)).toBe(false);
+      expect(existsSync(upper)).toBe(false);
+      expect(existsSync(path.join(t.stateParent, "deps"))).toBe(false);
+    }
+  });
+
   it("un .codex/ est refusé même avec --checks none, et avec --sortie-bac-a-sable", async () => {
     for (const overrides of [{ checks: [] }, { sandboxExitReason: "base locale", checks: [] }] satisfies Partial<WriteCommand>[]) {
       const t = setup(overrides);
@@ -338,6 +425,9 @@ describe("runWrite : --sortie-bac-a-sable", () => {
     writeFileSync(path.join(t.stateParent, "canary-write.json"), "{}");
     writeFileSync(path.join(t.stateParent, "canary-sandbox.json"), "{}");
     writeFileSync(path.join(t.stateParent, "autre.json"), "{}");
+    // Un modèle au nom en majuscules compris : tout state/deps disparaît.
+    const model = putModel(t.stateParent, "a".repeat(64));
+    const upper = putModel(t.stateParent, "B".repeat(64));
     t.deps.runCodex = fakeCodex((src) => put(src, "docs/nouveau.md", "n\n"));
     const executed: string[] = [];
     t.deps.execute = (name, cwd) => {
@@ -346,9 +436,14 @@ describe("runWrite : --sortie-bac-a-sable", () => {
     };
     expect(await runWrite(t.command, t.deps)).toBe(0);
     expect(t.lint).not.toHaveBeenCalled();
-    expect(t.install.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(["src", "codex-test-1"]);
+    // Les vérifications du worktree installent directement : aucun modèle n'est copié ni construit.
+    expect(t.copyDependencies).not.toHaveBeenCalled();
+    expect(t.installDependencies.mock.calls.map((call) => path.basename(String(call[0])))).toEqual(["codex-test-1"]);
     expect(executed).toEqual(["lint@codex-test-1", "test@codex-test-1"]);
     expect(entries(t.stateParent).filter((name) => name.endsWith(".json"))).toEqual(["autre.json"]);
+    expect(existsSync(model)).toBe(false);
+    expect(existsSync(upper)).toBe(false);
+    expect(existsSync(path.join(t.stateParent, "deps"))).toBe(false);
     expect(t.stdout()).toContain("canary-*.json");
     expect(entries(t.workParent)).toEqual([]);
   });
@@ -356,17 +451,46 @@ describe("runWrite : --sortie-bac-a-sable", () => {
   it("les caches sont supprimés même si Codex échoue", async () => {
     const t = setup({ sandboxExitReason: "base locale" });
     writeFileSync(path.join(t.stateParent, "canary-write.json"), "{}");
+    const model = putModel(t.stateParent, "b".repeat(64));
     t.deps.runCodex = fakeCodex(() => {}, { exitCode: 1, message: "" });
     await expect(runWrite(t.command, t.deps)).rejects.toThrow(UnavailableError);
     expect(entries(t.stateParent).filter((name) => name.startsWith("canary-"))).toEqual([]);
+    expect(existsSync(model)).toBe(false);
   });
 
-  it("dans le bac à sable, les caches des canaris ne sont pas touchés", async () => {
+  it("un state/deps qui est une jonction n'est pas suivi : seul le lien est retiré, la cible reste intacte", async (context) => {
+    const t = setup({ sandboxExitReason: "base locale" });
+    // state/deps pointe vers outside/deps, hors de l'état du wrapper.
+    const outside = tempDir();
+    const target = path.join(outside, "deps");
+    const kept = path.join(target, "garde.txt");
+    const model = putModel(outside, "c".repeat(64));
+    writeFileSync(kept, "ok\n");
+    try {
+      symlinkSync(target, path.join(t.stateParent, "deps"), "junction");
+    } catch (error) {
+      if (["EPERM", "EACCES"].includes((error as NodeJS.ErrnoException).code ?? "")) {
+        context.skip();
+        return;
+      }
+      throw error;
+    }
+    t.deps.runCodex = fakeCodex((src) => put(src, "docs/nouveau.md", "n\n"));
+    expect(await runWrite(t.command, t.deps)).toBe(0);
+    expect(existsSync(path.join(t.stateParent, "deps"))).toBe(false);
+    expect(existsSync(kept)).toBe(true);
+    expect(existsSync(path.join(model, ".complet"))).toBe(true);
+    expect(t.stderr()).toContain("seul le lien est retiré");
+  });
+
+  it("dans le bac à sable, les caches des canaris et les modèles ne sont pas touchés", async () => {
     const t = setup();
     writeFileSync(path.join(t.stateParent, "canary-write.json"), "{}");
+    const model = putModel(t.stateParent, "d".repeat(64));
     t.deps.runCodex = fakeCodex((src) => put(src, "docs/nouveau.md", "n\n"));
     await runWrite(t.command, t.deps);
     expect(entries(t.stateParent)).toContain("canary-write.json");
+    expect(existsSync(model)).toBe(true);
     expect(t.stdout()).not.toContain("canary-*.json");
   });
 });

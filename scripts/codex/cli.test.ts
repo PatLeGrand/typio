@@ -69,7 +69,7 @@ describe("parseCli : écriture", () => {
       briefPath: "brief.md",
       from: "HEAD",
       branch: undefined,
-      checks: ["lint"],
+      checks: [],
       sandboxExitReason: undefined,
       model: undefined,
       effort: undefined,
@@ -95,7 +95,7 @@ describe("parseCli : écriture", () => {
   });
 
   it("qa : sans niveau", () => {
-    expect(write(["qa", "--brief", "b.md"])).toMatchObject({ task: "qa", level: undefined });
+    expect(write(["qa", "--brief", "b.md"])).toMatchObject({ task: "qa", level: undefined, checks: [] });
     expect(() => parseCli(["qa", "--brief", "b.md", "--level", "1"])).toThrow(UsageError);
   });
 
@@ -127,7 +127,7 @@ describe("parseCli : écriture", () => {
   it("--checks : liste, none, ou erreur", () => {
     expect(write(["qa", "--brief", "b.md", "--checks", "none"]).checks).toEqual([]);
     expect(write(["qa", "--brief", "b.md", "--checks", "lint"]).checks).toEqual(["lint"]);
-    expect(write(["qa", "--brief", "b.md"]).checks).toEqual(["lint"]);
+    expect(write(["qa", "--brief", "b.md"]).checks).toEqual([]);
     // Hors bac à sable levé, seuls lint et none tournent automatiquement : le reste va à verify.
     for (const value of ["test", "build", "lint,test", "lint,test,build", "lint;rm", ""]) {
       expect(() => parseCli(["qa", "--brief", "b.md", "--checks", value])).toThrow(UsageError);
@@ -189,6 +189,11 @@ describe("parseCli : options bornées", () => {
 describe("parseCli : clean et usage", () => {
   it("clean accepte une branche codex/*", () => {
     expect(parseCli(["clean", "codex/implement-20261008-120000"])).toEqual({ kind: "clean", branch: "codex/implement-20261008-120000" });
+  });
+
+  it("clean --deps est accepté seul", () => {
+    expect(parseCli(["clean", "--deps"])).toEqual({ kind: "cleanDeps" });
+    expect(() => parseCli(["clean", "--deps", "codex/a"])).toThrow(UsageError);
   });
 
   it.each([

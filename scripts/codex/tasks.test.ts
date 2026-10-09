@@ -50,14 +50,14 @@ describe("buildWritePrompt", () => {
   const brief = "# Brief\n\nCrée docs/codex-smoke.md.\n- AC-1 : le fichier existe.\n";
 
   it("inclut le brief tel quel, le rôle et le niveau", () => {
-    const prompt = buildWritePrompt({ task: "implement", level: 2, brief });
+    const prompt = buildWritePrompt({ task: "implement", level: 2, brief, withDependencies: true });
     expect(prompt).toContain(brief);
     expect(prompt).toContain("exécutant de l'orchestrateur Claude");
     expect(prompt).toContain("implement, niveau 2");
   });
 
   it("impose les skills, le périmètre et l'interdiction de git", () => {
-    const prompt = buildWritePrompt({ task: "implement", level: 1, brief });
+    const prompt = buildWritePrompt({ task: "implement", level: 1, brief, withDependencies: true });
     expect(prompt).toContain(".agents/skills/code-quality/SKILL.md");
     expect(prompt).toContain(".agents/skills/qa/SKILL.md");
     for (const forbidden of ["git commit", "push", "checkout", "branch", "stash", "reset", "worktree"]) {
@@ -73,7 +73,7 @@ describe("buildWritePrompt", () => {
   });
 
   it("dit que le dossier de travail est une copie sans git et interdit ce que le wrapper refuse ensuite", () => {
-    const prompt = buildWritePrompt({ task: "implement", level: 1, brief });
+    const prompt = buildWritePrompt({ task: "implement", level: 1, brief, withDependencies: true });
     expect(prompt).toContain("copie du dépôt");
     expect(prompt).toContain("sans historique git");
     expect(prompt).not.toContain("worktree git");
@@ -82,17 +82,31 @@ describe("buildWritePrompt", () => {
     }
   });
 
+  it("annonce node_modules absent ou les dépendances installées selon withDependencies, sans déduire du niveau", () => {
+    const without = buildWritePrompt({ task: "implement", level: 1, brief, withDependencies: false });
+    expect(without).toContain("node_modules absent");
+    expect(without).not.toContain("dépendances installées");
+    expect(without).toContain("ne lance ni lint, ni tsc, ni tests");
+    const withInstalled = buildWritePrompt({ task: "implement", level: 2, brief, withDependencies: true });
+    expect(withInstalled).toContain("dépendances installées");
+    expect(withInstalled).not.toContain("node_modules absent");
+    // Le niveau 1 avec un lint demandé a ses dépendances ; le niveau 2 peut ne pas en avoir : seul le booléen décide.
+    expect(buildWritePrompt({ task: "implement", level: 1, brief, withDependencies: true })).toContain("dépendances installées");
+    expect(buildWritePrompt({ task: "implement", level: 2, brief, withDependencies: false })).toContain("node_modules absent");
+    expect(buildWritePrompt({ task: "qa", brief, withDependencies: true })).toContain("dépendances installées");
+  });
+
   it("qa demande les tests manquants et le rapport fidèle des échecs", () => {
-    const prompt = buildWritePrompt({ task: "qa", brief });
+    const prompt = buildWritePrompt({ task: "qa", brief, withDependencies: true });
     expect(prompt).toContain("Tâche : qa");
     expect(prompt).toContain("écris les tests manquants");
     expect(prompt).toContain("rapporte fidèlement chaque échec");
-    expect(buildWritePrompt({ task: "implement", level: 1, brief })).not.toContain("rapporte fidèlement chaque échec");
+    expect(buildWritePrompt({ task: "implement", level: 1, brief, withDependencies: true })).not.toContain("rapporte fidèlement chaque échec");
   });
 
   it("n'annonce la levée du bac à sable que si elle est demandée", () => {
-    expect(buildWritePrompt({ task: "implement", level: 1, brief })).not.toContain("levé exceptionnellement");
-    const prompt = buildWritePrompt({ task: "implement", level: 1, brief, sandboxExitReason: "base locale" });
+    expect(buildWritePrompt({ task: "implement", level: 1, brief, withDependencies: true })).not.toContain("levé exceptionnellement");
+    const prompt = buildWritePrompt({ task: "implement", level: 1, brief, sandboxExitReason: "base locale", withDependencies: true });
     expect(prompt).toContain("levé exceptionnellement");
     expect(prompt).toContain("base locale");
   });
