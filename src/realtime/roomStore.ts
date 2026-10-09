@@ -143,7 +143,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
         const runnersCount = room.participants.filter(
           (p) => p.role === "runner"
         ).length;
-        if (runnersCount >= room.maxRunners) {
+        if (runnersCount + room.config.botCount >= room.maxRunners) {
           return { ok: false, error: "ROOM_FULL" };
         }
       } else {
@@ -176,6 +176,13 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       if (!p) return { ok: false, error: "NOT_IN_ROOM" };
       if (room.hostId !== userId) return { ok: false, error: "NOT_HOST" };
       if (room.status !== "waiting") return { ok: false, error: "CONFIG_LOCKED" };
+
+      if (
+        patch.botCount !== undefined &&
+        room.participants.filter((participant) => participant.role === "runner").length + patch.botCount > room.maxRunners
+      ) {
+        return { ok: false, error: "ROOM_FULL" };
+      }
 
       room.config = { ...room.config, ...patch };
       return { ok: true, state: cloneState(room) };

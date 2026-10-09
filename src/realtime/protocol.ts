@@ -18,7 +18,7 @@ export const MAX_RUNNERS = 20;
 /** Délai de grâce d'un participant déconnecté avant son retrait (H-9, SALLE-13). */
 export const RECONNECT_GRACE_MS = 60_000;
 
-// ── Configuration de la salle (CONFIG-1, CONFIG-2, CONFIG-4, CONFIG-6) ─────
+// ── Configuration de la salle (CONFIG-1 à CONFIG-8) ─────────────────────────
 
 export const TEXT_MODES = ["sentences", "words"] as const;
 export type TextMode = (typeof TEXT_MODES)[number];
@@ -33,11 +33,26 @@ export type TextLength = (typeof TEXT_LENGTHS)[number];
 export const TIME_LIMITS_SECONDS = [60, 120, 180, 300, 600] as const;
 export type TimeLimitSeconds = (typeof TIME_LIMITS_SECONDS)[number];
 
+export const INPUT_MODES = ["free", "blocking"] as const;
+export type InputMode = (typeof INPUT_MODES)[number];
+
+export const BOT_DIFFICULTIES = ["easy", "normal", "hard"] as const;
+export type BotDifficulty = (typeof BOT_DIFFICULTIES)[number];
+
+export const MAX_BOTS = 7;
+export const MAX_EXCLUDED_INPUT_LENGTH = 100;
+export const MAX_EXCLUDED_CHARACTERS = 30;
+
 export interface RoomConfig {
   textMode: TextMode;
   language: TextLanguage;
   length: TextLength;
   timeLimitSeconds: TimeLimitSeconds | null;
+  accents: boolean;
+  excludedCharacters: string;
+  inputMode: InputMode;
+  botCount: number;
+  botDifficulty: BotDifficulty;
 }
 
 export type RoomConfigPatch = Partial<RoomConfig>;
@@ -47,6 +62,11 @@ export const DEFAULT_ROOM_CONFIG: RoomConfig = {
   language: "fr",
   length: "medium",
   timeLimitSeconds: null,
+  accents: true,
+  excludedCharacters: "",
+  inputMode: "free",
+  botCount: 0,
+  botDifficulty: "normal",
 };
 
 // ── État de la salle, diffusé en entier à chaque changement (ADR-001) ──────
@@ -149,7 +169,32 @@ const CONFIG_KEYS: ReadonlyArray<keyof RoomConfig> = [
   "language",
   "length",
   "timeLimitSeconds",
+  "accents",
+  "excludedCharacters",
+  "inputMode",
+  "botCount",
+  "botDifficulty",
 ];
+
+/**
+ * Caractères exclus (CONFIG-5, B-D1) : uniques, sans espaces ni caractères de contrôle, 30 au
+ * plus. La salle diffuse des caractères, jamais une phrase écrite par l'hôte. `null` si trop long.
+ */
+export function normalizeExcludedCharacters(input: string): string | null {
+  if (input.length > MAX_EXCLUDED_INPUT_LENGTH) return null;
+
+  const seen = new Set<string>();
+  const characters: string[] = [];
+  for (const character of Array.from(input.normalize("NFC"))) {
+    if (/\s/u.test(character) || /[\p{Cc}\p{Cf}]/u.test(character) || seen.has(character)) {
+      continue;
+    }
+    seen.add(character);
+    characters.push(character);
+    if (characters.length === MAX_EXCLUDED_CHARACTERS) break;
+  }
+  return characters.join("");
+}
 
 /**
  * Patch de configuration valide, ou `null`. Refuse toute clé inconnue et toute valeur
@@ -179,6 +224,31 @@ export function parseRoomConfigPatch(input: unknown): RoomConfigPatch | null {
       case "timeLimitSeconds":
         if (value !== null && !isOneOf(TIME_LIMITS_SECONDS, value)) return null;
         patch.timeLimitSeconds = value;
+        break;
+      case "accents":
+        if (typeof value !== "boolean") return null;
+        patch.accents = value;
+        break;
+      case "excludedCharacters": {
+        if (typeof value !== "string") return null;
+        const normalized = normalizeExcludedCharacters(value);
+        if (normalized === null) return null;
+        patch.excludedCharacters = normalized;
+        break;
+      }
+      case "inputMode":
+        if (!isOneOf(INPUT_MODES, value)) return null;
+        patch.inputMode = value;
+        break;
+      case "botCount":
+        if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > MAX_BOTS) {
+          return null;
+        }
+        patch.botCount = value;
+        break;
+      case "botDifficulty":
+        if (!isOneOf(BOT_DIFFICULTIES, value)) return null;
+        patch.botDifficulty = value;
         break;
     }
   }
