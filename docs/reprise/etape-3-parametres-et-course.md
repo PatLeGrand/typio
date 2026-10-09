@@ -190,3 +190,6 @@ WebSocket), Gemini `review`, `ui` et `visual`.
 
 - 2026-10-09 : plan écrit, tranche A lancée.
 - 2026-10-09 : corrections de relecture de la tranche A ; plan de la tranche B écrit.
+- 2026-10-09 : tranche A fusionnée (PR #51). Tranche B : B1 par Codex niveau 2, B2 par
+  `implementer`. `security-reviewer` a fait durcir les caractères exclus (liste blanche,
+  minuscules, tri) ; `code-reviewer` et Gemini : constats mineurs corrigés.
