@@ -1,4 +1,5 @@
 import type { RaceSettings } from "./config";
+import type { Keystrokes } from "./metrics";
 
 /**
  * Simulation des bots (BOT-2, A-D8). Module pur : le hasard est injecté et le temps est un
@@ -40,6 +41,8 @@ interface Keyframe {
 export interface BotPlan {
   readonly textLength: number;
   readonly keyframes: readonly Keyframe[];
+  /** Instants (ms) des frappes fausses, croissants : chacune sera effacée puis retapée juste. */
+  readonly mistakeTimesMs: readonly number[];
 }
 
 function between(min: number, max: number, random: () => number): number {
@@ -48,7 +51,8 @@ function between(min: number, max: number, random: () => number): number {
 
 export function planBot(text: string, difficulty: BotDifficulty, random: () => number): BotPlan {
   const keyframes: Keyframe[] = [{ timeMs: 0, chars: 0 }];
-  if (text.length === 0) return { textLength: 0, keyframes };
+  const mistakeTimesMs: number[] = [];
+  if (text.length === 0) return { textLength: 0, keyframes, mistakeTimesMs };
 
   const msPerChar = 60_000 / (BOT_TARGET_WPM[difficulty] * 5);
   const words = text.split(" ");
@@ -90,6 +94,7 @@ export function planBot(text: string, difficulty: BotDifficulty, random: () => n
     push();
 
     if (hasError) {
+      mistakeTimesMs.push(timeMs);
       wait(2 * msPerChar + between(ERROR_NOTICE_MIN_MS, ERROR_NOTICE_MAX_MS, random));
       const afterError = wordChars - errorAt;
       if (afterError > 0) {
@@ -100,7 +105,7 @@ export function planBot(text: string, difficulty: BotDifficulty, random: () => n
     }
   });
 
-  return { textLength: text.length, keyframes };
+  return { textLength: text.length, keyframes, mistakeTimesMs };
 }
 
 /** Nombre de caractères corrects tapés par le bot, `elapsedMs` après le départ (0..longueur). */
@@ -128,4 +133,14 @@ export function botProgressAt(plan: BotPlan, elapsedMs: number): number {
 /** Durée totale (ms) pour finir le texte ; à cet instant `botProgressAt` rend la longueur. */
 export function botFinishMs(plan: BotPlan): number {
   return Math.ceil(plan.keyframes[plan.keyframes.length - 1].timeMs);
+}
+
+/**
+ * Frappes du bot `elapsedMs` après le départ, au sens de la précision du joueur : chaque caractère
+ * correct est une frappe juste, chaque faute (déjà commise à cet instant) une frappe fausse.
+ */
+export function botKeystrokesAt(plan: BotPlan, elapsedMs: number): Keystrokes {
+  const correct = botProgressAt(plan, elapsedMs);
+  const mistakes = plan.mistakeTimesMs.filter((timeMs) => timeMs <= elapsedMs).length;
+  return { total: correct + mistakes, correct };
 }

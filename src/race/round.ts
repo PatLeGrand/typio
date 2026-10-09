@@ -1,6 +1,7 @@
 import { botProgressAt, planBot } from "./bots";
 import type { RaceSettings } from "./config";
 import { computeAccuracy, computeWpm, countCorrectChars } from "./metrics";
+import { createSeededRandom, shuffled } from "./seededRandom";
 import { buildRaceResults, type BotEntry, type RaceResultRow } from "./results";
 import {
   createRaceSession,
@@ -29,12 +30,15 @@ export function createRound(
   settings: RaceSettings,
   text: string,
   botNames: readonly string[],
+  /** Graine des noms : le serveur et le navigateur tirent ainsi les mêmes (hydratation). */
+  nameSeed: number,
   now: number,
   random: () => number,
 ): Round {
+  const names = shuffled(botNames, createSeededRandom(nameSeed));
   const bots = Array.from({ length: settings.botCount }, (_, index): BotEntry => ({
     id: `bot-${index}`,
-    name: botNames[index % botNames.length],
+    name: names[index % names.length],
     plan: planBot(text, settings.botDifficulty, random),
   }));
   return { id, session: createRaceSession(settings, text, now), bots };

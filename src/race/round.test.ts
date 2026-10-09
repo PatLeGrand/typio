@@ -11,7 +11,7 @@ const T0 = 0;
 const START = 3000;
 
 function newRound() {
-  return createRound(1, SETTINGS, TEXT, NAMES, T0, () => 0.5);
+  return createRound(1, SETTINGS, TEXT, NAMES, 7, T0, () => 0.5);
 }
 function racing() {
   const round = newRound();
@@ -19,14 +19,21 @@ function racing() {
 }
 
 describe("manche solo (BOT-2, BOT-3, A-D7)", () => {
-  it("crée un plan par bot, avec les noms de la liste dans l'ordre", () => {
+  it("crée un plan par bot, avec des noms distincts tirés de la liste selon la graine", () => {
     const round = newRound();
-    expect(round.bots.map((bot) => bot.name)).toEqual(["Milo", "Nino"]);
+    expect(round.bots).toHaveLength(2);
+    expect(new Set(round.bots.map((bot) => bot.name)).size).toBe(2);
+    expect(round.bots.every((bot) => NAMES.includes(bot.name))).toBe(true);
+    // Même graine, mêmes noms (serveur et navigateur) ; une autre graine peut changer l'ordre.
+    expect(newRound().bots.map((bot) => bot.name)).toEqual(round.bots.map((bot) => bot.name));
+    const orders = new Set(Array.from({ length: 12 }, (_, seed) =>
+      createRound(1, SETTINGS, TEXT, NAMES, seed, T0, () => 0.5).bots.map((bot) => bot.name).join()));
+    expect(orders.size).toBeGreaterThan(1);
     expect(round.bots.every((bot) => bot.plan.textLength === TEXT.length)).toBe(true);
-    expect(createRound(2, { ...SETTINGS, botCount: 0 }, TEXT, NAMES, T0, () => 0.5).bots).toEqual([]);
-    expect(createRound(3, { ...SETTINGS, botCount: 5 }, TEXT, NAMES, T0, () => 0.5).bots.map((bot) => bot.name)).toEqual([
-      "Milo", "Nino", "Luna", "Milo", "Nino",
-    ]);
+    expect(createRound(2, { ...SETTINGS, botCount: 0 }, TEXT, NAMES, 7, T0, () => 0.5).bots).toEqual([]);
+    // Plus de bots que de noms : la liste mélangée est reprise depuis le début.
+    const many = createRound(3, { ...SETTINGS, botCount: 5 }, TEXT, NAMES, 7, T0, () => 0.5).bots.map((bot) => bot.name);
+    expect(many.slice(0, 2)).toEqual(many.slice(3));
   });
 
   it("compte à rebours : 3, 2, 1 puis la course, temps restant plein", () => {
@@ -77,7 +84,7 @@ describe("manche solo (BOT-2, BOT-3, A-D7)", () => {
   });
 
   it("fin par le temps : les bots non arrivés sont classés selon leur progression", () => {
-    const round = createRound(1, { ...SETTINGS, timeLimitSeconds: 60, botCount: 1, botDifficulty: "easy" }, TEXT, NAMES, T0, () => 0.5);
+    const round = createRound(1, { ...SETTINGS, timeLimitSeconds: 60, botCount: 1, botDifficulty: "easy" }, TEXT, NAMES, 7, T0, () => 0.5);
     const session = tickRaceSession(tickRaceSession(round.session, START), START + 61_000);
     const snapshot = snapshotRound({ ...round, session }, START + 61_000, "Toi");
     expect(snapshot.endReason).toBe("timeout");

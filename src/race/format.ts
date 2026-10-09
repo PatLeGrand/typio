@@ -1,6 +1,13 @@
 /** Mise en forme des valeurs de la course (A-D9) : aucun texte en dur, les modèles viennent du dictionnaire. */
 export type OrdinalTemplates = Readonly<Record<"one" | "two" | "few" | "other", string>>;
 
+export type PluralTemplates = Readonly<Record<"one" | "other", string>>;
+
+/** Modèle singulier ou pluriel selon la catégorie cardinale de la langue (« 1 caractère », « 2 caractères »). */
+export function formatPlural(locale: string, count: number, templates: PluralTemplates): string {
+  return new Intl.PluralRules(locale).select(count) === "one" ? templates.one : templates.other;
+}
+
 /** « 1er », « 2e » / « 1st », « 2nd »… : la catégorie plurielle ordinale de la langue choisit le modèle. */
 export function formatOrdinal(locale: string, rank: number, templates: OrdinalTemplates): string {
   const category = new Intl.PluralRules(locale, { type: "ordinal" }).select(rank);

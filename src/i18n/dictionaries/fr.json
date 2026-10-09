@@ -12,6 +12,7 @@
     "playerOne": "joueur",
     "playerOther": "joueurs",
     "abandon": "Abandonner",
+    "go": "Partez !",
     "status": {
       "countdown": "DÉPART",
       "racing": "EN COURSE",
@@ -84,7 +85,6 @@
         "unfinished": "Non arrivé",
         "abandoned": "Abandon"
       },
-      "notAvailable": "Non disponible",
       "replay": "Rejouer",
       "editSettings": "Modifier les réglages"
     }
@@ -400,7 +400,10 @@
     "excludedChars": {
       "label": "Caractères exclus",
       "placeholder": "@ # %",
-      "count": "{count} caractères exclus",
+      "count": {
+        "one": "{count} caractère exclu",
+        "other": "{count} caractères exclus"
+      },
       "none": "Aucun",
       "help": "Saisis les caractères à éviter, séparés par un espace. Laisse vide pour tout autoriser.",
       "error": "Trop de caractères exclus (max 100)."

@@ -1,4 +1,4 @@
-import { botFinishMs, botProgressAt, type BotPlan } from "./bots";
+import { botFinishMs, botKeystrokesAt, botProgressAt, type BotPlan } from "./bots";
 import { computeAccuracy, computeWpm, type Keystrokes } from "./metrics";
 
 /**
@@ -28,8 +28,7 @@ export interface RaceResultRow {
   rank: number;
   status: RacerStatus;
   wpm: number;
-  /** `null` pour un bot : la simulation ne produit pas de frappes fausses comptabilisées. */
-  accuracy: number | null;
+  accuracy: number;
   timeMs: number;
   correctChars: number;
 }
@@ -83,7 +82,7 @@ export function buildRaceResults(input: {
       isPlayer: false,
       status: finished ? "finished" : "unfinished",
       wpm: computeWpm(correctChars, timeMs),
-      accuracy: null,
+      accuracy: computeAccuracy(botKeystrokesAt(bot.plan, timeMs)),
       timeMs,
       correctChars,
     });

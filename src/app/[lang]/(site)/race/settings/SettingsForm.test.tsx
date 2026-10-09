@@ -126,3 +126,46 @@ describe("SettingsForm", () => {
     expect(mockPush).toHaveBeenCalledWith(`/fr/race?${expectedConfig}`);
   });
 });
+
+describe("SettingsForm accessibility and plurals", () => {
+  it("links the excluded characters field to its count, help and error", () => {
+    render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    const field = screen.getByRole("textbox", { name: fr.raceSettings.excludedChars.label });
+    expect(field).toHaveAccessibleDescription(`0 caractère exclu ${fr.raceSettings.excludedChars.help}`);
+    fireEvent.change(field, { target: { value: "x".repeat(101) } });
+    fireEvent.click(screen.getByRole("button", { name: "Lancer la course →" }));
+    expect(field).toHaveAccessibleDescription(expect.stringContaining(fr.raceSettings.excludedChars.error));
+  });
+
+  it("uses the singular and plural forms of the excluded characters count in French and English", () => {
+    const { unmount } = render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    const frField = screen.getByRole("textbox", { name: fr.raceSettings.excludedChars.label });
+    fireEvent.change(frField, { target: { value: "@" } });
+    expect(screen.getByText("1 caractère exclu")).toBeInTheDocument();
+    fireEvent.change(frField, { target: { value: "@ # %" } });
+    expect(screen.getByText("3 caractères exclus")).toBeInTheDocument();
+    unmount();
+
+    render(<SettingsForm lang="en" dict={en.raceSettings} />);
+    const enField = screen.getByRole("textbox", { name: en.raceSettings.excludedChars.label });
+    expect(screen.getByText("0 characters excluded")).toBeInTheDocument();
+    fireEvent.change(enField, { target: { value: "@" } });
+    expect(screen.getByText("1 character excluded")).toBeInTheDocument();
+    fireEvent.change(enField, { target: { value: "@ #" } });
+    expect(screen.getByText("2 characters excluded")).toBeInTheDocument();
+  });
+
+  it("describes the time limit group and the abilities switch by their help text", () => {
+    render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    expect(screen.getByRole("radiogroup", { name: fr.raceSettings.timeLimit.label })).toHaveAccessibleDescription(fr.raceSettings.timeLimit.help);
+    expect(screen.getByRole("switch", { name: fr.raceSettings.abilities.label })).toHaveAccessibleDescription(fr.raceSettings.abilities.help);
+  });
+
+  it("announces the bot count politely when it changes", () => {
+    render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    const value = screen.getByText(String(DEFAULT_RACE_SETTINGS.botCount), { selector: "span[aria-live]" });
+    expect(value).toHaveAttribute("aria-live", "polite");
+    fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.botCount.increase }));
+    expect(value).toHaveTextContent(String(DEFAULT_RACE_SETTINGS.botCount + 1));
+  });
+});

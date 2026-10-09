@@ -3,13 +3,14 @@ import { botFinishMs, planBot, type BotPlan } from "./bots";
 import { buildRaceResults, type BotEntry, type PlayerOutcome } from "./results";
 
 /** Bot qui tape à vitesse constante, sans pause ni faute. */
-function steadyPlan(textLength: number, charsPerSecond: number): BotPlan {
+function steadyPlan(textLength: number, charsPerSecond: number, mistakeTimesMs: readonly number[] = []): BotPlan {
   return {
     textLength,
     keyframes: [
       { timeMs: 0, chars: 0 },
       { timeMs: (textLength / charsPerSecond) * 1000, chars: textLength },
     ],
+    mistakeTimesMs,
   };
 }
 
@@ -33,7 +34,7 @@ describe("classement final (A-D7, RES-1, RES-2)", () => {
       ["player", 2, "finished"],
       ["slow", 3, "unfinished"],
     ]);
-    expect(rows[0]).toMatchObject({ timeMs: 10_000, wpm: 120, accuracy: null });
+    expect(rows[0]).toMatchObject({ timeMs: 10_000, wpm: 120, accuracy: 100 });
     expect(rows[1]).toMatchObject({ timeMs: 20_000, wpm: 60, accuracy: 91 });
   });
 
@@ -56,6 +57,15 @@ describe("classement final (A-D7, RES-1, RES-2)", () => {
       ["slow", 1, "unfinished"],
       ["player", 2, "abandoned"],
     ]);
+  });
+
+  it("calcule la précision d'un bot avec ses fautes déjà commises, comme celle du joueur", () => {
+    const sloppy: BotEntry = { id: "sloppy", name: "sloppy", plan: steadyPlan(TEXT_LENGTH, 10, [2_000, 4_000, 20_000]) };
+    // Fini à 10 s : 3 fautes prévues, mais seules 2 ont eu lieu -> 100 / 102.
+    expect(build(outcome({}), [sloppy]).find((row) => row.id === "sloppy")?.accuracy).toBe(98);
+    // Le joueur finit à 3 s : le bot n'a commis qu'une faute, sur 30 caractères corrects.
+    const early = build(outcome({ elapsedMs: 3_000 }), [sloppy]).find((row) => row.id === "sloppy");
+    expect(early).toMatchObject({ status: "unfinished", accuracy: 97 });
   });
 
   it("à égalité de temps le joueur passe devant, et les rangs sont consécutifs", () => {

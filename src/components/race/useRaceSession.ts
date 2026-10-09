@@ -32,16 +32,18 @@ interface Options {
   settings: RaceSettings;
   initialText: string | null;
   botNames: readonly string[];
+  /** Graine des noms de bots de la première manche (tirée côté serveur avec le texte). */
+  botNameSeed: number;
   now: () => number;
   random: () => number;
 }
 
 /** Porte l'état d'une manche et l'horloge qui la fait vivre ; la logique est dans `src/race`. */
-export function useRaceSession({ settings, initialText, botNames, now, random }: Options): UseRaceSession {
+export function useRaceSession({ settings, initialText, botNames, botNameSeed, now, random }: Options): UseRaceSession {
   const [state, setState] = useState<RoundState>(() => {
     const t = now();
     return {
-      round: initialText === null ? null : createRound(1, settings, initialText, botNames, t, random),
+      round: initialText === null ? null : createRound(1, settings, initialText, botNames, botNameSeed, t, random),
       clock: t,
       count: 1,
     };
@@ -75,7 +77,7 @@ export function useRaceSession({ settings, initialText, botNames, now, random }:
   const replay = useCallback(() => {
     const t = now();
     const text = createRaceText(settings, random, previousText);
-    const round = text === null ? null : createRound(nextCount, settings, text, botNames, t, random);
+    const round = text === null ? null : createRound(nextCount, settings, text, botNames, Math.floor(random() * 4294967296), t, random);
     setState({ round, clock: t, count: nextCount });
   }, [now, random, settings, botNames, previousText, nextCount]);
 

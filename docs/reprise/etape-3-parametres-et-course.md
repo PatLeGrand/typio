@@ -123,6 +123,69 @@ A1 et A2 partent en parallèle. A3 attend A1.
   bloqué.
 - **AC-9** test, lint (0 erreur, 0 avertissement), build et `build:realtime` passent.
 
+## Tranche B — la salle porte tous les réglages (CONFIG-1 à 8)
+
+- **Branche :** `feat/room-settings`, partie de `develop` une fois la tranche A fusionnée.
+- **Exigences :** CONFIG-1 à 8, SALLE-1, SALLE-10, SALLE-12, H-3, H-16, UI-3 à 5.
+- **Hors périmètre :** lancement de la course multijoueur (tranche C), capacités (CONFIG-9).
+
+### Décisions prises
+
+- **B-D1 — Protocole étendu (orchestrateur).** `RoomConfig` gagne `accents: boolean`,
+  `excludedCharacters: string`, `inputMode: "free" | "blocking"`, `botCount: number`
+  (entier de 0 à 7) et `botDifficulty: "easy" | "normal" | "hard"`. `abilities` n'entre
+  pas dans le protocole tant que CONFIG-9 n'existe pas.
+  - `DEFAULT_ROOM_CONFIG` : comme la course solo, sauf `botCount: 0` (on invite des amis).
+  - `parseRoomConfigPatch` valide chaque nouvelle clé et refuse toute valeur hors liste.
+  - `excludedCharacters` est **normalisé par le serveur** : caractères uniques, sans
+    espaces ni caractères de contrôle, dans l'ordre d'apparition, 30 au plus ; une chaîne
+    brute de plus de 100 caractères est refusée. La salle affiche des caractères séparés,
+    jamais une phrase écrite par l'hôte.
+- **B-D2 — Les bots comptent comme coureurs (H-3, H-16).** Coureurs humains + `botCount`
+  ≤ `MAX_RUNNERS` (20). Un `room:join` en coureur ou un `room:updateConfig` qui
+  dépasserait ce plafond reçoit `ROOM_FULL`.
+- **B-D3 — Un seul type de réglages.** `RaceSettings` devient `RoomConfig` plus
+  `abilities` ; `parseRaceSettings` réutilise la validation du protocole. La page solo et
+  la salle ne peuvent plus diverger.
+- **B-D4 — « Inviter des amis » depuis les paramètres.** La page `/race/settings` gagne
+  un bouton secondaire « Inviter des amis » à côté de « Lancer la course ». Pour un membre,
+  il crée la salle avec les réglages choisis (`room:create`), puis ouvre `/room/[code]`.
+  Pour un invité, il est désactivé et la raison est affichée (SALLE-12). Sur `/play`, le
+  bloc « Créer une salle » devient un lien vers `/race/settings` ; « Rejoindre avec un
+  code » ne change pas.
+- **B-D5 — La salle d'attente reprend les composants de la page.** Les sections de
+  `SettingsForm` sont extraites dans un composant contrôlé `RaceSettingsFields`
+  (`value`, `onChange(patch)`, `readOnly`). La page solo l'utilise avec un état local ; la
+  salle l'utilise avec `room:updateConfig` pour l'hôte et en lecture seule pour les
+  autres. Le champ des caractères exclus envoie son patch à la sortie du champ ou après
+  500 ms sans frappe, pas à chaque touche.
+
+### Lots
+
+| Lot | Contenu | Qui | Fichiers |
+|---|---|---|---|
+| B1 | B-D1 à B-D3 : protocole, magasin des salles, `race/config.ts`, tests | Codex niveau 2, sur spécification exacte de l'orchestrateur | `src/realtime/protocol.ts`, `src/realtime/roomStore.ts`, `src/race/config.ts`, leurs tests |
+| B2 | B-D4, B-D5 : composant partagé, salle d'attente, bouton « Inviter des amis », `/play`, dictionnaires | `implementer` (niveau 3), après B1 | `src/components/race/RaceSettingsFields.tsx`, `SettingsForm.tsx`, `room/_components/*`, `play/*`, dictionnaires |
+
+Validation : `qa`, `code-reviewer`, `security-reviewer` (confiance dans les messages
+WebSocket), Gemini `review`, `ui` et `visual`.
+
+### Critères d'acceptation (tranche B)
+
+- **AC-B1** Un membre règle la course, clique « Inviter des amis » et arrive dans une salle
+  qui porte exactement ces réglages.
+- **AC-B2** Quand l'hôte change un réglage, un autre participant le voit sans recharger,
+  pour chacun des huit réglages CONFIG-1 à 8.
+- **AC-B3** Un client modifié qui envoie une valeur hors liste, une clé inconnue,
+  `botCount: 8` ou 101 caractères exclus reçoit `INVALID_PAYLOAD`, et l'état ne change pas.
+- **AC-B4** Avec 18 coureurs humains, passer à 3 bots est refusé (`ROOM_FULL`) ; avec
+  5 bots, le 16e coureur humain est refusé.
+- **AC-B5** Un invité voit « Inviter des amis » désactivé, avec la raison.
+- **AC-B6** Les non-hôtes voient les réglages en lecture seule. FR/EN, clair/sombre,
+  mobile et ordinateur, aucun texte en dur.
+- **AC-B7** test, lint (0 erreur, 0 avertissement), build et `build:realtime` passent.
+
 ## Journal
 
 - 2026-10-09 : plan écrit, tranche A lancée.
+- 2026-10-09 : corrections de relecture de la tranche A ; plan de la tranche B écrit.

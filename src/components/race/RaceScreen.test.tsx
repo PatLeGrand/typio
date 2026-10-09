@@ -4,11 +4,18 @@ import { RaceScreen } from "./RaceScreen";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { DEFAULT_RACE_SETTINGS, serializeRaceSettings, type RaceSettings } from "@/race/config";
+import { createRaceText } from "@/race/raceText";
 
 // La scène Pixi n'a pas de sens dans jsdom : un faux visualiseur expose juste les coureurs.
 vi.mock("@/components/race/RaceVisualizer", () => ({
   RaceVisualizer: ({ racers }: { racers: { id: string }[] }) => <div data-testid="visualizer">{racers.length}</div>,
 }));
+
+// Le vrai générateur, mais espionné : on vérifie que « Rejouer » demande bien un nouveau tirage.
+vi.mock("@/race/raceText", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/race/raceText")>();
+  return { createRaceText: vi.fn(actual.createRaceText) };
+});
 
 const SETTINGS: RaceSettings = { ...DEFAULT_RACE_SETTINGS, botCount: 2, botDifficulty: "easy", timeLimitSeconds: 60 };
 const TEXT = "ab cd";
@@ -37,6 +44,7 @@ function setup(overrides: { settings?: Partial<RaceSettings>; locale?: Locale; i
       settings={settings}
       userName="Aurel"
       initialText={overrides.initialText === undefined ? TEXT : overrides.initialText}
+      botNameSeed={7}
       now={now}
       random={overrides.random ?? (() => 0.5)}
     />,
@@ -47,6 +55,9 @@ function setup(overrides: { settings?: Partial<RaceSettings>; locale?: Locale; i
 const input = (labels: ReturnType<typeof getDictionary>["raceScreen"]) =>
   screen.getByLabelText(labels.typing.inputLabel) as HTMLInputElement;
 const type = (field: HTMLInputElement, value: string) => fireEvent.change(field, { target: { value } });
+/** Précision affichée dans le panneau de statistiques (et non celle d'un tableau ou d'un classement). */
+const accuracyShown = (labels: ReturnType<typeof getDictionary>["raceScreen"]) =>
+  screen.getByText(labels.stats.accuracy).nextElementSibling?.textContent;
 const textOnScreen = () => document.getElementById("race-text")?.textContent;
 
 beforeEach(() => {
@@ -58,21 +69,40 @@ afterEach(() => {
 });
 
 describe("RaceScreen : horloge (A-D6, AC-4)", () => {
-  it("affiche 3, 2, 1 puis déverrouille la saisie au départ, avec le temps restant visible", () => {
+  it("affiche 3, 2, 1 puis démarre au départ, avec le temps restant visible", () => {
     const { labels } = setup();
     expect(screen.getByRole("status")).toHaveTextContent(labels.status.countdown);
     expect(screen.getByTestId("countdown")).toHaveTextContent("3");
-    expect(input(labels)).toBeDisabled();
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
+    // Saisie ignorée pendant le compte à rebours.
+    type(input(labels), "a");
+    expect(input(labels).value).toBe("");
 
     advance(2100);
     expect(screen.getByTestId("countdown")).toHaveTextContent("1");
-    expect(input(labels)).toBeDisabled();
 
     advance(900);
     expect(screen.getByRole("status")).toHaveTextContent(labels.status.racing);
-    expect(input(labels)).toBeEnabled();
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
+  });
+
+  it("annonce le compte à rebours une fois par seconde dans une région polie, puis « partez »", () => {
+    const { labels } = setup();
+    const announcement = () => screen.getByText((_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P");
+    expect(announcement()).toHaveTextContent("3");
+    advance(1100);
+    expect(announcement()).toHaveTextContent("2");
+    advance(1000);
+    expect(announcement()).toHaveTextContent("1");
+    advance(900);
+    expect(announcement()).toHaveTextContent(labels.go);
+  });
+
+  it("les premières frappes ne sont pas perdues : la saisie compte dès l'instant du départ, sans attendre le tick", () => {
+    const { labels } = setup();
+    clock += 3000; // le départ est passé, mais aucun tick n'a encore eu lieu
+    type(input(labels), "a");
+    expect(input(labels).value).toBe("a");
   });
 
   it("une course d'une minute finit à 60 s même quand les ticks sont irréguliers", () => {
@@ -131,6 +161,62 @@ describe("RaceScreen : saisie (COURSE-7, A-D6)", () => {
   });
 });
 
+describe("RaceScreen : composition, touches mortes AZERTY et IME", () => {
+  /** « ^ » puis « e » : le navigateur compose « ê » ; seule la valeur finale doit compter. */
+  function composeDeadKey(field: HTMLInputElement, base: string, result: string) {
+    fireEvent.compositionStart(field);
+    type(field, `${base}^`);
+    fireEvent.compositionUpdate(field, { data: "^" });
+    expect(field.value).toBe(`${base}^`);
+    type(field, `${base}${result}`);
+    fireEvent.compositionEnd(field);
+  }
+
+  it.each(["free", "blocking"] as const)("« ê » juste compte pour une seule frappe juste (%s)", (inputMode) => {
+    const { labels } = setup({ initialText: "êa", settings: { inputMode } });
+    advance(3000);
+    composeDeadKey(input(labels), "", "ê");
+    expect(input(labels).value).toBe("ê");
+    expect(screen.getByText(`1 / 2 ${labels.typing.characters}`)).toBeInTheDocument();
+    expect(accuracyShown(labels)).toBe("100%");
+  });
+
+  it.each(["free", "blocking"] as const)("« ê » faux compte pour une seule frappe fausse (%s)", (inputMode) => {
+    const { labels } = setup({ initialText: "ab", settings: { inputMode } });
+    advance(3000);
+    composeDeadKey(input(labels), "", "ê");
+    expect(accuracyShown(labels)).toBe("0%");
+    // La frappe fausse n'est comptée qu'une fois, la touche morte « ^ » pas du tout.
+    expect(input(labels).value).toBe(inputMode === "free" ? "ê" : "");
+    type(input(labels), inputMode === "free" ? "êb" : "a");
+    expect(accuracyShown(labels)).toBe("50%");
+  });
+
+  it("garde un « ê » déjà tapé quand la composition suit des caractères", () => {
+    const { labels } = setup({ initialText: "aêb" });
+    advance(3000);
+    type(input(labels), "a");
+    composeDeadKey(input(labels), "a", "ê");
+    type(input(labels), "aêb");
+    expect(screen.getByRole("table")).toHaveTextContent("100%");
+  });
+});
+
+describe("RaceScreen : curseur verrouillé en fin de champ", () => {
+  it("ramène le curseur à la fin quand il est placé au milieu ou quand le texte est sélectionné", () => {
+    const { labels } = setup({ initialText: "abcd" });
+    advance(3000);
+    const field = input(labels);
+    type(field, "ab");
+    field.setSelectionRange(0, 0);
+    fireEvent.keyUp(field, { key: "ArrowLeft" });
+    expect([field.selectionStart, field.selectionEnd]).toEqual([2, 2]);
+    field.setSelectionRange(0, 2);
+    fireEvent.mouseUp(field);
+    expect([field.selectionStart, field.selectionEnd]).toEqual([2, 2]);
+  });
+});
+
 describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
   it("fin par le texte terminé : podium puis tableau avec MPM, précision, temps et rang", () => {
     const { labels } = setup();
@@ -173,23 +259,28 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
       seed = (seed + 0.318) % 1;
       return seed;
     };
-    const { labels, container } = setup({ initialText: "first text", random });
+    const { labels, settings } = setup({ initialText: "first text", random });
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
 
+    vi.mocked(createRaceText).mockClear();
+    vi.mocked(createRaceText).mockReturnValueOnce("brand new text");
     fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
-    expect(container.querySelector("#race-text")).not.toBeNull();
-    expect(textOnScreen()).not.toBe("first text");
-    expect(textOnScreen()?.length).toBeGreaterThan(50);
+    // Nouveau tirage, mêmes réglages, en évitant le texte précédent ; son résultat est celui affiché.
+    expect(createRaceText).toHaveBeenCalledTimes(1);
+    expect(createRaceText).toHaveBeenCalledWith(settings, random, "first text");
+    expect(textOnScreen()).toBe("brand new text");
     expect(screen.getByRole("status")).toHaveTextContent(labels.status.countdown);
-    expect(input(labels)).toBeDisabled();
+    // Le focus est sur le champ de saisie, pas perdu sur <body>.
+    expect(input(labels)).toHaveFocus();
 
-    const second = textOnScreen();
+    // Avec le vrai générateur, le deuxième tirage donne un texte différent du précédent.
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
-    expect(textOnScreen()).not.toBe(second);
+    expect(textOnScreen()).not.toBe("brand new text");
+    expect(textOnScreen()?.length).toBeGreaterThan(50);
   });
 
   it("Modifier les réglages renvoie vers la page de paramètres avec la configuration", () => {
@@ -213,7 +304,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     expect(screen.getByRole("heading", { name: labels.results.podium })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: labels.results.replay })).toBeInTheDocument();
     expect(screen.getByText(labels.results.statuses.abandoned)).toBeInTheDocument();
-    expect(screen.getAllByText(labels.botNames[0]).length).toBeGreaterThan(0);
+    expect(screen.getAllByText((name) => labels.botNames.includes(name)).length).toBeGreaterThan(0);
   });
 });
 
@@ -243,7 +334,9 @@ describe("RaceScreen : bots (BOT-2)", () => {
     const { labels } = setup({ settings: { botCount: 3 } });
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
     expect(screen.getByTestId("visualizer")).toHaveTextContent("4");
-    for (const name of labels.botNames.slice(0, 3)) expect(screen.getByText(name)).toBeInTheDocument();
+    const names = screen.getAllByRole("listitem").slice(1).map((item) => item.children[1].textContent ?? "");
+    expect(new Set(names).size).toBe(3);
+    for (const name of names) expect(labels.botNames).toContain(name);
   });
 
   it("se joue sans bot", () => {

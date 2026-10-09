@@ -46,6 +46,12 @@ const CAMERA_RATE = 5; // la caméra est plus lente que le Blob → effet d'éla
 const HOP_HEIGHT = 20; // hauteur max du saut en px
 const CAMERA_ANCHOR = 0.22; // position du joueur local à l'écran (fraction de largeur)
 
+/** Vrai quand les décors sont déjà déclarés auprès de `PIXI.Assets` (partagé par toutes les scènes). */
+let assetsRegistered = false;
+// Un coureur très en avance ou en retard sur le joueur local reste visible, collé au bord de l'écran
+// (la caméra suit le joueur local, la piste est bien plus longue que l'écran).
+const EDGE_MARGIN = 70; // px entre le Blob et le bord de l'écran
+
 // Couleurs de la scène par thème (UI-3). Les décors sont des SVG clairs : en thème sombre on
 // assombrit le fond et on teinte (multiplie) chaque calque.
 const SCENE_COLORS = {
@@ -151,7 +157,11 @@ export function RaceVisualizer({
         meadow: "/race/meadow.svg",
         track: "/race/track.svg",
       };
-      for (const [alias, src] of Object.entries(assets)) PIXI.Assets.add({ alias, src });
+      // Les alias ne s'enregistrent qu'une fois : « Rejouer » remonte la scène à chaque manche.
+      if (!assetsRegistered) {
+        for (const [alias, src] of Object.entries(assets)) PIXI.Assets.add({ alias, src });
+        assetsRegistered = true;
+      }
       await PIXI.Assets.load(Object.keys(assets));
       if (!isMounted) return;
 
@@ -182,8 +192,18 @@ export function RaceVisualizer({
         const list = racersRef.current;
         const length = trackLengthRef.current;
 
+        // Distances aux autres coureurs, bornées à ce que l'écran peut montrer.
+        const localRacer = list.find((r) => r.isLocal) ?? list[0];
+        const localRaw = localRacer ? (localRacer.progress / 100) * length : 0;
+        const localX = (localRacer && views.get(localRacer.id)?.x) ?? localRaw;
+        const maxAhead = Math.max(0, app.screen.width * (1 - CAMERA_ANCHOR) - EDGE_MARGIN);
+        const maxBehind = Math.max(0, app.screen.width * CAMERA_ANCHOR - EDGE_MARGIN / 2);
+
         list.forEach((racer, index) => {
-          const target = (racer.progress / 100) * length;
+          const raw = (racer.progress / 100) * length;
+          const target = racer === localRacer
+            ? raw
+            : localX + Math.max(-maxBehind, Math.min(maxAhead, raw - localRaw));
           let view = views.get(racer.id);
           if (!view) {
             view = createView(racer, blobTexture, target, world);
@@ -258,7 +278,7 @@ export function RaceVisualizer({
 
   return (
     <div className={className}>
-      <div ref={containerRef} className="absolute inset-0" />
+      <div ref={containerRef} className="absolute inset-0" aria-hidden="true" />
     </div>
   );
 }

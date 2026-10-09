@@ -32,6 +32,8 @@ type Props = {
   userName: string | null;
   /** Texte tiré côté serveur (hydratation identique), ou `null` si les filtres n'en laissent aucun. */
   initialText: string | null;
+  /** Graine des noms de bots, tirée côté serveur avec le texte (hydratation identique). */
+  botNameSeed: number;
   /** Horloge en ms ; injectable pour les tests (A-D6). */
   now?: () => number;
   /** Tirage dans [0, 1[ ; injectable pour les tests (TEXTE-2, BOT-2). */
@@ -46,6 +48,7 @@ export function RaceScreen({
   settings,
   userName,
   initialText,
+  botNameSeed,
   now = defaultNow,
   random = Math.random,
 }: Props) {
@@ -53,6 +56,7 @@ export function RaceScreen({
     settings,
     initialText,
     botNames: labels.botNames,
+    botNameSeed,
     now,
     random,
   });
@@ -83,6 +87,10 @@ export function RaceScreen({
     };
   });
   const announcedStep = Math.floor(playerProgress / ANNOUNCE_STEP) * ANNOUNCE_STEP;
+  const liveAnnouncement =
+    snapshot.countdownSeconds > 0 ? String(snapshot.countdownSeconds)
+    : racing ? (announcedStep === 0 ? labels.go : `${announcedStep} ${labels.trackProgress}`)
+    : "";
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
@@ -175,9 +183,8 @@ export function RaceScreen({
         </div>
       </section>
 
-      {racing ? (
-        <p className="sr-only" aria-live="polite">{announcedStep} {labels.trackProgress}</p>
-      ) : null}
+      {/* Une annonce polie par seconde du compte à rebours, puis « partez » et l'avancement par paliers. */}
+      <p className="sr-only" aria-live="polite" aria-atomic="true">{liveAnnouncement}</p>
 
       {results ? (
         <RaceResults
@@ -193,7 +200,6 @@ export function RaceScreen({
           labels={labels.typing}
           text={round.session.text}
           typed={round.session.typed}
-          disabled={!racing}
           correctChars={correctChars}
           onChange={typeInput}
         />

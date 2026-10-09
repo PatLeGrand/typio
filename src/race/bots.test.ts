@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BOT_TARGET_WPM,
   botFinishMs,
+  botKeystrokesAt,
   botProgressAt,
   planBot,
   type BotDifficulty,
@@ -137,5 +138,34 @@ describe("planBot / botProgressAt / botFinishMs", () => {
     const single = planBot("bonjour", "hard", seeded(1));
     expect(botFinishMs(single)).toBeGreaterThan(0);
     expect(botProgressAt(single, botFinishMs(single))).toBe(7);
+  });
+
+  it("liste les fautes du plan, croissantes et dans la durée de la course", () => {
+    const plan = planBot(TEXT, "hard", seeded(5));
+    expect(plan.mistakeTimesMs).toEqual([...plan.mistakeTimesMs].sort((a, b) => a - b));
+    for (const timeMs of plan.mistakeTimesMs) expect(timeMs).toBeLessThanOrEqual(botFinishMs(plan));
+    expect(planBot("", "normal", seeded(1)).mistakeTimesMs).toEqual([]);
+  });
+});
+
+describe("botKeystrokesAt", () => {
+  it("compte une frappe fausse par faute commise, comme la précision du joueur", () => {
+    let withMistakes = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const plan = planBot(TEXT, "normal", seeded(seed));
+      const end = botFinishMs(plan);
+      const { total, correct } = botKeystrokesAt(plan, end);
+      expect(correct).toBe(TEXT.length);
+      expect(total).toBe(TEXT.length + plan.mistakeTimesMs.length);
+      expect(botKeystrokesAt(plan, 0)).toEqual({ total: 0, correct: 0 });
+      if (plan.mistakeTimesMs.length > 0) {
+        withMistakes += 1;
+        const first = plan.mistakeTimesMs[0];
+        expect(botKeystrokesAt(plan, first - 1).total - botKeystrokesAt(plan, first - 1).correct).toBe(0);
+        const after = botKeystrokesAt(plan, first);
+        expect(after.total - after.correct).toBeGreaterThanOrEqual(1);
+      }
+    }
+    expect(withMistakes).toBeGreaterThan(0);
   });
 });

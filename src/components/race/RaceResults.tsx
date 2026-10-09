@@ -82,12 +82,7 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
                 <th scope="row" className="px-4 py-3 font-bold">{row.name}</th>
                 <td className="px-4 py-3 tabular-nums">{row.wpm}</td>
                 <td className="px-4 py-3 tabular-nums">
-                  {row.accuracy === null ? (
-                    <>
-                      <span aria-hidden="true">—</span>
-                      <span className="sr-only">{copy.notAvailable}</span>
-                    </>
-                  ) : `${row.accuracy}%`}
+                  {row.accuracy}%
                 </td>
                 <td className="px-4 py-3 tabular-nums">{formatDuration(row.timeMs)}</td>
                 <td className="px-4 py-3">{copy.statuses[row.status]}</td>

@@ -12,6 +12,7 @@
     "playerOne": "player",
     "playerOther": "players",
     "abandon": "Give up",
+    "go": "Go!",
     "status": {
       "countdown": "STARTING",
       "racing": "RACING",
@@ -84,7 +85,6 @@
         "unfinished": "Did not finish",
         "abandoned": "Gave up"
       },
-      "notAvailable": "Not available",
       "replay": "Play again",
       "editSettings": "Change settings"
     }
@@ -400,7 +400,10 @@
     "excludedChars": {
       "label": "Excluded characters",
       "placeholder": "@ # %",
-      "count": "{count} characters excluded",
+      "count": {
+        "one": "{count} character excluded",
+        "other": "{count} characters excluded"
+      },
       "none": "None",
       "help": "Enter characters to avoid, separated by a space. Leave empty to allow all.",
       "error": "Too many excluded characters (max 100)."
