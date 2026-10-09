@@ -491,51 +491,100 @@
     "close": "Fermer"
   },
   "room": {
+    "metaTitle": "Salle d'attente",
+    "loading": "Chargement de la salle…",
     "title": "Salle d'attente",
-    "createRoom": "Créer le salon",
-    "join": "Rejoindre",
+    "back": "Retour au choix de salle",
     "leave": "Quitter",
-    "start": "Lancer la course",
-    "roomCode": "Code de la course",
-    "copyCode": "Copier",
-    "codeCopied": "Copié !",
-    "participants": "Participants",
-    "addPlayer": "Ajouter un joueur (Nametag)",
-    "add": "Ajouter",
-    "playerNametag": "Nametag du joueur",
-    "host": "Hôte",
-    "spectator": "Spectateur",
-    "guest": "Invité",
-    "disconnected": "Déconnecté",
+    "connection": {
+      "offline": "Connexion perdue, nouvelle tentative…",
+      "tooManyConnections": "Trop d'onglets ouverts : ferme-en un, puis recharge la page."
+    },
+    "code": {
+      "label": "Code de la salle",
+      "copy": "Copier le code",
+      "copied": "Copié",
+      "copyFallback": "Code sélectionné : copie-le avec Ctrl+C."
+    },
+    "participants": {
+      "title": "Participants",
+      "runnersCount": "{count}/{max} coureurs",
+      "guest": "Invité",
+      "host": "Hôte",
+      "you": "Toi",
+      "runner": "Coureur",
+      "spectator": "Spectateur",
+      "disconnected": "Déconnecté"
+    },
+    "config": {
+      "title": "Configuration",
+      "hostOnly": "Seul l'hôte peut modifier la configuration.",
+      "textMode": {
+        "label": "Type de texte",
+        "sentences": "Phrases",
+        "words": "Mots"
+      },
+      "language": {
+        "label": "Langue du texte",
+        "fr": "Français",
+        "en": "Anglais"
+      },
+      "length": {
+        "label": "Longueur du texte",
+        "short": "Court",
+        "medium": "Moyen",
+        "long": "Long"
+      },
+      "timeLimit": {
+        "label": "Limite de temps",
+        "none": "Aucune (5 minutes par défaut)",
+        "60": "1 minute",
+        "120": "2 minutes",
+        "180": "3 minutes",
+        "300": "5 minutes",
+        "600": "10 minutes"
+      }
+    },
     "play": {
+      "metaTitle": "Jouer",
+      "title": "Jouer",
+      "inRoom": {
+        "message": "Tu es dans la salle {code}.",
+        "return": "Y retourner",
+        "leave": "Quitter",
+        "disabledNote": "Quitte cette salle pour en créer ou en rejoindre une autre."
+      },
       "create": {
         "title": "Créer une salle",
         "description": "Invite tes amis avec un code.",
-        "button": "Créer"
+        "button": "Créer une salle",
+        "guestNotice": "Les invités ne peuvent pas créer de salle. Crée un compte pour le faire, ou rejoins une salle avec un code."
       },
       "join": {
         "title": "Rejoindre avec un code",
+        "description": "Saisis le code à 6 caractères donné par l'hôte.",
         "codeLabel": "Code de la salle",
-        "codePlaceholder": "Ex. : ABCDEF",
+        "codePlaceholder": "Ex. : ABC234",
         "roleLabel": "Rejoindre en tant que",
         "runner": "Coureur",
         "spectator": "Spectateur",
         "button": "Rejoindre"
-      },
-      "guestCannotCreate": "Les invités ne peuvent pas créer de salle."
+      }
     },
     "errors": {
       "UNAUTHENTICATED": "Tu dois être connecté pour faire ça.",
-      "INVALID_PAYLOAD": "Données envoyées invalides.",
-      "INVALID_CODE": "Code de salle invalide. Il doit faire 6 caractères.",
+      "INVALID_PAYLOAD": "Les données envoyées sont invalides.",
+      "INVALID_CODE": "Code de salle invalide : il doit faire 6 caractères.",
       "GUEST_CANNOT_CREATE": "Les invités ne peuvent pas créer de salle.",
-      "ROOM_NOT_FOUND": "Salle introuvable avec ce code.",
+      "ROOM_NOT_FOUND": "Aucune salle ne correspond à ce code.",
       "ROOM_FULL": "Cette salle est déjà pleine.",
-      "ALREADY_IN_ROOM": "Tu es déjà dans une salle.",
-      "NOT_IN_ROOM": "Tu n'es pas dans cette salle.",
-      "NOT_HOST": "Seul l'hôte peut modifier les paramètres.",
-      "CONFIG_LOCKED": "Les paramètres sont verrouillés.",
-      "INTERNAL": "Erreur interne."
+      "ALREADY_IN_ROOM": "Tu es déjà dans une autre salle.",
+      "NOT_IN_ROOM": "Tu n'es plus dans cette salle.",
+      "NOT_HOST": "Seul l'hôte peut modifier la configuration.",
+      "CONFIG_LOCKED": "La configuration est verrouillée.",
+      "INTERNAL": "Une erreur est survenue, réessaie dans un instant.",
+      "OFFLINE": "Tu n'es pas connecté au serveur de jeu. Réessaie dans un instant.",
+      "TIMEOUT": "Le serveur de jeu ne répond pas. Réessaie dans un instant."
     }
   }
 }

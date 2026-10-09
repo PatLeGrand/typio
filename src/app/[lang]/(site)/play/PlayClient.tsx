@@ -1,81 +1,101 @@
 "use client";
 
-import { useState } from "react";
-import { useRoom } from "@/realtime/useRoom";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/Button";
-
+import { useEffect, useState } from "react";
+import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
+import type { ParticipantRole } from "@/realtime/protocol";
+import { roomPath } from "@/realtime/roomRoute";
+import { useLoginRedirect } from "@/realtime/useLoginRedirect";
+import { useRoom } from "@/realtime/useRoom";
+import { ConnectionBanner } from "../room/_components/ConnectionBanner";
+import { RoomError } from "../room/_components/RoomError";
+import { CreateRoomPanel } from "./CreateRoomPanel";
+import { InRoomNotice } from "./InRoomNotice";
+import { JoinRoomForm } from "./JoinRoomForm";
 
-export function PlayClient({ action, lang, dict }: { action: "create" | "join", lang: string, dict: Dictionary["room"] }) {
-  const room = useRoom();
+type PlayClientProps = {
+  locale: Locale;
+  /** `users.id` de la session, lue côté serveur par la page. */
+  userId: string;
+  isGuest: boolean;
+  labels: Dictionary["room"];
+};
+
+/**
+ * Choix de la salle (SALLE-1, SALLE-4, SALLE-12). Si l'élève est déjà dans une salle (D7),
+ * le bandeau propose d'y retourner ou de la quitter, et créer ou rejoindre est désactivé.
+ */
+export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps) {
   const router = useRouter();
-  const [code, setCode] = useState("");
-  const [role, setRole] = useState<"runner" | "spectator">("runner");
+  const { connection, room, error, create, leave, clearError } = useRoom(userId);
+  useLoginRedirect(connection, locale);
+  const [busy, setBusy] = useState(false);
 
-  const handleCreate = async () => {
-    try {
-      const res = await room.create();
-      router.push(`/${lang}/room/${res.code}`);
-    } catch (err) {
-      // room.error holds the error
-    }
-  };
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!code) return;
-    try {
-      router.push(`/${lang}/room/${code.toUpperCase()}?role=${role}`);
-    } catch (err) {
-      // ...
-    }
-  };
+  // La navigation lancée par « Rejoindre » peut ne pas aboutir, ou la page être réaffichée telle
+  // quelle (retour arrière, cache de page) : `busy` est alors remis à zéro, sinon créer et
+  // rejoindre resteraient bloqués. Le démontage (cleanup) couvre aussi la page mise en veille.
+  useEffect(() => {
+    const reset = () => setBusy(false);
+    window.addEventListener("pageshow", reset);
+    return () => {
+      window.removeEventListener("pageshow", reset);
+      reset();
+    };
+  }, []);
 
-  if (action === "create") {
-    return (
-      <div>
-        <Button onClick={handleCreate} className="w-full text-[15px]">
-          {dict.play.create.button}
-        </Button>
-        {room.error && <p className="mt-4 text-sm text-danger">{dict.errors[room.error] || room.error}</p>}
-      </div>
-    );
+  async function handleCreate(): Promise<void> {
+    setBusy(true);
+    const result = await create();
+    if (result.ok) router.push(roomPath(locale, result.data.code));
+    else setBusy(false);
   }
 
+  async function handleLeave(): Promise<void> {
+    setBusy(true);
+    await leave();
+    setBusy(false);
+  }
+
+  function handleJoin(code: string, role: ParticipantRole): void {
+    // La navigation est lancée : plus de création ni de second « rejoindre » tant qu'elle dure.
+    setBusy(true);
+    router.push(roomPath(locale, code, role));
+  }
+
+  const inRoom = room !== null;
+
   return (
-    <form onSubmit={handleJoin} className="flex flex-col gap-6">
-      <div>
-        <label htmlFor="room-code" className="block text-sm font-semibold mb-2">{dict.play.join.codeLabel}</label>
-        <input
-          id="room-code"
-          type="text"
-          value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
-          placeholder={dict.play.join.codePlaceholder}
-          maxLength={6}
-          className="w-full h-12 px-4 rounded-field border border-border bg-background focus:outline-none focus:ring-2 focus:ring-accent-text text-[15px] uppercase tracking-widest font-mono"
-          required
+    <div className="flex flex-col gap-6">
+      <ConnectionBanner status={connection} labels={labels.connection} />
+      {room ? (
+        <InRoomNotice
+          code={room.code}
+          labels={labels.play.inRoom}
+          roomHref={roomPath(locale, room.code)}
+          leaving={busy}
+          onLeave={() => void handleLeave()}
+        />
+      ) : null}
+      {error ? <RoomError code={error} messages={labels.errors} /> : null}
+      <div className="grid gap-6 md:grid-cols-2">
+        <CreateRoomPanel
+          labels={labels.play.create}
+          isGuest={isGuest}
+          disabled={inRoom || busy}
+          onCreate={() => void handleCreate()}
+        />
+        <JoinRoomForm
+          labels={labels.play.join}
+          invalidCodeMessage={labels.errors.INVALID_CODE}
+          disabled={inRoom || busy}
+          onJoin={handleJoin}
         />
       </div>
-
-      <div>
-        <label className="block text-sm font-semibold mb-2">{dict.play.join.roleLabel}</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input type="radio" checked={role === "runner"} onChange={() => setRole("runner")} className="accent-accent-text" />
-            <span>{dict.play.join.runner}</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="radio" checked={role === "spectator"} onChange={() => setRole("spectator")} className="accent-accent-text" />
-            <span>{dict.play.join.spectator}</span>
-          </label>
-        </div>
-      </div>
-
-      <Button type="submit" className="w-full text-[15px] mt-2">
-        {dict.play.join.button}
-      </Button>
-    </form>
+    </div>
   );
 }

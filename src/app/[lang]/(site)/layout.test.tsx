@@ -6,6 +6,13 @@ import { getDictionary } from "@/i18n/dictionaries";
 const mocks = vi.hoisted(() => ({
   getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>(),
   schedulePurge: vi.fn(),
+  guard: vi.fn(),
+}));
+vi.mock("@/realtime/RoomSessionGuard", () => ({
+  RoomSessionGuard: (props: { userId: string | null }) => {
+    mocks.guard(props.userId);
+    return null;
+  },
 }));
 vi.mock("@/auth/currentUser", () => ({ getCurrentUserForDisplay: mocks.getCurrentUserForDisplay }));
 vi.mock("@/auth/actions", () => ({ logout: vi.fn() }));
@@ -23,6 +30,7 @@ function layoutProps(lang: string) {
 }
 
 beforeEach(() => {
+  mocks.guard.mockClear();
   mocks.getCurrentUserForDisplay.mockResolvedValue(null);
 });
 
@@ -46,6 +54,21 @@ describe("SiteLayout", () => {
 
     expect(screen.getByText("Alice_B")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: getDictionary("fr").header.signOut })).toBeInTheDocument();
+  });
+
+  it("donne l'utilisateur courant (ou null) au garde de la connexion temps réel", async () => {
+    render(await SiteLayout(layoutProps("fr")));
+    expect(mocks.guard).toHaveBeenLastCalledWith(null);
+
+    mocks.getCurrentUserForDisplay.mockResolvedValue({
+      id: "11111111-1111-1111-1111-111111111111",
+      kind: "member",
+      displayName: "Alice_B",
+      username: "alice_b",
+      locale: "fr",
+    });
+    render(await SiteLayout(layoutProps("fr")));
+    expect(mocks.guard).toHaveBeenLastCalledWith("11111111-1111-1111-1111-111111111111");
   });
 
   it("déclenche le nettoyage des sessions et invités échus pour tout visiteur", async () => {

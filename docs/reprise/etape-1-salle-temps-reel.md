@@ -70,10 +70,10 @@ Fichiers : `src/realtime/roomStore.ts` et son test (repris du lot-1),
 `src/realtime/roomHandlers.ts` et son test (repris, puis corrigés selon D1 à D4),
 `src/realtime/server.ts`.
 
-- [ ] Reprendre `roomStore` et ses tests ; ajouter le test AC-10 du plan (code jamais
+- [x] Reprendre `roomStore` et ses tests ; ajouter le test AC-10 du plan (code jamais
   celui d'une salle ouverte). Remplacer `this.roomOf` par une fonction locale.
-- [ ] `roomHandlers` selon D1 à D4.
-- [ ] Tests d'intégration (`startTestServer`) : les AC-1 à AC-8 du lot 2 du plan, plus :
+- [x] `roomHandlers` selon D1 à D4.
+- [x] Tests d'intégration (`startTestServer`) : les AC-1 à AC-8 du lot 2 du plan, plus :
   - **S-1** Rechargement : B ferme son socket et en ouvre un nouveau sans `join`. Il reçoit
     l'état, `connected: true`, même `joinedAt` (D2).
   - **S-2** Expiration : avec `vi.useFakeTimers()`, B déconnecté depuis plus de
@@ -86,11 +86,11 @@ Fichiers : `src/realtime/roomStore.ts` et son test (repris du lot-1),
 
 ### 1B — Infra (`implementer-light`, en parallèle de 1A)
 
-- [ ] Reprendre du lot-1 : `Dockerfile`, `docker-compose.yml`, `infra/docker-compose.yml`,
+- [x] Reprendre du lot-1 : `Dockerfile`, `docker-compose.yml`, `infra/docker-compose.yml`,
   `infra/caddy/typio.caddyfile`, `infra/deployer.sh`, `.github/workflows/ci.yml`,
   `.env.example`.
-- [ ] Corrections D12. Remettre les commentaires de `deployer.sh` supprimés par Gemini.
-- [ ] `docker compose config --quiet` et
+- [x] Corrections D12. Remettre les commentaires de `deployer.sh` supprimés par Gemini.
+- [x] `docker compose config --quiet` et
   `MDP_TYPIO=x docker compose -f infra/docker-compose.yml config --quiet` passent.
 
 > ⚠️ **Mémoire du VPS.** Le service `realtime` ajoute environ 50 à 60 Mo (limite 128 Mo),
@@ -104,31 +104,31 @@ et le hook), `play/page.tsx`, `play/PlayClient.tsx`, `room/[code]/page.tsx`,
 `room/[code]/RoomClient.tsx`, les dictionnaires FR et EN, `HomeHero.tsx`,
 `HomeCallToAction.tsx`.
 
-- [ ] D5 à D10.
-- [ ] Page `/play` : « Créer une salle » pour les membres. Pour un invité, le bouton est
+- [x] D5 à D10.
+- [x] Page `/play` : « Créer une salle » pour les membres. Pour un invité, le bouton est
   désactivé avec la raison (SALLE-12). « Rejoindre avec un code » : champ de 6 caractères,
   normalisé en majuscules, avec un groupe radio coureur/spectateur dans un
   `fieldset`/`legend`. Sans session, redirection vers la connexion. `generateMetadata`
   conservé.
-- [ ] Page `/room/[code]` : le code en grand, copiable, avec un retour « Copié » ; une
+- [x] Page `/room/[code]` : le code en grand, copiable, avec un retour « Copié » ; une
   repli si `navigator.clipboard` est absent. Participants : nom, rôle, badge hôte, « toi »,
   déconnecté, dans une liste `aria-live="polite"`. Config éditable par l'hôte (selects
   **étiquetés**), en lecture seule pour les autres. Bouton « Quitter ». Chaque refus
   affiche un message traduit, jamais un code brut. Pas de bouton « Lancer la course » ni
   d'« Ajouter un joueur » : hors périmètre, ils ne feraient rien.
-- [ ] Tests Vitest avec un faux store : formulaire de code (normalisation, validation), vue
+- [x] Tests Vitest avec un faux store : formulaire de code (normalisation, validation), vue
   hôte et vue participant, bandeau « déjà dans une salle », pas de nouveau `join` après
   `leave`.
 
 ### 1D — Validation
 
-- [ ] `qa` : les quatre commandes, puis le scénario à deux navigateurs (membre en fenêtre
+- [x] `qa` : les quatre commandes, puis le scénario à deux navigateurs (membre en fenêtre
   normale, invité en fenêtre privée), en FR et en EN, en clair et en sombre, mobile et
   ordinateur.
-- [ ] `code-reviewer` sur tout le diff.
-- [ ] `security-reviewer` : confiance des messages WebSocket, `Origin`, cookies, codes de
+- [x] `code-reviewer` sur tout le diff.
+- [x] `security-reviewer` (deux passes) : confiance des messages WebSocket, `Origin`, cookies, codes de
   salle, D2 (le ré-attachement ne doit dépendre que de la session).
-- [ ] Gemini `review`, `ui`, `visual` en parallèle (second avis seulement).
+- [x] Gemini `review`, `ui`, `visual` en parallèle (second avis seulement).
 
 ## Critères d'acceptation
 
@@ -149,3 +149,61 @@ et le hook), `play/page.tsx`, `play/PlayClient.tsx`, `room/[code]/page.tsx`,
 ## Journal
 
 - 2026-10-08 : fiche écrite. Attend la fin de l'étape 0.
+- 2026-10-08 : 1A, 1B et 1C livrés et commités (`e6edb99` import, `03d2780` infra, `57453fb`
+  serveur, `10c0b64` client).
+  - Testé en vrai : un membre dans le navigateur, un invité par script. Création, jonction,
+    config en direct, rechargement (l'hôte garde son rôle), « Quitter » (l'invité
+    devient hôte, plus de fantôme), recréation immédiate, bandeau « tu es dans la
+    salle » en EN et sur mobile.
+  - `qa` : PASS (1432 tests, lint, build, `build:realtime`, `/healthz`, `protocol.ts`
+    inchangé).
+  - `code-reviewer` : 3 P2 (dernier partant pas notifié dans ses autres onglets ; socket
+    jamais reconnecté après une session expirée ; `join` en TIMEOUT qui bloque la vue).
+  - `security-reviewer` : rien de critique. M1 (énumération des codes), M2 (socket qui
+    survit à la déconnexion), M3 (mémoire) et F5 (ports du compose local) **corrigés
+    avant le checkpoint**.
+
+- 2026-10-08 : correctifs de revue commités.
+  - `1cf98f7` serveur : dernier partant ; limite de 10 échecs de `join` par minute ;
+    20 spectateurs au plus ; coupure à l'expiration de la session ; messages de 8 Kio
+    au plus ; 5 sockets par utilisateur ; index.
+  - `8c9f47a` client : reconnexion après expiration ; nouvel essai de `join` ;
+    `RoomSessionGuard` (coupe le socket au logout) ; bandeau « trop d'onglets ».
+  - `7e6ce83` : test de la course du plafond de sockets et derniers détails.
+- Revérifié dans le navigateur : deux onglets du même membre, « Quitter » dans l'un,
+  l'autre affiche « Tu n'es plus dans cette salle ». Un invité rejoint toujours
+  normalement.
+- Résultats : 1481 tests, lint (1 avertissement, dans `sandbox`, en attente de
+  suppression), build, `build:realtime` et `protocol.ts` inchangé.
+
+**Reste avant de fusionner :**
+
+1. Fusionner `fix/develop-green` dans `develop` (PR).
+2. Rebaser `feat/realtime-room` sur `develop`, puis ouvrir sa PR.
+3. Patrick valide la mémoire du VPS (service `realtime`, environ 60 Mo, limite 128 Mo)
+   avant le déploiement.
+
+### Choix assumés
+
+- Au-delà de 10 échecs de `join` en une minute, la réponse est `INVALID_CODE` sans
+  consulter le registre, parce que le protocole n'a pas de code « trop de tentatives ».
+- Si la base tombe en panne, l'en-tête voit « pas d'utilisateur ». Le garde coupe alors
+  le socket, et `useRoom` le relance. Résultat : un bref flash, pas un blocage.
+
+### Reporté après le checkpoint (sécurité)
+
+- Revalider la session sur chaque commande et couper les sockets à la déconnexion depuis
+  un autre appareil (`LISTEN/NOTIFY` PostgreSQL).
+- **Plafond par IP et plafond global** (constats de la seconde passe
+  `security-reviewer`, à traiter avant une ouverture large, pas pour un pilote encadré).
+  Un attaquant peut créer des invités (120 par heure et par IP) avec chacun 5 sockets
+  et 10 échecs de `join` par minute. Il épuise ainsi la mémoire, environ 14 000 sockets
+  en 24 h, et énumère les codes de façon répartie. Il faut un compteur par IP, à partir
+  de `X-Forwarded-For` lu seulement depuis Caddy, pour les poignées de main, les sockets
+  et les échecs de `join`, et un plafond global (`io.engine.clientsCount`).
+- F4 : `room:state` diffuse le `userId` stable de chaque participant, ce qui permet de
+  suivre un mineur d'une salle à l'autre. Remplacer par un identifiant opaque par salle.
+  Cela change `protocol.ts`.
+- F6 : donner au conteneur `realtime` un rôle SQL limité (`SELECT` sur `sessions` et
+  `users`, `DELETE` sur `sessions`).
+- SALLE-9 (retirer un participant) devient important dès qu'un inconnu peut entrer.
