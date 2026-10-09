@@ -35,7 +35,7 @@ Grille d'évaluation (100 points). Tout ce qui n'y figure pas attend après le c
 - ✅ Architecture validée par Patrick : arrondis, invité héritier du rôle d'hôte, fermeture
   des résultats après 10 min.
 - ✅ Déploiement en production : HTTPS (Caddy), authentification des membres et des invités,
-  PostgreSQL (tables `users` et `sessions`). Version en ligne : `sha-7338783` (9 octobre 2026),
+  PostgreSQL (tables `users` et `sessions`). Version en ligne : `sha-994ac37` (9 octobre 2026),
   avec le service `realtime` derrière Caddy (`/socket.io/*`).
 - ✅ Langue et thème : FR/EN, clair/sombre, direction artistique Figma.
 - ✅ Intégration continue : tests, lint, build, migrations et tests d'intégration PostgreSQL.
