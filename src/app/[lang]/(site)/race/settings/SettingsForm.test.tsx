@@ -56,7 +56,8 @@ describe("SettingsForm", () => {
   });
 
   it("does not render the site header itself (the (site) layout provides it)", () => {
-    render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    // Invité : pas de lien « Se connecter », donc aucun lien du tout dans la page.
+    render(<SettingsForm lang="fr" dict={fr.raceSettings} invite={{ kind: "guest" }} />);
     expect(screen.queryByRole("banner")).toBeNull();
     expect(screen.queryByRole("link")).toBeNull();
   });

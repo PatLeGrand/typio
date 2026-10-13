@@ -1,19 +1,25 @@
 import { useId } from "react";
 import { Button } from "@/components/Button";
+import { ButtonLink } from "@/components/ButtonLink";
 import { Card } from "@/components/Card";
+import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { prefixWithLocale } from "@/i18n/paths";
 
 type CreateRoomPanelProps = {
+  locale: Locale;
   labels: Dictionary["room"]["play"]["create"];
   /** Invité : création impossible, la raison est affichée (SALLE-12). */
   isGuest: boolean;
-  /** Déjà dans une salle, ou création en cours. */
+  /** Déjà dans une salle, ou une navigation est en cours. */
   disabled: boolean;
-  onCreate: () => void;
 };
 
-/** « Créer une salle » (SALLE-1), réservé aux membres (SALLE-12). */
-export function CreateRoomPanel({ labels, isGuest, disabled, onCreate }: CreateRoomPanelProps) {
+/**
+ * « Créer une salle » (SALLE-1), réservé aux membres (SALLE-12) : mène aux paramètres de course, où la
+ * salle est créée avec les réglages choisis (B-D4).
+ */
+export function CreateRoomPanel({ locale, labels, isGuest, disabled }: CreateRoomPanelProps) {
   const noticeId = useId();
 
   return (
@@ -25,9 +31,13 @@ export function CreateRoomPanel({ labels, isGuest, disabled, onCreate }: CreateR
           {labels.guestNotice}
         </p>
       ) : null}
-      <Button onClick={onCreate} disabled={disabled || isGuest} aria-describedby={isGuest ? noticeId : undefined}>
-        {labels.button}
-      </Button>
+      {isGuest || disabled ? (
+        <Button disabled aria-describedby={isGuest ? noticeId : undefined}>
+          {labels.button}
+        </Button>
+      ) : (
+        <ButtonLink href={prefixWithLocale("/race/settings", locale)}>{labels.button}</ButtonLink>
+      )}
     </Card>
   );
 }

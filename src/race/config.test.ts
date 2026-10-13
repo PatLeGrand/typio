@@ -5,9 +5,14 @@ import { DEFAULT_RACE_SETTINGS, deserializeRaceSettings, getEffectiveTimeLimitSe
 
 describe("race settings boundary (CONFIG-1..9)", () => {
   it("round-trips accents and URL-sensitive exclusions without changing settings", () => {
-    const settings = { ...DEFAULT_RACE_SETTINGS, excludedCharacters: "é & # + % ?", botCount: 0 };
+    const settings = { ...DEFAULT_RACE_SETTINGS, excludedCharacters: "#%&+?é", botCount: 0 };
     const query = new URLSearchParams(serializeRaceSettings(settings));
     expect(deserializeRaceSettings(query.get("config") ?? undefined)).toEqual(settings);
+  });
+
+  it("normalizes excluded characters through the shared room parser", () => {
+    expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, excludedCharacters: "a a b" }))
+      .toMatchObject({ excludedCharacters: "ab" });
   });
 
   it.each([0, 1, 90, -1, 601, 1.5, NaN, Infinity, "120"])("rejects duration %s outside the protocol list", (timeLimitSeconds) => {

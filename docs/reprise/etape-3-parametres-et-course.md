@@ -137,10 +137,11 @@ A1 et A2 partent en parallèle. A3 attend A1.
   pas dans le protocole tant que CONFIG-9 n'existe pas.
   - `DEFAULT_ROOM_CONFIG` : comme la course solo, sauf `botCount: 0` (on invite des amis).
   - `parseRoomConfigPatch` valide chaque nouvelle clé et refuse toute valeur hors liste.
-  - `excludedCharacters` est **normalisé par le serveur** : caractères uniques, sans
-    espaces ni caractères de contrôle, dans l'ordre d'apparition, 30 au plus ; une chaîne
-    brute de plus de 100 caractères est refusée. La salle affiche des caractères séparés,
-    jamais une phrase écrite par l'hôte.
+  - `excludedCharacters` est **normalisé par le serveur** : caractères uniques, pris dans
+    une liste blanche (lettres latines avec les accents du français, chiffres, ponctuation
+    ASCII et française), 30 au plus, puis **triés** ; une chaîne brute de plus de 100
+    caractères est refusée. L'hôte ne choisit ni les glyphes ni l'ordre : la salle affiche
+    un jeu de caractères, jamais un mot lisible (revue `security-reviewer` du 9 octobre).
 - **B-D2 — Les bots comptent comme coureurs (H-3, H-16).** Coureurs humains + `botCount`
   ≤ `MAX_RUNNERS` (20). Un `room:join` en coureur ou un `room:updateConfig` qui
   dépasserait ce plafond reçoit `ROOM_FULL`.
@@ -189,3 +190,6 @@ WebSocket), Gemini `review`, `ui` et `visual`.
 
 - 2026-10-09 : plan écrit, tranche A lancée.
 - 2026-10-09 : corrections de relecture de la tranche A ; plan de la tranche B écrit.
+- 2026-10-09 : tranche A fusionnée (PR #51). Tranche B : B1 par Codex niveau 2, B2 par
+  `implementer`. `security-reviewer` a fait durcir les caractères exclus (liste blanche,
+  minuscules, tri) ; `code-reviewer` et Gemini : constats mineurs corrigés.

@@ -1,22 +1,11 @@
-import { TIME_LIMITS_SECONDS } from "@/realtime/protocol";
-import type { RoomConfig, TimeLimitSeconds } from "@/realtime/protocol";
+import { DEFAULT_ROOM_CONFIG, parseRoomConfigPatch } from "@/realtime/protocol";
+import type { RoomConfig } from "@/realtime/protocol";
 
 /**
- * CONFIG-1..9: local race preparation. The four fields shared with the room reuse the protocol's
- * types so the solo page and the future room settings cannot drift apart (A-D4).
+ * CONFIG-1..9: race settings. Everything but `abilities` is the room's `RoomConfig`, validated by
+ * the protocol, so the solo page and the room cannot drift apart (B-D3).
  */
-export interface RaceSettings {
-  textMode: RoomConfig["textMode"];
-  language: RoomConfig["language"];
-  accents: boolean;
-  length: RoomConfig["length"];
-  excludedCharacters: string;
-  timeLimitSeconds: TimeLimitSeconds | null;
-  inputMode: "free" | "blocking";
-  botCount: number;
-  botDifficulty: "easy" | "normal" | "hard";
-  abilities: boolean;
-}
+export type RaceSettings = RoomConfig & { abilities: boolean };
 
 export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze({
   textMode: "sentences",
@@ -31,31 +20,15 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze({
   abilities: false,
 });
 
-function isTimeLimitSeconds(value: unknown): value is TimeLimitSeconds {
-  return TIME_LIMITS_SECONDS.some((allowed) => allowed === value);
-}
-
 export function parseRaceSettings(value: unknown): RaceSettings | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const keys = Object.keys(DEFAULT_RACE_SETTINGS);
   if (Object.keys(value).length !== keys.length || keys.some((key) => !Object.hasOwn(value, key))) return null;
   const settings = value as Record<string, unknown>;
-  const { textMode, language, accents, length, excludedCharacters, timeLimitSeconds,
-    inputMode, botCount, botDifficulty, abilities } = settings;
-  if (
-    (textMode !== "sentences" && textMode !== "words") ||
-    (language !== "fr" && language !== "en") ||
-    typeof accents !== "boolean" ||
-    (length !== "short" && length !== "medium" && length !== "long") ||
-    typeof excludedCharacters !== "string" || excludedCharacters.length > 100 ||
-    (timeLimitSeconds !== null && !isTimeLimitSeconds(timeLimitSeconds)) ||
-    (inputMode !== "free" && inputMode !== "blocking") ||
-    typeof botCount !== "number" || !Number.isInteger(botCount) || botCount < 0 || botCount > 7 ||
-    (botDifficulty !== "easy" && botDifficulty !== "normal" && botDifficulty !== "hard") ||
-    typeof abilities !== "boolean"
-  ) return null;
-  return { textMode, language, accents, length, excludedCharacters, timeLimitSeconds,
-    inputMode, botCount, botDifficulty, abilities };
+  const { abilities, ...roomConfig } = settings;
+  const parsedRoomConfig = parseRoomConfigPatch(roomConfig);
+  if (parsedRoomConfig === null || typeof abilities !== "boolean") return null;
+  return { ...DEFAULT_ROOM_CONFIG, ...parsedRoomConfig, abilities };
 }
 
 /** H-9: disabling an explicit limit keeps the five-minute safety limit. */
