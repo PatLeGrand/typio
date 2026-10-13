@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import RacePage from "./page";
 import { DEFAULT_RACE_SETTINGS } from "@/race/config";
@@ -22,9 +22,20 @@ describe("race route boundary", () => {
     expect(screen.getByTestId("visualizer")).toBeInTheDocument();
     expect(screen.getByText("Aurel")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(copy.status.countdown);
-    // Locked until the countdown ends.
-    expect(screen.getByLabelText(copy.typing.inputLabel)).toBeDisabled();
+    // Ready to type, but the keystrokes only count once the countdown ends.
+    const input = screen.getByLabelText(copy.typing.inputLabel) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "x" } });
+    expect(input.value).toBe("");
     // The local runner plus three bots appear in the leaderboard.
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
+    // The server draws the text, so the client hydrates the very same one.
+    expect(document.getElementById("race-text")?.textContent?.length).toBeGreaterThan(50);
+  });
+  it("explains when the filters leave no text instead of starting an empty race", async () => {
+    const copy = getDictionary("fr").raceScreen;
+    render(await RacePage({ params: Promise.resolve({ lang: "fr" }),
+      searchParams: Promise.resolve({ config: JSON.stringify({ ...DEFAULT_RACE_SETTINGS, excludedCharacters: "a e i o u y" }) }) }));
+    expect(screen.getByRole("alert")).toHaveTextContent(copy.noText.message);
+    expect(screen.queryByTestId("visualizer")).not.toBeInTheDocument();
   });
 });

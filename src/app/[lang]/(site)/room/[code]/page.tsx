@@ -25,6 +25,7 @@ export default async function RoomPage({ params, searchParams }: RoomPageProps) 
   const locale = requireLocale(lang);
   const user = await getCurrentUser();
   if (!user) redirect(prefixWithLocale("/login", locale));
+  const dict = getDictionary(locale);
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 md:px-8 md:py-12">
@@ -33,7 +34,8 @@ export default async function RoomPage({ params, searchParams }: RoomPageProps) 
         role={parseJoinRole((await searchParams).role)}
         locale={locale}
         userId={user.id}
-        labels={getDictionary(locale).room}
+        labels={dict.room}
+        settingsLabels={dict.raceSettings}
       />
     </main>
   );

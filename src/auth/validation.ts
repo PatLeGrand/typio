@@ -104,13 +104,34 @@ export function validatePseudo(raw: unknown): ValidationResult<string> {
 }
 
 /**
+ * Pliage des confusables ASCII, sur une chaîne DÉJÀ en minuscules : `i`, `1` et `|` valent `l`
+ * (un « I » majuscule se lit `i` ou `l`), `0` vaut `o`, puis `rn` vaut `m`, puis `w` est déplié
+ * en `vv` (le sens `vv` vers `w` n'est pas canonique : `vvv` se lit `vw` ou `wv`). Ordre fixe,
+ * remplacements de gauche à droite sans chevauchement (`rnrn` donne `mm`), comme `replace()` de
+ * PostgreSQL. Doit rester identique à l'expression SQL de `memberUsernameExists`. `|` n'est admis
+ * nulle part aujourd'hui : il est plié par prudence si l'alphabet s'élargit. Coût accepté : `elia`
+ * et `ella` ont le même squelette.
+ */
+export function foldAsciiConfusables(lowercase: string): string {
+  return lowercase.replaceAll(/[i1|]/g, "l").replaceAll("0", "o").replaceAll("rn", "m").replaceAll("w", "vv");
+}
+
+/**
+ * Squelette d'un identifiant de membre (déjà en ASCII) : minuscules puis pliage des confusables.
+ * Miroir TypeScript exact de l'expression SQL de `memberUsernameExists`.
+ */
+export function usernameSkeleton(username: string): string {
+  return foldAsciiConfusables(username.toLowerCase());
+}
+
+/**
  * Squelette d'un pseudo DÉJÀ validé par `validatePseudo` : diacritiques retirés, ligatures
- * dépliées, minuscules. Le résultat est en ASCII, comparable à l'identifiant d'un membre :
- * « Àlice » et « ALICÉ » ont le squelette `alice`, donc ne peuvent pas usurper le membre `alice`.
+ * dépliées, minuscules, confusables ASCII pliés. Le résultat est en ASCII, comparable à
+ * `usernameSkeleton` d'un membre : « Àlice », « ALICÉ » et « a1ice » ne peuvent pas usurper le
+ * membre `alice`, ni « AIice » (`i` et `l` sont fusionnés).
  */
 export function pseudoSkeleton(pseudo: string): string {
   const withoutDiacritics = pseudo.normalize("NFD").replace(DIACRITICS, "");
-  return Array.from(withoutDiacritics, (character) => PSEUDO_LIGATURES.get(character) ?? character)
-    .join("")
-    .toLowerCase();
+  const unfolded = Array.from(withoutDiacritics, (character) => PSEUDO_LIGATURES.get(character) ?? character).join("");
+  return foldAsciiConfusables(unfolded.toLowerCase());
 }

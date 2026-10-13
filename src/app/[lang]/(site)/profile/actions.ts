@@ -33,11 +33,13 @@ export async function updateProfile(formData: FormData): Promise<ProfileUpdateRe
     if (!parsed.ok) return parsed;
     const { displayName, keyboardLayout, locale } = parsed.value;
 
-    // Même règle que le pseudo d'invité : un nom affiché dont le squelette (sans casse ni
-    // accents) égale l'identifiant d'un AUTRE membre l'usurperait. Le sien reste permis :
-    // c'est le nom affiché par défaut.
-    const candidate = pseudoSkeleton(displayName);
-    if (candidate !== user.username?.toLowerCase() && (await deps.users.memberUsernameExists(candidate))) {
+    // Même règle que le pseudo d'invité : un nom affiché dont le squelette (sans casse ni accents,
+    // confusables ASCII pliés) égale celui d'un AUTRE membre l'usurperait. Un membre qui affiche
+    // son propre identifiant, à la casse près, n'est pas contrôlé : c'est le nom affiché par
+    // défaut. Sinon sa propre ligne est exclue de la recherche, mais pas les autres membres de
+    // même squelette (le membre `a1ice` ne peut pas s'afficher « alice » à côté de `alice`).
+    const isOwnUsername = user.username !== null && displayName.toLowerCase() === user.username;
+    if (!isOwnUsername && (await deps.users.memberUsernameExists(pseudoSkeleton(displayName), { exceptUserId: user.id }))) {
       return { ok: false, code: "PSEUDO_TAKEN" };
     }
 
