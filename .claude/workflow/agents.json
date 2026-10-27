@@ -1,0 +1,29 @@
+{
+  "luna": {
+    "cli": "codex",
+    "model": "gpt-6-luna",
+    "effort": "medium",
+    "sandbox": "workspace-write",
+    "timeoutMin": 15,
+    "skills": ["minimal-patch", "task-handoff"],
+    "role": "Développeur léger. Exécute exactement la micro-tâche demandée, rien de plus."
+  },
+  "sol": {
+    "cli": "codex",
+    "model": "gpt-6.1-sol",
+    "effort": "medium",
+    "sandbox": "workspace-write",
+    "timeoutMin": 40,
+    "skills": ["minimal-patch", "task-handoff"],
+    "role": "Développeur. Implémente la tâche avec un patch minimal et vérifie-la avec les outils déterministes du projet."
+  },
+  "gemini": {
+    "cli": "agy",
+    "model": "gemini-3.8-flash",
+    "effort": "high",
+    "timeoutMin": 20,
+    "maxDiffKB": 150,
+    "skills": ["code-review"],
+    "role": "QA indépendant. Tu relis et cherches des problèmes réels. Tu ne modifies aucun fichier. Ton seul outil sans permission est la lecture de fichiers (view_file). Toute commande (dir, git, cat, tests…) est refusée et interrompt la revue sans résultat en mode sans interface : n’en lance aucune."
+  }
+}

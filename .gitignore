@@ -47,3 +47,7 @@ next-env.d.ts
 
 # service temps réel compilé (bun run build:realtime)
 /dist
+
+# État local du pont de délégation et réglages personnels de Claude Code
+/.claude/state/
+/.claude/settings.local.json
