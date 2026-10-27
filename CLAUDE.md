@@ -1,4 +1,19 @@
 @AGENTS.md
+@.claude/workflow/orchestrator.md
+
+# Configuration du projet
+
+- Description : plateforme de courses de dactylographie multijoueur (Next.js 16, Bun, PostgreSQL via Drizzle, Socket.IO pour le temps réel).
+- Commandes de vérification :
+  - lint : `bun run lint` ;
+  - tests ciblés : `bun run test <fichier>` ; suite complète : `bun run test` (le test d'intégration `src/auth/repositories.integration.test.ts` exige une base PostgreSQL : `DATABASE_URL`) ;
+  - build : `bun run build`, plus `bun run build:realtime` si `src/realtime/` change ;
+  - schéma : `bun run db:generate` après toute modification de `src/db/schema.ts`, migration versionnée commitée avec.
+- QA d'une grosse feature : la suite complète et les deux builds, puis les critères d'acceptation joués dans l'app (`.claude/launch.json` : `typio-dev` et `typio-realtime`), en FR et EN, en thème clair et sombre.
+- Branches : `main` stable, `develop` branche d'intégration. Une branche courte par tâche à partir de `develop` à jour, nommée `<type>/<description-en-anglais>` (ex. `feat/race-results`). Micro-tâche : branche quand même, rien ne se fait sur `develop` ni `main`.
+- Intégration : PR vers `develop`, fusionnée en squash avec l'accord de l'utilisateur. `develop` → `main` par merge classique. Le déploiement reste manuel (README).
+- Commits et push : autorisés sur la branche de tâche à chaque jalon cohérent et vérifié, jamais sur `develop` ni `main`, jamais de force-push. Message en anglais : `<type>(<scope>): <description>` (scopes : `race`, `room`, `auth`, `realtime`, `ui`, `db`, `config`…), avec l'identifiant d'exigence dans le corps quand il y en a un.
+- Zones sensibles (`security-review`) : authentification, sessions et cookies, OAuth GitHub et Discord, confiance du serveur temps réel envers les clients, validation serveur de la progression et anti-triche (COURSE-8), droits de l'hôte (SALLE-9, SALLE-13), création de salle réservée aux membres (SALLE-12), liens et codes d'invitation, mots de passe (AUTH-5). Les utilisateurs ont de 12 à 17 ans : données personnelles au strict minimum.
 
 # Produit
 
@@ -8,36 +23,6 @@ Les exigences (identifiants `SALLE-4`, `H-9`…) sont dans
 [docs/checkpoint-1.md](docs/checkpoint-1.md). Cite toujours l'identifiant d'exigence
 dans un plan, un brief ou un commit. Ne réinvente pas une règle déjà tranchée dans
 les hypothèses (H-1 à H-18).
-
-# Orchestration
-
-La session principale (Opus) est l'**orchestrateur**. Elle planifie, tranche, découpe
-en briefs, délègue, vérifie, puis commite. Les agents de `.claude/agents/` exécutent.
-Chacun lit le skill de `.agents/skills/` qui correspond à son rôle.
-
-| Tâche | Qui | Skill appliqué |
-|---|---|---|
-| Recherche, lecture de code ou de doc, « où est X ? » | Gemini `search` ; Codex `search` s'il est indisponible ; `scout` (haiku) en dernier | gemini-delegation, codex-routing |
-| Second avis sur un diff : relecture, cas de test, accessibilité et textes FR/EN, captures d'écran | Gemini `review`, `tests`, `ui`, `visual`, en parallèle de la chaîne Claude ; Codex `review`, `tests`, `ui` en plus si son quota le permet | gemini-delegation, codex-routing |
-| Niveau 1 — changement mécanique exactement spécifié : clés FR/EN, texte, renommage, classes, lint, tableaux de doc, extraction | Codex `implement --level 1` (GPT-6 Luna) ; `implementer-light` (haiku) s'il est indisponible | codex-routing + code-quality |
-| Niveau 2 — fonctionnalité, page, composant ou correctif simple, bien cadré par des critères AC-n, avec ses tests unitaires | Codex `implement --level 2` (GPT-5.6 Terra) ; `implementer` (sonnet) s'il est indisponible | codex-routing + code-quality + qa |
-| Niveau 3 — fonctionnalité ou correctif difficile | `implementer` (sonnet) | code-quality + qa (couverture) |
-| Niveau 4 — plus difficile encore, raisonnement poussé, peu de code | Codex `implement --level 4` (GPT-6.1 Sol) ; l'orchestrateur s'il est indisponible | codex-routing + code-quality |
-| Écrire les tests manquants et les scénarios d'acceptation (Codex `qa`, puis lint, tests et build par `verify` après relecture) ; lancer lint/build/tests et tenir le registre de validation (`qa` sonnet) | Codex `qa` (GPT-5.6 Terra) ; `qa` (sonnet) s'il est indisponible | codex-routing + qa |
-| Relecture de tout diff applicatif | `code-reviewer` (sonnet) | code-review |
-| Auth, sessions, cookies, OAuth, confiance WebSocket, anti-triche, liens d'invitation | `security-reviewer` (opus) | security-review |
-| Plan d'une fonctionnalité, modèle de données, machine à états, ADR, protocole temps réel, infra/Docker/DB, debug sans cause connue, git | **orchestrateur** | feature-planning, git-branch, git-commit |
-
-Règles :
-
-1. **Plan avant code.** Tout ce qui dépasse quelques lignes passe d'abord par `feature-planning`, puis le plan est découpé en briefs.
-2. **Brief autonome.** Un agent ne voit pas la conversation. Le brief donne les exigences citées, les fichiers, les critères AC-n, les décisions déjà prises et ce qu'il ne faut pas toucher.
-3. **Le moins cher qui suffit.** Si un agent s'arrête sur une ambiguïté, l'orchestrateur tranche ou remonte d'un niveau. Il ne relance pas le même brief.
-4. **Parallèle si indépendant**, séquentiel si les agents touchent les mêmes fichiers.
-5. **Chaîne de validation :** implémentation → `qa` → `code-reviewer` (+ `security-reviewer` si surface sensible) → commit par l'orchestrateur. Aucun agent ne commite ni ne pousse. En parallèle, Gemini `review` sur tout diff applicatif, plus `ui` et `visual` si l'interface change.
-6. **Résultats fidèles.** Un échec se rapporte tel quel ; un check non lancé n'est pas un check réussi.
-7. **Gemini d'abord, en lecture seule.** Il passe avant `scout` et donne un second avis, mais ne valide rien. L'orchestrateur vérifie chaque constat avant de le relayer ou de le corriger. S'il est indisponible (code 2), on continue sans lui, sans réessayer : Codex `search` puis `scout` pour une recherche, la chaîne Claude seule pour le reste.
-8. **Codex pour le volume, Claude pour le jugement.** Le niveau de difficulté choisit le modèle : on monte d'un niveau quand un modèle échoue ou bloque, on ne relance jamais le même brief au même niveau. Sol coûte le plus cher : peu de code, ciblé. Codex travaille dans une extraction sans git, et le wrapper reporte ses fichiers dans un worktree neuf ; son rapport ne vaut pas validation : seul compte `verify` (lint, tests et build) que l'orchestrateur lance après avoir relu tout le diff, puis la chaîne de la règle 5. Indisponible (code 2) : repli sur l'agent Claude du tableau, sans réessayer. Il ne sort de son bac à sable (`--sortie-bac-a-sable`) que si la tâche l'exige, avec la raison.
 
 # UI provisoire
 
