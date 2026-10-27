@@ -49,7 +49,7 @@ services:
     # Le `127.0.0.1:` en tête n'est pas décoratif : sans lui, Docker ouvre le
     # port sur toutes les interfaces et écrit sa propre règle dans iptables,
     # en amont du pare-feu — Typio serait joignable en clair sur
-    # http://164.90.160.137:8018, hors de Caddy et sans TLS.
+    # http://57.131.165.168:8018, hors de Caddy et sans TLS.
     ports:
       - "127.0.0.1:8018:3000"
 

@@ -64,4 +64,4 @@ jobs:
         run: |
           echo "Image publiee : ${{ steps.meta.outputs.tags }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo 'Pour deployer :  ssh root@164.90.160.137 "cd /srv/typio/infra && ./deployer.sh"' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Pour deployer :  ssh ubuntu@socle.aether-manager.ca "cd /srv/typio/infra && sudo ./deployer.sh"' >> "$GITHUB_STEP_SUMMARY"

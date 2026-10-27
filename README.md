@@ -88,14 +88,14 @@ l'OOM killer de Linux ne tue pas forcément le build — il pourrait choisir la
 base PostgreSQL de la famille.
 
 ```bash
-ssh root@164.90.160.137 "cd /srv/typio/infra && ./deployer.sh"
+ssh ubuntu@socle.aether-manager.ca "cd /srv/typio/infra && sudo ./deployer.sh"
 ```
 
 Le script récupère l'image, redémarre le conteneur et attend que Next réponde
 vraiment avant de rendre la main. Pour revenir à une version précise :
 
 ```bash
-TAG=sha-a1b2c3d ./deployer.sh
+sudo TAG=sha-a1b2c3d ./deployer.sh
 ```
 
 ### Le déploiement n'est pas automatique, et c'est voulu
@@ -110,7 +110,7 @@ de gagner une commande. Le déploiement reste donc une action délibérée.
 
 | | |
 |---|---|
-| VPS | `164.90.160.137` — Ubuntu 24.04, 1 vCPU, 1,9 Go |
+| VPS | `socle.aether-manager.ca` (`57.131.165.168`) — Ubuntu 24.04, 2 vCPU, 3,7 Go |
 | Frontal | Caddy (TLS automatique), déjà en place pour d'autres domaines |
 | Port interne | `127.0.0.1:8018` |
 | Chemin | `/srv/typio/infra` |
