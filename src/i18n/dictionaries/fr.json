@@ -112,7 +112,12 @@
   "home": {
     "tagline": "Défie tes amis dans des courses de dactylographie et vois qui tape le plus vite.",
     "createRace": "Créer une course",
-    "joinWithCode": "Rejoindre avec un code",
+    "joinByCode": {
+      "label": "Code de la salle",
+      "placeholder": "Ex. : ABC234",
+      "button": "Rejoindre",
+      "invalidCode": "Code de salle invalide : saisis les 6 caractères du code."
+    },
     "signIn": "Se connecter",
     "playAsGuest": "Jouer en invité",
     "signUp": "Créer un compte",

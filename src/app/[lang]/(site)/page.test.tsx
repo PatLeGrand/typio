@@ -5,6 +5,10 @@ import { getDictionary } from "@/i18n/dictionaries";
 
 const mocks = vi.hoisted(() => ({ getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>() }));
 vi.mock("@/auth/currentUser", () => ({ getCurrentUserForDisplay: mocks.getCurrentUserForDisplay }));
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn() }),
+}));
 
 import Home from "./page";
 
@@ -25,7 +29,7 @@ beforeEach(() => {
 });
 
 describe("Home", () => {
-  it.each(["fr", "en"] as const)("affiche la page de présentation traduite : « Créer une course » ouvre les paramètres, « Rejoindre » ouvre /play (%s)", async (lang) => {
+  it.each(["fr", "en"] as const)("affiche la page traduite avec la création de course et le champ pour rejoindre par code (%s)", async (lang) => {
     const { home } = getDictionary(lang);
     render(await Home(props(lang)));
 
@@ -43,9 +47,8 @@ describe("Home", () => {
     for (const link of screen.getAllByRole("link", { name: home.createRace })) {
       expect(link).toHaveAttribute("href", `/${lang}/race/settings`);
     }
-    for (const link of screen.getAllByRole("link", { name: home.joinWithCode })) {
-      expect(link).toHaveAttribute("href", `/${lang}/play`);
-    }
+    expect(screen.getByRole("textbox", { name: home.joinByCode.label })).toBeVisible();
+    expect(screen.getByRole("button", { name: home.joinByCode.button })).toBeEnabled();
   });
 
   it.each(["fr", "en"] as const)("un visiteur peut créer un compte ou se connecter (%s)", async (lang) => {

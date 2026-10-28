@@ -112,7 +112,12 @@
   "home": {
     "tagline": "Challenge your friends to typing races and see who types the fastest.",
     "createRace": "Create a race",
-    "joinWithCode": "Join with a code",
+    "joinByCode": {
+      "label": "Room code",
+      "placeholder": "E.g. ABC234",
+      "button": "Join",
+      "invalidCode": "Invalid room code: enter the 6 characters of the code."
+    },
     "signIn": "Sign in",
     "playAsGuest": "Play as a guest",
     "signUp": "Create an account",
