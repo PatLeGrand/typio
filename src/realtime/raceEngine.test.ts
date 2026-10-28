@@ -278,12 +278,13 @@ describe("série MPM (RES-05)", () => {
     expect(tickRace(race, START + 9_000).runners[0].wpmSeries).toEqual(series);
   });
 
-  it("fige à l’abandon et borne les séries à la limite de temps et à 600 valeurs", () => {
+  it("fige à l’abandon et inclut la dernière seconde à la limite de temps, au plus 601 valeurs", () => {
     const race = abandonRace(racing(), "host", START + 1_500);
     expect(tickRace(race, START + 9_000).runners[0].wpmSeries).toEqual([0, 0]);
     const limited = { ...racing(), timeLimitMs: 600_000 };
-    expect(tickRace(limited, START + 900_000).runners[1].wpmSeries).toHaveLength(600);
+    expect(tickRace(limited, START + 900_000).runners[1].wpmSeries).toHaveLength(601);
     const short = { ...racing(), timeLimitMs: 2_000 };
-    expect(tickRace(short, START + 900_000).runners[1].wpmSeries).toHaveLength(2);
+    expect(tickRace(short, START + 2_000).runners[1].wpmSeries).toEqual([0, 0, 0]);
+    expect(tickRace(short, START + 900_000).runners[1].wpmSeries).toHaveLength(3);
   });
 });

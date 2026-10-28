@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import type { NewRace, NewRaceResult } from "@/race/raceRepository";
 import { startRace, applyInput, abandonRace, setRunnerConnected, expireRunner, tickRace, raceSnapshot, raceResults, raceResultRows, type RaceState } from "./raceEngine";
 import {
   DEFAULT_ROOM_CONFIG,
@@ -51,8 +52,17 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
   const now = options.now ?? Date.now;
   const generateSeed = options.generateSeed ?? (() => randomBytes(4).readUInt32LE());
   const rooms = new Map<string, RoomState & { race: RaceState | null }>();
+  const recordings: { race: NewRace; rows: NewRaceResult[] }[] = [];
 
   function saveRace(room: RoomState & { race: RaceState | null }, race: RaceState): void {
+    if (race.status === "results" && room.race?.status !== "results" && race.endedAt !== null) {
+      const rows = raceResultRows(race);
+      if (rows.length > 0) recordings.push({
+        race: { roomCode: room.code, hostId: race.hostId, config: { ...race.config }, text: race.text,
+          participantCount: race.runners.length, startedAt: new Date(race.startAt), endedAt: new Date(race.endedAt) },
+        rows,
+      });
+    }
     room.race = race;
     room.status = race.status;
   }
@@ -76,6 +86,13 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     roomByUser.delete(userId);
 
     if (room.participants.length === 0) {
+      if (room.race && room.race.status !== "results") {
+        const endedAt = now();
+        saveRace(room, { ...room.race, status: "results", endedAt,
+          runners: room.race.runners.map((r) => r.kind === "human" && (r.status === "ready" || r.status === "typing")
+            ? { ...r, status: "abandoned", abandonedAt: endedAt, lastActivityAt: endedAt } : r),
+        });
+      }
       rooms.delete(roomCode);
       return { ok: true, state: cloneState({ ...room, status: "closed" }) };
     }
@@ -305,14 +322,8 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       return raceSnapshot(race, at);
     },
 
-    recording(code: string) {
-      const race = rooms.get(code)?.race;
-      if (!race || race.endedAt === null) return null;
-      return {
-        race: { roomCode: code, hostId: race.hostId, config: { ...race.config }, text: race.text,
-          participantCount: race.runners.length, startedAt: new Date(race.startAt), endedAt: new Date(race.endedAt) },
-        rows: raceResultRows(race),
-      };
+    takeRecordings() {
+      return recordings.splice(0);
     },
 
     results(code: string) {

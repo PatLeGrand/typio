@@ -145,7 +145,7 @@ export function tickRace(race: RaceState, now: number): RaceState {
   const runners = race.runners.map((r): RaceRunner => {
     if (r.kind === "human") {
       // Indice = seconde depuis le départ ; les ticks tardifs complètent les secondes manquantes.
-      const count = Math.min(600, Math.ceil(race.timeLimitMs / 1000),
+      const count = Math.min(601, Math.floor(race.timeLimitMs / 1000) + 1,
         Math.floor(elapsed(race, r, now) / 1000) + 1);
       if (r.wpmSeries.length >= count) return r;
       const wpmSeries = [...r.wpmSeries];

@@ -117,6 +117,12 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
   const lastPublishedAt = new Map<string, number>();
   function syncRace(code: string): void {
     const snapshot = store.snapshot(code);
+    for (const recording of store.takeRecordings()) {
+      if (options.raceRepository) {
+        void Promise.resolve().then(() => options.raceRepository!.recordRace(recording.race, recording.rows))
+          .catch((error: unknown) => console.error("[realtime] race recording failed:", describeError(error)));
+      }
+    }
     const state = store.get(code);
     const previous = publishedStatus.get(code);
     if (snapshot && state && (snapshot.status !== previous ||
@@ -129,11 +135,6 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       if (snapshot.status === "results" && previous !== "results") {
         const results = store.results(code);
         if (results) io.to(code).emit("race:results", results);
-        const recording = options.raceRepository && store.recording(code);
-        if (recording) {
-          void Promise.resolve().then(() => options.raceRepository!.recordRace(recording.race, recording.rows))
-            .catch((error: unknown) => console.error("[realtime] race recording failed:", describeError(error)));
-        }
       }
     }
     if (state?.status === "countdown" || state?.status === "racing") {

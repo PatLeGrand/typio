@@ -100,6 +100,7 @@ export function registerRoomHandlers(
 
   const resumeRace = (code: string): void => {
     const snapshot = store.snapshot(code);
+    deps.syncRace(code);
     if (!snapshot) return;
     for (const s of userSockets()) {
       s.emit("race:state", snapshot);
