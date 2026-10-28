@@ -209,6 +209,24 @@ describe("roomStore", () => {
     expect(store.get(code)).toBeNull(); // La salle est supprimée
   });
 
+  it("SALLE-01: a spectator host leaves without changing the remaining participants' roles", () => {
+    const createRes = store.create(member, {}, "spectator", 100);
+    if (!createRes.ok) throw new Error("failed to create");
+    const code = createRes.state.code;
+    expect(store.join(guest, code, "spectator", 200).ok).toBe(true);
+    expect(store.join(member2, code, "runner", 300).ok).toBe(true);
+
+    const leaveRes = store.leave(member.id, code);
+    expect(leaveRes.ok).toBe(true);
+    if (!leaveRes.ok) return;
+
+    expect(leaveRes.state.hostId).toBe(guest.id);
+    expect(leaveRes.state.participants).toEqual([
+      expect.objectContaining({ userId: guest.id, role: "spectator", connected: true }),
+      expect.objectContaining({ userId: member2.id, role: "runner", connected: true }),
+    ]);
+  });
+
   it("AC-9: Disconnect ne retire personne et ne transfère pas le rôle", () => {
     const createRes = store.create(member, {}, "runner", 100);
     if (!createRes.ok) throw new Error();

@@ -58,6 +58,7 @@ describe.each(["fr", "en"] as const)("Inviter des amis, membre (%s)", (locale) =
     fireEvent.click(screen.getByRole("button", { name: raceSettings.invite.button }));
 
     await waitFor(() => expect(create).toHaveBeenCalledWith(EXPECTED_CONFIG, "spectator"));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(`/${locale}/room/XYZ789?role=spectator`));
   });
 
   it("disables the button while the call is pending", async () => {

@@ -46,7 +46,7 @@ export function InviteFriendsButton({ lang, userId, settings, validate, labels, 
     const result = await create(toRoomConfig(settings), role);
     if (result.ok) {
       // `busy` reste vrai : la navigation est lancée, pas de seconde création.
-      router.push(roomPath(lang, result.data.code));
+      router.push(roomPath(lang, result.data.code, role));
       return;
     }
     setError(result.error);
