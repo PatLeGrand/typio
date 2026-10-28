@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:realtime": "bun --watch src/realtime/main.ts",
+    "dev:realtime": "HOSTNAME=127.0.0.1 bun --watch src/realtime/main.ts",
     "build": "next build",
     "build:realtime": "bun build src/realtime/main.ts --target=bun --define process.env.NODE_ENV='\"production\"' --outfile=dist/realtime.js",
     "start": "next start",
