@@ -69,7 +69,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   }
 
   function change(value: string) {
-    if (!race || !active || connection !== "connected" || pending || race.status !== "racing" || room.status !== "racing") return;
+    if (!race || !active || connection !== "connected" || pending || race.status !== "racing" || room.status !== "racing" || input.typed === race.text) return;
     const ops = raceInputOps(input.typed, value);
     let next = input;
     for (const op of ops) {

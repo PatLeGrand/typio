@@ -279,7 +279,11 @@ export function registerRoomHandlers(
       return;
     }
     const res = store.input(user.id, code, payload.ops);
-    if (!res.ok) socket.emit("room:error", res.error);
+    if (!res.ok) {
+      socket.emit("room:error", res.error);
+      const self = store.self(code, user.id);
+      if (self) socket.emit("race:self", self);
+    }
     deps.syncRace(code);
   });
 

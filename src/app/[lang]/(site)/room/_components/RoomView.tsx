@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/Button";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { RoomConfigPatch, RoomState } from "@/realtime/protocol";
@@ -29,8 +30,13 @@ type RoomViewProps = {
 };
 
 export function RoomView({ room, userId, labels, settingsLabels, lang, error, leaving, onLeave, onConfigChange, raceLabels, session }: RoomViewProps) {
+  const [pending, setPending] = useState(false);
   const humans = room.participants.filter((p) => p.role === "runner").length;
   const enoughRunners = humans > 0 && humans + room.config.botCount >= 2;
+  async function startRace() {
+    setPending(true);
+    try { await session.startRace(); } finally { setPending(false); }
+  }
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -52,7 +58,7 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
           onChange={onConfigChange}
         />
         {room.hostId === userId ? <div className="flex flex-col items-start gap-2">
-          <Button disabled={!enoughRunners || session.connection !== "connected"} aria-describedby={!enoughRunners ? "race-start-reason" : undefined} onClick={() => void session.startRace()}>{labels.race.start}</Button>
+          <Button disabled={pending || !enoughRunners || session.connection !== "connected"} aria-describedby={!enoughRunners ? "race-start-reason" : undefined} onClick={() => void startRace()}>{labels.race.start}</Button>
           {!enoughRunners ? <p id="race-start-reason">{labels.errors.NOT_ENOUGH_RUNNERS}</p> : null}
         </div> : null}
       </div> : <RoomRaceView key={room.code} room={room} userId={userId} lang={lang} labels={labels.race} raceLabels={raceLabels} session={session} />}

@@ -80,15 +80,23 @@ describe("frontière client des courses (COURSE-06)", () => {
     const { host, guest, store, at } = setup();
     host.command("race:start");
     host.input({ ops: ["a"] });
-    expect(host.received.at(-1)).toEqual({ event: "room:error", payload: "RACE_NOT_RUNNING" });
+    expect(host.received.slice(-2)).toEqual([
+      { event: "room:error", payload: "RACE_NOT_RUNNING" },
+      { event: "race:self", payload: store.self("ABCDEF", "host") },
+    ]);
     at(4000);
-    for (const payload of [null, [], { ops: ["ab"] }, { ops: [""] }, { ops: Array(65).fill("a") }, { ops: ["a"], userId: "guest" }, { ops: Array(64).fill("a") }]) {
+    for (const payload of [null, [], { ops: ["ab"] }, { ops: [""] }, { ops: Array(65).fill("a") }, { ops: ["a"], userId: "guest" }]) {
       host.input(payload);
       expect(host.received.at(-1)).toEqual({ event: "room:error", payload: "INPUT_REJECTED" });
     }
     expect(store.self("ABCDEF", "host")?.typed).toBe("");
     host.input({ ops: ["😀"] });
     expect(store.self("ABCDEF", "host")?.typed).toBe("😀");
+    host.input({ ops: Array(64).fill("a") });
+    expect(host.received.slice(-2)).toEqual([
+      { event: "room:error", payload: "INPUT_REJECTED" },
+      { event: "race:self", payload: { typed: "😀", keystrokes: { total: 1, correct: 0 } } },
+    ]);
     host.input({ ops: ["\b"] });
     expect(store.self("ABCDEF", "host")?.typed).toBe("");
     expect(guest.received).toEqual([]);
@@ -136,6 +144,32 @@ describe("frontière client des courses (COURSE-06)", () => {
     expect(store.get("ABCDEF")?.participants.length).toBe(1);
     expect(host.command("room:leave")).toEqual({ ok: true });
     expect(store.get("ABCDEF")).toBeNull();
+  });
+
+  it.each(["room:restart", "room:close"] as const)("autorise l’hôte promu après expiration de la grâce à exécuter %s en résultats", (event) => {
+    const { host, guest, store, expirations, broadcasts, at } = setup();
+    expect(host.command("race:start")).toEqual({ ok: true });
+    at(6000);
+    host.disconnect();
+    expect(expirations.get("host")?.delay).toBe(30_000);
+    at(36_000);
+    expirations.get("host")!.expire();
+    expect(store.get("ABCDEF")).toMatchObject({ hostId: "guest", status: "racing" });
+    expect(store.snapshot("ABCDEF")?.runners.find((r) => r.id === "host")?.status).toBe("abandoned");
+    expect(store.roomOf("host")).toBeNull();
+    expect(guest.command("race:abandon")).toEqual({ ok: true });
+    expect(store.get("ABCDEF")?.status).toBe("results");
+    expect(guest.command(event)).toEqual({ ok: true });
+    if (event === "room:restart") {
+      expect(store.get("ABCDEF")).toMatchObject({ hostId: "guest", status: "waiting" });
+      expect(store.snapshot("ABCDEF")).toBeNull();
+      expect(guest.rooms.has("ABCDEF")).toBe(true);
+    } else {
+      expect(store.get("ABCDEF")).toBeNull();
+      expect(store.roomOf("guest")).toBeNull();
+      expect(guest.rooms.size).toBe(0);
+      expect(broadcasts).toContainEqual({ event: "room:state", payload: expect.objectContaining({ status: "closed" }) });
+    }
   });
 
   it("réserve relance et fermeture à l’hôte en résultats", () => {
