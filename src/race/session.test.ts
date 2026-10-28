@@ -86,7 +86,7 @@ describe("session de course (A-D6)", () => {
     expect(session.typed).toBe("a");
   });
 
-  it("COURSE-5 : l'abandon n'est possible qu'en course et arrête le temps", () => {
+  it("COURSE-07 : l'abandon n'est possible qu'en course et arrête le temps", () => {
     const waiting = createRaceSession(SETTINGS, "abc", T0);
     expect(abandonRaceSession(waiting, 2000)).toBe(waiting);
     const session = abandonRaceSession(typeIntoRaceSession(racing(), "a", START + 1000), START + 5000);

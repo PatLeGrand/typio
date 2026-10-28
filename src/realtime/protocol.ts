@@ -1,7 +1,7 @@
 /**
  * Contrat temps réel entre le navigateur et le service `realtime` (ADR-001), périmètre
  * du checkpoint 1 : créer une salle, la rejoindre par code, voir participants et
- * configuration changer sans recharger (SALLE-1, SALLE-4, SALLE-7, SALLE-10, SALLE-12).
+ * configuration changer sans recharger (SALLE-01, SALLE-02, JOIN-01, SALLE-05, COURSE-05, CONF-12, AUTH-03).
  *
  * Ce fichier est importé des deux côtés : aucune dépendance serveur ni navigateur ici.
  * Le serveur ne fait confiance à rien de ce qu'envoie le client : chaque charge utile
@@ -15,10 +15,10 @@ import { isRoomCode, normalizeRoomCode } from "./roomCode";
 /** Plafond de coureurs par salle (H-16). Les spectateurs ne comptent pas. */
 export const MAX_RUNNERS = 20;
 
-/** Délai de grâce d'un participant déconnecté avant son retrait (H-9, SALLE-13). */
+/** Délai de grâce d'un participant déconnecté avant son retrait (H-9, ancien SALLE-13). */
 export const RECONNECT_GRACE_MS = 60_000;
 
-// ── Configuration de la salle (CONFIG-1 à CONFIG-8) ─────────────────────────
+// ── Configuration de la salle (CONF-01 à CONF-04, CONF-06 à CONF-08, CONF-10, BOT-01) ─────────────────────────
 
 export const TEXT_MODES = ["sentences", "words"] as const;
 export type TextMode = (typeof TEXT_MODES)[number];
@@ -29,7 +29,7 @@ export type TextLanguage = (typeof TEXT_LANGUAGES)[number];
 export const TEXT_LENGTHS = ["short", "medium", "long"] as const;
 export type TextLength = (typeof TEXT_LENGTHS)[number];
 
-/** Limites de temps proposées à l'hôte, en secondes ; `null` = défaut de 5 min (CONFIG-6, H-9). */
+/** Limites de temps proposées à l'hôte, en secondes ; `null` = défaut de 5 min (CONF-01, H-9). */
 export const TIME_LIMITS_SECONDS = [60, 120, 180, 300, 600] as const;
 export type TimeLimitSeconds = (typeof TIME_LIMITS_SECONDS)[number];
 
@@ -82,9 +82,9 @@ export interface Participant {
   displayName: string;
   kind: "member" | "guest";
   role: ParticipantRole;
-  /** Faux pendant le délai de grâce qui suit une déconnexion (SALLE-13). */
+  /** Faux pendant le délai de grâce qui suit une déconnexion (ancien SALLE-13). */
   connected: boolean;
-  /** Horodatage serveur (ms) de l'arrivée : départage « le plus ancien » (SALLE-15). */
+  /** Horodatage serveur (ms) de l'arrivée : départage « le plus ancien » (SALLE-08). */
   joinedAt: number;
 }
 
@@ -98,7 +98,7 @@ export interface RoomState {
   maxRunners: number;
 }
 
-// ── Erreurs : des codes, jamais des phrases (UI-5, traduites côté client) ──
+// ── Erreurs : des codes, jamais des phrases (I18N-01, I18N-02, I18N-03, traduites côté client) ──
 
 export const ROOM_ERROR_CODES = [
   "UNAUTHENTICATED",
@@ -130,11 +130,11 @@ export interface JoinPayload {
 
 /** Client → serveur. Toujours avec un accusé ; un refus ne change pas l'état. */
 export interface ClientToServerEvents {
-  /** Membre seulement (SALLE-1, SALLE-12). Le créateur devient hôte et coureur. */
+  /** Membre seulement (SALLE-01, AUTH-03). Le créateur devient hôte et coureur. */
   "room:create": (config: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
-  /** Rejoindre par code (SALLE-4, SALLE-7). Coureur refusé au-delà de MAX_RUNNERS. */
+  /** Rejoindre par code (SALLE-02, JOIN-01) comme coureur ou spectateur (SALLE-01, SALLE-05). */
   "room:join": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
-  /** Hôte seulement, en `waiting` seulement (SALLE-10). */
+  /** Hôte seulement, en `waiting` seulement (CONF-12). */
   "room:updateConfig": (patch: unknown, ack: (res: Ack) => void) => void;
   "room:leave": (ack: (res: Ack) => void) => void;
 }
@@ -183,7 +183,7 @@ const CONFIG_KEYS: ReadonlyArray<keyof RoomConfig> = [
 const EXCLUDABLE_CHARACTER = /^[A-Za-z0-9À-ÖØ-öø-ÿŒœ!-/:-@[-`{-~«»’…–—]$/u;
 
 /**
- * Caractères exclus (CONFIG-5, B-D1) : en minuscules (le générateur ignore la casse), uniques,
+ * Caractères exclus (CONF-07, B-D1) : en minuscules (le générateur ignore la casse), uniques,
  * pris dans la liste ci-dessus, 30 au plus, puis **triés**. L'hôte ne choisit ni les glyphes, ni
  * la casse, ni l'ordre : la salle diffuse un jeu de caractères, jamais un mot lisible. Les
  * surrogates isolés ne sont pas dans la liste. `null` si l'entrée brute est trop longue.

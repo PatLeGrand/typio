@@ -2,7 +2,7 @@ import { botFinishMs, botKeystrokesAt, botProgressAt, type BotPlan } from "./bot
 import { computeAccuracy, computeWpm, type Keystrokes } from "./metrics";
 
 /**
- * Classement final d'une course (A-D7, COURSE-3, COURSE-5, RES-1, RES-2). Module pur.
+ * Classement final d'une course (A-D7, COURSE-09, COURSE-07, RES-01, RES-02). Module pur.
  * Tous les temps sont en ms depuis le départ, à l'instant où la course se termine pour le joueur.
  */
 export type RacerStatus = "finished" | "unfinished" | "abandoned";

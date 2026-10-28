@@ -1,3 +1,5 @@
+> **Document de référence historique.** Ce fichier est le cahier des charges remis (copie du Word `Cahier_des_charges_Web_V.docx`). Ses identifiants (`SALLE-4`, `COURSE-8`, `H-9`…) sont ceux de l'ancienne numérotation. La référence du dépôt est désormais [enonce.md](enonce.md) (énoncé final) et [EXIGENCES.md](EXIGENCES.md), dont la section « Correspondance avec l'ancien cahier des charges » relie chaque ancien identifiant au nouveau.
+
 > Source : `Cahier_des_charges_Web_V.docx` (Patrick Monkam). Copie de travail pour les agents ; le Word reste la référence.
 
 Cahier des charges

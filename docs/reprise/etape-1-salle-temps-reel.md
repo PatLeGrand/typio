@@ -5,11 +5,11 @@
 - **Source à réutiliser :** `feat/realtime-room-lot-1`. On prend les fichiers un par un
   (`git checkout feat/realtime-room-lot-1 -- <fichier>`). **Pas de merge** : cette branche
   supprime la page profil et duplique l'interface de salle.
-- **Exigences :** SALLE-1, SALLE-4 (code, sans QR), SALLE-7, SALLE-10, SALLE-12, SALLE-13,
-  SALLE-15, H-5, H-9, H-16, UI-3, UI-4, UI-5, TECH-4
+- **Exigences :** SALLE-01 (ancien SALLE-1), SALLE-02, JOIN-01 (ancien SALLE-4) (code, sans QR), SALLE-01, SALLE-05, COURSE-05 (ancien SALLE-7), CONF-12 (ancien SALLE-10), AUTH-03 (ancien SALLE-12), ancien SALLE-13,
+  SALLE-08 (ancien SALLE-15), H-5, H-9, H-16, DES-05, A11Y-01 (ancien UI-3), DES-06 (ancien UI-4), I18N-01, I18N-02, I18N-03 (ancien UI-5), TECH-06 (ancien TECH-4)
 - **Référence :** [plan-salle-temps-reel.md](../plan-salle-temps-reel.md) (lots et AC
-  d'origine), [ADR-001](../architecture/adr-001-temps-reel.md),
-  [machine à états](../architecture/machine-a-etats.md) § 1 et § 2.
+  d'origine), [ADR-001](../ARCHITECTURE.md#adr-001),
+  [machine à états](../ARCHITECTURE.md#machine-a-etats) § 1 et § 2.
 - **Scénario du checkpoint :** un membre crée une salle, un invité la rejoint par code, la
   liste des participants et la configuration changent chez les deux **sans recharger**.
 
@@ -24,7 +24,7 @@ Elles corrigent les défauts trouvés à l'audit (voir [README](README.md) § 1)
   utilisateur est déjà dans une salle, le serveur fait plusieurs choses : il le met dans
   la room Socket.IO, appelle `store.reconnect`, annule le minuteur de grâce et diffuse
   `room:state`. Rechargement, coupure réseau et nouvel onglet sont ainsi traités au même
-  endroit (SALLE-13), sans logique de reconnexion côté client.
+  endroit (ancien SALLE-13), sans logique de reconnexion côté client.
 - **D3 — Départ.** `room:leave` retire l'utilisateur, diffuse le nouvel état à toute la
   salle (onglets du partant compris), puis sort **tous** ses sockets de la room
   Socket.IO. Un client qui reçoit un état sans lui-même considère qu'il n'est plus dans
@@ -106,7 +106,7 @@ et le hook), `play/page.tsx`, `play/PlayClient.tsx`, `room/[code]/page.tsx`,
 
 - [x] D5 à D10.
 - [x] Page `/play` : « Créer une salle » pour les membres. Pour un invité, le bouton est
-  désactivé avec la raison (SALLE-12). « Rejoindre avec un code » : champ de 6 caractères,
+  désactivé avec la raison (AUTH-03 (ancien SALLE-12)). « Rejoindre avec un code » : champ de 6 caractères,
   normalisé en majuscules, avec un groupe radio coureur/spectateur dans un
   `fieldset`/`legend`. Sans session, redirection vers la connexion. `generateMetadata`
   conservé.
@@ -133,15 +133,15 @@ et le hook), `play/page.tsx`, `play/PlayClient.tsx`, `room/[code]/page.tsx`,
 ## Critères d'acceptation
 
 - **AC-1** Scénario du checkpoint : la liste passe à 2 chez les deux, sans recharger.
-- **AC-2 (SALLE-10)** Langue, mode, longueur ou limite changés par l'hôte : l'autre écran se
+- **AC-2 (CONF-12 (ancien SALLE-10))** Langue, mode, longueur ou limite changés par l'hôte : l'autre écran se
   met à jour en moins d'une seconde.
 - **AC-3** « Quitter » ramène à `/play`. On peut ensuite créer ou rejoindre une autre salle
-  sans erreur, et les autres voient le départ et le nouvel hôte (SALLE-15).
-- **AC-4 (SALLE-13)** Recharger la page de salle garde la place, le rôle d'hôte et
+  sans erreur, et les autres voient le départ et le nouvel hôte (SALLE-08 (ancien SALLE-15)).
+- **AC-4 (ancien SALLE-13)** Recharger la page de salle garde la place, le rôle d'hôte et
   `joinedAt`. Couper le réseau 10 s : l'écran se remet à jour au retour.
-- **AC-5** Un invité ne peut pas créer, et la raison est affichée (SALLE-12). Un code inconnu
+- **AC-5** Un invité ne peut pas créer, et la raison est affichée (AUTH-03 (ancien SALLE-12)). Un code inconnu
   et une salle pleine affichent un message traduit.
-- **AC-6 (UI-3, UI-4, UI-5)** Aucun texte en dur, tokens existants seulement, clair et
+- **AC-6 (DES-05, A11Y-01 (ancien UI-3), DES-06 (ancien UI-4), I18N-01, I18N-02, I18N-03 (ancien UI-5))** Aucun texte en dur, tokens existants seulement, clair et
   sombre, mobile et ordinateur.
 - **AC-7** test, lint (0 erreur, 0 avertissement dans les fichiers touchés), build et
   `build:realtime` passent.
@@ -206,4 +206,4 @@ et le hook), `play/page.tsx`, `play/PlayClient.tsx`, `room/[code]/page.tsx`,
   Cela change `protocol.ts`.
 - F6 : donner au conteneur `realtime` un rôle SQL limité (`SELECT` sur `sessions` et
   `users`, `DELETE` sur `sessions`).
-- SALLE-9 (retirer un participant) devient important dès qu'un inconnu peut entrer.
+- SALLE-07, SEC-01 (ancien SALLE-9) (retirer un participant) devient important dès qu'un inconnu peut entrer.

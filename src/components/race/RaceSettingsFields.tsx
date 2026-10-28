@@ -14,7 +14,7 @@ interface RaceSettingsFieldsProps {
   value: RaceSettings;
   /** Reçoit uniquement les clés modifiées par le contrôle manipulé. */
   onChange: (patch: Partial<RaceSettings>) => void;
-  /** Mêmes sections et mêmes valeurs, contrôles inactifs (non-hôte d'une salle, SALLE-10). */
+  /** Mêmes sections et mêmes valeurs, contrôles inactifs (non-hôte d'une salle, CONF-12). */
   readOnly?: boolean;
   dict: Dictionary["raceSettings"];
   lang: string;
@@ -32,7 +32,7 @@ function formatMinutes(template: string, seconds: TimeLimitSeconds): string {
 }
 
 /**
- * Les trois sections de réglages de course (CONFIG-1 à 9), contrôlées par `value`. Partagées par la
+ * Les trois sections de réglages de course (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01), contrôlées par `value`. Partagées par la
  * page de paramètres (état local) et la salle d'attente (état de la salle, lecture seule hors hôte).
  */
 export function RaceSettingsFields({
@@ -245,7 +245,7 @@ export function RaceSettingsFields({
             </div>
           </div>
 
-          {/* Capacités (CONFIG-9) : pas encore disponibles, l'interrupteur reste désactivé. */}
+          {/* Capacités (CONF-09) : pas encore disponibles, l'interrupteur reste désactivé. */}
           <div className="flex items-center justify-between pt-4">
             <div className="flex items-center gap-3 opacity-50">
               <div className="text-accent-text">

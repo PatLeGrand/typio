@@ -24,7 +24,7 @@ const IDLE: AuthFormState = { status: "idle" };
 const FORM_FIELDS: readonly AuthField[] = ["username", "password"];
 const FIELD_IDS = { username: "login-username", password: "login-password" } as const;
 
-/** Connexion par identifiant et mot de passe (AUTH-1). */
+/** Connexion par identifiant et mot de passe (AUTH-01, TEST-03). */
 export function LoginForm({ locale, labels, common }: LoginFormProps) {
   const [state, formAction, pending] = useActionState(login, IDLE);
   // React 19 vide les champs non contrôlés après une action : l'identifiant et la case sont

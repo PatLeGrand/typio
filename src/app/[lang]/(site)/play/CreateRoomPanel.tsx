@@ -9,14 +9,14 @@ import { prefixWithLocale } from "@/i18n/paths";
 type CreateRoomPanelProps = {
   locale: Locale;
   labels: Dictionary["room"]["play"]["create"];
-  /** Invité : création impossible, la raison est affichée (SALLE-12). */
+  /** Invité : création impossible, la raison est affichée (AUTH-03). */
   isGuest: boolean;
   /** Déjà dans une salle, ou une navigation est en cours. */
   disabled: boolean;
 };
 
 /**
- * « Créer une salle » (SALLE-1), réservé aux membres (SALLE-12) : mène aux paramètres de course, où la
+ * « Créer une salle » (SALLE-01), réservé aux membres (AUTH-03) : mène aux paramètres de course, où la
  * salle est créée avec les réglages choisis (B-D4).
  */
 export function CreateRoomPanel({ locale, labels, isGuest, disabled }: CreateRoomPanelProps) {

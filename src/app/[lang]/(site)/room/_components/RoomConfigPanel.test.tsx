@@ -158,7 +158,7 @@ describe("RoomConfigPanel, host", () => {
   });
 });
 
-describe("RoomConfigPanel, non-host (SALLE-10)", () => {
+describe("RoomConfigPanel, non-host (CONF-12)", () => {
   it("read only: room values, disabled controls, note shown", () => {
     const { onChange } = setup({
       editable: false,

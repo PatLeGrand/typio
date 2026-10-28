@@ -363,7 +363,7 @@ describe("état de la salle", () => {
   });
 });
 
-describe("reconnexion avec une salle (SALLE-13)", () => {
+describe("reconnexion avec une salle (ancien SALLE-13)", () => {
   function reconnect(): void {
     socket.connected = false;
     socket.fire("disconnect", "transport close");

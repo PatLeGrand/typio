@@ -1,5 +1,5 @@
 /**
- * Minuteurs de grâce (SALLE-13, H-9) : un par utilisateur déconnecté, armé à la perte de son
+ * Minuteurs de grâce (ancien SALLE-13, H-9) : un par utilisateur déconnecté, armé à la perte de son
  * dernier socket et annulé s'il revient. Le registre est créé par serveur (jamais global au
  * module), pour que deux serveurs, ou deux tests, ne partagent aucun minuteur.
  */

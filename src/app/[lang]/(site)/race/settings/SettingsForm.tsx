@@ -14,7 +14,7 @@ import type { Dictionary } from "@/i18n/dictionaries";
 import { InviteFriendsButton } from "./InviteFriendsButton";
 import { InviteFriendsUnavailable } from "./InviteFriendsUnavailable";
 
-/** Qui regarde la page : décide si « Inviter des amis » est possible (SALLE-1, SALLE-12). */
+/** Qui regarde la page : décide si « Inviter des amis » est possible (SALLE-01, AUTH-03). */
 export type InviteAccess =
   | { kind: "member"; userId: string; roomErrors: Dictionary["room"]["errors"] }
   | { kind: "guest" }

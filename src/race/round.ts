@@ -12,7 +12,7 @@ import {
 } from "./session";
 
 /**
- * Une manche solo : la session du joueur et les bots qui courent contre lui (BOT-2, BOT-3).
+ * Une manche solo : la session du joueur et les bots qui courent contre lui (BOT-02, BOT-03, COURSE-02).
  * Module pur : `now` et `random` sont fournis par l'appelant.
  */
 export interface Round {

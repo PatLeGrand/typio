@@ -14,7 +14,7 @@ type Props = {
 
 const TEXT_ID = "race-text";
 
-/** Texte à taper (caractères colorés selon la frappe) et champ de saisie, sans copier-coller (COURSE-7). */
+/** Texte à taper (caractères colorés selon la frappe) et champ de saisie, sans copier-coller (COURSE-04). */
 export function RaceTypingPanel({ labels, text, typed, correctChars, onChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   // Pendant une composition (touche morte « ^ » puis « e », IME), la valeur brute est affichée

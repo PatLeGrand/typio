@@ -34,7 +34,7 @@ export const AUTH_RATE_LIMITS = {
   registrations: { limit: 60, windowMs: HOUR_MS },
   /** Créations d'invité par IP (une classe, plusieurs parties dans l'heure). */
   guests: { limit: 120, windowMs: HOUR_MS },
-  /** Départs d'une connexion GitHub ou Discord par IP (AUTH-2, AUTH-3) : borne l'abus massif. */
+  /** Départs d'une connexion GitHub ou Discord par IP (AUTH-01) : borne l'abus massif. */
   oauthStarts: { limit: 300, windowMs: 15 * MINUTE_MS },
   /** Retours de GitHub ou Discord par IP, comptés AVANT tout échange de code (requête sortante). */
   oauthCallbacks: { limit: 300, windowMs: 15 * MINUTE_MS },

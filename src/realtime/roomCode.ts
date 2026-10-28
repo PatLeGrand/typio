@@ -1,5 +1,5 @@
 /**
- * Codes de salle (SALLE-4, H-5) : 6 caractères, majuscules et chiffres, sans les
+ * Codes de salle (SALLE-02, JOIN-01, H-5) : 6 caractères, majuscules et chiffres, sans les
  * caractères ambigus 0, O, 1, I et L, pour qu'un code se dicte en classe sans erreur.
  * 31 symboles sur 6 positions : environ 887 millions de codes.
  */

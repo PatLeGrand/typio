@@ -278,7 +278,7 @@ describe("roomStore", () => {
     });
   });
 
-  it("expire: retire un participant déconnecté et transfère l'hôte (SALLE-13, SALLE-15)", () => {
+  it("expire: retire un participant déconnecté et transfère l'hôte (ancien SALLE-13, SALLE-08)", () => {
     const createRes = store.create(member, {}, 100);
     if (!createRes.ok) throw new Error("failed to create");
     const code = createRes.state.code;

@@ -87,7 +87,7 @@ describe("invité connecté", () => {
 });
 
 describe("page login", () => {
-  it.each(["fr", "en"] as const)("suit l'ordre AUTH-1 et affiche les blocs de la maquette (%s)", async (lang) => {
+  it.each(["fr", "en"] as const)("suit l'ordre AUTH-01, TEST-03 et affiche les blocs de la maquette (%s)", async (lang) => {
     const { login, auth, oauth } = getDictionary(lang);
     render(await LoginPage(props(lang)));
 
@@ -97,7 +97,7 @@ describe("page login", () => {
 
 
 
-    // AUTH-1 : GitHub et Discord avant le formulaire d'identifiant.
+    // AUTH-01, TEST-03 : GitHub et Discord avant le formulaire d'identifiant.
     const github = screen.getByRole("button", { name: new RegExp(oauth.github) });
     const username = screen.getByRole("textbox", { name: login.usernameLabel });
     expect(github.compareDocumentPosition(username) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

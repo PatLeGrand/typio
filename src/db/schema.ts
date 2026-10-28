@@ -11,9 +11,9 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Comptes : membres (AUTH-1 à AUTH-3) et invités (AUTH-4, H-2) dans la même table.
+ * Comptes : membres (AUTH-01, TEST-03) et invités (AUTH-02, AUTH-03, H-2) dans la même table.
  * Un invité a une ligne pour pouvoir ouvrir une session et figurer sur un podium ;
- * `expires_at` borne sa durée de vie. Voir docs/architecture/modele-de-donnees.md.
+ * `expires_at` borne sa durée de vie. Voir docs/ARCHITECTURE.md (Modèle de données).
  *
  * Aucune extension PostgreSQL (base partagée) : `uuid` vient de `gen_random_uuid()`
  * natif, et l'unicité sans casse du pseudo passe par un index sur `lower(username)`.
@@ -46,7 +46,7 @@ export const users = pgTable(
     check("users_username_length_check", sql`char_length(${table.username}) <= 20`),
     check("users_display_name_length_check", sql`char_length(${table.displayName}) <= 40`),
     // Un membre a toujours un identifiant ; son mot de passe est facultatif, car un compte
-    // créé par GitHub ou Discord (AUTH-2, AUTH-3) n'en a pas. Un invité n'a ni l'un ni l'autre.
+    // créé par GitHub ou Discord (AUTH-01) n'en a pas. Un invité n'a ni l'un ni l'autre.
     check(
       "users_kind_columns_check",
       sql`(${table.kind} = 'member' and ${table.username} is not null)
@@ -77,7 +77,7 @@ export const sessions = pgTable(
 );
 
 /**
- * Comptes GitHub et Discord reliés à un membre (AUTH-2, AUTH-3). On ne garde QUE le
+ * Comptes GitHub et Discord reliés à un membre (AUTH-01). On ne garde QUE le
  * fournisseur et l'identifiant numérique stable du compte chez lui : ni login, ni e-mail,
  * ni avatar, ni jeton. La clé (provider, provider_account_id) empêche qu'un même compte
  * externe ouvre deux comptes Typio.

@@ -1,7 +1,7 @@
 import type { RaceSettings } from "@/race/config";
 import type { RoomConfig, RoomConfigPatch } from "@/realtime/protocol";
 
-/** Réglages de course d'une salle : `abilities` (CONFIG-9) n'existe pas encore côté salle, il reste faux. */
+/** Réglages de course d'une salle : `abilities` (CONF-09) n'existe pas encore côté salle, il reste faux. */
 export function toRaceSettings(config: RoomConfig): RaceSettings {
   return { ...config, abilities: false };
 }

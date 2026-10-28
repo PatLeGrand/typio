@@ -1,4 +1,4 @@
-/** Fournisseurs de connexion tiers : GitHub (AUTH-3) et Discord (AUTH-2). */
+/** Fournisseurs de connexion tiers : GitHub (AUTH-01) et Discord (AUTH-01). */
 export const OAUTH_PROVIDERS = ["github", "discord"] as const;
 
 export type OAuthProviderName = (typeof OAUTH_PROVIDERS)[number];

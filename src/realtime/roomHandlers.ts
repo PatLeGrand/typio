@@ -133,7 +133,7 @@ export function registerRoomHandlers(
   }
 
   // D2 : un socket qui se connecte reprend la place de son utilisateur, sans que le client
-  // ait à le demander (rechargement, coupure réseau, nouvel onglet : SALLE-13).
+  // ait à le demander (rechargement, coupure réseau, nouvel onglet : ancien SALLE-13).
   try {
     const code = store.roomOf(user.id);
     if (code) {
@@ -231,7 +231,7 @@ export function registerRoomHandlers(
       const code = store.roomOf(user.id);
       if (!code) return;
 
-      // Un autre onglet ouvert : l'utilisateur reste connecté (SALLE-13).
+      // Un autre onglet ouvert : l'utilisateur reste connecté (ancien SALLE-13).
       if (userSockets().some((s) => s.id !== socket.id)) return;
 
       const res = store.disconnect(user.id, code);

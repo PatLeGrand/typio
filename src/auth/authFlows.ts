@@ -45,7 +45,7 @@ const fail = (code: AuthFailure["code"], field?: AuthFailure["field"]): AuthFlow
 });
 
 /**
- * AUTH-1 : crée un membre puis ouvre sa session.
+ * AUTH-01, TEST-03 : crée un membre puis ouvre sa session.
  *
  * Tous les contrôles de formulaire (identifiant, règle du mot de passe, confirmation,
  * consentement) passent AVANT le limiteur et avant tout hachage : ils ne coûtent rien, et
@@ -94,7 +94,7 @@ export async function registerMember(deps: AuthDeps, input: RegistrationInput): 
 }
 
 /**
- * AUTH-1 : connexion. Identifiant inconnu et mauvais mot de passe donnent la même réponse,
+ * AUTH-01, TEST-03 : connexion. Identifiant inconnu et mauvais mot de passe donnent la même réponse,
  * et un hash factice est vérifié dans le premier cas pour égaliser le temps de réponse.
  *
  * Les essais sont RÉSERVÉS de façon synchrone (`consume`) avant le premier `await` : si on
@@ -148,7 +148,7 @@ export async function loginMember(deps: AuthDeps, input: Credentials): Promise<A
   return { ok: true, grant };
 }
 
-/** AUTH-4 : invité avec pseudo, sans compte durable (H-2). */
+/** AUTH-02, AUTH-03 : invité avec pseudo, sans compte durable (H-2). */
 export async function createGuest(
   deps: AuthDeps,
   input: { ip: string; pseudo: unknown; locale: Locale },

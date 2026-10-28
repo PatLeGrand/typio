@@ -2,7 +2,7 @@ import type { Locale } from "@/i18n/config";
 
 export type UserKind = "member" | "guest";
 
-/** Codes d'erreur rendus aux formulaires ; l'interface les traduit (UI-5), jamais de phrase ici. */
+/** Codes d'erreur rendus aux formulaires ; l'interface les traduit (I18N-01, I18N-02, I18N-03), jamais de phrase ici. */
 export const AUTH_ERROR_CODES = [
   "INVALID_USERNAME",
   "INVALID_PASSWORD",

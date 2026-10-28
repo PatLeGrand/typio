@@ -18,7 +18,7 @@ type Props = {
   onReplay: () => void;
 };
 
-/** Écran de résultats (RES-1, RES-2) : podium des trois premiers puis tableau de tous les coureurs. */
+/** Écran de résultats (RES-01, RES-02) : podium des trois premiers puis tableau de tous les coureurs. */
 export function RaceResults({ locale, labels, rows, headline, settingsHref, onReplay }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const copy = labels.results;

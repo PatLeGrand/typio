@@ -8,7 +8,7 @@ import { OAuthAccountTakenError, type OAuthAccountRef } from "./oauthRepository"
 import type { OAuthProfile, OAuthProviderName } from "./providers";
 
 /**
- * AUTH-2, AUTH-3 : connexion par GitHub ou Discord.
+ * AUTH-01 : connexion par GitHub ou Discord.
  *
  * Deux issues seulement : le compte fournisseur est déjà relié à un membre, on ouvre une session
  * sur CE membre ; sinon on crée un nouveau membre (sans mot de passe) et son lien, puis une

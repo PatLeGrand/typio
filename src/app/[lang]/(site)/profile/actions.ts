@@ -14,7 +14,7 @@ import { validateProfileUpdate, type ProfileUpdateResult } from "@/profile/profi
 /**
  * Met à jour le nom affiché, la disposition du clavier et la langue de l'utilisateur de la
  * session (membre ou invité). L'identité vient de la session, jamais du formulaire : on ne
- * peut modifier que son propre profil. Les erreurs sont des codes, traduits côté client (UI-5).
+ * peut modifier que son propre profil. Les erreurs sont des codes, traduits côté client (I18N-01, I18N-02, I18N-03).
  */
 export async function updateProfile(formData: FormData): Promise<ProfileUpdateResult> {
   try {

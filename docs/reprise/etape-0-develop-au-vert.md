@@ -3,7 +3,7 @@
 - **Branche :** `fix/develop-green`, partie de `develop` (`c22cb3c`)
 - **But :** CI verte (test, lint, build, `build:realtime`), page profil qui fonctionne. Ensuite
   seulement, `develop` peut repartir vers `main` et la production.
-- **Exigences :** QA-1, QA-3 (CI), UI-3, UI-5 (thème, FR/EN), AUTH-4 et AUTH-5 (le
+- **Exigences :** TEST-01, TECH-09 (ancien QA-1), ancien QA-3 (CI), DES-05, A11Y-01 (ancien UI-3), I18N-01, I18N-02, I18N-03 (ancien UI-5) (thème, FR/EN), AUTH-02, AUTH-03 (ancien AUTH-4) et SEC-03 (ancien AUTH-5) (le
   profil touche la session), H-14 (disposition du clavier dans le profil)
 - **Hors périmètre :** pages `play/` et `room/` (réécrites à l'étape 1), écran de course
   (étape 2).
@@ -16,7 +16,7 @@
 - Disposition du clavier : les valeurs sont celles de la base, `qwerty | azerty | cmf`.
   Le libellé « Canadien multilingue » / « Canadian Multilingual » vient du dictionnaire.
 - Stats du `ProfileModal` : les chiffres factices (0 course, 0 MPM) sont retirés. Une
-  phrase « Les statistiques arrivent bientôt » les remplace, jusqu'à STATS-1.
+  phrase « Les statistiques arrivent bientôt » les remplace, jusqu'à AUTH-06 (ancien STATS-1).
 - `/sandbox/race` est supprimée (publique en production, cassée, texte en dur).
 - `fr_profile.json` (racine) est supprimé.
 - On corrige les composants appelants, **pas** l'API des composants partagés : pas de

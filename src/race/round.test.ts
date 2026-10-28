@@ -18,7 +18,7 @@ function racing() {
   return { ...round, session: tickRaceSession(round.session, START) };
 }
 
-describe("manche solo (BOT-2, BOT-3, A-D7)", () => {
+describe("manche solo (BOT-02, BOT-03, COURSE-02, A-D7)", () => {
   it("crée un plan par bot, avec des noms distincts tirés de la liste selon la graine", () => {
     const round = newRound();
     expect(round.bots).toHaveLength(2);

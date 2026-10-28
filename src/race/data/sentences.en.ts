@@ -1,5 +1,5 @@
 /**
- * English sentences written for Typio (TEXTE-1, H-10): everyday topics for teenagers, simple
+ * English sentences written for Typio (CONF-03, H-10): everyday topics for teenagers, simple
  * punctuation, 40 to 140 characters, no accented letters.
  */
 export const SENTENCES_EN: readonly string[] = [

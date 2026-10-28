@@ -10,7 +10,7 @@ type ParticipantListProps = {
   labels: Dictionary["room"]["participants"];
 };
 
-/** Participants dans l'ordre d'arrivée ; la liste est une zone `aria-live` (SALLE-7). */
+/** Participants dans l'ordre d'arrivée ; la liste est une zone `aria-live` (SALLE-01, SALLE-05, COURSE-05). */
 export function ParticipantList({ room, currentUserId, labels }: ParticipantListProps) {
   const runners = room.participants.filter((participant) => participant.role === "runner").length;
 

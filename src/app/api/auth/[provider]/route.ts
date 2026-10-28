@@ -10,7 +10,7 @@ import { startOAuth } from "@/auth/oauth/start";
 import { getClientIp } from "@/auth/rateLimit";
 
 /**
- * AUTH-2, AUTH-3 : départ de la connexion GitHub ou Discord, `GET /api/auth/{provider}?locale=fr|en`.
+ * AUTH-01 : départ de la connexion GitHub ou Discord, `GET /api/auth/{provider}?locale=fr|en`.
  * Pose le `state` (et le code PKCE de Discord) en cookies temporaires, puis redirige vers le
  * fournisseur. Une route et non une Server Action : c'est une simple navigation (lien).
  */

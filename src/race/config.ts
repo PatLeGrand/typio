@@ -2,7 +2,7 @@ import { DEFAULT_ROOM_CONFIG, parseRoomConfigPatch } from "@/realtime/protocol";
 import type { RoomConfig } from "@/realtime/protocol";
 
 /**
- * CONFIG-1..9: race settings. Everything but `abilities` is the room's `RoomConfig`, validated by
+ * CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01: race settings. Everything but `abilities` is the room's `RoomConfig`, validated by
  * the protocol, so the solo page and the room cannot drift apart (B-D3).
  */
 export type RaceSettings = RoomConfig & { abilities: boolean };

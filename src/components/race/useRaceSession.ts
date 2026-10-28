@@ -12,7 +12,7 @@ const TICK_MS = 100;
 export const defaultNow = (): number => performance.now();
 
 interface RoundState {
-  /** `null` : aucun texte disponible avec ces réglages (TEXTE-1, A-D5). */
+  /** `null` : aucun texte disponible avec ces réglages (CONF-03, A-D5). */
   round: Round | null;
   /** Dernier instant lu sur l'horloge, pour l'affichage. */
   clock: number;

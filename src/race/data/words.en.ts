@@ -1,4 +1,4 @@
-/** Frequent English words, lowercase, for the "words" text mode (TEXTE-1, H-10). */
+/** Frequent English words, lowercase, for the "words" text mode (CONF-03, H-10). */
 export const WORDS_EN: readonly string[] = [
   "the", "be", "to", "of", "and", "a", "in", "that", "have", "it", "for", "not", "on", "with",
   "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her",

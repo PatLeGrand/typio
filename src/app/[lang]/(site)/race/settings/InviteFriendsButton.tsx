@@ -23,7 +23,7 @@ type InviteFriendsButtonProps = {
   errorMessages: Dictionary["room"]["errors"];
 };
 
-/** « Inviter des amis » (SALLE-1, B-D4) : crée une salle avec les réglages choisis puis l'ouvre. */
+/** « Inviter des amis » (SALLE-01, B-D4) : crée une salle avec les réglages choisis puis l'ouvre. */
 export function InviteFriendsButton({ lang, userId, settings, validate, labels, errorMessages }: InviteFriendsButtonProps) {
   const router = useRouter();
   const { create } = useRoom(userId);
