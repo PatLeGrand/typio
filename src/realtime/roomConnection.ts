@@ -15,6 +15,7 @@ import {
   type RoomConfigPatch,
   type RoomErrorCode,
   type RoomState,
+  type ServerToClientEvents,
 } from "./protocol";
 
 /** Codes d'erreur propres au client (D8), traduits comme ceux du serveur. */
@@ -34,6 +35,10 @@ export interface RoomSnapshot {
   /** Salle de l'utilisateur courant, ou `null` s'il n'est dans aucune salle. */
   room: RoomState | null;
   error: ClientRoomErrorCode | null;
+  race: Parameters<ServerToClientEvents["race:state"]>[0] | null;
+  results: Parameters<ServerToClientEvents["race:results"]>[0] | null;
+  self: Parameters<ServerToClientEvents["race:self"]>[0] | null;
+  raceReceivedAt: number | null;
 }
 
 export type ActionResult<T = undefined> =
@@ -55,14 +60,14 @@ export const RESYNC_TIMEOUT_MS = 3_000;
 const UNAUTHENTICATED_MESSAGE = "UNAUTHENTICATED";
 const TOO_MANY_CONNECTIONS_MESSAGE = "TOO_MANY_CONNECTIONS";
 
-export const IDLE_SNAPSHOT: RoomSnapshot = { connection: "idle", room: null, error: null };
+export const IDLE_SNAPSHOT: RoomSnapshot = { connection: "idle", room: null, error: null, race: null, results: null, self: null, raceReceivedAt: null };
 
 /**
  * L'état reçu n'est valable que si l'utilisateur y figure ; sinon (il a quitté, ou un autre
  * onglet l'a fait) il n'est plus dans une salle (D3).
  */
 export function roomForUser(state: RoomState, userId: string): RoomState | null {
-  return state.participants.some((participant) => participant.userId === userId) ? state : null;
+  return state.status !== "closed" && state.participants.some((participant) => participant.userId === userId) ? state : null;
 }
 
 export interface RoomConnection {
@@ -82,6 +87,11 @@ export interface RoomConnection {
   create(config?: RoomConfigPatch, role?: ParticipantRole): Promise<ActionResult<{ code: string }>>;
   join(payload: JoinPayload): Promise<ActionResult<{ code: string }>>;
   updateConfig(patch: RoomConfigPatch): Promise<ActionResult>;
+  startRace(): Promise<ActionResult>;
+  abandonRace(): Promise<ActionResult>;
+  restartRace(): Promise<ActionResult>;
+  closeRoom(): Promise<ActionResult>;
+  sendInput(ops: string[]): void;
   leave(): Promise<ActionResult>;
   clearError(): void;
 }
@@ -99,7 +109,15 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
   function update(patch: Partial<RoomSnapshot>): void {
     const next = { ...snapshot, ...patch };
-    if (next.connection === snapshot.connection && next.room === snapshot.room && next.error === snapshot.error) {
+    if (next.room === null || next.room.status === "waiting" || next.room.status === "closed") {
+      next.race = null;
+      next.results = null;
+      next.self = null;
+      next.raceReceivedAt = null;
+    }
+    if (next.connection === snapshot.connection && next.room === snapshot.room && next.error === snapshot.error &&
+      next.race === snapshot.race && next.results === snapshot.results && next.self === snapshot.self &&
+      next.raceReceivedAt === snapshot.raceReceivedAt) {
       return;
     }
     snapshot = next;
@@ -163,6 +181,9 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
       update({ room: userId === null ? null : roomForUser(state, userId) });
     };
 
+    const onRace: ServerToClientEvents["race:state"] = (race) => update({ race, raceReceivedAt: Date.now() });
+    const onResults: ServerToClientEvents["race:results"] = (results) => update({ results });
+    const onSelf: ServerToClientEvents["race:self"] = (self) => update({ self });
     const onRoomError = (error: RoomErrorCode) => update({ error });
 
     target.on("connect", onConnect);
@@ -170,6 +191,9 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     target.on("connect_error", onConnectError);
     target.on("room:state", onState);
     target.on("room:error", onRoomError);
+    target.on("race:state", onRace);
+    target.on("race:results", onResults);
+    target.on("race:self", onSelf);
 
     return () => {
       target.off("connect", onConnect);
@@ -177,6 +201,9 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
       target.off("connect_error", onConnectError);
       target.off("room:state", onState);
       target.off("room:error", onRoomError);
+      target.off("race:state", onRace);
+      target.off("race:results", onResults);
+      target.off("race:self", onSelf);
     };
   }
 
@@ -204,6 +231,19 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
   /** Socket utilisable pour émettre, ou `null` : on n'émet jamais hors connexion (D8). */
   function connectedSocket(): RoomSocket | null {
     return socket !== null && socket.connected ? socket : null;
+  }
+
+  function raceCommand(event: "race:start" | "race:abandon" | "room:restart" | "room:close"): Promise<ActionResult> {
+    return new Promise((resolve) => {
+      update({ error: null });
+      const target = connectedSocket();
+      if (target === null) return resolve(fail("OFFLINE"));
+      target.timeout(ACK_TIMEOUT_MS).emit(event, {}, (timedOut, response) => {
+        if (timedOut) return resolve(fail("TIMEOUT"));
+        if (!response.ok) return resolve(fail(response.error));
+        resolve({ ok: true, data: undefined });
+      });
+    });
   }
 
   return {
@@ -267,6 +307,14 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
           resolve({ ok: true, data: response.data });
         });
       });
+    },
+
+    startRace: () => raceCommand("race:start"),
+    abandonRace: () => raceCommand("race:abandon"),
+    restartRace: () => raceCommand("room:restart"),
+    closeRoom: () => raceCommand("room:close"),
+    sendInput(ops) {
+      connectedSocket()?.emit("race:input", { ops });
     },
 
     updateConfig(patch) {

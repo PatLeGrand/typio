@@ -541,6 +541,21 @@
     "close": "Close"
   },
   "room": {
+    "race": {
+      "start": "Start race",
+      "restart": "Restart",
+      "close": "Close room",
+      "bot": "Bot",
+      "grossWpm": "Gross WPM",
+      "errors": "Errors",
+      "loading": "Loading race…",
+      "stay": "You can stay for the next race or leave the room.",
+      "keyboard": "To participate, use a computer with a physical keyboard.",
+      "reconnecting": "Reconnecting. Typing will resume from your saved progress.",
+      "confirmAbandon": "Give up this race?",
+      "confirm": "Yes, give up",
+      "cancel": "Continue racing"
+    },
     "metaTitle": "Waiting room",
     "loading": "Loading the room…",
     "title": "Waiting room",

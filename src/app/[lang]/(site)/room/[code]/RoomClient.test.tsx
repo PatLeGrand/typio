@@ -69,10 +69,10 @@ describe("vue de l'hôte (CONF-12)", () => {
     ]);
   });
 
-  it("ne propose ni « Lancer la course » ni « Ajouter un joueur » (hors périmètre)", () => {
+  it("propose le lancement à l’hôte sans ajout manuel de joueur", () => {
     current = makeUseRoom({ room: hostRoom });
     renderRoom();
-    expect(screen.queryByText(/lancer/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: getDictionary("fr").room.race.start })).toBeInTheDocument();
     expect(screen.queryByText(/ajouter/i)).not.toBeInTheDocument();
   });
 });

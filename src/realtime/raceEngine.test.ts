@@ -252,3 +252,9 @@ describe("snapshots and COURSE-10 results", () => {
     expect(final).toEqual(before);
   });
 });
+
+it("exposes the server clock with the scheduled start for synchronized countdowns", () => {
+  expect(raceSnapshot(started(), NOW + 500)).toMatchObject({
+    serverNow: NOW + 500, startAt: START, status: "countdown",
+  });
+});

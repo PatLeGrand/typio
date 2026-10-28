@@ -541,6 +541,21 @@
     "close": "Fermer"
   },
   "room": {
+    "race": {
+      "start": "Lancer la course",
+      "restart": "Relancer",
+      "close": "Fermer la salle",
+      "bot": "Robot",
+      "grossWpm": "MPM brut",
+      "errors": "Erreurs",
+      "loading": "Chargement de la course…",
+      "stay": "Vous pouvez rester pour la prochaine course ou quitter la salle.",
+      "keyboard": "Pour participer, utilisez un ordinateur avec un clavier physique.",
+      "reconnecting": "Reconnexion en cours. La saisie reprendra avec votre progression enregistrée.",
+      "confirmAbandon": "Abandonner cette course ?",
+      "confirm": "Oui, abandonner",
+      "cancel": "Continuer la course"
+    },
     "metaTitle": "Salle d'attente",
     "loading": "Chargement de la salle…",
     "title": "Salle d'attente",

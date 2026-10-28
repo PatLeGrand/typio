@@ -163,7 +163,7 @@ function elapsed(race: RaceState, runner: RaceRunner, now: number): number {
 export function raceSnapshot(race: RaceState, now: number) {
   const current = tickRace(race, now);
   return {
-    status: current.status, startAt: current.startAt, text: current.text,
+    status: current.status, serverNow: now, startAt: current.startAt, text: current.text,
     runners: current.runners.map((r) => ({
       id: r.id, name: r.name, kind: r.kind, status: r.status, connected: r.connected,
       position: r.position, progress: r.position / current.text.length,
