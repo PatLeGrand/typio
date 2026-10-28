@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { startRace, applyInput, abandonRace, setRunnerConnected, expireRunner, tickRace, raceSnapshot, raceResults, type RaceState } from "./raceEngine";
+import { startRace, applyInput, abandonRace, setRunnerConnected, expireRunner, tickRace, raceSnapshot, raceResults, raceResultRows, type RaceState } from "./raceEngine";
 import {
   DEFAULT_ROOM_CONFIG,
   MAX_RUNNERS,
@@ -303,6 +303,16 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       const race = tickRace(room.race, at);
       saveRace(room, race);
       return raceSnapshot(race, at);
+    },
+
+    recording(code: string) {
+      const race = rooms.get(code)?.race;
+      if (!race || race.endedAt === null) return null;
+      return {
+        race: { roomCode: code, hostId: race.hostId, config: { ...race.config }, text: race.text,
+          participantCount: race.runners.length, startedAt: new Date(race.startAt), endedAt: new Date(race.endedAt) },
+        rows: raceResultRows(race),
+      };
     },
 
     results(code: string) {

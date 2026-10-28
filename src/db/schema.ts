@@ -2,6 +2,10 @@ import { sql } from "drizzle-orm";
 import {
   check,
   index,
+  integer,
+  jsonb,
+  real,
+  smallint,
   pgTable,
   primaryKey,
   text,
@@ -9,6 +13,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+
+import type { RoomConfig } from "@/realtime/protocol";
 
 /**
  * Comptes : membres (AUTH-01, TEST-03) et invités (AUTH-02, AUTH-03, H-2) dans la même table.
@@ -101,3 +107,37 @@ export const oauthAccounts = pgTable(
     check("oauth_accounts_provider_check", sql`${table.provider} in ('github', 'discord')`),
   ],
 );
+
+/** Courses terminées (RES-05) : une seule écriture en fin de course (PERF-02). */
+export const races = pgTable("races", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  roomCode: text("room_code").notNull(),
+  hostId: uuid("host_id").references(() => users.id, { onDelete: "set null" }),
+  config: jsonb("config").$type<RoomConfig>().notNull(),
+  text: text("text").notNull(),
+  participantCount: smallint("participant_count").notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
+});
+
+/** Résultats des membres seulement (H-24) : ni pseudo invité, ni saisie brute, ni IP. */
+export const raceResults = pgTable("race_results", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  raceId: uuid("race_id").notNull().references(() => races.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rank: smallint("rank").notNull(),
+  status: text("status").$type<"finished" | "unfinished" | "abandoned">().notNull(),
+  wpm: real("wpm").notNull(),
+  grossWpm: real("gross_wpm").notNull(),
+  accuracy: real("accuracy").notNull(),
+  errors: integer("errors").notNull(),
+  durationMs: integer("duration_ms").notNull(),
+  progress: real("progress").notNull(),
+  wpmSeries: jsonb("wpm_series").$type<number[]>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("race_results_user_created_at_idx").on(table.userId, table.createdAt.desc()),
+  uniqueIndex("race_results_race_user_idx").on(table.raceId, table.userId),
+  check("race_results_status_check", sql`${table.status} in ('finished', 'unfinished', 'abandoned')`),
+  check("race_results_progress_check", sql`${table.progress} >= 0 and ${table.progress} <= 1`),
+]);

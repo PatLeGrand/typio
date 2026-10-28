@@ -29,9 +29,9 @@ Elles font foi pour distinguer le code actuel de la cible.
 
 ## Schéma
 
-### Schéma implémenté
+### Authentification
 
-Vérifié dans `src/db/schema.ts` : seules les trois entités ci-dessous existent.
+Les trois entités d’authentification sont implémentées dans `src/db/schema.ts`.
 Les noms, colonnes et relations correspondent au schéma Drizzle. Les suppressions
 se propagent de `users` vers `sessions` et `oauth_accounts` (`onDelete: cascade`).
 
@@ -64,22 +64,20 @@ erDiagram
   }
 ```
 
-### Schéma cible d'origine (prévu pour les courses)
+### Schéma complet implémenté
 
-Le diagramme suivant est conservé intégralement. `races`, `race_results` et leurs
-relations ne sont pas encore dans `src/db/schema.ts`. Leurs colonnes, index et
-règles de persistance décrits plus bas sont donc **prévus**. Le texte d'origine
-évoque une écriture au départ puis à la fin, tandis que l'ADR-001 parle d'une
-écriture à la fin : ce point reste à trancher lors de la persistance des courses.
-Aucune écriture par frappe n'est prévue (PERF-02).
+Les cinq tables sont implémentées dans `src/db/schema.ts`. `races` et `race_results`
+(migration 0003, RES-05) sont écrites en une transaction à la fin de chaque course,
+sans écriture pendant la course (PERF-02). Seuls les résultats des membres sont
+conservés (H-24, AUTH-03) : ni invités, ni bots, ni saisie brute, ni IP.
 
 ```mermaid
 erDiagram
   users ||--o{ sessions : "ouvre"
   users ||--o{ oauth_accounts : "relie"
-  users ||--o{ races : "héberge"
-  users |o--o{ race_results : "obtient"
-  races ||--|{ race_results : "produit"
+  users |o--o{ races : "héberge"
+  users ||--o{ race_results : "obtient"
+  races ||--o{ race_results : "produit"
 
   users {
     uuid id PK
@@ -107,27 +105,27 @@ erDiagram
   races {
     uuid id PK
     text room_code
-    uuid host_id FK
-    text visibility "public | unlisted | private"
-    jsonb config "mode, langue, longueur, accents, blacklist, limite, bloquant, capacités"
+    uuid host_id FK "nullable, suppression de l’hôte : SET NULL"
+    jsonb config "RoomConfig"
     text text "texte de course"
-    boolean abilities_enabled "exclut la course de la progression (H-7)"
+    smallint participant_count "humains et bots classés"
     timestamptz started_at
     timestamptz ended_at
   }
   race_results {
     uuid id PK
-    uuid race_id FK
-    uuid user_id FK "null pour un bot ou un invité expiré"
-    text display_name "figé au moment de la course"
-    text bot_level "null pour un humain"
-    text status "finished | abandoned | afk"
+    uuid race_id FK "suppression de la course : CASCADE"
+    uuid user_id FK "membre, non nul, suppression : CASCADE"
     smallint rank
+    text status "finished | unfinished | abandoned"
     real wpm
+    real gross_wpm
     real accuracy
+    integer errors
     integer duration_ms
-    real completion "fraction du texte (H-8)"
-    jsonb key_errors "par touche, pour les heatmaps (RES-03, ancien STATS-4)"
+    real progress "fraction du texte, de 0 à 1"
+    jsonb wpm_series "MPM net par seconde, au plus 600 valeurs"
+    timestamptz created_at
   }
 ```
 
@@ -139,9 +137,8 @@ une session et peut finir sur un podium. Lui donner une ligne `users` avec
 `expires_at` borne sa durée de vie (H-2 : ses statistiques n'existent que le temps de sa
 session). Un invité est supprimé **dès qu'il se déconnecte**. Sinon, un nettoyage le
 supprime après expiration : il tourne par lots de 500, au plus une fois par minute, à la
-moindre visite (`src/auth/purge.ts`). Quand `race_results` existera, ses résultats
-resteront, avec `user_id = null` et le `display_name` figé, pour que le podium des autres ne
-perde pas de ligne. Un pseudo d'invité identique, sans tenir compte de la casse, à
+moindre visite (`src/auth/purge.ts`). Aucun résultat d’invité n’est persisté (H-24).
+Un pseudo d'invité identique, sans tenir compte de la casse, à
 l'identifiant d'un membre est refusé, pour qu'un invité ne puisse pas se faire passer pour
 un membre.
 
@@ -192,19 +189,21 @@ et ne vaut rien une fois fermée. Son code (H-5) n'a besoin d'être unique que p
 salles ouvertes, ce que le service `realtime` garantit en mémoire. Les liens d'invitation
 à usage unique (SALLE-04, H-4) expirent au départ de la course : ils vivent avec la salle.
 > Révisé par l'énoncé (SALLE-04, H-4 dans EXIGENCES.md) : le lien est à usage unique, lié à l'IP de la première personne, réutilisable par elle pour se reconnecter, révoqué à l'expulsion et invalide à la fermeture de la salle.
-`races` n'est écrite qu'au départ d'une course, et complétée à sa fin.
+`races` et `race_results` sont écrites une seule fois à la fin, dans `syncRace`
+(`src/realtime/server.ts`), via le dépôt injecté. Un échec est journalisé sans bloquer
+la diffusion et sans nouvelle tentative. Le type membre est conservé depuis les
+participants de la salle au départ, jamais fourni par le client.
 
 **`config` en `jsonb`.** La configuration (CONF-03, CONF-02, CONF-06, CONF-04, CONF-07, CONF-01, CONF-08, CONF-10 et BOT-01, CONF-09) évolue avec les fonctionnalités et
-n'est jamais filtrée en SQL, sauf `abilities_enabled`, sortie en colonne parce que le
-graphique de progression doit exclure ces courses (H-7, C-7).
+est conservée intégralement. Le champ `abilities` permet d’exclure ces courses du
+graphique de progression (H-7, C-7).
 
 **Rien pour les personnages.** H-18 débloque les personnages selon le nombre de courses
 terminées : c'est un `count(*)` sur `race_results`, pas une table à tenir à jour.
 
-**Les heatmaps dans `key_errors`.** Un objet `{ "e": 3, "é": 5 }` par résultat suffit à
-la heatmap d'une course (RES-03) et se cumule pour la heatmap personnelle (ancien STATS-4). La
-disposition du clavier (H-14, C-15) est sur l'utilisateur, car une même erreur de touche
-ne se dessine pas au même endroit en AZERTY et en QWERTY.
+**Série MPM persistée.** `wpm_series` contient le MPM net par seconde depuis le départ
+(indice = seconde), au plus 600 valeurs, figées à l’arrivée ou à l’abandon. Elle n’est
+pas diffusée dans les instantanés. Les heatmaps (`key_errors`, RES-03) restent prévues.
 
 ## Index
 
@@ -217,14 +216,15 @@ ne se dessine pas au même endroit en AZERTY et en QWERTY.
 | `oauth_accounts (provider, provider_account_id)` clé primaire | Retrouver le membre d'un compte GitHub ou Discord |
 | `oauth_accounts (user_id, provider)` unique | Un compte par fournisseur et par membre |
 | `oauth_accounts (user_id)` | Cascade et liste des comptes d'un membre |
-| `race_results (user_id, race_id)` | Historique et progression (HIST-01, HIST-02, AUTH-06) |
+| `race_results (user_id, created_at desc)` | Historique paginé (HIST-01) |
+| `race_results (race_id, user_id)` unique | Un résultat par membre et par course |
 
 ## Périmètre du checkpoint 1
 
 Seules `users` (membres et invités) et `sessions` sont nécessaires pour le checkpoint :
 connexion par identifiants, mode invité, salle rejointe par code. `oauth_accounts`
-(AUTH-01) a été ajoutée ensuite. `races` et `race_results` sont décrites ici pour valider
-le modèle, et seront créées avec leurs fonctionnalités.
+(AUTH-01) a été ajoutée ensuite. `races` et `race_results` sont maintenant implémentées
+pour la persistance des courses et des résultats des membres (RES-05).
 
 <a id="machine-a-etats"></a>
 
