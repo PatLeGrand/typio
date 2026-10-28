@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import { ROOM_ERROR_CODES } from "@/realtime/protocol";
 import type { UseRoom } from "@/realtime/useRoom";
@@ -39,6 +39,28 @@ beforeEach(() => {
   vi.clearAllMocks();
   current = makeUseRoom();
   mocks.useRoom.mockImplementation(() => current);
+});
+
+describe("titre de la salle", () => {
+  beforeEach(() => {
+    vi.stubGlobal("matchMedia", () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each(["fr", "en"] as const)("suit le statut de la salle (%s)", (locale) => {
+    current = makeUseRoom({ room: hostRoom });
+    const view = renderRoom({ locale });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(view.labels.title);
+
+    for (const status of ["countdown", "racing", "results"] as const) {
+      setRoom(makeUseRoom({ room: { ...hostRoom, status } }), () => view.rerender(view.ui()));
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(status === "results" ? view.labels.resultsTitle : view.labels.raceTitle);
+    }
+  });
 });
 
 describe("vue de l'hôte (CONF-12)", () => {
@@ -196,6 +218,17 @@ describe("rejoindre au chargement (D6)", () => {
 });
 
 describe("quitter (D7, SALLE-08)", () => {
+  it.each(["fr", "en"] as const)("fermeture par l'hôte : message dédié et lien vers /play (%s)", (locale) => {
+    current = makeUseRoom({ room: hostRoom });
+    const view = renderRoom({ locale });
+    setRoom(makeUseRoom({ room: null, error: "ROOM_CLOSED" }), () => view.rerender(view.ui()));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(view.labels.errors.ROOM_CLOSED);
+    expect(screen.queryByText(view.labels.errors.NOT_IN_ROOM)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: view.labels.back })).toHaveAttribute("href", `/${locale}/play`);
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
   it("quitte la salle puis remplace l'adresse par /play dans la langue courante", async () => {
     const leave = vi.fn<UseRoom["leave"]>(async () => ({ ok: true, data: undefined }));
     current = makeUseRoom({ leave, room: hostRoom });
@@ -254,10 +287,10 @@ describe("refus du serveur : message traduit, jamais le code brut", () => {
     expect(screen.queryByText("NOT_HOST")).not.toBeInTheDocument();
   });
 
-  it("chaque code d'erreur du protocole, plus OFFLINE et TIMEOUT, a un message non vide dans les deux langues", () => {
+  it("chaque code d'erreur du protocole et du client a un message non vide dans les deux langues", () => {
     for (const locale of ["fr", "en"] as const) {
       const { errors } = getDictionary(locale).room;
-      for (const code of [...ROOM_ERROR_CODES, "OFFLINE", "TIMEOUT"] as const) {
+      for (const code of [...ROOM_ERROR_CODES, "OFFLINE", "TIMEOUT", "ROOM_CLOSED"] as const) {
         expect(errors[code].trim()).not.toBe("");
         expect(errors[code]).not.toBe(code);
       }

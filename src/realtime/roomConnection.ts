@@ -19,7 +19,7 @@ import {
 } from "./protocol";
 
 /** Codes d'erreur propres au client (D8), traduits comme ceux du serveur. */
-export type ClientRoomErrorCode = RoomErrorCode | "OFFLINE" | "TIMEOUT";
+export type ClientRoomErrorCode = RoomErrorCode | "OFFLINE" | "TIMEOUT" | "ROOM_CLOSED";
 
 export type ConnectionStatus =
   | "idle"
@@ -177,8 +177,11 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
     const onState = (state: RoomState) => {
       resyncTimer = clearTimer(resyncTimer);
-      // L'erreur n'est pas effacée ici : un refus doit rester lisible jusqu'à la prochaine action de l'élève.
-      update({ room: userId === null ? null : roomForUser(state, userId) });
+      // Un refus reste lisible jusqu'à la prochaine action, sauf si la salle a été fermée.
+      update({
+        room: userId === null ? null : roomForUser(state, userId),
+        error: state.status === "closed" ? "ROOM_CLOSED" : snapshot.error,
+      });
     };
 
     const onRace: ServerToClientEvents["race:state"] = (race) => update({ race, raceReceivedAt: Date.now() });

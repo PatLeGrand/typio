@@ -40,7 +40,7 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{labels.title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{room.status === "waiting" ? labels.title : room.status === "results" ? labels.resultsTitle : labels.raceTitle}</h1>
         <Button variant="secondary" onClick={onLeave} disabled={leaving}>
           {labels.leave}
         </Button>

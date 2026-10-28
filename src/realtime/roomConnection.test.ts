@@ -315,6 +315,18 @@ describe("connect_error (D9)", () => {
 });
 
 describe("état de la salle", () => {
+  it("mémorise la fermeture par l'hôte en oubliant la salle", () => {
+    startConnected();
+    socket.fire("room:state", roomState([ME, OTHER]));
+    socket.fire("room:error", "NOT_HOST");
+    socket.fire("room:state", { ...roomState([ME, OTHER]), status: "closed" });
+
+    expect(connection.getSnapshot()).toMatchObject({ room: null, error: "ROOM_CLOSED" });
+    socket.fire("disconnect", "transport close");
+    socket.open();
+    expect(connection.getSnapshot()).toMatchObject({ room: null, error: "ROOM_CLOSED" });
+  });
+
   it("mémorise l'état reçu sans effacer une erreur que l'élève n'a pas encore lue", () => {
     startConnected();
     socket.fire("room:error", "ROOM_FULL");

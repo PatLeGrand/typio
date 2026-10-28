@@ -556,9 +556,11 @@
       "confirm": "Yes, give up",
       "cancel": "Continue racing"
     },
-    "metaTitle": "Waiting room",
+    "metaTitle": "Room",
     "loading": "Loading the room…",
     "title": "Waiting room",
+    "raceTitle": "Race",
+    "resultsTitle": "Results",
     "back": "Back to the room picker",
     "leave": "Leave",
     "connection": {
@@ -620,6 +622,7 @@
       "ROOM_FULL": "This room is already full.",
       "ALREADY_IN_ROOM": "You are already in another room.",
       "NOT_IN_ROOM": "You are no longer in this room.",
+      "ROOM_CLOSED": "The host closed the room.",
       "NOT_HOST": "Only the host can perform this action.",
       "CONFIG_LOCKED": "The settings are locked.",
       "RACE_NOT_ALLOWED": "The race cannot start in this state.",

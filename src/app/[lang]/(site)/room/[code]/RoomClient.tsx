@@ -114,8 +114,10 @@ export function RoomClient({ code, role, locale, userId, labels, settingsLabels 
     ? "INVALID_CODE"
     : inThisRoom
       ? null
-      : (joinError ??
-        (wasInRoom && !leaveRequested && connection === "connected" ? "NOT_IN_ROOM" : null));
+      : error === "ROOM_CLOSED"
+        ? "ROOM_CLOSED"
+        : (joinError ??
+          (wasInRoom && !leaveRequested && connection === "connected" ? "NOT_IN_ROOM" : null));
 
   return (
     <div className="flex flex-col gap-6">

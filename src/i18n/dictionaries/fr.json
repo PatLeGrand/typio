@@ -556,9 +556,11 @@
       "confirm": "Oui, abandonner",
       "cancel": "Continuer la course"
     },
-    "metaTitle": "Salle d'attente",
+    "metaTitle": "Salle",
     "loading": "Chargement de la salle…",
     "title": "Salle d'attente",
+    "raceTitle": "Course",
+    "resultsTitle": "Résultats",
     "back": "Retour au choix de salle",
     "leave": "Quitter",
     "connection": {
@@ -620,6 +622,7 @@
       "ROOM_FULL": "Cette salle est déjà pleine.",
       "ALREADY_IN_ROOM": "Tu es déjà dans une autre salle.",
       "NOT_IN_ROOM": "Tu n'es plus dans cette salle.",
+      "ROOM_CLOSED": "La salle a été fermée par l'hôte.",
       "NOT_HOST": "Cette action est réservée à l'hôte.",
       "CONFIG_LOCKED": "La configuration est verrouillée.",
       "RACE_NOT_ALLOWED": "La course ne peut pas démarrer dans cet état.",
