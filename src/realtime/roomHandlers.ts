@@ -11,6 +11,7 @@ import type { Socket } from "socket.io";
 import type { RateLimiter } from "@/auth/rateLimit";
 import type { GraceTimers } from "./graceTimers";
 import {
+  parseCreatePayload,
   parseJoinPayload,
   parseRoomConfigPatch,
   RECONNECT_GRACE_MS,
@@ -146,12 +147,12 @@ export function registerRoomHandlers(
     console.error("[realtime] reattach failed:", describeError(e));
   }
 
-  socket.on("room:create", (configInput, ack) => {
+  socket.on("room:create", (payloadInput, ack) => {
     respond(ack, () => {
-      const patch = parseRoomConfigPatch(configInput);
-      if (!patch) return failure("INVALID_PAYLOAD");
+      const payload = parseCreatePayload(payloadInput);
+      if (!payload) return failure("INVALID_PAYLOAD");
 
-      const res = store.create(user, patch, now().getTime());
+      const res = store.create(user, payload.config, payload.role, now().getTime());
       if (!res.ok) return failure(res.error);
 
       const { state } = res;

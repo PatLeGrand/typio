@@ -457,6 +457,9 @@
     },
     "invite": {
       "button": "Invite friends",
+      "roleLabel": "Your role in the room",
+      "runner": "Runner",
+      "spectator": "Spectator only",
       "guestNotice": "Guests cannot create a room. Create an account to invite friends.",
       "anonymousNotice": "You need to be signed in to invite friends.",
       "loginLink": "Sign in"

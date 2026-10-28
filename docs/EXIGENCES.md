@@ -56,7 +56,7 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
-| SALLE-01 | partiel | `src/realtime/roomStore.ts` (`create`), `src/realtime/roomHandlers.ts`, `src/app/[lang]/(site)/play/CreateRoomPanel.tsx` | `src/realtime/roomStore.test.ts`, `roomHandlers.test.ts` | Création par un membre, qui devient hôte. Manque : le choix d'être spectateur seulement (le créateur est toujours coureur). |
+| SALLE-01 | complet | `src/realtime/roomStore.ts` (`create`), `src/realtime/protocol.ts` (`parseCreatePayload`), `src/realtime/roomHandlers.ts`, `src/app/[lang]/(site)/race/settings/InviteFriendsButton.tsx` | `src/realtime/roomStore.test.ts`, `protocol.test.ts`, `roomHandlers.test.ts`, `InviteFriendsButton.test.tsx` | Création par un membre, qui devient hôte. L'hôte choisit d'être coureur (par défaut) ou seulement spectateur ; le rôle est validé par le serveur (`room:create` reçoit `{ config, role }`). |
 | SALLE-02 | complet | `src/realtime/roomCode.ts` | `src/realtime/roomCode.test.ts` | Code de 6 caractères sans `0`, `O`, `1`, `I`, `L`, tiré par `crypto.getRandomValues` ; unique parmi les salles ouvertes (H-5). |
 | SALLE-03 | non fait | — | — | Les trois visibilités n'existent pas : toute salle est accessible par son code. |
 | SALLE-04 | non fait | — | — | Aucun lien d'invitation (jeton, usage unique, liaison à l'IP, révocation). Le bouton « Inviter des amis » de `race/settings/InviteFriendsButton.tsx` ouvre une salle ; il ne génère pas de lien. |

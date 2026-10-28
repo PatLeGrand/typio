@@ -11,6 +11,7 @@
 import type { RoomSocket } from "./client";
 import {
   type JoinPayload,
+  type ParticipantRole,
   type RoomConfigPatch,
   type RoomErrorCode,
   type RoomState,
@@ -78,7 +79,7 @@ export interface RoomConnection {
   stop(): void;
   /** Coupe le socket s'il appartient à un autre utilisateur que `userId` (ou si `userId` est `null`). */
   syncUser(userId: string | null): void;
-  create(config?: RoomConfigPatch): Promise<ActionResult<{ code: string }>>;
+  create(config?: RoomConfigPatch, role?: ParticipantRole): Promise<ActionResult<{ code: string }>>;
   join(payload: JoinPayload): Promise<ActionResult<{ code: string }>>;
   updateConfig(patch: RoomConfigPatch): Promise<ActionResult>;
   leave(): Promise<ActionResult>;
@@ -241,13 +242,13 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
       target.connect();
     },
 
-    create(config) {
+    create(config, role = "runner") {
       return new Promise((resolve) => {
         update({ error: null });
         const target = connectedSocket();
         if (target === null) return resolve(fail("OFFLINE"));
         // `{}` et non `undefined` : un argument `undefined` arriverait en `null` côté serveur.
-        target.timeout(ACK_TIMEOUT_MS).emit("room:create", config ?? {}, (timedOut, response) => {
+        target.timeout(ACK_TIMEOUT_MS).emit("room:create", { config: config ?? {}, role }, (timedOut, response) => {
           if (timedOut) return resolve(fail("TIMEOUT"));
           if (!response.ok) return resolve(fail(response.error));
           resolve({ ok: true, data: response.data });

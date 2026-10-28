@@ -130,8 +130,8 @@ export interface JoinPayload {
 
 /** Client → serveur. Toujours avec un accusé ; un refus ne change pas l'état. */
 export interface ClientToServerEvents {
-  /** Membre seulement (SALLE-01, AUTH-03). Le créateur devient hôte et coureur. */
-  "room:create": (config: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
+  /** Membre seulement (SALLE-01, AUTH-03). `{ config, role }` : hôte coureur ou spectateur. */
+  "room:create": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
   /** Rejoindre par code (SALLE-02, JOIN-01) comme coureur ou spectateur (SALLE-01, SALLE-05). */
   "room:join": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
   /** Hôte seulement, en `waiting` seulement (CONF-12). */
@@ -257,6 +257,17 @@ export function parseRoomConfigPatch(input: unknown): RoomConfigPatch | null {
     }
   }
   return patch;
+}
+
+/** Charge utile de `room:create` validée ; configuration vide et rôle coureur par défaut. */
+export function parseCreatePayload(input: unknown): { config: RoomConfigPatch; role: ParticipantRole } | null {
+  if (!isPlainObject(input)) return null;
+  if (Object.keys(input).some((key) => key !== "config" && key !== "role")) return null;
+  const role = input.role === undefined ? "runner" : input.role;
+  if (!isOneOf(["runner", "spectator"] as const, role)) return null;
+  const config = parseRoomConfigPatch(input.config);
+  if (config === null) return null;
+  return { config, role };
 }
 
 /**

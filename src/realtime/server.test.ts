@@ -55,7 +55,7 @@ describe("realtime server", () => {
     expect(await waitForConnection(client)).toEqual({ connected: true });
     // Exercise a modified client that omits the typed acknowledgement callback.
     const emitWithoutAck = client.emit.bind(client) as (event: string, payload?: unknown) => void;
-    emitWithoutAck("room:create", {});
+    emitWithoutAck("room:create", { config: {}, role: "runner" });
     emitWithoutAck("room:join", { code: "ABCDEF", role: "runner" });
     emitWithoutAck("room:updateConfig", {});
     emitWithoutAck("room:leave");
