@@ -10,7 +10,7 @@ le relevé historique du 5 octobre est conservé ci-dessous.
 | `docs/DEMARCHE-CREATIVE.md` complet (DES-01 à DES-03) | **partiel** : [squelette créé](DEMARCHE-CREATIVE.md), logo dans `src/components/Logo.tsx`, direction artistique dans `docs/design/`, tokens dans `src/app/globals.css` | Patrick : noms envisagés, originalité, croquis, logo, moodboard, palette et typographies à documenter avec images. Le nom et le logo remis sont définitifs. |
 | `docs/ARCHITECTURE.md`, version initiale | **complet** pour le document initial : [modèle de données, machine à états, ADR temps réel et approche bots](ARCHITECTURE.md) (COURSE-01, TECH-04, TECH-06) | orchestrateur ; la cible documentée reste à implémenter, notamment les bots multijoueurs. |
 | Application déployée en HTTPS | **partiel** au regard des exigences finales : dernière production vérifiée le 9 octobre, `sha-994ac37`, https://typio.aether-manager.ca ; preuves : `infra/docker-compose.yml`, `infra/caddy/typio.caddyfile`, `src/auth/`, `src/db/schema.ts`, `drizzle/`, `src/realtime/`, `src/components/LanguageSwitcher.tsx`, `ThemeToggle.tsx`, `Logo.tsx`, `src/app/globals.css` | orchestrateur (infra), `implementer` et `security-reviewer` : revérifier production, auth (AUTH-01), migrations (TECH-04), création/jonction et liste en direct (SALLE-01, SALLE-02, JOIN-01), langue/thème (I18N-02, DES-05), logo/palette/typographies. Écarts finaux dans `EXIGENCES.md` : seed, créateur spectateur, code sur l'accueil. |
-| Intégration continue et tests unitaires (TECH-09) | **partiel** : `.github/workflows/ci.yml`, `vitest.config.mts`, `src/**/*.test.ts(x)` ; tests, lint, builds, migrations et intégration PostgreSQL configurés | `implementer` + `qa` : ajouter `tsc --noEmit` séparé et déclencher sur chaque push de branche. |
+| Intégration continue et tests unitaires (TECH-09) | **complet** : `.github/workflows/ci.yml`, `vitest.config.mts`, `src/**/*.test.ts(x)` ; sur chaque push : `tsc --noEmit`, tests, lint, builds, migrations et intégration PostgreSQL | — |
 | `docs/EXIGENCES.md`, version initiale | **complet** : [matrice créée](EXIGENCES.md), exigences, statuts et preuves listés | Maintenir les statuts honnêtes à chaque fusion dans `develop`. |
 
 ## Grille d'évaluation (§ 7.2)
@@ -22,7 +22,7 @@ le relevé historique du 5 octobre est conservé ci-dessous.
 | Architecture : modèle de données, machine à états, ADR temps réel | 20 | **complet** pour la version initiale : `ARCHITECTURE.md`, approche bots incluse. |
 | Déploiement fonctionnel en production : HTTPS, authentification, base de données | 20 | Déploiement vérifié le 9 octobre (`sha-994ac37`) ; à revérifier avant remise, écarts finaux TECH-04 dans `EXIGENCES.md`. |
 | Salle créée et rejointe par code, mise à jour en temps réel | 10 | Fonctionnel selon le relevé historique : `src/realtime/`, `reprise/etape-1-salle-temps-reel.md` ; SALLE-01 et JOIN-01 restent **partiels** selon `EXIGENCES.md`. |
-| Intégration continue, langue et thème, qualité initiale du code, matrice des exigences | 10 | CI existante mais TECH-09 **partiel** ; I18N-02 et DES-05 **complets** ; matrice `EXIGENCES.md` créée, conformité technique restante documentée. |
+| Intégration continue, langue et thème, qualité initiale du code, matrice des exigences | 10 | CI complète (TECH-09) ; I18N-02 et DES-05 **complets** ; matrice `EXIGENCES.md` créée, conformité technique restante documentée. |
 | **Total** | **100** | Aucun score obtenu n'est présumé. |
 
 ## Ordre proposé
@@ -30,7 +30,7 @@ le relevé historique du 5 octobre est conservé ci-dessous.
 1. Patrick complète la démarche créative (DES-01 à DES-03).
 2. Vérifier la version initiale de l'architecture et son approche bots.
 3. Revérifier l'application déployée et les parcours du checkpoint.
-4. Compléter la CI (TECH-09), puis actualiser la matrice des exigences.
+4. ~~Compléter la CI (TECH-09)~~ (fait), puis actualiser la matrice des exigences.
 
 ## Architecture
 

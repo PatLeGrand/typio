@@ -27,8 +27,8 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 | TECH-06 | partiel | `src/realtime/` (`server.ts`, `roomHandlers.ts`, `protocol.ts`) | `src/realtime/server.test.ts`, `roomHandlers.test.ts` | Socket.IO (ADR-001), service séparé derrière Caddy. Fonctionne pour la salle (participants, configuration). La progression des participants pendant une course n'est pas encore diffusée. |
 | TECH-07 | partiel | `src/realtime/protocol.ts` (`parse*`), `src/auth/validation.ts`, `src/race/config.ts` | `src/realtime/protocol.test.ts`, `src/auth/validation.test.ts` | Les entrées sont validées par des fonctions écrites à la main (liste blanche, clés inconnues refusées), pas par un schéma Zod. Pas de schéma partagé pour toutes les actions serveur et routes API. Choix : zéro dépendance ajoutée ; à revoir si le temps le permet. |
 | TECH-08 | complet | `infra/docker-compose.yml` | — | VPS déjà payé, aucun service externe payant (ADR-001). Pas de stockage d'images (AUTH-04 non fait). |
-| TECH-09 | partiel | `.github/workflows/ci.yml` | — | GitHub Actions : tests, lint, build, build temps réel, migrations, test d'intégration PostgreSQL. Manque : pas de `tsc --noEmit` séparé (seul `next build` vérifie les types). Déclenchée sur `pull_request` et `push` vers `develop` et `main` seulement, pas sur chaque push de branche. |
-| TECH-10 | partiel | `.env.example`, `infra/.env.example` | — | Aucun secret commité. Manquent : `REALTIME_PORT` et `HOSTNAME`, lues dans le code mais absentes de `.env.example`. |
+| TECH-09 | complet | `.github/workflows/ci.yml`, `package.json` (`typecheck`) | — | GitHub Actions déclenchée sur chaque *push* (toutes les branches) et sur les PR vers `develop` et `main` : vérification de types séparée (`tsc --noEmit`), tests unitaires, lint, build, build temps réel, migrations, test d'intégration PostgreSQL. |
+| TECH-10 | complet | `.env.example`, `infra/.env.example` | — | Aucun secret commité. `.env.example` documente toutes les variables lues par `src/` et `scripts/` (`DATABASE_URL`, `APP_ORIGIN`, OAuth, `NEXT_PUBLIC_REALTIME_URL`, `REALTIME_PORT`, `HOSTNAME`). |
 
 ## Identité visuelle et design (DES)
 
