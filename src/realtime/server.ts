@@ -36,6 +36,7 @@ export interface RealtimeServerOptions {
   /** Origines autorisées à ouvrir une connexion, par exemple `https://typio.aether-manager.ca`. */
   allowedOrigins: readonly string[];
   now?: () => Date;
+  generateSeed?: () => number;
   /** Délai de grâce avant le retrait d'un participant déconnecté ; `RECONNECT_GRACE_MS` par défaut. */
   graceMs?: number;
   /** Intervalle de relecture de la session de chaque socket ; `SESSION_REVALIDATE_MS` par défaut. */
@@ -96,12 +97,53 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     }
   });
 
-  const store = createRoomStore();
+  const store = createRoomStore({ now: () => now().getTime(), generateSeed: options.generateSeed });
   const timers = createGraceTimers();
   const joinFailures = createRateLimiter({ ...JOIN_FAILURE_LIMIT, now: () => now().getTime() });
 
+  const raceInputs = createRateLimiter({ limit: 12, windowMs: 1000, now: () => now().getTime(), onFull: "refuse" });
+  // Un seul intervalle par salle ; les frappes ne déclenchent pas de diffusion supplémentaire.
+  const raceIntervals = new Map<string, ReturnType<typeof setInterval>>();
+  const publishedStatus = new Map<string, string>();
+  const lastPublishedAt = new Map<string, number>();
+  function syncRace(code: string): void {
+    const snapshot = store.snapshot(code);
+    const state = store.get(code);
+    const previous = publishedStatus.get(code);
+    if (snapshot && state && (snapshot.status !== previous ||
+      ((state.status === "countdown" || state.status === "racing") &&
+        now().getTime() - (lastPublishedAt.get(code) ?? -Infinity) >= 100))) {
+      if (snapshot.status !== previous && previous !== undefined) io.to(code).emit("room:state", state);
+      io.to(code).emit("race:state", snapshot);
+      lastPublishedAt.set(code, now().getTime());
+      publishedStatus.set(code, snapshot.status);
+      if (snapshot.status === "results" && previous !== "results") {
+        const results = store.results(code);
+        if (results) io.to(code).emit("race:results", results);
+      }
+    }
+    if (state?.status === "countdown" || state?.status === "racing") {
+      if (!raceIntervals.has(code)) {
+        const timer = setInterval(() => {
+          syncRace(code);
+        }, 100);
+        timer.unref?.();
+        raceIntervals.set(code, timer);
+      }
+    } else {
+      clearInterval(raceIntervals.get(code));
+      raceIntervals.delete(code);
+      if (!state || state.status !== "results") {
+        publishedStatus.delete(code);
+        lastPublishedAt.delete(code);
+      }
+    }
+  }
+
   // `io.close()` ferme le serveur HTTP : plus aucun minuteur ne doit survivre.
   httpServer.on("close", () => {
+    for (const timer of raceIntervals.values()) clearInterval(timer);
+    raceIntervals.clear();
     timers.close();
     sessionExpiry.close();
   });
@@ -123,6 +165,8 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       graceMs: options.graceMs,
       sockets: userSockets,
       joinFailures,
+      raceInputs,
+      syncRace,
     });
 
     // Après les gestionnaires : une échéance déjà passée coupe le socket tout de suite, et

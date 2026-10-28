@@ -72,7 +72,7 @@ export function createFakeSessions(gate: { current: Promise<void> | null } = { c
 }
 
 /** Serveur sur un port libre ; `client(token)` ouvre une connexion avec le cookie de session. */
-export async function startTestServer(options: { graceMs?: number; revalidateMs?: number } = {}) {
+export async function startTestServer(options: { graceMs?: number; revalidateMs?: number; now?: () => Date; generateSeed?: () => number } = {}) {
   const gate: { current: Promise<void> | null } = { current: null };
   let releaseGate = () => {};
   const sessions = createFakeSessions(gate);
@@ -80,6 +80,8 @@ export async function startTestServer(options: { graceMs?: number; revalidateMs?
     sessions: sessions.repository,
     allowedOrigins: [TEST_ORIGIN],
     graceMs: options.graceMs,
+    now: options.now,
+    generateSeed: options.generateSeed,
     revalidateMs: options.revalidateMs,
   });
   await new Promise<void>((resolve) => httpServer.listen(0, "127.0.0.1", resolve));

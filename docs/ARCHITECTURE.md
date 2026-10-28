@@ -568,7 +568,7 @@ Le transfert désigné décrit dans le texte d'origine reste **prévu** : aucun
 
 # Flux des messages temps réel
 
-**Implémenté (TECH-06).** Les six événements applicatifs suivants sont ceux de
+**Implémenté (TECH-06).** Les événements applicatifs suivants sont ceux de
 `ClientToServerEvents` et `ServerToClientEvents` dans `src/realtime/protocol.ts`.
 
 | Événement | Sens | Rôle |
@@ -577,10 +577,18 @@ Le transfert désigné décrit dans le texte d'origine reste **prévu** : aucun
 | `room:join` | client → serveur | Rejoindre par code comme `runner` ou `spectator`. Accusé avec le code, ou refus si code invalide, salle pleine, etc. |
 | `room:updateConfig` | client → serveur | Appliquer un patch ; hôte seulement, en `waiting`. Accusé de succès ou d'erreur. |
 | `room:leave` | client → serveur | Quitter la salle ; accusé, puis état actualisé et retrait des sockets. |
+| `race:start` | client → serveur | `{}` et accusé ; hôte seulement en `waiting`, graine cryptographique serveur (COURSE-02). |
+| `race:input` | client → serveur | `{ ops: string[] }`, au plus 64 opérations d’un point de code ou retour arrière ; sans accusé, refus par `room:error` à l’émetteur. |
+| `race:abandon` | client → serveur | `{}` et accusé ; abandon du coureur authentifié (COURSE-07). |
+| `room:restart` | client → serveur | `{}` et accusé ; hôte en `results`, retour à `waiting` avec les mêmes participants (COURSE-11). |
+| `room:close` | client → serveur | `{}` et accusé ; hôte en `results`, diffusion de `closed`, retrait des sockets et libération du code. |
+| `race:state` | serveur → client | Instantané public du moteur au décompte, aux transitions, puis au plus toutes les 100 ms pendant la course. |
+| `race:results` | serveur → client | Classement final, aussi envoyé à l’arrivée ou à la reconnexion en `results`. |
+| `race:self` | serveur → client | `{ typed, keystrokes }`, uniquement aux sockets du coureur lors de sa reprise. |
 | `room:state` | serveur → client | Diffuser l'état complet : code, statut, hôte, configuration, participants et plafond. |
 | `room:error` | serveur → client | Signaler une erreur hors accusé avec un `RoomErrorCode`, traduit par le client. |
 
-Chaque commande exige un accusé de réception : `{ ok: true }`, avec `data.code`
+Chaque commande sauf `race:input` exige un accusé de réception : `{ ok: true }`, avec `data.code`
 pour créer ou rejoindre, ou `{ ok: false, error }`. Les refus sont renvoyés par
 cet accusé ; `room:error` est un canal distinct. Le transport gère aussi ses
 événements de connexion et déconnexion, qui ne sont pas des commandes métier.
@@ -626,22 +634,22 @@ sequenceDiagram
 supplémentaires. `room:leave` n'a pas de charge utile et son accusé doit être une
 fonction. Il s'agit aujourd'hui de validateurs manuels, pas d'un schéma déclaratif
 commun à toutes les entrées serveur. La validation par schéma de toutes les
-entrées, dont les futurs messages de course, reste **prévue** pour TECH-07.
+entrées reste **prévue** pour TECH-07. Les parseurs de course refusent les objets
+non simples et les clés inconnues, y compris une identité fournie par le client.
 
-**Course multijoueur — prévu.** Les noms `race:start`, `race:countdown`,
-`race:input`, `race:progress`, `race:finished` de l'ADR-001 sont des propositions,
-pas des événements implémentés. Il reste à définir leurs schémas, accusés,
-erreurs et règles de reprise. Le serveur devra lancer le décompte, valider les
-frappes contre le texte, calculer la progression et arrêter la course avant de
-publier les résultats (COURSE-06). La reprise devra garder la place et la
-progression pendant 30 s (COURSE-08).
+**Course multijoueur — implémenté.** Le registre garde la course privée, sans la
+joindre à `room:state`. Le serveur valide les frappes et calcule la progression
+(COURSE-06). Un intervalle par salle fait avancer le moteur toutes les 100 ms ;
+il s’arrête en `results`, à la fermeture ou au départ du dernier humain.
+`room:join` refuse les nouveaux participants pendant `countdown` et `racing`
+(`RACE_IN_PROGRESS`) et les accepte en `results` (SALLE-09).
 
-La progression sera envoyée au plus à environ **10 messages/s par joueur**
-(PERF-02), avec regroupement des frappes et diffusion bornée. Aucune écriture en
-base à chaque frappe ; seuls la course et les résultats seront persistés selon
-la stratégie à préciser. Les tables correspondantes restent à créer.
-Le rafraîchissement solo actuel toutes les 100 ms dans `useRaceSession` est local :
-il ne prouve pas cette limitation réseau.
+La limite réseau est de **12 messages `race:input` par seconde et par utilisateur**,
+partagée entre ses onglets, en fenêtre glissante ; l’excédent est ignoré (PERF-02).
+Une saisie invalide ou une cadence de frappes impossible reçoit `INPUT_REJECTED` ;
+hors course, `RACE_NOT_RUNNING`. La reprise conserve la saisie pendant **30 s**
+(COURSE-08), puis le coureur déconnecté abandonne et quitte la salle.
+Aucune écriture en base par frappe ; la persistance des courses reste à réaliser.
 
 <a id="adr-002"></a>
 

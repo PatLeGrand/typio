@@ -8,6 +8,8 @@
  * passe par un `parse*` ci-dessous avant usage.
  */
 
+import type { raceSnapshot, raceResults } from "./raceEngine";
+import type { Keystrokes } from "@/race/metrics";
 import { isRoomCode, normalizeRoomCode } from "./roomCode";
 
 // ── Constantes métier ───────────────────────────────────────────────────────
@@ -16,7 +18,7 @@ import { isRoomCode, normalizeRoomCode } from "./roomCode";
 export const MAX_RUNNERS = 20;
 
 /** Délai de grâce d'un participant déconnecté avant son retrait (H-9, ancien SALLE-13). */
-export const RECONNECT_GRACE_MS = 60_000;
+export const RECONNECT_GRACE_MS = 30_000;
 
 // ── Configuration de la salle (CONF-01 à CONF-04, CONF-06 à CONF-08, CONF-10, BOT-01) ─────────────────────────
 
@@ -71,7 +73,7 @@ export const DEFAULT_ROOM_CONFIG: RoomConfig = {
 
 // ── État de la salle, diffusé en entier à chaque changement (ADR-001) ──────
 
-/** Seul `waiting` est atteint au checkpoint 1 ; les autres viennent avec la course. */
+/** Cycle de vie de la salle et de sa course. */
 export type RoomStatus = "waiting" | "countdown" | "racing" | "results" | "closed";
 
 export type ParticipantRole = "runner" | "spectator";
@@ -111,6 +113,12 @@ export const ROOM_ERROR_CODES = [
   "NOT_IN_ROOM",
   "NOT_HOST",
   "CONFIG_LOCKED",
+  "RACE_NOT_ALLOWED",
+  "RACE_IN_PROGRESS",
+  "NOT_ENOUGH_RUNNERS",
+  "NO_TEXT_AVAILABLE",
+  "RACE_NOT_RUNNING",
+  "INPUT_REJECTED",
   "INTERNAL",
 ] as const;
 
@@ -128,7 +136,7 @@ export interface JoinPayload {
   role: ParticipantRole;
 }
 
-/** Client → serveur. Toujours avec un accusé ; un refus ne change pas l'état. */
+/** Client → serveur ; les frappes seules ne demandent pas d’accusé. */
 export interface ClientToServerEvents {
   /** Membre seulement (SALLE-01, AUTH-03). `{ config, role }` : hôte coureur ou spectateur. */
   "room:create": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
@@ -136,11 +144,19 @@ export interface ClientToServerEvents {
   "room:join": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
   /** Hôte seulement, en `waiting` seulement (CONF-12). */
   "room:updateConfig": (patch: unknown, ack: (res: Ack) => void) => void;
+  "race:start": (payload: unknown, ack: (res: Ack) => void) => void;
+  "race:input": (payload: unknown) => void;
+  "race:abandon": (payload: unknown, ack: (res: Ack) => void) => void;
+  "room:restart": (payload: unknown, ack: (res: Ack) => void) => void;
+  "room:close": (payload: unknown, ack: (res: Ack) => void) => void;
   "room:leave": (ack: (res: Ack) => void) => void;
 }
 
 /** Serveur → client. */
 export interface ServerToClientEvents {
+  "race:state": (state: ReturnType<typeof raceSnapshot>) => void;
+  "race:results": (results: NonNullable<ReturnType<typeof raceResults>>) => void;
+  "race:self": (self: { typed: string; keystrokes: Keystrokes }) => void;
   /** État complet, envoyé à toute la salle après chaque changement. */
   "room:state": (state: RoomState) => void;
   /** Erreur non sollicitée (salle fermée, retrait…), hors accusé de réception. */
@@ -161,7 +177,7 @@ function isOneOf<T extends readonly unknown[]>(values: T, value: unknown): value
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
 
 const CONFIG_KEYS: ReadonlyArray<keyof RoomConfig> = [
@@ -283,4 +299,17 @@ export function parseJoinPayload(input: unknown): JoinPayload | "INVALID_PAYLOAD
   const normalized = normalizeRoomCode(code);
   if (!isRoomCode(normalized)) return "INVALID_CODE";
   return { code: normalized, role };
+}
+
+/** Commandes sans paramètres : objet vide strict, sans identité fournie par le client. */
+export function parseRaceCommand(input: unknown): boolean {
+  return isPlainObject(input) && Object.keys(input).length === 0;
+}
+
+/** Lot borné d’unités UTF-16 ou de retours arrière (COURSE-06). */
+export function parseRaceInput(input: unknown): { ops: string[] } | null {
+  if (!isPlainObject(input) || Object.keys(input).some((key) => key !== "ops")) return null;
+  if (!Array.isArray(input.ops) || input.ops.length > 64 ||
+    input.ops.some((op) => typeof op !== "string" || op.length !== 1)) return null;
+  return { ops: input.ops };
 }

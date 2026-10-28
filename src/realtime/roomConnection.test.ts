@@ -3,6 +3,7 @@ import { DEFAULT_ROOM_CONFIG, MAX_RUNNERS, type Participant, type RoomState } fr
 import type { RoomSocket } from "./client";
 import {
   ACK_TIMEOUT_MS,
+  IDLE_SNAPSHOT,
   createRoomConnection,
   RESYNC_TIMEOUT_MS,
   RETRY_BASE_MS,
@@ -41,6 +42,10 @@ class FakeSocket {
   off(event: string, handler: Handler): this {
     this.handlers.get(event)?.delete(handler);
     return this;
+  }
+
+  emit(event: string, ...args: unknown[]): void {
+    this.emissions.push({ event, args, timeoutMs: 0, ack: () => undefined });
   }
 
   timeout(timeoutMs: number) {
@@ -124,7 +129,7 @@ describe("roomForUser", () => {
 
 describe("connexion", () => {
   it("ne fait rien avant start() : état inactif, aucun socket sollicité", () => {
-    expect(connection.getSnapshot()).toEqual({ connection: "idle", room: null, error: null });
+    expect(connection.getSnapshot()).toEqual(IDLE_SNAPSHOT);
     expect(socket.connect).not.toHaveBeenCalled();
   });
 
@@ -176,8 +181,8 @@ describe("connexion", () => {
 
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
     expect(socket.connect).toHaveBeenCalledTimes(2);
-    expect(connection.getSnapshot()).toEqual({ connection: "connecting", room: null, error: null });
-    expect(socket.listenerCount()).toBe(5);
+    expect(connection.getSnapshot()).toEqual({ ...IDLE_SNAPSHOT, connection: "connecting" });
+    expect(socket.listenerCount()).toBe(8);
   });
 });
 
@@ -223,7 +228,7 @@ describe("stop() et syncUser()", () => {
     connection.stop();
 
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
-    expect(connection.getSnapshot()).toEqual({ connection: "idle", room: null, error: null });
+    expect(connection.getSnapshot()).toEqual(IDLE_SNAPSHOT);
     expect(socket.listenerCount()).toBe(0);
     connection.start(ME);
     expect(socket.connect).toHaveBeenCalledTimes(2);
@@ -310,6 +315,18 @@ describe("connect_error (D9)", () => {
 });
 
 describe("état de la salle", () => {
+  it("mémorise la fermeture par l'hôte en oubliant la salle", () => {
+    startConnected();
+    socket.fire("room:state", roomState([ME, OTHER]));
+    socket.fire("room:error", "NOT_HOST");
+    socket.fire("room:state", { ...roomState([ME, OTHER]), status: "closed" });
+
+    expect(connection.getSnapshot()).toMatchObject({ room: null, error: "ROOM_CLOSED" });
+    socket.fire("disconnect", "transport close");
+    socket.open();
+    expect(connection.getSnapshot()).toMatchObject({ room: null, error: "ROOM_CLOSED" });
+  });
+
   it("mémorise l'état reçu sans effacer une erreur que l'élève n'a pas encore lue", () => {
     startConnected();
     socket.fire("room:error", "ROOM_FULL");
@@ -359,7 +376,7 @@ describe("état de la salle", () => {
 
   it("le snapshot serveur reste inactif", () => {
     startConnected();
-    expect(connection.getServerSnapshot()).toEqual({ connection: "idle", room: null, error: null });
+    expect(connection.getServerSnapshot()).toEqual(IDLE_SNAPSHOT);
   });
 });
 
@@ -396,7 +413,7 @@ describe("reconnexion avec une salle (ancien SALLE-13)", () => {
     startConnected();
     reconnect();
     vi.advanceTimersByTime(RESYNC_TIMEOUT_MS * 2);
-    expect(connection.getSnapshot()).toEqual({ connection: "connected", room: null, error: null });
+    expect(connection.getSnapshot()).toEqual({ ...IDLE_SNAPSHOT, connection: "connected" });
   });
 });
 
@@ -491,5 +508,71 @@ describe("accusés (D8)", () => {
 
     await expect(result).resolves.toEqual({ ok: false, error: "INTERNAL" });
     expect(connection.getSnapshot().room).not.toBeNull();
+  });
+});
+
+describe("multiplayer race", () => {
+  const race = { status: "racing", serverNow: 1000, startAt: 500, text: "abc", runners: [] };
+  const results = [{ id: ME, rank: 1 }];
+  const self = { typed: "a", keystrokes: { total: 2, correct: 1 } };
+  function receiveRace() {
+    socket.fire("room:state", { ...roomState([ME]), status: "racing" });
+    socket.fire("race:state", race);
+    socket.fire("race:results", results);
+    socket.fire("race:self", self);
+  }
+
+  it("publishes race events and records the local receipt time", () => {
+    startConnected();
+    const listener = vi.fn();
+    connection.subscribe(listener);
+    receiveRace();
+    expect(connection.getSnapshot()).toMatchObject({ race, results, self, raceReceivedAt: Date.now() });
+    expect(listener).toHaveBeenCalledTimes(4);
+  });
+
+  it.each(["waiting", "left", "closed", "stop"])("clears race data after %s", (action) => {
+    startConnected();
+    receiveRace();
+    if (action === "stop") connection.stop();
+    else socket.fire("room:state", { ...roomState(action === "left" ? [OTHER] : [ME]), status: action === "closed" ? "closed" : "waiting" });
+    if (action === "closed") expect(connection.getSnapshot().room).toBeNull();
+    expect(connection.getSnapshot()).toMatchObject({ race: null, results: null, self: null, raceReceivedAt: null });
+  });
+
+  it("clears race data on acknowledged leave", async () => {
+    startConnected();
+    receiveRace();
+    const promise = connection.leave();
+    socket.emissions[0].ack(null, { ok: true });
+    await promise;
+    expect(connection.getSnapshot()).toMatchObject({ room: null, race: null, results: null, self: null });
+  });
+
+  it.each([
+    ["startRace", "race:start"], ["abandonRace", "race:abandon"],
+    ["restartRace", "room:restart"], ["closeRoom", "room:close"],
+  ] as const)("%s uses empty payload, timeout and server errors", async (method, event) => {
+    await expect(connection[method]()).resolves.toEqual({ ok: false, error: "OFFLINE" });
+    startConnected();
+    const success = connection[method]();
+    expect(socket.emissions[0]).toMatchObject({ event, args: [{}], timeoutMs: ACK_TIMEOUT_MS });
+    socket.emissions[0].ack(null, { ok: true });
+    await expect(success).resolves.toEqual({ ok: true, data: undefined });
+    const timeout = connection[method]();
+    socket.emissions[1].ack(new Error("timeout"));
+    await expect(timeout).resolves.toEqual({ ok: false, error: "TIMEOUT" });
+    const refused = connection[method]();
+    socket.emissions[2].ack(null, { ok: false, error: "NOT_HOST" });
+    await expect(refused).resolves.toEqual({ ok: false, error: "NOT_HOST" });
+    expect(connection.getSnapshot().error).toBe("NOT_HOST");
+  });
+
+  it("sends only input operations, without ack, and never while offline", () => {
+    connection.sendInput(["a"]);
+    expect(socket.emissions).toHaveLength(0);
+    startConnected();
+    connection.sendInput(["a", "\b", "\uD83D", "\uDE00"]);
+    expect(socket.emissions[0]).toMatchObject({ event: "race:input", args: [{ ops: ["a", "\b", "\uD83D", "\uDE00"] }], timeoutMs: 0 });
   });
 });

@@ -24,7 +24,7 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 | TECH-03 | complet | `postcss.config.mjs`, `src/app/globals.css` | `src/theme/noHardcodedColors.test.ts` | Tailwind CSS 4, couleurs passées par des variables CSS. |
 | TECH-04 | partiel | `src/db/schema.ts`, `drizzle/0000_short_gateway.sql` à `0002_fair_daredevil.sql`, `scripts/migrate.ts` | `src/auth/repositories.integration.test.ts` | PostgreSQL via Drizzle, migrations versionnées. Manque : script de seed (corpus, utilisateurs, historique). Seules `users`, `sessions` et `oauth_accounts` existent : ni salles, ni courses, ni résultats en base. |
 | TECH-05 | complet | `Dockerfile`, `infra/docker-compose.yml`, `.github/workflows/image.yml` | — | Déploiement sur le VPS, HTTPS par Caddy, https://typio.aether-manager.ca. Dernière version vérifiée en production : 9 octobre 2026 (`sha-994ac37`). À revérifier avant chaque remise. |
-| TECH-06 | partiel | `src/realtime/` (`server.ts`, `roomHandlers.ts`, `protocol.ts`) | `src/realtime/server.test.ts`, `roomHandlers.test.ts` | Socket.IO (ADR-001), service séparé derrière Caddy. Fonctionne pour la salle (participants, configuration). La progression des participants pendant une course n'est pas encore diffusée. |
+| TECH-06 | complet | `src/realtime/` (`server.ts`, `roomHandlers.ts`, `protocol.ts`, `raceEngine.ts`) | `src/realtime/server.test.ts`, `roomHandlers.test.ts`, `raceHandlers.test.ts` | Socket.IO (ADR-001), service séparé derrière Caddy : salle et progression des participants pendant la course. |
 | TECH-07 | partiel | `src/realtime/protocol.ts` (`parse*`), `src/auth/validation.ts`, `src/race/config.ts` | `src/realtime/protocol.test.ts`, `src/auth/validation.test.ts` | Les entrées sont validées par des fonctions écrites à la main (liste blanche, clés inconnues refusées), pas par un schéma Zod. Pas de schéma partagé pour toutes les actions serveur et routes API. Choix : zéro dépendance ajoutée ; à revoir si le temps le permet. |
 | TECH-08 | complet | `infra/docker-compose.yml` | — | VPS déjà payé, aucun service externe payant (ADR-001). Pas de stockage d'images (AUTH-04 non fait). |
 | TECH-09 | complet | `.github/workflows/ci.yml`, `package.json` (`typecheck`) | — | GitHub Actions déclenchée sur chaque *push* (toutes les branches) et sur les PR vers `develop` et `main` : vérification de types séparée (`tsc --noEmit`), tests unitaires, lint, build, build temps réel, migrations, test d'intégration PostgreSQL. |
@@ -39,7 +39,7 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 | DES-03 | partiel | `docs/design/`, `docs/DEMARCHE-CREATIVE.md`, `src/app/globals.css` | — | Direction artistique faite dans Figma, palette et typographies en tokens CSS. Moodboard de 3 à 5 références à joindre à la démarche. |
 | DES-04 | partiel | `src/components/race/RaceVisualizer.tsx`, `public/race/` | — | Piste de progression dessinée (PixiJS) : élément signature. Design propre mais pas vérifié contre la liste des signes « généré par défaut » (icônes `lucide-react`, mise en page de l'accueil). |
 | DES-05 | complet | `src/theme/`, `src/components/ThemeToggle.tsx`, `src/theme/themeScript.ts` | `src/theme/theme.test.ts`, `themeScript.test.ts`, `themeStore.test.ts`, `src/components/ThemeToggle.test.tsx` | Sélecteur, préférence système par défaut, script de thème avant l'affichage (pas de flash). |
-| DES-06 | partiel | classes Tailwind responsives dans `src/components/` et `src/app/` | — | Pages responsives. Manque : le message « clavier physique recommandé » qui remplace la course sur mobile n'existe pas. Pas de vérification à 360 px consignée. |
+| DES-06 | partiel | classes Tailwind responsives, `src/app/[lang]/(site)/room/_components/RoomRaceView.tsx` | — | En salle, la zone de frappe est remplacée par un message « clavier physique recommandé » sous 768 px ou avec un pointeur tactile. Vérifié à 375 et 360 px sans défilement horizontal (salle de course). Manque : ce message pour la course solo. |
 
 ## Comptes et profil (AUTH)
 
@@ -64,7 +64,7 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 | SALLE-06 | partiel | `src/realtime/roomStore.ts` (`roomByUser`), `src/app/[lang]/(site)/play/InRoomNotice.tsx` | `src/realtime/roomStore.test.ts` | Une personne n'est que dans une salle, garanti par le serveur ; un deuxième onglet ne crée pas de doublon ; l'interface propose de quitter la salle actuelle. Écart : l'index est en mémoire, pas une contrainte en base de données. |
 | SALLE-07 | non fait | — | — | Aucune commande d'expulsion dans le protocole. |
 | SALLE-08 | partiel | `src/realtime/roomStore.ts` (`removeParticipant`) | `src/realtime/roomStore.test.ts` | Le plus ancien participant connecté devient hôte ; salle fermée quand plus personne. Écarts : s'il ne reste que des déconnectés, le plus ancien d'entre eux hérite du rôle au lieu de fermer la salle ; un invité peut hériter (choix à confirmer, voir « à trancher »). |
-| SALLE-09 | partiel | `src/realtime/roomStore.ts` (`status`, `CONFIG_LOCKED`) | `src/realtime/roomStore.test.ts` | Le statut de salle existe mais seul `waiting` est atteint : la règle « jamais rejoindre une course en cours » n'est pas appliquée (pas de course multijoueur). |
+| SALLE-09 | complet | `src/realtime/roomStore.ts` (`join`) | `src/realtime/raceHandlers.test.ts` | Rejoindre est refusé en décompte et en course (`RACE_IN_PROGRESS`), permis en attente et aux résultats (H-23). |
 | SALLE-10 | partiel | `src/realtime/roomHandlers.ts`, `src/realtime/server.ts` (`JOIN_FAILURE_LIMIT`) | `src/realtime/roomHandlers.test.ts` | Limite de 10 échecs par minute sur `room:join`. Écart : comptée par utilisateur (session), pas par adresse IP. |
 
 ## Rejoindre une course (JOIN)
@@ -88,7 +88,7 @@ Les mêmes réglages servent à la course solo (`src/race/config.ts`) et à la s
 | CONF-05 | non fait | — | — | Pas de réglage de complexité (facile, moyen, difficile) ni de critères mesurables. Voir « à trancher ». |
 | CONF-06 | partiel | `src/race/textGenerator.ts`, `src/components/race/RaceSettingsFields.tsx` | `src/race/textGenerator.test.ts` | Seule l'option « accents » existe. Manquent : ponctuation, nombres, majuscules. |
 | CONF-07 | partiel | `src/realtime/protocol.ts` (`normalizeExcludedCharacters`), `src/race/textGenerator.ts` | `src/realtime/protocol.test.ts`, `src/race/textGenerator.test.ts` | Caractères à exclure (liste normalisée, 30 au plus). En mode phrase, les phrases contenant un caractère exclu sont écartées (H-11). Manque : l'inclusion de caractères. |
-| CONF-08 | partiel | `src/race/session.ts`, `src/race/metrics.ts` (`applyTypedInput`) | `src/race/session.test.ts`, `src/race/metrics.test.ts` | Mode libre et mode bloquant appliqués en solo. Dans une salle, le réglage est diffusé mais aucune course ne l'applique encore. |
+| CONF-08 | complet | `src/race/metrics.ts` (`applyTypedInput`), `src/realtime/raceEngine.ts` | `src/race/metrics.test.ts`, `src/realtime/raceEngine.test.ts` | Mode libre et mode bloquant appliqués en solo et par le serveur en salle. |
 | CONF-09 | non fait | — | — | Pas de bonus de remontée. L'interrupteur « capacités » de `RaceSettings` est sans effet. |
 | CONF-10 | partiel | `src/realtime/protocol.ts` (`botCount`, `botDifficulty`, `MAX_BOTS`), `src/race/bots.ts` | `src/race/bots.test.ts`, `src/realtime/protocol.test.ts` | Ajout et retrait de bots (0 à 7). Écarts : un seul niveau pour tous les bots, trois niveaux au lieu de cinq ; bots joués en solo seulement. |
 | CONF-11 | partiel | `src/realtime/protocol.ts` | — | Visibilité absente (SALLE-03) ; capacité fixe (SALLE-05). |
@@ -100,17 +100,17 @@ Seule la course solo contre des bots existe (`src/race/`, `src/components/race/`
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
-| COURSE-01 | partiel | `docs/ARCHITECTURE.md`, `src/realtime/protocol.ts` (`RoomStatus`), `src/race/lifecycle.ts` | `src/race/lifecycle.test.ts` | Machine à états documentée et typée, mais la salle n'atteint que `waiting`. Le cycle solo a ses propres états. |
-| COURSE-02 | non fait | — | — | Le lancement d'une course par l'hôte (2 participants dont 1 humain) n'existe pas. |
-| COURSE-03 | partiel | `src/components/race/RaceScreen.tsx`, `src/race/lifecycle.ts` | `src/components/race/RaceScreen.test.tsx`, `src/race/lifecycle.test.ts` | Décompte 3, 2, 1 en solo, texte révélé au décompte. Pas de synchronisation entre plusieurs clients. |
-| COURSE-04 | partiel | `src/components/race/RaceTypingPanel.tsx`, `src/race/metrics.ts` | `src/race/metrics.test.ts` | Retour visuel, MPM et précision en direct, coller et déposer bloqués. Vérifié en solo seulement. |
-| COURSE-05 | partiel | `src/components/race/RaceVisualizer.tsx` | — | Piste animée (PixiJS) avec le joueur et les bots, en solo. Manquent : les autres humains, les avatars, les spectateurs. |
-| COURSE-06 | non fait | — | — | Le serveur ne reçoit aucune progression : pas de validation, ni de saut ou vitesse irréaliste rejetés. |
-| COURSE-07 | partiel | `src/components/race/RaceScreen.tsx`, `src/race/session.ts` (`abandonRaceSession`) | `src/race/session.test.ts` | Abandon possible en solo. Écart : aucune confirmation avant d'abandonner. |
-| COURSE-08 | partiel | `src/realtime/graceTimers.ts`, `src/realtime/protocol.ts` (`RECONNECT_GRACE_MS`) | `src/realtime/graceTimers.test.ts`, `roomHandlers.test.ts` | Reprise de la place en salle après rechargement ou coupure. Écarts : 60 s (H-9) au lieu de 30 s ; pas de reprise d'une course en cours. |
-| COURSE-09 | partiel | `src/race/session.ts`, `src/race/lifecycle.ts` | `src/race/session.test.ts` | Fin de la course solo : texte terminé, abandon ou temps maximal. Pas de multijoueur. |
-| COURSE-10 | partiel | `src/race/results.ts` (`compareRows`) | `src/race/results.test.ts` | Classement terminé, puis non terminé, puis abandon, avec départage par temps ou progression. Solo seulement. |
-| COURSE-11 | partiel | `src/components/race/RaceResults.tsx` | `src/components/race/RaceScreen.test.tsx` | En solo : rejouer et modifier les réglages. Manquent : relance avec les mêmes participants d'une salle, fermeture de la salle. |
+| COURSE-01 | complet | `src/realtime/protocol.ts` (`RoomStatus`), `src/realtime/raceEngine.ts`, `src/realtime/roomStore.ts`, `docs/ARCHITECTURE.md` | `src/realtime/raceEngine.test.ts`, `raceStore.test.ts`, `raceHandlers.test.ts` | La salle parcourt `waiting` → `countdown` → `racing` → `results` → `waiting` ou `closed`, côté serveur temps réel. |
+| COURSE-02 | complet | `src/realtime/raceEngine.ts` (`startRace`), `src/realtime/roomHandlers.ts` (`race:start`) | `src/realtime/raceEngine.test.ts`, `raceStore.test.ts`, `raceHandlers.test.ts` | Hôte connecté seulement ; au moins 2 coureurs dont 1 humain, bots compris, spectateurs exclus (`NOT_ENOUGH_RUNNERS`). |
+| COURSE-03 | complet | `src/realtime/raceEngine.ts` (`startAt`, `serverNow`), `src/app/[lang]/(site)/room/_components/RoomRaceView.tsx` | `src/realtime/raceEngine.test.ts` | Texte généré et diffusé au début du décompte de 3 s ; le client cale le décompte sur l'heure du serveur. Vérifié dans l'application (QA du 28 octobre 2026, FR et EN, clair et sombre). |
+| COURSE-04 | complet | `src/components/race/RaceTypingPanel.tsx`, `src/realtime/raceInput.ts`, `src/app/[lang]/(site)/room/_components/RoomRaceView.tsx` | `src/realtime/raceInput.test.ts` | En salle : saisie optimiste rejouée avec les règles du serveur, MPM et précision en direct, coller bloqué. Vérifié dans l'application (QA du 28 octobre 2026, FR et EN, clair et sombre). |
+| COURSE-05 | partiel | `src/components/race/RaceVisualizer.tsx`, `src/app/[lang]/(site)/room/_components/RoomRaceView.tsx` | — | Piste alimentée par le serveur (10 instantanés/s) avec humains et bots, nom, position, MPM, joueur local mis en évidence ; spectateurs sans zone de frappe. Manquent : les avatars. Vérifié dans l'application. |
+| COURSE-06 | partiel | `src/realtime/raceEngine.ts` (`applyInput`), `src/realtime/roomHandlers.ts` (`race:input`), `src/realtime/protocol.ts` (`parseRaceInput`) | `src/realtime/raceEngine.test.ts`, `raceStore.test.ts`, `raceHandlers.test.ts` | Le serveur fixe départ et fin, rejoue les frappes (au plus 64 par lot), refuse une cadence au-delà de 25 frappes/s + 15 (H-20) et calcule progression et classement. Manque : l'application des bonus (BONUS-01 à 04 non faits). |
+| COURSE-07 | partiel | `src/realtime/raceEngine.ts` (`abandonRace`), `src/app/[lang]/(site)/room/_components/RoomRaceView.tsx` | `src/realtime/raceEngine.test.ts`, `raceStore.test.ts`, `raceHandlers.test.ts` | Abandon en salle avec confirmation en deux temps (en solo, pas encore de confirmation). Vérifié dans l'application (QA du 28 octobre 2026, FR et EN, clair et sombre). |
+| COURSE-08 | complet | `src/realtime/protocol.ts` (`RECONNECT_GRACE_MS` = 30 s), `src/realtime/roomStore.ts`, `src/realtime/roomHandlers.ts` (`race:self`) | `src/realtime/raceHandlers.test.ts`, `graceTimers.test.ts` | Grâce de 30 s ; le coureur reprend sa saisie (`race:self`) ; passé le délai, abandon. Vérifié dans l'application (QA du 28 octobre 2026, FR et EN, clair et sombre). |
+| COURSE-09 | complet | `src/realtime/raceEngine.ts` (`tickRace`) | `src/realtime/raceEngine.test.ts`, `raceStore.test.ts`, `raceHandlers.test.ts` | Fin quand plus aucun coureur actif (déconnecté compris) ou à la limite de temps. |
+| COURSE-10 | complet | `src/realtime/raceEngine.ts` (`raceResults`), `src/race/results.ts` (solo) | `src/realtime/raceEngine.test.ts`, `raceStore.test.ts`, `raceHandlers.test.ts` | Arrivés par temps, puis non arrivés par progression, puis abandons par progression au moment de l'abandon. |
+| COURSE-11 | complet | `src/realtime/roomStore.ts` (`finish`), `src/realtime/roomHandlers.ts` (`room:restart`, `room:close`), `src/app/[lang]/(site)/room/_components/RoomRaceView.tsx` | `src/realtime/raceHandlers.test.ts` | L'hôte relance (mêmes participants, configuration modifiable) ou ferme la salle ; les autres restent ou quittent. Vérifié dans l'application (QA du 28 octobre 2026, FR et EN, clair et sombre). |
 
 ## Bots (BOT)
 
@@ -120,7 +120,7 @@ Seule la course solo contre des bots existe (`src/race/`, `src/components/race/`
 | BOT-02 | partiel | `src/race/bots.ts` (`planBot`) | `src/race/bots.test.ts` | Vitesse variable par mot (±20 %), pauses aléatoires. Manque : ralentissement sur les mots difficiles (`src/race/bots.ts` ne tient pas compte de la difficulté du mot). |
 | BOT-03 | partiel | `src/race/bots.ts` | `src/race/bots.test.ts` | Les bots font des fautes qu'ils corrigent (temps perdu). Ils ne tiennent pas compte du mode d'erreur configuré. |
 | BOT-04 | partiel | `src/components/race/RaceVisualizer.tsx`, `src/i18n/dictionaries/` | — | Noms de bots dédiés. Identification claire dans l'interface et soumission aux bonus à vérifier (pas de bonus). |
-| BOT-05 | partiel | `src/race/bots.ts` (`planBot(text, difficulty, random)`), `src/race/seededRandom.ts` | `src/race/bots.test.ts`, `src/race/seededRandom.test.ts` | Le hasard est injecté, donc le moteur est testable avec une graine. En jeu, la graine n'est pas fixée ni partagée (moteur côté client). |
+| BOT-05 | complet | `src/race/bots.ts`, `src/race/seededRandom.ts`, `src/realtime/raceEngine.ts` | `src/race/bots.test.ts`, `src/realtime/raceEngine.test.ts` | En salle, le serveur tire une graine par course ; texte, noms et plans des bots en découlent, donc une même graine rejoue les mêmes bots. En solo, la graine n'est toujours pas fixée. |
 
 ## Bonus de remontée (BONUS)
 
@@ -136,7 +136,7 @@ Seule la course solo contre des bots existe (`src/race/`, `src/components/race/`
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
 | RES-01 | partiel | `src/components/race/RaceResults.tsx` | `src/components/race/RaceScreen.test.tsx` | Podium des 3 premiers, en solo seulement. |
-| RES-02 | partiel | `src/components/race/RaceResults.tsx`, `src/race/results.ts` | `src/race/results.test.ts` | Tableau `<table>` avec rang, nom, MPM, précision, temps, statut. Manquent : MPM brut, nombre d'erreurs, bonus reçus. |
+| RES-02 | partiel | `src/app/[lang]/(site)/room/_components/RoomRaceView.tsx`, `src/components/race/RaceResults.tsx` | `src/realtime/raceEngine.test.ts` | En salle : rang, nom, MPM net et brut, précision, erreurs, temps, statut. Manquent : les bonus reçus. Vérifié dans l'application. |
 | RES-03 | non fait | — | — | Aucun graphique. |
 | RES-04 | non fait | — | — | Pas de record personnel (rien n'est persisté). |
 | RES-05 | non fait | `src/db/schema.ts` | — | Aucune table de courses ni de résultats. |
@@ -169,7 +169,7 @@ Seule la course solo contre des bots existe (`src/race/`, `src/components/race/`
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
 | PERF-01 | non fait | — | — | Aucune mesure Lighthouse consignée. |
-| PERF-02 | non fait | — | — | Aucune progression envoyée au réseau (course multijoueur absente). Aucune écriture en base par frappe. |
+| PERF-02 | complet | `src/realtime/raceInput.ts`, `src/realtime/server.ts`, `src/realtime/roomHandlers.ts` | `src/realtime/raceInput.test.ts`, `raceHandlers.test.ts` | Le client regroupe ses frappes toutes les 100 ms ; le serveur ignore au-delà de 12 messages/s par joueur et diffuse au plus toutes les 100 ms (H-21). Aucune écriture en base pendant la course. |
 | PERF-03 | non fait | `src/components/race/RaceVisualizer.tsx` | — | Piste jamais mesurée avec 30 participants. |
 
 ## Accessibilité (A11Y)
@@ -203,7 +203,7 @@ Les hypothèses H-1 à H-18 de l'ancien cahier gardent leur identifiant : le cod
 | H-6 | Pas de code QR pour une course privée | sans objet | Le code QR n'existe plus dans l'énoncé. |
 | H-7 | Courses avec capacités exclues des graphiques | sans objet | Les capacités sont remplacées par les bonus ; BONUS-04 exige un calcul cohérent à la place. |
 | H-8 | Classement au pourcentage du texte | révisée par l'énoncé | COURSE-10 : temps d'arrivée, puis progression, puis abandons. La progression suit l'annexe A. |
-| H-9 | 60 s de reconnexion, 30 s d'AFK, limite par défaut de 5 min | révisée par l'énoncé | COURSE-08 : reconnexion 30 s (le code utilise encore 60 s, écart à corriger). Plus d'AFK : l'abandon couvre le cas. La limite de 5 min tient lieu d'« aucun » (écart avec CONF-01). |
+| H-9 | 60 s de reconnexion, 30 s d'AFK, limite par défaut de 5 min | révisée par l'énoncé | COURSE-08 : reconnexion 30 s (`RECONNECT_GRACE_MS`, H-22). Plus d'AFK : l'abandon couvre le cas. La limite de 5 min tient lieu d'« aucun » (écart avec CONF-01). |
 | H-10 | Phrases du domaine public et dictionnaire de fréquence | révisée par l'énoncé | CONF-03 : le mode cohérent lit un corpus stocké en base de données (seed, TECH-04). Écart : banque dans le code. |
 | H-11 | Phrase avec caractère exclu : on écarte la phrase | toujours valable | Retenu comme le comportement de CONF-07 en mode cohérent (voir « à trancher »). |
 | H-12 | Tablette seulement avec clavier physique | révisée par l'énoncé | DES-06 : à partir de 360 px tout est utilisable, mais la course est remplacée par un message « clavier physique » sur mobile. |
@@ -214,6 +214,10 @@ Les hypothèses H-1 à H-18 de l'ancien cahier gardent leur identifiant : le cod
 | H-17 | Énergie identique pour tous, rattrapage par les capacités | sans objet | Les personnages, capacités et énergie sont remplacés par les bonus de remontée (BONUS-01 à 04). |
 | H-18 | Personnages débloqués par le nombre de courses terminées | sans objet | Personnages absents de l'énoncé. |
 | H-19 | L'outillage des agents IA (`.claude/`) est hors périmètre de TECH-02 | valable | Ce n'est pas du code de l'application livrée ; l'énoncé (§ 8, `docs/IA.md`) demande de commiter ces fichiers d'instructions d'agent, et ils ne sont ni compilés ni déployés. |
+| H-20 | Le client envoie des frappes, pas une position | valable | `race:input` porte au plus 64 opérations (un caractère ou un retour arrière) ; le serveur les rejoue. Cadence refusée au-delà de 25 frappes/s depuis le départ + 15 de rafale (environ 300 MPM) : le lot entier est refusé et le serveur renvoie la saisie de référence (COURSE-06). |
+| H-21 | Limites réseau de la course | valable | Le client envoie au plus un lot toutes les 100 ms ; le serveur ignore au-delà de 12 messages/s par joueur et diffuse l'état de la course au plus toutes les 100 ms (PERF-02, COURSE-05). |
+| H-22 | Grâce de reconnexion de 30 s | valable | Remplace les 60 s de H-9 pour la salle comme pour la course (COURSE-08). |
+| H-23 | Pas d'entrée en spectateur pendant une course | valable | L'architecture d'origine faisait entrer un arrivant en spectateur ; SALLE-09 interdit de rejoindre en décompte ou en course : refus `RACE_IN_PROGRESS`. |
 
 ### Choix encore à trancher
 

@@ -5,6 +5,7 @@ import { CircleCheck, Delete, Keyboard, Sparkles } from "lucide-react";
 import type { Dictionary } from "@/i18n/dictionaries";
 
 type Props = {
+  locale?: string;
   labels: Dictionary["raceScreen"]["typing"];
   text: string;
   typed: string;
@@ -15,7 +16,7 @@ type Props = {
 const TEXT_ID = "race-text";
 
 /** Texte à taper (caractères colorés selon la frappe) et champ de saisie, sans copier-coller (COURSE-04). */
-export function RaceTypingPanel({ labels, text, typed, correctChars, onChange }: Props) {
+export function RaceTypingPanel({ locale, labels, text, typed, correctChars, onChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   // Pendant une composition (touche morte « ^ » puis « e », IME), la valeur brute est affichée
   // sans être jugée : « ^ » n'est pas une frappe, seul « ê » final compte.
@@ -51,6 +52,7 @@ export function RaceTypingPanel({ labels, text, typed, correctChars, onChange }:
     if (field.selectionStart !== end || field.selectionEnd !== end) field.setSelectionRange(end, end);
   }
 
+  const number = new Intl.NumberFormat(locale);
   const done = text.length === 0 ? 0 : (correctChars / text.length) * 100;
 
   return (
@@ -61,7 +63,7 @@ export function RaceTypingPanel({ labels, text, typed, correctChars, onChange }:
           <h2 className="text-lg font-extrabold">{labels.title}</h2>
         </div>
         <div className="flex items-center gap-3 text-xs font-bold text-muted">
-          <span>{correctChars} / {text.length} {labels.characters}</span>
+          <span>{number.format(correctChars)} / {number.format(text.length)} {labels.characters}</span>
           <span className="h-2 w-28 overflow-hidden rounded-full bg-accent-soft" aria-hidden="true">
             <span className="block h-full rounded-full bg-accent" style={{ width: `${done}%` }} />
           </span>
