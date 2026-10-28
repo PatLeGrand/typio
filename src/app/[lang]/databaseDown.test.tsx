@@ -21,6 +21,7 @@ vi.mock("@/auth/schedulePurge", () => ({ schedulePurge: vi.fn() }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   usePathname: () => "/fr",
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 import LoginPage from "./(auth)/login/page";

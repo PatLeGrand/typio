@@ -71,7 +71,7 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
-| JOIN-01 | partiel | `src/app/[lang]/(site)/play/JoinRoomForm.tsx`, `PlayClient.tsx` | `src/app/[lang]/(site)/play/JoinRoomForm.test.tsx`, `PlayClient.test.tsx` | Rejoindre par code. Écart : le champ est sur la page `/play`, pas sur la page d'accueil. |
+| JOIN-01 | complet | `src/components/home/HomeJoinCodeForm.tsx`, `src/components/home/HomeHero.tsx`, `src/app/[lang]/(site)/play/JoinRoomForm.tsx` | `src/app/[lang]/(site)/page.test.tsx`, `play/JoinRoomForm.test.tsx` | Champ « code de la salle » sur la page d'accueil, qui ouvre la salle ; aussi sur `/play` avec le choix du rôle. Un visiteur non connecté passe par la connexion et doit ressaisir le code ensuite. |
 | JOIN-02 | non fait | — | — | Pas d'explorateur de salles publiques (ni liste, ni filtres, ni mise à jour en direct). |
 | JOIN-03 | non fait | — | — | Pas de bouton « Faire une course » (partie rapide). |
 
