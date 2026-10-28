@@ -32,7 +32,7 @@ function input(race: RaceState, ops: readonly string[], now = START + 1_000, id 
   return result.state;
 }
 
-// These guards protect host authority and the minimum human participation (COURSE-02).
+// Ces gardes protègent les droits de l’hôte et le minimum de coureurs (COURSE-02).
 describe("startRace", () => {
   it.each(["countdown", "racing", "results", "closed"] as const)("rejects a %s room", (status) => {
     expect(startRace({ ...room(), status }, "host", NOW, 42)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
@@ -86,13 +86,13 @@ describe("startRace", () => {
   });
 });
 
-// Replay and atomic rejection protect the server's authoritative progression (COURSE-06, CONF-08).
+// Le rejeu et le refus atomique protègent la progression faisant autorité (COURSE-06, CONF-08).
 describe("applyInput", () => {
-  it("rejects before countdown elapses and before startAt even with a racing status", () => {
+  it("rejects before startAt and accepts at startAt without a prior tick", () => {
     const race = started();
     expect(applyInput(race, "host", ["a"], START - 1)).toEqual({ ok: false, state: race, error: "RACE_NOT_RUNNING" });
     expect(applyInput({ ...race, status: "racing" }, "host", ["a"], START - 1).ok).toBe(false);
-    expect(applyInput(race, "host", ["a"], START).ok).toBe(false);
+    expect(applyInput(race, "host", ["a"], START).ok).toBe(true);
   });
   it("replays free-mode errors and correction without erasing mistake counters", () => {
     const race = racing();
@@ -119,8 +119,8 @@ describe("applyInput", () => {
       const race = racing("a".repeat(100));
       const before = structuredClone(race);
       const result = applyInput(race, "host", ops, now);
-      expect(result).toEqual({ ok: false, state: race, error: "INPUT_REJECTED" });
-      expect(result.state).toBe(race);
+      expect(result).toEqual({ ok: false, state: tickRace(race, now), error: "INPUT_REJECTED" });
+      expect(result.state.runners[0]).toEqual(race.runners[0]);
       expect(race).toEqual(before);
     },
   );
@@ -128,7 +128,7 @@ describe("applyInput", () => {
     const source = room();
     source.config.inputMode = "blocking";
     const race = input(racing("abc", source), Array(15).fill("x"), START);
-    expect(applyInput(race, "host", ["x"], START)).toEqual({ ok: false, state: race, error: "INPUT_REJECTED" });
+    expect(applyInput(race, "host", ["x"], START)).toEqual({ ok: false, state: tickRace(race, START), error: "INPUT_REJECTED" });
     expect(applyInput(race, "host", ["a"], START + 40).ok).toBe(true);
   });
   it("rejects spectators, unknown users, bots, disconnected and terminal runners", () => {
@@ -153,7 +153,7 @@ describe("applyInput", () => {
   });
   it("does not accept input at or after the deadline", () => {
     const race = racing();
-    expect(applyInput(race, "host", ["a"], START + race.timeLimitMs)).toEqual({ ok: false, state: race, error: "RACE_NOT_RUNNING" });
+    expect(applyInput(race, "host", ["a"], START + race.timeLimitMs)).toEqual({ ok: false, state: tickRace(race, START + race.timeLimitMs), error: "RACE_NOT_RUNNING" });
   });
 });
 
@@ -227,7 +227,7 @@ describe("snapshots and COURSE-10 results", () => {
     expect(raceResults(ended)?.find((r) => r.id === "host")).toMatchObject({
       wpm: 0, grossWpm: 1, accuracy: 67, errors: 1, timeMs: 60_000, status: "abandoned",
     });
-    // Nonzero exact rates: 25 validated / 5 / 0.5 min = 10 net, 30 total = 12 gross.
+    // Débits exacts : 25 caractères validés / 5 / 0,5 min = 10 nets ; 30 frappes = 12 bruts.
     const measured: RaceState = { ...ended, text: "a".repeat(50), runners: [{ ...ended.runners[0],
       position: 25, keystrokes: { total: 30, correct: 27 }, abandonedAt: START + 30_000 }] };
     expect(raceResults(measured)?.[0]).toMatchObject({ wpm: 10, grossWpm: 12, accuracy: 90, errors: 3, progress: 0.5 });

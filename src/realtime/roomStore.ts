@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+import { startRace, applyInput, abandonRace, setRunnerConnected, expireRunner, tickRace, raceSnapshot, raceResults, type RaceState } from "./raceEngine";
 import {
   DEFAULT_ROOM_CONFIG,
   MAX_RUNNERS,
@@ -21,7 +23,10 @@ export interface UserContext {
 
 function cloneState(state: RoomState): RoomState {
   return {
-    ...state,
+    code: state.code,
+    status: state.status,
+    hostId: state.hostId,
+    maxRunners: state.maxRunners,
     config: { ...state.config },
     participants: state.participants.map((p) => ({ ...p })),
   };
@@ -37,11 +42,20 @@ export const MAX_SPECTATORS = 20;
 export interface RoomStoreOptions {
   /** Tirage d'un code candidat ; injectable pour tester la collision (AC-10). */
   generateCode?: () => string;
+  generateSeed?: () => number;
+  now?: () => number;
 }
 
 export function createRoomStore(options: RoomStoreOptions = {}) {
   const generateCode = options.generateCode ?? generateRoomCode;
-  const rooms = new Map<string, RoomState>();
+  const now = options.now ?? Date.now;
+  const generateSeed = options.generateSeed ?? (() => randomBytes(4).readUInt32LE());
+  const rooms = new Map<string, RoomState & { race: RaceState | null }>();
+
+  function saveRace(room: RoomState & { race: RaceState | null }, race: RaceState): void {
+    room.race = race;
+    room.status = race.status;
+  }
   /** Index utilisateur → code de sa salle. Tenu à jour par `create`, `join` et `removeParticipant`, seuls à changer les participants. */
   const roomByUser = new Map<string, string>();
 
@@ -57,6 +71,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     const index = room.participants.findIndex((p) => p.userId === userId);
     if (index === -1) return { ok: false, error: "NOT_IN_ROOM" };
 
+    if (room.race) saveRace(room, abandonRace(room.race, userId, now()));
     room.participants.splice(index, 1);
     roomByUser.delete(userId);
 
@@ -113,7 +128,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
         maxRunners: MAX_RUNNERS,
       };
 
-      rooms.set(code, cloneState(state));
+      rooms.set(code, { ...cloneState(state), race: null });
       roomByUser.set(user.id, code);
       return { ok: true, state: cloneState(state) };
     },
@@ -136,8 +151,13 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
         (p) => p.userId === user.id
       );
       if (existingParticipant) {
+        if (room.race) saveRace(room, setRunnerConnected(room.race, user.id, true, now));
         existingParticipant.connected = true;
         return { ok: true, state: cloneState(room) };
+      }
+
+      if (room.status === "countdown" || room.status === "racing") {
+        return { ok: false, error: "RACE_IN_PROGRESS" };
       }
 
       if (role === "runner") {
@@ -201,6 +221,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       if (!p) return { ok: false, error: "NOT_IN_ROOM" };
 
       p.connected = false;
+      if (room.race) saveRace(room, setRunnerConnected(room.race, userId, false, now()));
       return { ok: true, state: cloneState(room) };
     },
 
@@ -212,16 +233,86 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       if (!p) return { ok: false, error: "NOT_IN_ROOM" };
 
       p.connected = true;
+      if (room.race) saveRace(room, setRunnerConnected(room.race, userId, true, now()));
       return { ok: true, state: cloneState(room) };
     },
 
     expire(userId: string, code: string): RoomResult {
+      const room = rooms.get(code);
+      if (room?.race) saveRace(room, expireRunner(room.race, userId, now()));
       return removeParticipant(code, userId);
     },
 
     get(code: string): RoomState | null {
       const room = rooms.get(code);
       return room ? cloneState(room) : null;
+    },
+
+    start(userId: string, code: string): RoomResult {
+      const room = rooms.get(code);
+      if (!room) return { ok: false, error: "ROOM_NOT_FOUND" };
+      const result = startRace(room, userId, now(), generateSeed());
+      if (!result.ok) return result;
+      saveRace(room, result.state);
+      return { ok: true, state: cloneState(room) };
+    },
+
+    input(userId: string, code: string, ops: string[]): RoomResult {
+      const room = rooms.get(code);
+      if (!room?.race) return { ok: false, error: "RACE_NOT_RUNNING" };
+      const result = applyInput(room.race, userId, ops, now());
+      saveRace(room, result.state);
+      return result.ok ? { ok: true, state: cloneState(room) } : { ok: false, error: result.error };
+    },
+
+    abandon(userId: string, code: string): RoomResult {
+      const room = rooms.get(code);
+      if (!room?.race || room.status === "results") return { ok: false, error: "RACE_NOT_RUNNING" };
+      if (!room.race.runners.some((r) => r.id === userId && r.kind === "human")) {
+        return { ok: false, error: "INPUT_REJECTED" };
+      }
+      saveRace(room, abandonRace(room.race, userId, now()));
+      return { ok: true, state: cloneState(room) };
+    },
+
+    finish(userId: string, code: string, close: boolean): RoomResult {
+      const room = rooms.get(code);
+      if (!room) return { ok: false, error: "ROOM_NOT_FOUND" };
+      if (room.hostId !== userId) return { ok: false, error: "NOT_HOST" };
+      if (room.status !== "results") return { ok: false, error: "RACE_NOT_ALLOWED" };
+      room.race = null;
+      room.status = close ? "closed" : "waiting";
+      if (close) {
+        for (const p of room.participants) roomByUser.delete(p.userId);
+        rooms.delete(code);
+      }
+      return { ok: true, state: cloneState(room) };
+    },
+
+    tick(code: string): RoomState | null {
+      const room = rooms.get(code);
+      if (!room) return null;
+      if (room.race) saveRace(room, tickRace(room.race, now()));
+      return cloneState(room);
+    },
+
+    snapshot(code: string) {
+      const room = rooms.get(code);
+      if (!room?.race) return null;
+      const at = now();
+      const race = tickRace(room.race, at);
+      saveRace(room, race);
+      return raceSnapshot(race, at);
+    },
+
+    results(code: string) {
+      const race = rooms.get(code)?.race;
+      return race ? raceResults(race) : null;
+    },
+
+    self(code: string, userId: string) {
+      const runner = rooms.get(code)?.race?.runners.find((r) => r.id === userId && r.kind === "human");
+      return runner ? { typed: runner.typed, keystrokes: { ...runner.keystrokes } } : null;
     },
 
     roomOf,

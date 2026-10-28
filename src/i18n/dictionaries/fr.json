@@ -611,6 +611,7 @@
       "NOT_ENOUGH_RUNNERS": "Il faut au moins deux coureurs, dont un humain.",
       "NO_TEXT_AVAILABLE": "Aucun texte ne correspond à ces réglages.",
       "RACE_NOT_RUNNING": "La course n'est pas en cours.",
+      "RACE_IN_PROGRESS": "Une course est déjà en cours dans cette salle.",
       "INPUT_REJECTED": "Cette saisie ne peut pas être acceptée.",
       "INTERNAL": "Une erreur est survenue, réessaie dans un instant.",
       "OFFLINE": "Tu n'es pas connecté au serveur de jeu. Réessaie dans un instant.",

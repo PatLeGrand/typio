@@ -686,3 +686,37 @@ describe("roomHandlers: abus (énumération, connexions, taille, session)", () =
     expect(server.sessionExpiry.size).toBe(1);
   });
 });
+
+describe("diffusions réseau de la course", () => {
+  it("diffuse le décompte, limite les instantanés et publie les résultats au tick", async () => {
+    let time = Date.now();
+    const server = await startTestServer({ now: () => new Date(time), generateSeed: () => 42 });
+    servers.push(server);
+    const { token } = server.sessions.signIn("member");
+    const socket = await open(server, token);
+    expectOk(await create(socket, { botCount: 1, timeLimitSeconds: 60 }));
+    const states: string[] = [];
+    let results = 0;
+    socket.on("race:state", (state) => states.push(state.status));
+    socket.on("race:results", () => { results++; });
+    expect(await emitAck<Ack>((ack) => socket.emit("race:start", {}, ack))).toEqual({ ok: true });
+    await pause(30);
+    expect(states).toEqual(["countdown"]);
+    for (let n = 0; n < 12; n++) socket.emit("race:input", { ops: [] });
+    await pause(120);
+    // L’horloge injectée n’avance pas : ni les entrées ni l’intervalle ne rediffusent.
+    expect(states).toEqual(["countdown"]);
+    time += 3000;
+    await pause(120);
+    expect(states).toEqual(["countdown", "racing"]);
+    time += 60_000;
+    await pause(120);
+    expect(states).toEqual(["countdown", "racing", "results"]);
+    expect(results).toBe(1);
+    time += 1000;
+    await pause(120);
+    expect(states.length).toBe(3);
+    expect(results).toBe(1);
+    expect(await emitAck<Ack>((ack) => socket.emit("room:close", {}, ack))).toEqual({ ok: true });
+  });
+});

@@ -12,6 +12,8 @@ import type { RateLimiter } from "@/auth/rateLimit";
 import type { GraceTimers } from "./graceTimers";
 import {
   parseCreatePayload,
+  parseRaceCommand,
+  parseRaceInput,
   parseJoinPayload,
   parseRoomConfigPatch,
   RECONNECT_GRACE_MS,
@@ -43,6 +45,8 @@ export interface RoomHandlerDeps {
   sockets: UserSockets;
   /** Échecs de `room:join` par utilisateur (énumération des codes de salle). */
   joinFailures: RateLimiter;
+  raceInputs: RateLimiter;
+  syncRace: (code: string) => void;
 }
 
 type AckFailure = Extract<Ack, { ok: false }>;
@@ -91,6 +95,22 @@ export function registerRoomHandlers(
 
   const broadcast = (state: RoomState): void => {
     io.to(state.code).emit("room:state", state);
+    deps.syncRace(state.code);
+  };
+
+  const resumeRace = (code: string): void => {
+    const snapshot = store.snapshot(code);
+    if (!snapshot) return;
+    for (const s of userSockets()) {
+      s.emit("race:state", snapshot);
+      if (snapshot.status === "results") {
+        const results = store.results(code);
+        if (results) s.emit("race:results", results);
+      } else {
+        const self = store.self(code, user.id);
+        if (self) s.emit("race:self", self);
+      }
+    }
   };
 
   /**
@@ -102,6 +122,7 @@ export function registerRoomHandlers(
   const publishDeparture = (code: string, state: RoomState): void => {
     if (state.status === "closed") {
       for (const s of userSockets()) s.emit("room:state", state);
+      deps.syncRace(code);
     } else {
       broadcast(state);
     }
@@ -141,7 +162,10 @@ export function registerRoomHandlers(
       attachUser(code);
       timers.cancel(user.id);
       const res = store.reconnect(user.id, code);
-      if (res.ok) broadcast(res.state);
+      if (res.ok) {
+        broadcast(res.state);
+        resumeRace(code);
+      }
     }
   } catch (e) {
     console.error("[realtime] reattach failed:", describeError(e));
@@ -189,7 +213,10 @@ export function registerRoomHandlers(
       timers.cancel(user.id);
       return {
         reply: { ok: true, data: { code: state.code } },
-        publish: () => broadcast(state),
+        publish: () => {
+          broadcast(state);
+          resumeRace(state.code);
+        },
       };
     });
   });
@@ -208,6 +235,52 @@ export function registerRoomHandlers(
       const { state } = res;
       return { reply: { ok: true }, publish: () => broadcast(state) };
     });
+  });
+
+  for (const event of ["race:start", "race:abandon", "room:restart", "room:close"] as const) {
+    socket.on(event, (payload, ack) => {
+      respond(ack, () => {
+        if (!parseRaceCommand(payload)) return failure("INVALID_PAYLOAD");
+        const code = store.roomOf(user.id);
+        if (!code) return failure("NOT_IN_ROOM");
+        const res = event === "race:start" ? store.start(user.id, code)
+          : event === "race:abandon" ? store.abandon(user.id, code)
+          : store.finish(user.id, code, event === "room:close");
+        if (!res.ok) return failure(res.error);
+        return {
+          reply: { ok: true },
+          publish: () => {
+            broadcast(res.state);
+            if (res.state.status === "closed") {
+              for (const p of res.state.participants) {
+                timers.cancel(p.userId);
+                for (const s of sockets.of(p.userId)) {
+                  void s.leave(code);
+                  s.data.roomCode = null;
+                }
+              }
+            }
+          },
+        };
+      });
+    });
+  }
+
+  socket.on("race:input", (payloadInput) => {
+    if (!deps.raceInputs.consume(user.id)) return;
+    const payload = parseRaceInput(payloadInput);
+    if (!payload) {
+      socket.emit("room:error", "INPUT_REJECTED");
+      return;
+    }
+    const code = store.roomOf(user.id);
+    if (!code) {
+      socket.emit("room:error", "RACE_NOT_RUNNING");
+      return;
+    }
+    const res = store.input(user.id, code, payload.ops);
+    if (!res.ok) socket.emit("room:error", res.error);
+    deps.syncRace(code);
   });
 
   socket.on("room:leave", (ack) => {

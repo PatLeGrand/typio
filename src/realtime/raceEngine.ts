@@ -19,7 +19,7 @@ export interface RaceRunner {
   typed: string;
   position: number;
   keystrokes: Keystrokes;
-  /** Counts all accepted operations, including backspaces, for COURSE-06. */
+  /** Compte toutes les opérations acceptées, retours arrière compris (COURSE-06). */
   inputCount: number;
   lastActivityAt: number;
   finishedAt: number | null;
@@ -82,8 +82,9 @@ export function startRace(
   };
 }
 
-/** Rejections preserve the exact input state; no part of a rejected batch is applied. */
+/** Aucun lot refusé n’est appliqué, même partiellement ; seul le temps avance. */
 export function applyInput(race: RaceState, userId: string, ops: readonly string[], now: number): RaceResult {
+  race = tickRace(race, now);
   if (race.status !== "racing" || now < race.startAt || now >= race.startAt + race.timeLimitMs) {
     return { ok: false, state: race, error: "RACE_NOT_RUNNING" };
   }
@@ -128,7 +129,7 @@ export function setRunnerConnected(race: RaceState, userId: string, connected: b
   };
 }
 
-/** The caller owns the 30-second grace timer; stale expirations after reconnect are ignored. */
+/** L’appelant gère la grâce de 30 s ; une expiration après reconnexion est ignorée. */
 export function expireRunner(race: RaceState, userId: string, now: number): RaceState {
   const runner = race.runners.find((r) => r.id === userId);
   return runner && !runner.connected ? abandonRace(race, userId, now) : tickRace(race, now);
@@ -171,7 +172,7 @@ export function raceSnapshot(race: RaceState, now: number) {
   };
 }
 
-/** Final ranking is available only after the race ends. Ties preserve room order. */
+/** Classement disponible après la fin ; les égalités gardent l’ordre de la salle. */
 export function raceResults(race: RaceState) {
   const endedAt = race.endedAt;
   if (endedAt === null) return null;

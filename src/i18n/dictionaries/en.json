@@ -611,6 +611,7 @@
       "NOT_ENOUGH_RUNNERS": "At least two runners are required, including one human.",
       "NO_TEXT_AVAILABLE": "No text matches these settings.",
       "RACE_NOT_RUNNING": "The race is not running.",
+      "RACE_IN_PROGRESS": "A race is already in progress in this room.",
       "INPUT_REJECTED": "This input cannot be accepted.",
       "INTERNAL": "Something went wrong, please try again in a moment.",
       "OFFLINE": "You are not connected to the game server. Try again in a moment.",
