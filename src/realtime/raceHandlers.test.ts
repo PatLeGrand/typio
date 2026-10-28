@@ -85,18 +85,20 @@ describe("frontière client des courses (COURSE-06)", () => {
       { event: "race:self", payload: store.self("ABCDEF", "host") },
     ]);
     at(4000);
-    for (const payload of [null, [], { ops: ["ab"] }, { ops: [""] }, { ops: Array(65).fill("a") }, { ops: ["a"], userId: "guest" }]) {
+    for (const payload of [null, [], { ops: ["ab"] }, { ops: ["😀"] }, { ops: [""] }, { ops: Array(65).fill("a") }, { ops: ["a"], userId: "guest" }]) {
       host.input(payload);
       expect(host.received.at(-1)).toEqual({ event: "room:error", payload: "INPUT_REJECTED" });
     }
     expect(store.self("ABCDEF", "host")?.typed).toBe("");
-    host.input({ ops: ["😀"] });
+    host.input({ ops: ["\uD83D", "\uDE00"] });
     expect(store.self("ABCDEF", "host")?.typed).toBe("😀");
     host.input({ ops: Array(64).fill("a") });
     expect(host.received.slice(-2)).toEqual([
       { event: "room:error", payload: "INPUT_REJECTED" },
-      { event: "race:self", payload: { typed: "😀", keystrokes: { total: 1, correct: 0 } } },
+      { event: "race:self", payload: { typed: "😀", keystrokes: { total: 2, correct: 0 } } },
     ]);
+    host.input({ ops: ["\b"] });
+    expect(store.self("ABCDEF", "host")?.typed).toBe("\uD83D");
     host.input({ ops: ["\b"] });
     expect(store.self("ABCDEF", "host")?.typed).toBe("");
     expect(guest.received).toEqual([]);

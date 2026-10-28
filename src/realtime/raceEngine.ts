@@ -90,13 +90,13 @@ export function applyInput(race: RaceState, userId: string, ops: readonly string
   }
   const runner = race.runners.find((r) => r.id === userId && r.kind === "human");
   if (!runner || !active(runner) || !runner.connected || now < runner.lastActivityAt ||
-    ops.length > 64 || ops.some((op) => typeof op !== "string" || Array.from(op).length !== 1) ||
+    ops.length > 64 || ops.some((op) => typeof op !== "string" || op.length !== 1) ||
     runner.inputCount + ops.length > 25 * ((now - race.startAt) / 1000) + 15) {
     return { ok: false, state: race, error: "INPUT_REJECTED" };
   }
   let updated = { ...runner };
   for (const op of ops) {
-    const next = op === "\b" ? Array.from(updated.typed).slice(0, -1).join("") : updated.typed + op;
+    const next = op === "\b" ? updated.typed.slice(0, -1) : updated.typed + op;
     const input = applyTypedInput(updated.typed, next, race.text, race.config.inputMode, updated.keystrokes);
     updated = { ...updated, ...input, inputCount: updated.inputCount + 1, lastActivityAt: now, status: "typing" };
     updated.position = countCorrectChars(updated.typed, race.text);

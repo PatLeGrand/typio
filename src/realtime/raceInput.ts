@@ -1,10 +1,8 @@
-/** Diff du champ par points de code ; le serveur ne reçoit que des frappes. */
+/** Diff du champ par unités UTF-16 ; le serveur ne reçoit que des frappes. */
 export function raceInputOps(previous: string, next: string): string[] {
-  const before = Array.from(previous);
-  const after = Array.from(next);
   let common = 0;
-  while (common < before.length && common < after.length && before[common] === after[common]) common++;
-  return [...Array<string>(before.length - common).fill("\b"), ...after.slice(common)];
+  while (common < previous.length && common < next.length && previous[common] === next[common]) common++;
+  return [...Array<string>(previous.length - common).fill("\b"), ...next.slice(common).split("")];
 }
 
 /** Un message de 64 opérations maximum par tranche de 100 ms (PERF-02). */

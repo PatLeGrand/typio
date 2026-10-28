@@ -73,7 +73,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
     const ops = raceInputOps(input.typed, value);
     let next = input;
     for (const op of ops) {
-      const typed = op === "\b" ? Array.from(next.typed).slice(0, -1).join("") : next.typed + op;
+      const typed = op === "\b" ? next.typed.slice(0, -1) : next.typed + op;
       next = applyTypedInput(next.typed, typed, race.text, room.config.inputMode, next.keystrokes);
     }
     setInput(next);

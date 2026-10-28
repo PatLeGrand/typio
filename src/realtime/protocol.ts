@@ -306,10 +306,10 @@ export function parseRaceCommand(input: unknown): boolean {
   return isPlainObject(input) && Object.keys(input).length === 0;
 }
 
-/** Lot borné de frappes Unicode ou de retours arrière (COURSE-06). */
+/** Lot borné d’unités UTF-16 ou de retours arrière (COURSE-06). */
 export function parseRaceInput(input: unknown): { ops: string[] } | null {
   if (!isPlainObject(input) || Object.keys(input).some((key) => key !== "ops")) return null;
   if (!Array.isArray(input.ops) || input.ops.length > 64 ||
-    input.ops.some((op) => typeof op !== "string" || Array.from(op).length !== 1)) return null;
+    input.ops.some((op) => typeof op !== "string" || op.length !== 1)) return null;
   return { ops: input.ops };
 }

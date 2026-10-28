@@ -560,7 +560,7 @@ describe("multiplayer race", () => {
     connection.sendInput(["a"]);
     expect(socket.emissions).toHaveLength(0);
     startConnected();
-    connection.sendInput(["a", "\b", "😀"]);
-    expect(socket.emissions[0]).toMatchObject({ event: "race:input", args: [{ ops: ["a", "\b", "😀"] }], timeoutMs: 0 });
+    connection.sendInput(["a", "\b", "\uD83D", "\uDE00"]);
+    expect(socket.emissions[0]).toMatchObject({ event: "race:input", args: [{ ops: ["a", "\b", "\uD83D", "\uDE00"] }], timeoutMs: 0 });
   });
 });

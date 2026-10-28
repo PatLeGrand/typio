@@ -108,11 +108,19 @@ describe("applyInput", () => {
     const next = input(racing("abc", source), ["x", "a", "x", "b"]);
     expect(next.runners[0]).toMatchObject({ typed: "ab", position: 2, keystrokes: { total: 4, correct: 2 } });
   });
+  it("counts and deletes emoji as two UTF-16 units", () => {
+    const race = input(racing(), ["\uD83D", "\uDE00"]);
+    expect(race.runners[0]).toMatchObject({ typed: "😀", inputCount: 2, keystrokes: { total: 2, correct: 0 } });
+    const next = input(race, ["\b"]);
+    expect(next.runners[0].typed).toBe("\uD83D");
+    expect(input(next, ["\b"]).runners[0]).toMatchObject({ typed: "", inputCount: 4, keystrokes: { total: 2, correct: 0 } });
+  });
   it.each([
     { ops: Array(16).fill("a"), now: START },
     { ops: Array(16).fill("\b"), now: START },
     { ops: Array(65).fill("a"), now: START + 10_000 },
     { ops: ["ab"], now: START + 10_000 },
+    { ops: ["😀"], now: START + 10_000 },
     { ops: [""], now: START + 10_000 },
   ])(
     "atomically rejects invalid batches or impossible cadence (%j)", ({ ops, now }) => {
