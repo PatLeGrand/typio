@@ -85,6 +85,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     create(
       user: UserContext,
       configPatch: RoomConfigPatch,
+      role: ParticipantRole,
       now: number
     ): RoomResult {
       if (user.kind === "guest") {
@@ -104,7 +105,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
             userId: user.id,
             displayName: user.displayName,
             kind: user.kind,
-            role: "runner",
+            role,
             connected: true,
             joinedAt: now,
           },

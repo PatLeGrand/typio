@@ -2,9 +2,35 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_EXCLUDED_CHARACTERS,
   normalizeExcludedCharacters,
+  parseCreatePayload,
   parseJoinPayload,
   parseRoomConfigPatch,
 } from "./protocol";
+
+describe("parseCreatePayload", () => {
+  it("defaults to an empty config and runner role", () => {
+    expect(parseCreatePayload({})).toEqual({ config: {}, role: "runner" });
+    expect(parseCreatePayload({ config: { language: "en" } })).toEqual({
+      config: { language: "en" }, role: "runner",
+    });
+  });
+
+  it.each(["runner", "spectator"])("accepts the %s role and validates the config", (role) => {
+    expect(parseCreatePayload({ role })).toEqual({ config: {}, role });
+    expect(parseCreatePayload({ config: { excludedCharacters: "b a b" }, role })).toEqual({
+      config: { excludedCharacters: "ab" }, role,
+    });
+  });
+
+  it.each([
+    undefined, null, [], "runner",
+    { role: "host" }, { role: null },
+    { hostId: "x" },
+    { config: { language: "de" } }, { config: { hostId: "x" } }, { config: null },
+  ])("rejects an invalid create payload: %o", (payload) => {
+    expect(parseCreatePayload(payload)).toBeNull();
+  });
+});
 
 describe("parseRoomConfigPatch", () => {
   it("accepts an empty or partial valid patch", () => {

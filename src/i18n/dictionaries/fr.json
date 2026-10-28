@@ -462,6 +462,9 @@
     },
     "invite": {
       "button": "Inviter des amis",
+      "roleLabel": "Ton rôle dans la salle",
+      "runner": "Coureur",
+      "spectator": "Spectateur seulement",
       "guestNotice": "Les invités ne peuvent pas créer de salle. Crée un compte pour inviter des amis.",
       "anonymousNotice": "Pour inviter des amis, tu dois être connecté.",
       "loginLink": "Se connecter"

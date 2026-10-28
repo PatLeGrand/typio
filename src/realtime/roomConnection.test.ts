@@ -418,7 +418,7 @@ describe("accusés (D8)", () => {
     const result = connection.create();
 
     expect(socket.emissions).toHaveLength(1);
-    expect(socket.emissions[0]).toMatchObject({ event: "room:create", args: [{}], timeoutMs: ACK_TIMEOUT_MS });
+    expect(socket.emissions[0]).toMatchObject({ event: "room:create", args: [{ config: {}, role: "runner" }], timeoutMs: ACK_TIMEOUT_MS });
     socket.emissions[0].ack(null, { ok: true, data: { code: "ABC234" } });
 
     await expect(result).resolves.toEqual({ ok: true, data: { code: "ABC234" } });
@@ -427,8 +427,8 @@ describe("accusés (D8)", () => {
 
   it("create : transmet la configuration demandée", async () => {
     startConnected();
-    const result = connection.create({ language: "en" });
-    expect(socket.emissions[0].args).toEqual([{ language: "en" }]);
+    const result = connection.create({ language: "en" }, "spectator");
+    expect(socket.emissions[0].args).toEqual([{ config: { language: "en" }, role: "spectator" }]);
     socket.emissions[0].ack(null, { ok: true, data: { code: "ABC234" } });
     await result;
   });

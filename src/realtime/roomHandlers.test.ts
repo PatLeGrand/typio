@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from "vitest";
-import type { Ack, JoinPayload, RoomState } from "./protocol";
+import type { Ack, JoinPayload, ParticipantRole, RoomState } from "./protocol";
 import { startTestServer, waitForConnection, type TestClient } from "./testSupport";
 
 type TestServer = Awaited<ReturnType<typeof startTestServer>>;
@@ -35,8 +35,8 @@ function emitAck<T>(emit: (ack: (res: T) => void) => void): Promise<T> {
   return new Promise((resolve) => emit(resolve));
 }
 
-const create = (socket: TestClient, config: unknown = {}) =>
-  emitAck<CreateAck>((ack) => socket.emit("room:create", config, ack));
+const create = (socket: TestClient, config: unknown = {}, role: ParticipantRole = "runner") =>
+  emitAck<CreateAck>((ack) => socket.emit("room:create", { config, role }, ack));
 
 const join = (socket: TestClient, payload: unknown) =>
   emitAck<CreateAck>((ack) => socket.emit("room:join", payload, ack));
@@ -106,6 +106,29 @@ describe("roomHandlers (lot 2)", () => {
     expect(state.hostId).toBe(userA.userId);
     expect(state.config.textMode).toBe("words");
   });
+
+  it("SALLE-01: the member can create as a spectator host", async () => {
+    const server = await start();
+    const user = server.sessions.signIn("member");
+    const socket = await open(server, user.token);
+    const statePromise = waitForState(socket, (s) => s.participants.length === 1);
+    expectOk(await create(socket, {}, "spectator"));
+    const state = await statePromise;
+    expect(state.hostId).toBe(user.userId);
+    expect(participant(state, user.userId)?.role).toBe("spectator");
+  });
+
+  it.each([{ role: "host" }, { config: {}, hostId: "x" }, { config: { language: "de" } }])(
+    "rejects an invalid create payload without creating a room: %o", async (payload) => {
+      const server = await start();
+      const user = server.sessions.signIn("member");
+      const socket = await open(server, user.token);
+      expect(await emitAck<CreateAck>((ack) => socket.emit("room:create", payload, ack))).toEqual({
+        ok: false, error: "INVALID_PAYLOAD",
+      });
+      expectOk(await create(socket));
+    },
+  );
 
   it("AC-2: invité B rejoint, A et B reçoivent le même room:state à 2 participants", async () => {
     const server = await start();
@@ -562,7 +585,7 @@ describe("roomHandlers: abus (énumération, connexions, taille, session)", () =
     const socket = await open(server, server.sessions.signIn("member").token);
     const closed = new Promise<string>((resolve) => socket.once("disconnect", resolve));
 
-    socket.emit("room:create", { textMode: "x".repeat(20_000) }, () => undefined);
+    socket.emit("room:create", { config: { textMode: "x".repeat(20_000) }, role: "runner" }, () => undefined);
 
     expect(await closed).toBeTruthy();
   });
