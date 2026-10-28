@@ -5,7 +5,7 @@ import { WORDS_EN } from "./data/words.en";
 import { WORDS_FR } from "./data/words.fr";
 
 /**
- * Génération du texte d'une course (TEXTE-1, TEXTE-2, H-10, H-11).
+ * Génération du texte d'une course (CONF-03, CONF-02, CONF-04, CONF-06, CONF-07, H-10, H-11).
  * Module pur : ni DOM ni React, et le hasard est injecté pour que le serveur temps réel
  * puisse le réutiliser et que les tests soient déterministes.
  */
@@ -18,7 +18,7 @@ export type TextGenerationResult =
   | { ok: true; text: string }
   | { ok: false; error: "NO_TEXT_AVAILABLE" };
 
-/** Longueur visée selon le réglage ; le résultat reste dans ±25 % (TEXTE-1). */
+/** Longueur visée selon le réglage ; le résultat reste dans ±25 % (CONF-04). */
 export const TEXT_TARGET_LENGTH: Record<RaceSettings["length"], number> = {
   short: 100,
   medium: 200,

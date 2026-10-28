@@ -3,7 +3,7 @@ import { TIME_LIMITS_SECONDS } from "@/realtime/protocol";
 import { DEFAULT_RACE_SETTINGS, deserializeRaceSettings, getEffectiveTimeLimitSeconds,
   parseRaceSettings, serializeRaceSettings } from "./config";
 
-describe("race settings boundary (CONFIG-1..9)", () => {
+describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01)", () => {
   it("round-trips accents and URL-sensitive exclusions without changing settings", () => {
     const settings = { ...DEFAULT_RACE_SETTINGS, excludedCharacters: "#%&+?é", botCount: 0 };
     const query = new URLSearchParams(serializeRaceSettings(settings));

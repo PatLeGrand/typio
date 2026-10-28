@@ -1,5 +1,5 @@
 /**
- * Phrases françaises écrites pour Typio (TEXTE-1, H-10) : sujets de la vie courante d'un
+ * Phrases françaises écrites pour Typio (CONF-03, H-10) : sujets de la vie courante d'un
  * collégien ou d'un lycéen, ponctuation simple, 40 à 140 caractères. Une partie est sans
  * aucune lettre accentuée pour que l'option « sans accents » reste jouable.
  */

@@ -52,7 +52,7 @@ let assetsRegistered = false;
 // (la caméra suit le joueur local, la piste est bien plus longue que l'écran).
 const EDGE_MARGIN = 70; // px entre le Blob et le bord de l'écran
 
-// Couleurs de la scène par thème (UI-3). Les décors sont des SVG clairs : en thème sombre on
+// Couleurs de la scène par thème (DES-05, A11Y-01). Les décors sont des SVG clairs : en thème sombre on
 // assombrit le fond et on teinte (multiplie) chaque calque.
 const SCENE_COLORS = {
   light: { background: 0xdcf2fa, layers: { cloud: 0xffffff, "meadow-distant": 0xffffff, meadow: 0xffffff, track: 0xffffff } },

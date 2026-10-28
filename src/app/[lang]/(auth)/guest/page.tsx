@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/guest">): 
   return { title: meta.title, description: meta.description };
 }
 
-/** AUTH-4 : jouer en invité avec un pseudo ; données supprimées après 24 h (H-2), pas de création de course (SALLE-12). */
+/** AUTH-02, AUTH-03 : jouer en invité avec un pseudo ; données supprimées après 24 h (H-2), pas de création de course (AUTH-03). */
 export default async function GuestPage({ params }: PageProps<"/[lang]/guest">) {
   const locale = requireLocale((await params).lang);
   await redirectIfSignedIn(locale);

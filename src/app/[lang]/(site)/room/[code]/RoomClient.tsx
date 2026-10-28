@@ -27,7 +27,7 @@ type RoomClientProps = {
 };
 
 /**
- * Salle d'attente (SALLE-7, SALLE-10, SALLE-13, SALLE-15). Rejoint la salle de l'URL une
+ * Salle d'attente (SALLE-01, SALLE-05, COURSE-05, CONF-12, ancien SALLE-13, SALLE-08). Rejoint la salle de l'URL une
  * seule fois par montage (D6) ; quitter la page sans « Quitter » ne quitte pas la salle (D7).
  */
 export function RoomClient({ code, role, locale, userId, labels, settingsLabels }: RoomClientProps) {

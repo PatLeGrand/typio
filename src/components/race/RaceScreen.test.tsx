@@ -121,7 +121,7 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
   });
 });
 
-describe("RaceScreen : saisie (COURSE-7, A-D6)", () => {
+describe("RaceScreen : saisie (COURSE-04, A-D6)", () => {
   it("mode libre : on continue après une faute", () => {
     const { labels } = setup({ settings: { inputMode: "free" } });
     advance(3000);
@@ -240,7 +240,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     expect(within(youRow as HTMLElement).getAllByRole("cell")[0]).toHaveTextContent("1er");
   });
 
-  it("COURSE-5 : abandon classé dernier et marqué", () => {
+  it("COURSE-07 : abandon classé dernier et marqué", () => {
     const { labels } = setup();
     expect(screen.getByRole("button", { name: labels.abandon })).toBeDisabled();
     advance(3000);
@@ -308,7 +308,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
   });
 });
 
-describe("RaceScreen : aucun texte (TEXTE-1)", () => {
+describe("RaceScreen : aucun texte (CONF-03)", () => {
   it("explique le problème et renvoie vers les réglages au lieu de lancer une course vide", () => {
     const { labels, settings } = setup({ initialText: null });
     expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.message);
@@ -329,7 +329,7 @@ describe("RaceScreen : aucun texte (TEXTE-1)", () => {
   });
 });
 
-describe("RaceScreen : bots (BOT-2)", () => {
+describe("RaceScreen : bots (BOT-02, BOT-03)", () => {
   it("affiche le joueur et botCount bots nommés d'après le dictionnaire", () => {
     const { labels } = setup({ settings: { botCount: 3 } });
     expect(screen.getAllByRole("listitem")).toHaveLength(4);

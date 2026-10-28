@@ -1,7 +1,7 @@
 import type { RaceSettings } from "./config";
 
 /**
- * Mesures d'une frappe (A-D6, RES-2). Module pur : aucun temps ni DOM, l'appelant fournit
+ * Mesures d'une frappe (A-D6, RES-02). Module pur : aucun temps ni DOM, l'appelant fournit
  * le texte, la saisie et la durée écoulée.
  */
 export interface Keystrokes {

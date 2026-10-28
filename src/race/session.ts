@@ -41,7 +41,7 @@ export function typeIntoRaceSession(session: RaceSession, next: string, now: num
   return typed === current.text ? withLifecycle(updated, { type: "complete" }, now) : updated;
 }
 
-/** COURSE-5 : abandon volontaire, possible seulement en course. */
+/** COURSE-07 : abandon volontaire, possible seulement en course. */
 export function abandonRaceSession(session: RaceSession, now: number): RaceSession {
   return withLifecycle(tickRaceSession(session, now), { type: "abandon" }, now);
 }

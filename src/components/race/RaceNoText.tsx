@@ -6,7 +6,7 @@ type Props = {
   settingsHref: string;
 };
 
-/** TEXTE-1 : les filtres ne laissent aucun texte, on l'explique au lieu de lancer une course vide. */
+/** CONF-03 : les filtres ne laissent aucun texte, on l'explique au lieu de lancer une course vide. */
 export function RaceNoText({ labels, settingsHref }: Props) {
   return (
     <main className="mx-auto flex min-h-dvh max-w-3xl flex-col justify-center gap-6 px-4 py-12 text-foreground">

@@ -20,7 +20,7 @@ type JoinRoomFormProps = {
 
 const ROLES = ["runner", "spectator"] as const satisfies readonly ParticipantRole[];
 
-/** « Rejoindre avec un code » (SALLE-4, SALLE-7) : code de 6 caractères et rôle. */
+/** « Rejoindre avec un code » (SALLE-02, JOIN-01, SALLE-01, SALLE-05, COURSE-05) : code de 6 caractères et rôle. */
 export function JoinRoomForm({ labels, invalidCodeMessage, disabled, onJoin }: JoinRoomFormProps) {
   const [code, setCode] = useState("");
   const [role, setRole] = useState<ParticipantRole>("runner");

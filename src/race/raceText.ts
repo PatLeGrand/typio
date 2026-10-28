@@ -4,7 +4,7 @@ import { generateRaceText } from "./textGenerator";
 const MAX_ATTEMPTS = 8;
 
 /**
- * Texte d'une course (TEXTE-1, TEXTE-2). Le générateur peut échouer par malchance du tirage
+ * Texte d'une course (CONF-03, CONF-02, CONF-04, CONF-06, CONF-07). Le générateur peut échouer par malchance du tirage
  * même quand les filtres laissent des phrases : on réessaie quelques fois avant de conclure
  * qu'aucun texte n'est disponible (`null`). `previous` évite de rejouer le même texte (AC-3, AC-6).
  */

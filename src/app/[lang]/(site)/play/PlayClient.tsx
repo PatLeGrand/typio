@@ -23,7 +23,7 @@ type PlayClientProps = {
 };
 
 /**
- * Choix de la salle (SALLE-1, SALLE-4, SALLE-12). Si l'élève est déjà dans une salle (D7),
+ * Choix de la salle (SALLE-01, SALLE-02, JOIN-01, AUTH-03). Si l'élève est déjà dans une salle (D7),
  * le bandeau propose d'y retourner ou de la quitter, et créer ou rejoindre est désactivé.
  */
 export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps) {

@@ -41,7 +41,7 @@ beforeEach(() => {
   mocks.useRoom.mockImplementation(() => current);
 });
 
-describe("vue de l'hôte (SALLE-10)", () => {
+describe("vue de l'hôte (CONF-12)", () => {
   it.each(["fr", "en"] as const)("réglages modifiables, sans note « hôte seulement » (%s)", (locale) => {
     current = makeUseRoom({ room: hostRoom });
     const { labels, settingsLabels } = renderRoom({ locale });
@@ -90,7 +90,7 @@ describe("vue d'un participant", () => {
   });
 });
 
-describe("liste des participants (SALLE-7)", () => {
+describe("liste des participants (SALLE-01, SALLE-05, COURSE-05)", () => {
   it("affiche nom, rôle, badge hôte, « toi » et déconnecté dans une zone aria-live", () => {
     current = makeUseRoom({ room: hostRoom });
     const { labels } = renderRoom();
@@ -195,7 +195,7 @@ describe("rejoindre au chargement (D6)", () => {
   });
 });
 
-describe("quitter (D7, SALLE-15)", () => {
+describe("quitter (D7, SALLE-08)", () => {
   it("quitte la salle puis remplace l'adresse par /play dans la langue courante", async () => {
     const leave = vi.fn<UseRoom["leave"]>(async () => ({ ok: true, data: undefined }));
     current = makeUseRoom({ leave, room: hostRoom });
@@ -388,7 +388,7 @@ describe("connexion", () => {
   });
 });
 
-describe("code de la salle (SALLE-4)", () => {
+describe("code de la salle (SALLE-02, JOIN-01)", () => {
   it("affiche le code en grand et le copie, avec retour « Copié » annoncé", async () => {
     const writeText = vi.fn(async () => undefined);
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });

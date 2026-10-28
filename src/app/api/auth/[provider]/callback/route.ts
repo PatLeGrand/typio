@@ -13,7 +13,7 @@ import { isOAuthProviderName } from "@/auth/oauth/providers";
 import { getClientIp } from "@/auth/rateLimit";
 
 /**
- * AUTH-2, AUTH-3 : retour du fournisseur, `GET /api/auth/{provider}/callback`. Vérifie le
+ * AUTH-01 : retour du fournisseur, `GET /api/auth/{provider}/callback`. Vérifie le
  * `state`, échange le code, lit l'identifiant du compte, puis ouvre la session et redirige vers
  * le site.
  */

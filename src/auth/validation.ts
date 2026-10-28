@@ -14,7 +14,7 @@ export const PSEUDO_MAX_LENGTH = 20;
  */
 const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,20}$/;
 /**
- * AUTH-4 : un pseudo ne s'écrit qu'en alphabet latin, pour qu'aucun homoglyphe (« а »
+ * AUTH-02, AUTH-03 : un pseudo ne s'écrit qu'en alphabet latin, pour qu'aucun homoglyphe (« а »
  * cyrillique, « ο » grec, « ａ » pleine chasse, « ɑ » latin alpha) ne puisse imiter
  * l'identifiant ASCII d'un membre. Sont admis : l'ASCII ci-dessous, les lettres dont la
  * forme NFD est une lettre ASCII suivie de diacritiques (« é », « ï », « ç »), et les

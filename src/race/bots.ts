@@ -2,7 +2,7 @@ import type { RaceSettings } from "./config";
 import type { Keystrokes } from "./metrics";
 
 /**
- * Simulation des bots (BOT-2, A-D8). Module pur : le hasard est injecté et le temps est un
+ * Simulation des bots (BOT-02, BOT-03, A-D8). Module pur : le hasard est injecté et le temps est un
  * simple paramètre `elapsedMs`, jamais lu sur une horloge. Le bot ne « joue » pas : on
  * précalcule sa frappe en une courbe temps -> caractères corrects, que l'écran (ou, plus tard,
  * le serveur) interroge à chaque image.

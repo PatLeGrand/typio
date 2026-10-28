@@ -33,7 +33,7 @@ const PSEUDO_HINT_ID = "register-username-hint";
 const PASSWORD_RULE_ID = "register-password-rule";
 const TERMS_ERROR_ID = "register-terms-error";
 
-/** Inscription par pseudo et mot de passe (AUTH-1), sans e-mail. La validation fait foi côté serveur. */
+/** Inscription par pseudo et mot de passe (AUTH-01, TEST-03), sans e-mail. La validation fait foi côté serveur. */
 export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
   const [state, formAction, pending] = useActionState(register, IDLE);
   // Contrôlés : React 19 vide les champs non contrôlés après une action, erreur comprise.

@@ -36,7 +36,7 @@ type Props = {
   botNameSeed: number;
   /** Horloge en ms ; injectable pour les tests (A-D6). */
   now?: () => number;
-  /** Tirage dans [0, 1[ ; injectable pour les tests (TEXTE-2, BOT-2). */
+  /** Tirage dans [0, 1[ ; injectable pour les tests (CONF-02, CONF-04, CONF-06, CONF-07, BOT-02, BOT-03). */
   random?: () => number;
 };
 

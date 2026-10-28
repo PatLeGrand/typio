@@ -121,7 +121,7 @@ describe("roomHandlers (lot 2)", () => {
     expect(stateA).toEqual(stateB);
   });
 
-  it("AC-2: un code saisi en minuscules avec un tiret est normalisé (SALLE-4)", async () => {
+  it("AC-2: un code saisi en minuscules avec un tiret est normalisé (SALLE-02, JOIN-01)", async () => {
     const server = await start();
     const socketA = await open(server, server.sessions.signIn("member").token);
     const code = expectOk(await create(socketA));
@@ -131,7 +131,7 @@ describe("roomHandlers (lot 2)", () => {
     expect(expectOk(await join(socketB, { code: typed, role: "spectator" }))).toBe(code);
   });
 
-  it("AC-3 (SALLE-10): A change la langue, B reçoit le room:state sans rien demander", async () => {
+  it("AC-3 (CONF-12): A change la langue, B reçoit le room:state sans rien demander", async () => {
     const server = await start();
     const { socketA, socketB } = await roomWithTwo(server);
     const statePromiseB = waitForState(socketB, (s) => s.config.language === "en");
@@ -181,7 +181,7 @@ describe("roomHandlers (lot 2)", () => {
     });
   });
 
-  it("AC-7 (SALLE-15): A quitte, B reçoit un état où il est hôte", async () => {
+  it("AC-7 (SALLE-08): A quitte, B reçoit un état où il est hôte", async () => {
     const server = await start();
     const { userB, socketA, socketB } = await roomWithTwo(server);
     const statePromiseB = waitForState(socketB, (s) => s.participants.length === 1);
@@ -191,7 +191,7 @@ describe("roomHandlers (lot 2)", () => {
     expect((await statePromiseB).hostId).toBe(userB.userId);
   });
 
-  it("AC-8 (SALLE-13): B se déconnecte, A voit connected: false ; B revient par room:join, même joinedAt", async () => {
+  it("AC-8 (ancien SALLE-13): B se déconnecte, A voit connected: false ; B revient par room:join, même joinedAt", async () => {
     const server = await start();
     const { userB, socketA, socketB, code, joined } = await roomWithTwo(server);
     const joinedAt = participant(joined, userB.userId)?.joinedAt;
@@ -278,7 +278,7 @@ describe("roomHandlers: reconnexion, onglets et départ (D1 à D4)", () => {
     expect(server.timers.size).toBe(0);
   });
 
-  it("S-2 (SALLE-15): l'hôte déconnecté qui expire passe le rôle au participant connecté", async () => {
+  it("S-2 (SALLE-08): l'hôte déconnecté qui expire passe le rôle au participant connecté", async () => {
     const server = await start(100);
     const { userA, userB, socketA, socketB } = await roomWithTwo(server);
     const transferred = waitForState(socketB, (s) => !participant(s, userA.userId));
@@ -388,7 +388,7 @@ describe("roomHandlers: reconnexion, onglets et départ (D1 à D4)", () => {
     expectOk(await join(otherTab, { code, role: "spectator" }));
   });
 
-  it("S-4 (SALLE-15): après leave, A peut créer une autre salle", async () => {
+  it("S-4 (SALLE-06): après leave, A peut créer une autre salle", async () => {
     const server = await start();
     const { code, socketA } = await roomWithTwo(server);
     expect(await leave(socketA)).toEqual({ ok: true });

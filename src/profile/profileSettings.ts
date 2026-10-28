@@ -11,7 +11,7 @@ export function isKeyboardLayout(value: unknown): value is KeyboardLayout {
 }
 
 /**
- * Codes d'erreur de la modification du profil ; l'interface les traduit (UI-5), jamais de
+ * Codes d'erreur de la modification du profil ; l'interface les traduit (I18N-01, I18N-02, I18N-03), jamais de
  * phrase ici. `INVALID_PSEUDO`, `PSEUDO_TAKEN` et `UNKNOWN` réutilisent les messages de
  * l'authentification (`auth.errors`), les autres vivent dans `profile.errors`.
  */
@@ -36,7 +36,7 @@ export interface ProfileUpdate {
 
 export type ProfileValidationResult = { ok: true; value: ProfileUpdate } | { ok: false; code: ProfileErrorCode };
 
-/** Valide les trois réglages éditables du profil ; le nom affiché suit la règle du pseudo (AUTH-4). */
+/** Valide les trois réglages éditables du profil ; le nom affiché suit la règle du pseudo (AUTH-02, AUTH-03). */
 export function validateProfileUpdate(raw: {
   displayName: unknown;
   keyboardLayout: unknown;

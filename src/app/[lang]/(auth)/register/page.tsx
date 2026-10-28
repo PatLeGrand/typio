@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/register">
   return { title: meta.title, description: meta.description };
 }
 
-/** AUTH-1 : inscription par pseudo et mot de passe, sans e-mail (OAuth d'abord, actif s'il est configuré). */
+/** AUTH-01, TEST-03 : inscription par pseudo et mot de passe, sans e-mail (OAuth d'abord, actif s'il est configuré). */
 export default async function RegisterPage({ params }: PageProps<"/[lang]/register">) {
   const locale = requireLocale((await params).lang);
   await redirectIfSignedIn(locale, { allowGuests: true });

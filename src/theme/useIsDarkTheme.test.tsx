@@ -4,7 +4,7 @@ import { useIsDarkTheme } from "./useIsDarkTheme";
 
 afterEach(() => document.documentElement.classList.remove("dark"));
 
-describe("useIsDarkTheme (UI-3)", () => {
+describe("useIsDarkTheme (DES-05, A11Y-01)", () => {
   it("suit la classe dark de <html>, au chargement puis en direct", async () => {
     const { result, unmount } = renderHook(() => useIsDarkTheme());
     expect(result.current).toBe(false);

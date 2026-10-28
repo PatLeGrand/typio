@@ -1,4 +1,4 @@
-/** Mots français fréquents, en minuscules, pour le mode « mots » (TEXTE-1, H-10). */
+/** Mots français fréquents, en minuscules, pour le mode « mots » (CONF-03, H-10). */
 export const WORDS_FR: readonly string[] = [
   "le", "la", "les", "un", "une", "des", "de", "du", "et", "est", "que", "qui", "dans", "pour",
   "sur", "avec", "pas", "plus", "par", "mais", "tout", "nous", "vous", "ils", "elles", "son",

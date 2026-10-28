@@ -26,7 +26,7 @@ const outcome = (overrides: Partial<PlayerOutcome>): PlayerOutcome => ({
 const build = (player: PlayerOutcome, bots: BotEntry[]) =>
   buildRaceResults({ textLength: TEXT_LENGTH, playerId: "player", playerName: "Toi", player, bots });
 
-describe("classement final (A-D7, RES-1, RES-2)", () => {
+describe("classement final (A-D7, RES-01, RES-02)", () => {
   it("classe les arrivés par temps, bots plus rapides ou plus lents que le joueur", () => {
     const rows = build(outcome({}), [bot("fast", 10), bot("slow", 2)]);
     expect(rows.map((row) => [row.id, row.rank, row.status])).toEqual([
