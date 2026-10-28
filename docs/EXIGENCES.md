@@ -20,7 +20,7 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
 | TECH-01 | complet | `package.json`, `src/app/[lang]/` | `src/app/[lang]/layout.test.tsx` | Next.js. Next 16.3.8, App Router, React 19. |
-| TECH-02 | partiel | `tsconfig.json`, `eslint.config.mjs` | — | TypeScript. `strict: true` et aucun `any`, `@ts-ignore` ni `@ts-expect-error` dans `src/`. Écarts : trois fichiers `.mjs` (`eslint.config.mjs`, `postcss.config.mjs`, `.claude/scripts/delegate.mjs`) et `@typescript-eslint/no-explicit-any` pas réglé explicitement en erreur (il vient du préréglage `eslint-config-next/typescript`, à vérifier). `allowJs: true` dans `tsconfig.json`. |
+| TECH-02 | partiel | `tsconfig.json`, `eslint.config.mjs` | — | TypeScript. `strict: true` et aucun `any`, `@ts-ignore` ni `@ts-expect-error` dans `src/`. Écarts : deux fichiers `.mjs` (`eslint.config.mjs`, `postcss.config.mjs`) et `@typescript-eslint/no-explicit-any` pas réglé explicitement en erreur (il vient du préréglage `eslint-config-next/typescript`, à vérifier). `.claude/scripts/delegate.mjs` exclu : outillage des agents IA, pas du code de l'application (choix documenté). `allowJs: true` dans `tsconfig.json`. |
 | TECH-03 | complet | `postcss.config.mjs`, `src/app/globals.css` | `src/theme/noHardcodedColors.test.ts` | Tailwind CSS 4, couleurs passées par des variables CSS. |
 | TECH-04 | partiel | `src/db/schema.ts`, `drizzle/0000_short_gateway.sql` à `0002_fair_daredevil.sql`, `scripts/migrate.ts` | `src/auth/repositories.integration.test.ts` | PostgreSQL via Drizzle, migrations versionnées. Manque : script de seed (corpus, utilisateurs, historique). Seules `users`, `sessions` et `oauth_accounts` existent : ni salles, ni courses, ni résultats en base. |
 | TECH-05 | complet | `Dockerfile`, `infra/docker-compose.yml`, `.github/workflows/image.yml` | — | Déploiement sur le VPS, HTTPS par Caddy, https://typio.aether-manager.ca. Dernière version vérifiée en production : 9 octobre 2026 (`sha-994ac37`). À revérifier avant chaque remise. |
@@ -213,6 +213,7 @@ Les hypothèses H-1 à H-18 de l'ancien cahier gardent leur identifiant : le cod
 | H-16 | 20 coureurs par course | révisée par l'énoncé | SALLE-05 : capacité de 2 à 30, choisie par l'hôte (le code est resté à 20). |
 | H-17 | Énergie identique pour tous, rattrapage par les capacités | sans objet | Les personnages, capacités et énergie sont remplacés par les bonus de remontée (BONUS-01 à 04). |
 | H-18 | Personnages débloqués par le nombre de courses terminées | sans objet | Personnages absents de l'énoncé. |
+| H-19 | L'outillage des agents IA (`.claude/`) est hors périmètre de TECH-02 | valable | Ce n'est pas du code de l'application livrée ; l'énoncé (§ 8, `docs/IA.md`) demande de commiter ces fichiers d'instructions d'agent, et ils ne sont ni compilés ni déployés. |
 
 ### Choix encore à trancher
 

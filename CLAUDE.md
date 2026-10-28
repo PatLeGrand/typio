@@ -33,7 +33,7 @@ avec ses anciens identifiants ; utilise la table de correspondance de `EXIGENCES
 
 # Contraintes de l'énoncé pour tout code
 
-- **TECH-02** : TypeScript à 100 % ; aucun fichier `.js`/`.jsx`/`.mjs`, aucun `any` explicite, aucun `@ts-ignore`/`@ts-expect-error` sans commentaire justificatif.
+- **TECH-02** : TypeScript à 100 % ; aucun fichier `.js`/`.jsx`/`.mjs`, aucun `any` explicite, aucun `@ts-ignore`/`@ts-expect-error` sans commentaire justificatif. Exception : l'outillage des agents (`.claude/`, dont `delegate.mjs`) n'est pas du code de l'application ; on n'y touche pas.
 - **TECH-07** : toute entrée serveur est validée par un schéma Zod (actions serveur, routes API, messages temps réel).
 - **TECH-10** : `.env.example` à jour, aucun secret commité.
 - **PERF-02** : progression regroupée ou limitée à environ 10 messages/s par joueur ; aucune écriture en base à chaque frappe.
