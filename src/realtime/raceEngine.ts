@@ -24,11 +24,14 @@ export interface RaceRunner {
   lastActivityAt: number;
   finishedAt: number | null;
   abandonedAt: number | null;
+  wpmSeries: number[];
+  userKind?: "member" | "guest";
   plan?: BotPlan;
 }
 
 export interface RaceState {
   status: "countdown" | "racing" | "results";
+  hostId: string;
   config: RoomConfig;
   text: string;
   startAt: number;
@@ -62,17 +65,17 @@ export function startRace(
   const runner = (id: string, name: string, kind: RaceRunner["kind"], connected: boolean): RaceRunner => ({
     id, name, kind, connected, status: "ready", typed: "", position: 0,
     keystrokes: { total: 0, correct: 0 }, inputCount: 0, lastActivityAt: now,
-    finishedAt: null, abandonedAt: null,
+    finishedAt: null, abandonedAt: null, wpmSeries: [],
   });
   return {
     ok: true,
     state: {
-      status: "countdown", config: { ...room.config }, text: generated.text,
+      status: "countdown", hostId: room.hostId, config: { ...room.config }, text: generated.text,
       startAt: now + COUNTDOWN_MS,
       timeLimitMs: getEffectiveTimeLimitSeconds({ ...room.config, abilities: false }) * 1000,
       endedAt: null,
       runners: [
-        ...humans.map((p) => runner(p.userId, p.displayName, "human", p.connected)),
+        ...humans.map((p) => ({ ...runner(p.userId, p.displayName, "human", p.connected), userKind: p.kind })),
         ...Array.from({ length: room.config.botCount }, (_, index) => ({
           ...runner(`bot-${index}`, names[index % names.length], "bot", true),
           plan: planBot(generated.text, room.config.botDifficulty, random),
@@ -140,6 +143,17 @@ export function tickRace(race: RaceState, now: number): RaceState {
   const deadline = race.startAt + race.timeLimitMs;
   const elapsedMs = Math.min(now, deadline) - race.startAt;
   const runners = race.runners.map((r): RaceRunner => {
+    if (r.kind === "human") {
+      // Indice = seconde depuis le départ ; les ticks tardifs complètent les secondes manquantes.
+      const count = Math.min(601, Math.floor(race.timeLimitMs / 1000) + 1,
+        Math.floor(elapsed(race, r, now) / 1000) + 1);
+      if (r.wpmSeries.length >= count) return r;
+      const wpmSeries = [...r.wpmSeries];
+      while (wpmSeries.length < count) {
+        wpmSeries.push(computeWpm(r.position, wpmSeries.length * 1000));
+      }
+      return { ...r, wpmSeries };
+    }
     if (!r.plan || !active(r)) return r;
     const finished = elapsedMs >= botFinishMs(r.plan);
     return {
@@ -189,4 +203,17 @@ export function raceResults(race: RaceState) {
   }).sort((a, b) => order[a.status] - order[b.status] ||
     (a.status === "finished" ? a.timeMs - b.timeMs : b.position - a.position))
     .map((row, index) => ({ ...row, rank: index + 1 }));
+}
+
+/** Données privées réservées au dépôt ; aucune saisie ni identité d'invité. */
+export function raceResultRows(race: RaceState) {
+  return raceResults(race)?.flatMap((row) => {
+    const runner = race.runners.find((r) => r.id === row.id)!;
+    if (runner.kind !== "human" || runner.userKind !== "member") return [];
+    return [{
+      userId: row.id, rank: row.rank, status: row.status, wpm: row.wpm,
+      grossWpm: row.grossWpm, accuracy: row.accuracy, errors: row.errors,
+      durationMs: row.timeMs, progress: row.progress, wpmSeries: [...runner.wpmSeries],
+    }];
+  }) ?? [];
 }

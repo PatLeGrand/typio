@@ -128,7 +128,7 @@ describe("applyInput", () => {
       const before = structuredClone(race);
       const result = applyInput(race, "host", ops, now);
       expect(result).toEqual({ ok: false, state: tickRace(race, now), error: "INPUT_REJECTED" });
-      expect(result.state.runners[0]).toEqual(race.runners[0]);
+      expect(result.state.runners[0]).toEqual({ ...race.runners[0], wpmSeries: tickRace(race, now).runners[0].wpmSeries });
       expect(race).toEqual(before);
     },
   );
@@ -264,5 +264,27 @@ describe("snapshots and COURSE-10 results", () => {
 it("exposes the server clock with the scheduled start for synchronized countdowns", () => {
   expect(raceSnapshot(started(), NOW + 500)).toMatchObject({
     serverNow: NOW + 500, startAt: START, status: "countdown",
+  });
+});
+
+describe("série MPM (RES-05)", () => {
+  it("complète chaque seconde malgré les ticks irréguliers et fige la série à l’arrivée", () => {
+    let race = input(racing(), ["a"], START + 500);
+    race = tickRace(race, START + 3_400);
+    expect(race.runners[0].wpmSeries).toEqual([0, 12, 6, 4]);
+    expect(raceSnapshot(race, START + 3_400).runners[0]).not.toHaveProperty("wpmSeries");
+    race = input(race, ["b", "c"], START + 3_500);
+    const series = [...race.runners[0].wpmSeries];
+    expect(tickRace(race, START + 9_000).runners[0].wpmSeries).toEqual(series);
+  });
+
+  it("fige à l’abandon et inclut la dernière seconde à la limite de temps, au plus 601 valeurs", () => {
+    const race = abandonRace(racing(), "host", START + 1_500);
+    expect(tickRace(race, START + 9_000).runners[0].wpmSeries).toEqual([0, 0]);
+    const limited = { ...racing(), timeLimitMs: 600_000 };
+    expect(tickRace(limited, START + 900_000).runners[1].wpmSeries).toHaveLength(601);
+    const short = { ...racing(), timeLimitMs: 2_000 };
+    expect(tickRace(short, START + 2_000).runners[1].wpmSeries).toEqual([0, 0, 0]);
+    expect(tickRace(short, START + 900_000).runners[1].wpmSeries).toHaveLength(3);
   });
 });

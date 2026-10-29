@@ -4,6 +4,7 @@
  * l'instancient avec un faux dépôt de sessions, sans base ni variables d'environnement.
  */
 
+import type { RaceRepository } from "@/race/raceRepository";
 import { createServer, type Server as HttpServer } from "node:http";
 import { Server } from "socket.io";
 import type { SessionRepository } from "@/auth/session";
@@ -33,6 +34,7 @@ export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, 
 
 export interface RealtimeServerOptions {
   sessions: SessionRepository;
+  raceRepository?: RaceRepository;
   /** Origines autorisées à ouvrir une connexion, par exemple `https://typio.aether-manager.ca`. */
   allowedOrigins: readonly string[];
   now?: () => Date;
@@ -52,6 +54,13 @@ export interface RealtimeServerHandle {
   sessionExpiry: SessionExpiryWatcher;
   /** Index des sockets ouverts par utilisateur. */
   userSockets: UserSockets;
+}
+
+/** Message seul : les erreurs Drizzle peuvent contenir des paramètres sensibles. */
+function describeError(error: unknown): string {
+  // Une erreur SQL enveloppée expose sa requête dans message : ne garder que la cause.
+  if (error instanceof Error && error.cause instanceof Error) return describeError(error.cause);
+  return error instanceof Error ? `${error.name}: ${error.message}` : "unknown error";
 }
 
 export function createRealtimeServer(options: RealtimeServerOptions): RealtimeServerHandle {
@@ -108,6 +117,12 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
   const lastPublishedAt = new Map<string, number>();
   function syncRace(code: string): void {
     const snapshot = store.snapshot(code);
+    for (const recording of store.takeRecordings()) {
+      if (options.raceRepository) {
+        void Promise.resolve().then(() => options.raceRepository!.recordRace(recording.race, recording.rows))
+          .catch((error: unknown) => console.error("[realtime] race recording failed:", describeError(error)));
+      }
+    }
     const state = store.get(code);
     const previous = publishedStatus.get(code);
     if (snapshot && state && (snapshot.status !== previous ||

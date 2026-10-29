@@ -22,7 +22,7 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 | TECH-01 | complet | `package.json`, `src/app/[lang]/` | `src/app/[lang]/layout.test.tsx` | Next.js. Next 16.3.8, App Router, React 19. |
 | TECH-02 | partiel | `tsconfig.json`, `eslint.config.mjs` | — | TypeScript. `strict: true` et aucun `any`, `@ts-ignore` ni `@ts-expect-error` dans `src/`. Écarts : deux fichiers `.mjs` (`eslint.config.mjs`, `postcss.config.mjs`) et `@typescript-eslint/no-explicit-any` pas réglé explicitement en erreur (il vient du préréglage `eslint-config-next/typescript`, à vérifier). `.claude/scripts/delegate.mjs` exclu : outillage des agents IA, pas du code de l'application (choix documenté). `allowJs: true` dans `tsconfig.json`. |
 | TECH-03 | complet | `postcss.config.mjs`, `src/app/globals.css` | `src/theme/noHardcodedColors.test.ts` | Tailwind CSS 4, couleurs passées par des variables CSS. |
-| TECH-04 | partiel | `src/db/schema.ts`, `drizzle/0000_short_gateway.sql` à `0002_fair_daredevil.sql`, `scripts/migrate.ts` | `src/auth/repositories.integration.test.ts` | PostgreSQL via Drizzle, migrations versionnées. Manque : script de seed (corpus, utilisateurs, historique). Seules `users`, `sessions` et `oauth_accounts` existent : ni salles, ni courses, ni résultats en base. |
+| TECH-04 | partiel | `src/db/schema.ts`, `drizzle/0000_short_gateway.sql` à `0003_flippant_bloodstorm.sql`, `scripts/migrate.ts` | `src/auth/repositories.integration.test.ts`, `src/race/drizzleRaceRepository.integration.test.ts` | PostgreSQL via Drizzle, migrations versionnées : `users`, `sessions`, `oauth_accounts`, `races`, `race_results`. Manque : script de seed (corpus, utilisateurs, historique) ; les textes restent dans le code (CONF-03). |
 | TECH-05 | complet | `Dockerfile`, `infra/docker-compose.yml`, `.github/workflows/image.yml` | — | Déploiement sur le VPS, HTTPS par Caddy, https://typio.aether-manager.ca. Dernière version vérifiée en production : 9 octobre 2026 (`sha-994ac37`). À revérifier avant chaque remise. |
 | TECH-06 | complet | `src/realtime/` (`server.ts`, `roomHandlers.ts`, `protocol.ts`, `raceEngine.ts`) | `src/realtime/server.test.ts`, `roomHandlers.test.ts`, `raceHandlers.test.ts` | Socket.IO (ADR-001), service séparé derrière Caddy : salle et progression des participants pendant la course. |
 | TECH-07 | partiel | `src/realtime/protocol.ts` (`parse*`), `src/auth/validation.ts`, `src/race/config.ts` | `src/realtime/protocol.test.ts`, `src/auth/validation.test.ts` | Les entrées sont validées par des fonctions écrites à la main (liste blanche, clés inconnues refusées), pas par un schéma Zod. Pas de schéma partagé pour toutes les actions serveur et routes API. Choix : zéro dépendance ajoutée ; à revoir si le temps le permet. |
@@ -139,7 +139,7 @@ Seule la course solo contre des bots existe (`src/race/`, `src/components/race/`
 | RES-02 | partiel | `src/app/[lang]/(site)/room/_components/RoomRaceView.tsx`, `src/components/race/RaceResults.tsx` | `src/realtime/raceEngine.test.ts` | En salle : rang, nom, MPM net et brut, précision, erreurs, temps, statut. Manquent : les bonus reçus. Vérifié dans l'application. |
 | RES-03 | non fait | — | — | Aucun graphique. |
 | RES-04 | non fait | — | — | Pas de record personnel (rien n'est persisté). |
-| RES-05 | non fait | `src/db/schema.ts` | — | Aucune table de courses ni de résultats. |
+| RES-05 | complet | `src/db/schema.ts` (`races`, `race_results`), `drizzle/0003_flippant_bloodstorm.sql`, `src/race/drizzleRaceRepository.ts`, `src/realtime/raceEngine.ts` (`wpmSeries`), `src/realtime/server.ts` | `src/race/drizzleRaceRepository.integration.test.ts`, `src/realtime/racePersistence.test.ts`, `raceEngine.test.ts` | Une écriture par course, en une transaction, au passage aux résultats (aussi si la salle se vide pendant la course) : rang, statut, MPM net et brut, précision, erreurs, temps, progression et série du MPM (une valeur par seconde). Membres seulement (H-24). Vérifié dans l'application avec une base locale. |
 
 ## Historique (HIST)
 
@@ -218,6 +218,7 @@ Les hypothèses H-1 à H-18 de l'ancien cahier gardent leur identifiant : le cod
 | H-21 | Limites réseau de la course | valable | Le client envoie au plus un lot toutes les 100 ms ; le serveur ignore au-delà de 12 messages/s par joueur et diffuse l'état de la course au plus toutes les 100 ms (PERF-02, COURSE-05). |
 | H-22 | Grâce de reconnexion de 30 s | valable | Remplace les 60 s de H-9 pour la salle comme pour la course (COURSE-08). |
 | H-23 | Pas d'entrée en spectateur pendant une course | valable | L'architecture d'origine faisait entrer un arrivant en spectateur ; SALLE-09 interdit de rejoindre en décompte ou en course : refus `RACE_IN_PROGRESS`. |
+| H-24 | Résultats enregistrés pour les membres seulement | valable | AUTH-03 : un invité n'a pas d'historique persistant. Ni invités ni bots dans `race_results` ; `races.participant_count` garde le nombre de classés. Aucun pseudo d'invité ni saisie brute en base (données minimales, 12 à 17 ans). |
 
 ### Choix encore à trancher
 
