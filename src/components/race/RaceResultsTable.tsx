@@ -1,0 +1,51 @@
+import type { Dictionary } from "@/i18n/dictionaries";
+
+export type RaceResultsRow = {
+  id: string;
+  name: string;
+  isBot?: boolean;
+  rank: number;
+  wpm: number;
+  grossWpm: number;
+  accuracy: number;
+  errors: number;
+  timeMs: number;
+  status: "finished" | "unfinished" | "abandoned";
+};
+
+type Props = {
+  rows: RaceResultsRow[];
+  lang: string;
+  labels: Dictionary["raceScreen"]["results"];
+  extraLabels: Pick<Dictionary["room"]["race"], "grossWpm" | "errors" | "bot">;
+  highlightId: string;
+};
+
+export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId }: Props) {
+  const columns = labels.columns;
+  const number = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
+  const percent = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 1 });
+  const seconds = new Intl.NumberFormat(lang, { style: "unit", unit: "second", maximumFractionDigits: 1 });
+  return (
+    <div className="overflow-x-auto rounded-card border border-border bg-surface">
+      <table className="w-full text-left text-sm">
+        <caption className="sr-only">{labels.tableTitle}</caption>
+        <thead><tr>
+          {[columns.rank, columns.name, columns.wpm, extraLabels.grossWpm, columns.accuracy, extraLabels.errors, columns.time, columns.status].map((label) => <th key={label} scope="col" className="whitespace-nowrap px-3 py-2">{label}</th>)}
+        </tr></thead>
+        <tbody>{rows.map((row) => (
+          <tr key={row.id} className={`border-t border-border ${row.id === highlightId ? "bg-accent-panel font-bold" : ""}`}>
+            <td className="px-3 py-2">{number.format(row.rank)}</td>
+            <th scope="row" className="px-3 py-2">{row.name}{row.isBot ? ` (${extraLabels.bot})` : ""}</th>
+            <td className="px-3 py-2">{number.format(row.wpm)}</td>
+            <td className="px-3 py-2">{number.format(row.grossWpm)}</td>
+            <td className="px-3 py-2">{percent.format(row.accuracy / 100)}</td>
+            <td className="px-3 py-2">{number.format(row.errors)}</td>
+            <td className="whitespace-nowrap px-3 py-2">{seconds.format(row.timeMs / 1000)}</td>
+            <td className="px-3 py-2">{labels.statuses[row.status]}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}

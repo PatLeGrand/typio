@@ -145,8 +145,8 @@ Seule la course solo contre des bots existe (`src/race/`, `src/components/race/`
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
-| HIST-01 | non fait | — | — | Pas d'historique (rien n'est persisté, RES-05). |
-| HIST-02 | non fait | — | — | — |
+| HIST-01 | complet | `src/app/[lang]/(site)/history/page.tsx`, `src/race/drizzleRaceHistoryRepository.ts` (`listUserRaces`), `src/race/raceHistory.ts`, lien dans `src/components/ProfileModal.tsx` et la page profil | `src/race/raceHistory.test.ts`, `src/race/raceHistory.integration.test.ts`, `src/app/[lang]/(site)/history/page.test.tsx` | Chaque course enregistrée (RES-05) du membre, de la plus récente à la plus ancienne (`race_results_user_created_at_idx`), 20 par page, navigation précédent/suivant : date, rang sur le nombre de classés, MPM, précision, statut. Visiteur redirigé vers la connexion, invité vers l'inscription (H-25). Vérifié dans l'application avec 23 courses en base (FR/EN, clair/sombre, 360 px). |
+| HIST-02 | complet | `src/app/[lang]/(site)/history/[raceId]/page.tsx`, `src/race/drizzleRaceHistoryRepository.ts` (`getRaceForUser`), `src/components/race/RaceResultsTable.tsx` (partagé avec `RoomRaceView`) | `src/race/raceHistory.integration.test.ts`, `src/race/raceHistory.test.ts` | Le lien de chaque ligne réaffiche le tableau de résultats de la course (rang, nom, MPM net et brut, précision, erreurs, temps, statut), ligne du membre surlignée. Seuls les membres enregistrés y figurent (H-24). Contrôle serveur : 404 si l'identifiant n'est pas un UUID ou si le membre n'a pas couru cette course, sans distinguer une course inexistante. Vérifié dans l'application. |
 
 ## Internationalisation (I18N)
 
@@ -219,6 +219,7 @@ Les hypothèses H-1 à H-18 de l'ancien cahier gardent leur identifiant : le cod
 | H-22 | Grâce de reconnexion de 30 s | valable | Remplace les 60 s de H-9 pour la salle comme pour la course (COURSE-08). |
 | H-23 | Pas d'entrée en spectateur pendant une course | valable | L'architecture d'origine faisait entrer un arrivant en spectateur ; SALLE-09 interdit de rejoindre en décompte ou en course : refus `RACE_IN_PROGRESS`. |
 | H-24 | Résultats enregistrés pour les membres seulement | valable | AUTH-03 : un invité n'a pas d'historique persistant. Ni invités ni bots dans `race_results` ; `races.participant_count` garde le nombre de classés. Aucun pseudo d'invité ni saisie brute en base (données minimales, 12 à 17 ans). |
+| H-25 | Historique réservé aux membres, 20 courses par page | valable | AUTH-03 : un invité qui ouvre l'historique est redirigé vers l'inscription, un visiteur vers la connexion. Pagination par page fixe de 20 (au plus 10 000 pages) ; le détail d'une course n'est visible que par ses participants enregistrés (HIST-01, HIST-02). |
 
 ### Choix encore à trancher
 

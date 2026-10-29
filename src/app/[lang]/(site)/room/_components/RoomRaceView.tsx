@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/Button";
+import { RaceResultsTable } from "@/components/race/RaceResultsTable";
 import { RaceTypingPanel } from "@/components/race/RaceTypingPanel";
 import { RaceVisualizer } from "@/components/race/RaceVisualizer";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -57,7 +58,6 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
 
   const number = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
   const percent = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 1 });
-  const seconds = new Intl.NumberFormat(lang, { style: "unit", unit: "second", maximumFractionDigits: 1 });
   const runner = race?.runners.find((r) => r.id === userId && r.kind === "human");
   const active = runner?.status === "ready" || runner?.status === "typing";
   const serverTime = race ? race.serverNow + Math.max(0, (now ?? raceReceivedAt ?? 0) - (raceReceivedAt ?? 0)) : 0;
@@ -81,31 +81,11 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   }
 
   if (room.status === "results") {
-    const columns = raceLabels.results.columns;
     return (
       <section className="flex flex-col gap-4" aria-label={raceLabels.results.tableTitle}>
         <h2 className="text-2xl font-bold">{raceLabels.results.tableTitle}</h2>
         {results ? (
-          <div className="overflow-x-auto rounded-card border border-border bg-surface">
-            <table className="w-full text-left text-sm">
-              <caption className="sr-only">{raceLabels.results.tableTitle}</caption>
-              <thead><tr>
-                {[columns.rank, columns.name, columns.wpm, labels.grossWpm, columns.accuracy, labels.errors, columns.time, columns.status].map((label) => <th key={label} scope="col" className="whitespace-nowrap px-3 py-2">{label}</th>)}
-              </tr></thead>
-              <tbody>{results.map((row) => (
-                <tr key={row.id} className={`border-t border-border ${row.id === userId ? "bg-accent-panel font-bold" : ""}`}>
-                  <td className="px-3 py-2">{number.format(row.rank)}</td>
-                  <th scope="row" className="px-3 py-2">{row.name}{row.kind === "bot" ? ` (${labels.bot})` : ""}</th>
-                  <td className="px-3 py-2">{number.format(row.wpm)}</td>
-                  <td className="px-3 py-2">{number.format(row.grossWpm)}</td>
-                  <td className="px-3 py-2">{percent.format(row.accuracy / 100)}</td>
-                  <td className="px-3 py-2">{number.format(row.errors)}</td>
-                  <td className="whitespace-nowrap px-3 py-2">{seconds.format(row.timeMs / 1000)}</td>
-                  <td className="px-3 py-2">{raceLabels.results.statuses[row.status]}</td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
+          <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot" }))} lang={lang} labels={raceLabels.results} extraLabels={labels} highlightId={userId} />
         ) : <p role="status">{labels.loading}</p>}
         {room.hostId === userId ? <div className="flex flex-wrap gap-3">
           <Button disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>{labels.restart}</Button>

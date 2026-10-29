@@ -1,4 +1,22 @@
 {
+  "history": {
+    "title": "Historique",
+    "description": "Retrouve tes courses terminées, de la plus récente à la plus ancienne.",
+    "detailTitle": "Résultats de la course",
+    "date": "Date",
+    "actions": "Détail",
+    "view": "Voir",
+    "empty": "Aucune course sur cette page.",
+    "play": "Jouer",
+    "firstPage": "Revenir à la page 1",
+    "pagination": "Pagination de l’historique",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page {page}",
+    "participants": "Participants : {count}",
+    "membersOnly": "Seuls les résultats des membres sont enregistrés. Les invités et les bots ne figurent pas dans ce tableau.",
+    "back": "Retour à l’historique"
+  },
   "raceEntry": {
     "title": "Course",
     "pending": "Tes réglages sont prêts. La course jouable sera disponible prochainement.",

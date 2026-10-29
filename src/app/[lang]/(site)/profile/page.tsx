@@ -46,7 +46,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
               {profile.description}
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex flex-wrap gap-2">
+            {currentUser.kind === "member" && <ButtonLink href={prefixWithLocale("/history", locale)} variant="secondary">
+              {dictionary.history.title}
+            </ButtonLink>}
             <ButtonLink href={prefixWithLocale("/race", locale)} variant="secondary">
               <ArrowLeft aria-hidden="true" className="w-4 h-4" />
               {profile.backToCourses}

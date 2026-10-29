@@ -105,9 +105,12 @@ export function ProfileModal({ user, dictionary, locale, children }: ProfileModa
                   <p className="text-xs text-muted text-center">{dict.stats.comingSoon}</p>
                 </div>
 
-                <div className="pt-2 border-t border-border mt-2">
+                <div className="pt-2 border-t border-border mt-2 flex flex-col gap-2">
                   <ButtonLink href={`/${locale}/profile`} variant="secondary" fullWidth onClick={() => setIsOpen(false)}>
                     {dict.viewFullProfile}
+                  </ButtonLink>
+                  <ButtonLink href={`/${locale}/history`} variant="secondary" fullWidth onClick={() => setIsOpen(false)}>
+                    {dictionary.history.title}
                   </ButtonLink>
                 </div>
               </div>

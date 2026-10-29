@@ -1,4 +1,22 @@
 {
+  "history": {
+    "title": "History",
+    "description": "Find your completed races, from newest to oldest.",
+    "detailTitle": "Race results",
+    "date": "Date",
+    "actions": "Details",
+    "view": "View",
+    "empty": "No races on this page.",
+    "play": "Play",
+    "firstPage": "Back to page 1",
+    "pagination": "Race history pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page}",
+    "participants": "Participants: {count}",
+    "membersOnly": "Only member results are saved. Guests and bots do not appear in this table.",
+    "back": "Back to history"
+  },
   "raceEntry": {
     "title": "Race",
     "pending": "Your settings are ready. The playable race is coming soon.",
