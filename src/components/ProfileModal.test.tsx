@@ -44,6 +44,7 @@ describe.each(["fr", "en"] as const)("ProfileModal (%s)", (locale) => {
     expect(screen.getByRole("heading", { name: dict.stats.title })).toBeInTheDocument();
     expect(screen.getByText(dict.stats.comingSoon)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: dict.viewFullProfile })).toHaveAttribute("href", `/${locale}/profile`);
+    expect(screen.getByRole("link", { name: getDictionary(locale).history.title })).toHaveAttribute("href", `/${locale}/history`);
     expect(screen.getByRole("button", { name: dict.close })).toBeInTheDocument();
   });
 
@@ -63,6 +64,7 @@ describe.each(["fr", "en"] as const)("ProfileModal (%s)", (locale) => {
     expect(screen.getByRole("link", { name: dict.register })).toHaveAttribute("href", `/${locale}/register`);
     expect(screen.queryByRole("link", { name: dict.viewFullProfile })).toBeNull();
     expect(screen.queryByText(dict.stats.title)).toBeNull();
+    expect(screen.queryByRole("link", { name: getDictionary(locale).history.title })).toBeNull();
   });
 
   it("l'événement natif « close » du dialogue (Échap) retire le contenu", () => {

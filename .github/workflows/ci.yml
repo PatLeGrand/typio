@@ -81,7 +81,7 @@ jobs:
       # sans casse, CHECK, cascades, résultats des courses, purges par lots. Le job `quality`
       # n'a pas de base et l'ignore.
       - name: PostgreSQL integration tests
-        run: bun run test src/auth/repositories.integration.test.ts src/race/drizzleRaceRepository.integration.test.ts
+        run: bun run test src/auth/repositories.integration.test.ts src/race/drizzleRaceRepository.integration.test.ts src/race/raceHistory.integration.test.ts
       - name: Validate local Compose
         run: docker compose config --quiet
       - name: Validate VPS Compose
