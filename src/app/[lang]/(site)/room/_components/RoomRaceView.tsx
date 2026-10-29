@@ -8,6 +8,7 @@ import { RaceVisualizer } from "@/components/race/RaceVisualizer";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { applyTypedInput, countCorrectChars } from "@/race/metrics";
 import { createRaceInputBuffer, raceInputOps } from "@/realtime/raceInput";
+import { getSocket } from "@/realtime/client";
 import type { RoomState } from "@/realtime/protocol";
 import type { UseRoom } from "@/realtime/useRoom";
 
@@ -32,6 +33,19 @@ const serverKeyboardSnapshot = () => false;
 /** Saisie optimiste ; piste et classement restent entièrement pilotés par le serveur. */
 export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }: Props) {
   const { race, results, self, raceReceivedAt, connection, sendInput, abandonRace, restartRace, closeRoom } = session;
+  const [records, setRecords] = useState<string[]>([]);
+  const [recordStart, setRecordStart] = useState(race?.startAt);
+  if (recordStart !== race?.startAt) {
+    setRecordStart(race?.startAt);
+    setRecords([]);
+  }
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    const onRecords = ({ userIds }: { userIds: string[] }) => setRecords(userIds);
+    socket.on("race:records", onRecords);
+    return () => { socket.off("race:records", onRecords); };
+  }, []);
   const [input, setInput] = useState(self ?? { typed: "", keystrokes: { total: 0, correct: 0 } });
   const [resumedSelf, setResumedSelf] = useState(self);
   const [confirmAbandon, setConfirmAbandon] = useState(false);
@@ -84,8 +98,9 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
     return (
       <section className="flex flex-col gap-4" aria-label={raceLabels.results.tableTitle}>
         <h2 className="text-2xl font-bold">{raceLabels.results.tableTitle}</h2>
+        {records.includes(userId) && <p role="status">{raceLabels.results.newPersonalBest}</p>}
         {results ? (
-          <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot" }))} lang={lang} labels={raceLabels.results} extraLabels={labels} highlightId={userId} />
+          <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} highlightId={userId} />
         ) : <p role="status">{labels.loading}</p>}
         {room.hostId === userId ? <div className="flex flex-wrap gap-3">
           <Button disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>{labels.restart}</Button>

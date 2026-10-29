@@ -4,6 +4,7 @@ export type RaceResultsRow = {
   id: string;
   name: string;
   isBot?: boolean;
+  personalBest?: boolean;
   rank: number;
   wpm: number;
   grossWpm: number;
@@ -36,7 +37,7 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId 
         <tbody>{rows.map((row) => (
           <tr key={row.id} className={`border-t border-border ${row.id === highlightId ? "bg-accent-panel font-bold" : ""}`}>
             <td className="px-3 py-2">{number.format(row.rank)}</td>
-            <th scope="row" className="px-3 py-2">{row.name}{row.isBot ? ` (${extraLabels.bot})` : ""}</th>
+            <th scope="row" className="px-3 py-2">{row.name}{row.isBot ? ` (${extraLabels.bot})` : ""}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</th>
             <td className="px-3 py-2">{number.format(row.wpm)}</td>
             <td className="px-3 py-2">{number.format(row.grossWpm)}</td>
             <td className="px-3 py-2">{percent.format(row.accuracy / 100)}</td>

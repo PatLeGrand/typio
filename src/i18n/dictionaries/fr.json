@@ -86,6 +86,8 @@
       "back": "Modifier les réglages"
     },
     "results": {
+      "personalBest": "Record personnel",
+      "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
       "tableTitle": "Résultats de la course",
       "columns": {
@@ -489,6 +491,20 @@
     }
   },
   "profile": {
+    "stats": {
+      "title": "Statistiques personnelles",
+      "empty": "Aucune course enregistrée pour le moment.",
+      "bestWpm": "Meilleur MPM",
+      "averageWpm": "MPM moyen",
+      "averageAccuracy": "Précision moyenne",
+      "raceCount": "Courses",
+      "wins": "Victoires",
+      "noValue": "—",
+      "chartTitle": "MPM des 50 dernières courses non abandonnées",
+      "chartSummary": "{count} courses, de {first} à {last} MPM, en ordre chronologique.",
+      "wpm": "MPM",
+      "noChart": "Aucune course non abandonnée à afficher."
+    },
     "security": {
       "unlink": "Délier",
       "linked": "Relié",

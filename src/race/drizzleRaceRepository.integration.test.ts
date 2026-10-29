@@ -7,6 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDatabaseClient } from "@/db/client";
 import { races, raceResults, users } from "@/db/schema";
 import { DEFAULT_ROOM_CONFIG } from "@/realtime/protocol";
+import { createDrizzleProfileStatsRepository } from "./drizzleProfileStatsRepository";
+import { createDrizzleRaceHistoryRepository } from "./drizzleRaceHistoryRepository";
 import { createDrizzleRaceRepository } from "./drizzleRaceRepository";
 import type { NewRace, NewRaceResult } from "./raceRepository";
 
@@ -69,6 +71,45 @@ describe.skipIf(!databaseUrl)("PostgreSQL race repository", () => {
     const empty = race(hostId);
     await repository.recordRace(empty, []);
     expect(await client.db.select().from(races).where(eq(races.id, empty.id!))).toHaveLength(1);
+  });
+
+  // Protège la comparaison stricte au meilleur antérieur et les exclusions H-26.
+  it("persiste les records et agrège les courses admissibles, avec les victoires à plusieurs classés", async () => {
+    const userId = await member();
+    const stats = createDrizzleProfileStatsRepository(client.db);
+    expect(await stats.getUserStats(userId)).toEqual({
+      raceCount: 0, wins: 0, bestWpm: null, averageWpm: null, averageAccuracy: null,
+    });
+    const cases = [
+      { wpm: 20, accuracy: 80, status: "finished", rank: 1, participants: 1, record: false },
+      { wpm: 30, accuracy: 90, status: "finished", rank: 1, participants: 2, record: true },
+      { wpm: 30, accuracy: 90, status: "finished", rank: 2, participants: 3, record: false },
+      { wpm: 100, accuracy: 10, status: "abandoned", rank: 1, participants: 3, record: false },
+      { wpm: 40, accuracy: 100, status: "unfinished", rank: 1, participants: 3, record: true },
+    ] as const;
+    for (const [index, entry] of cases.entries()) {
+      const data = { ...race(userId), participantCount: entry.participants };
+      const records = await repository.recordRace(data, [{ ...result(userId), ...entry }]);
+      expect(records).toEqual(entry.record ? [userId] : []);
+      const [saved] = await client.db.select().from(raceResults).where(eq(raceResults.raceId, data.id!));
+      expect(saved.personalBest).toBe(entry.record);
+      await client.db.update(raceResults).set({ createdAt: new Date(index * 1_000) }).where(eq(raceResults.id, saved.id));
+      const detail = await createDrizzleRaceHistoryRepository(client.db).getRaceForUser(userId, data.id!);
+      expect(detail?.rows[0].personalBest).toBe(entry.record);
+    }
+    expect(await stats.getUserStats(userId)).toEqual({
+      raceCount: 5, wins: 1, bestWpm: 40, averageWpm: 30, averageAccuracy: 90,
+    });
+    expect((await stats.getWpmHistory(userId)).map((row) => row.wpm)).toEqual([20, 30, 30, 40]);
+    const history = await createDrizzleRaceHistoryRepository(client.db).listUserRaces(userId, { page: 1, pageSize: 20 });
+    expect(history.items.map((row) => row.personalBest)).toEqual([true, false, false, true, false]);
+    const other = await member();
+    await repository.recordRace(race(other), [{ ...result(other), status: "abandoned", wpm: 100 }]);
+    expect(await stats.getUserStats(other)).toEqual({
+      raceCount: 1, wins: 0, bestWpm: null, averageWpm: null, averageAccuracy: null,
+    });
+    expect(await stats.getWpmHistory(other)).toEqual([]);
+    expect(await repository.recordRace(race(other), [result(other)])).toEqual([]);
   });
 
   it("annule toute la transaction si un résultat est invalide ou dupliqué", async () => {

@@ -120,6 +120,12 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     for (const recording of store.takeRecordings()) {
       if (options.raceRepository) {
         void Promise.resolve().then(() => options.raceRepository!.recordRace(recording.race, recording.rows))
+          .then((userIds) => {
+            const current = store.snapshot(recording.race.roomCode);
+            if (userIds.length && current?.status === "results" && current.startAt === recording.race.startedAt.getTime()) {
+              io.to(recording.race.roomCode).emit("race:records", { userIds });
+            }
+          })
           .catch((error: unknown) => console.error("[realtime] race recording failed:", describeError(error)));
       }
     }

@@ -9,7 +9,7 @@ export function createDrizzleRaceHistoryRepository(db: PostgresJsDatabase) {
       const rows = await db.select({
         raceId: races.id, endedAt: races.endedAt, rank: raceResults.rank,
         participantCount: races.participantCount, wpm: raceResults.wpm,
-        accuracy: raceResults.accuracy, status: raceResults.status,
+        accuracy: raceResults.accuracy, personalBest: raceResults.personalBest, status: raceResults.status,
       }).from(raceResults).innerJoin(races, eq(raceResults.raceId, races.id))
         .where(eq(raceResults.userId, userId))
         .orderBy(desc(raceResults.createdAt), desc(raceResults.id))
@@ -25,7 +25,7 @@ export function createDrizzleRaceHistoryRepository(db: PostgresJsDatabase) {
       const rows = await db.select({
         id: raceResults.userId, name: users.displayName, rank: raceResults.rank,
         wpm: raceResults.wpm, grossWpm: raceResults.grossWpm, accuracy: raceResults.accuracy,
-        errors: raceResults.errors, timeMs: raceResults.durationMs, status: raceResults.status,
+        personalBest: raceResults.personalBest, errors: raceResults.errors, timeMs: raceResults.durationMs, status: raceResults.status,
       }).from(raceResults).innerJoin(users, eq(raceResults.userId, users.id))
         .where(eq(raceResults.raceId, raceId)).orderBy(asc(raceResults.rank), asc(raceResults.id));
       return { ...race, rows };
