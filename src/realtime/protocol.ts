@@ -8,6 +8,7 @@
  * passe par un `parse*` ci-dessous avant usage.
  */
 
+import { z } from "zod";
 import type { raceSnapshot, raceResults } from "./raceEngine";
 import type { Keystrokes } from "@/race/metrics";
 import { isRoomCode, normalizeRoomCode } from "./roomCode";
@@ -171,27 +172,15 @@ export interface SocketData {
   roomCode: string | null;
 }
 
-// ── Validation des charges utiles reçues du client ──────────────────────────
+// ── Validation des charges utiles reçues du client (TECH-07) ────────────────
 
-function isOneOf<T extends readonly unknown[]>(values: T, value: unknown): value is T[number] {
-  return values.includes(value);
-}
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
-}
-
-const CONFIG_KEYS: ReadonlyArray<keyof RoomConfig> = [
-  "textMode",
-  "language",
-  "length",
-  "timeLimitSeconds",
-  "accents",
-  "excludedCharacters",
-  "inputMode",
-  "botCount",
-  "botDifficulty",
-];
+/**
+ * Objet « simple » (prototype `Object` ou `null`) : refuse tableaux, primitives, instances de
+ * classe et tampons binaires, que `z.strictObject` accepterait seuls.
+ */
+const plainObject = z.custom<object>(
+  (value) => value != null && [Object.prototype, null].includes(Object.getPrototypeOf(value)),
+);
 
 /**
  * Caractères qu'il est utile d'exclure : ceux que le générateur de textes peut produire.
@@ -203,114 +192,114 @@ const EXCLUDABLE_CHARACTER = /^[A-Za-z0-9À-ÖØ-öø-ÿŒœ!-/:-@[-`{-~«»’�
  * Caractères exclus (CONF-07, B-D1) : en minuscules (le générateur ignore la casse), uniques,
  * pris dans la liste ci-dessus, 30 au plus, puis **triés**. L'hôte ne choisit ni les glyphes, ni
  * la casse, ni l'ordre : la salle diffuse un jeu de caractères, jamais un mot lisible. Les
- * surrogates isolés ne sont pas dans la liste. `null` si l'entrée brute est trop longue.
+ * surrogates isolés ne sont pas dans la liste. Entrée brute de 100 unités au plus.
  */
-export function normalizeExcludedCharacters(input: string): string | null {
-  if (input.length > MAX_EXCLUDED_INPUT_LENGTH) return null;
+export const excludedCharactersSchema = z
+  .string()
+  .refine((input) => input.length <= MAX_EXCLUDED_INPUT_LENGTH) // unités UTF-16, pas points de code
+  .transform((input) => {
+    const kept = new Set<string>();
+    for (const character of Array.from(input.normalize("NFC").toLowerCase())) {
+      if (!EXCLUDABLE_CHARACTER.test(character)) continue;
+      kept.add(character);
+      if (kept.size === MAX_EXCLUDED_CHARACTERS) break;
+    }
+    return [...kept].sort().join("");
+  });
 
-  const kept = new Set<string>();
-  for (const character of Array.from(input.normalize("NFC").toLowerCase())) {
-    if (!EXCLUDABLE_CHARACTER.test(character)) continue;
-    kept.add(character);
-    if (kept.size === MAX_EXCLUDED_CHARACTERS) break;
-  }
-  return [...kept].sort().join("");
+/** `null` si l'entrée brute est trop longue. */
+export function normalizeExcludedCharacters(input: string): string | null {
+  const result = excludedCharactersSchema.safeParse(input);
+  return result.success ? result.data : null;
 }
 
+/** Champs de `RoomConfig`, tous requis ; les valeurs hors liste sont refusées. */
+export const roomConfigFields = {
+  textMode: z.enum(TEXT_MODES),
+  language: z.enum(TEXT_LANGUAGES),
+  length: z.enum(TEXT_LENGTHS),
+  timeLimitSeconds: z.literal(TIME_LIMITS_SECONDS).nullable(),
+  accents: z.boolean(),
+  excludedCharacters: excludedCharactersSchema,
+  inputMode: z.enum(INPUT_MODES),
+  botCount: z
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_BOTS)
+    .transform((value) => value + 0), // -0 devient 0
+  botDifficulty: z.enum(BOT_DIFFICULTIES),
+};
+
 /**
- * Patch de configuration valide, ou `null`. Refuse toute clé inconnue et toute valeur
- * hors liste : un client modifié ne peut rien glisser d'autre dans l'état diffusé.
- * `undefined` ou `{}` donnent un patch vide (création avec la config par défaut).
+ * Patch de configuration : refuse toute clé inconnue et toute valeur hors liste (y compris
+ * `undefined` explicite) : un client modifié ne peut rien glisser d'autre dans l'état diffusé.
+ */
+export const roomConfigPatchSchema = plainObject.pipe(
+  z.strictObject({
+    textMode: roomConfigFields.textMode.exactOptional(),
+    language: roomConfigFields.language.exactOptional(),
+    length: roomConfigFields.length.exactOptional(),
+    timeLimitSeconds: roomConfigFields.timeLimitSeconds.exactOptional(),
+    accents: roomConfigFields.accents.exactOptional(),
+    excludedCharacters: roomConfigFields.excludedCharacters.exactOptional(),
+    inputMode: roomConfigFields.inputMode.exactOptional(),
+    botCount: roomConfigFields.botCount.exactOptional(),
+    botDifficulty: roomConfigFields.botDifficulty.exactOptional(),
+  }),
+);
+
+/**
+ * Patch de configuration valide, ou `null`. `undefined` ou `{}` donnent un patch vide
+ * (création avec la config par défaut).
  */
 export function parseRoomConfigPatch(input: unknown): RoomConfigPatch | null {
   if (input === undefined) return {};
-  if (!isPlainObject(input)) return null;
-
-  const patch: RoomConfigPatch = {};
-  for (const [key, value] of Object.entries(input)) {
-    if (!(CONFIG_KEYS as readonly string[]).includes(key)) return null;
-    switch (key as keyof RoomConfig) {
-      case "textMode":
-        if (!isOneOf(TEXT_MODES, value)) return null;
-        patch.textMode = value;
-        break;
-      case "language":
-        if (!isOneOf(TEXT_LANGUAGES, value)) return null;
-        patch.language = value;
-        break;
-      case "length":
-        if (!isOneOf(TEXT_LENGTHS, value)) return null;
-        patch.length = value;
-        break;
-      case "timeLimitSeconds":
-        if (value !== null && !isOneOf(TIME_LIMITS_SECONDS, value)) return null;
-        patch.timeLimitSeconds = value;
-        break;
-      case "accents":
-        if (typeof value !== "boolean") return null;
-        patch.accents = value;
-        break;
-      case "excludedCharacters": {
-        if (typeof value !== "string") return null;
-        const normalized = normalizeExcludedCharacters(value);
-        if (normalized === null) return null;
-        patch.excludedCharacters = normalized;
-        break;
-      }
-      case "inputMode":
-        if (!isOneOf(INPUT_MODES, value)) return null;
-        patch.inputMode = value;
-        break;
-      case "botCount":
-        if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > MAX_BOTS) {
-          return null;
-        }
-        patch.botCount = value + 0; // -0 devient 0
-        break;
-      case "botDifficulty":
-        if (!isOneOf(BOT_DIFFICULTIES, value)) return null;
-        patch.botDifficulty = value;
-        break;
-    }
-  }
-  return patch;
+  const result = roomConfigPatchSchema.safeParse(input);
+  return result.success ? result.data : null;
 }
+
+const participantRoleSchema = z.enum(["runner", "spectator"]);
+
+/** `{ config, role }` : configuration vide et rôle coureur par défaut, clés inconnues refusées. */
+export const createPayloadSchema = plainObject
+  .pipe(z.strictObject({ config: roomConfigPatchSchema.optional(), role: participantRoleSchema.optional() }))
+  .transform(({ config, role }) => ({ config: config ?? {}, role: role ?? ("runner" as const) }));
 
 /** Charge utile de `room:create` validée ; configuration vide et rôle coureur par défaut. */
 export function parseCreatePayload(input: unknown): { config: RoomConfigPatch; role: ParticipantRole } | null {
-  if (!isPlainObject(input)) return null;
-  if (Object.keys(input).some((key) => key !== "config" && key !== "role")) return null;
-  const role = input.role === undefined ? "runner" : input.role;
-  if (!isOneOf(["runner", "spectator"] as const, role)) return null;
-  const config = parseRoomConfigPatch(input.config);
-  if (config === null) return null;
-  return { config, role };
+  const result = createPayloadSchema.safeParse(input);
+  return result.success ? result.data : null;
 }
+
+/** `{ code, role }` ; les clés en trop sont ignorées, comme avant. Le code est normalisé après. */
+export const joinPayloadSchema = plainObject.pipe(z.object({ code: z.string(), role: participantRoleSchema }));
 
 /**
  * Charge utile de `room:join` avec le code normalisé (majuscules, sans espaces), ou le
  * code d'erreur à renvoyer : `INVALID_CODE` si seul le code de salle est mal formé.
  */
 export function parseJoinPayload(input: unknown): JoinPayload | "INVALID_PAYLOAD" | "INVALID_CODE" {
-  if (!isPlainObject(input)) return "INVALID_PAYLOAD";
-  const { code, role } = input;
-  if (typeof code !== "string" || !isOneOf(["runner", "spectator"] as const, role)) {
-    return "INVALID_PAYLOAD";
-  }
-  const normalized = normalizeRoomCode(code);
+  const result = joinPayloadSchema.safeParse(input);
+  if (!result.success) return "INVALID_PAYLOAD";
+  const normalized = normalizeRoomCode(result.data.code);
   if (!isRoomCode(normalized)) return "INVALID_CODE";
-  return { code: normalized, role };
+  return { code: normalized, role: result.data.role };
 }
 
 /** Commandes sans paramètres : objet vide strict, sans identité fournie par le client. */
+export const raceCommandSchema = plainObject.pipe(z.strictObject({}));
+
 export function parseRaceCommand(input: unknown): boolean {
-  return isPlainObject(input) && Object.keys(input).length === 0;
+  return raceCommandSchema.safeParse(input).success;
 }
 
 /** Lot borné d’unités UTF-16 ou de retours arrière (COURSE-06). */
+export const raceInputSchema = plainObject.pipe(
+  z.strictObject({ ops: z.array(z.string().refine((op) => op.length === 1)).max(64) }),
+);
+
 export function parseRaceInput(input: unknown): { ops: string[] } | null {
-  if (!isPlainObject(input) || Object.keys(input).some((key) => key !== "ops")) return null;
-  if (!Array.isArray(input.ops) || input.ops.length > 64 ||
-    input.ops.some((op) => typeof op !== "string" || op.length !== 1)) return null;
-  return { ops: input.ops };
+  const result = raceInputSchema.safeParse(input);
+  return result.success ? result.data : null;
 }

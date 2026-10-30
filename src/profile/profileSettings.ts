@@ -1,5 +1,6 @@
-import { validatePseudo } from "@/auth/validation";
-import { isLocale, type Locale } from "@/i18n/config";
+import { z } from "zod";
+import { pseudoSchema } from "@/auth/validation";
+import { locales, type Locale } from "@/i18n/config";
 
 /** Valeurs de la colonne `users.keyboard_layout` (contrainte `users_keyboard_layout_check`). */
 export const KEYBOARD_LAYOUTS = ["qwerty", "azerty", "cmf"] as const;
@@ -36,16 +37,21 @@ export interface ProfileUpdate {
 
 export type ProfileValidationResult = { ok: true; value: ProfileUpdate } | { ok: false; code: ProfileErrorCode };
 
+export const profileUpdateSchema = z.object({
+  displayName: pseudoSchema,
+  keyboardLayout: z.enum(KEYBOARD_LAYOUTS),
+  locale: z.enum(locales),
+});
+
 /** Valide les trois réglages éditables du profil ; le nom affiché suit la règle du pseudo (AUTH-02, AUTH-03). */
 export function validateProfileUpdate(raw: {
-  displayName: unknown;
-  keyboardLayout: unknown;
-  locale: unknown;
+  displayName?: unknown;
+  keyboardLayout?: unknown;
+  locale?: unknown;
 }): ProfileValidationResult {
-  const pseudo = validatePseudo(raw.displayName);
-  if (!pseudo.ok) return { ok: false, code: "INVALID_PSEUDO" };
-  if (!isKeyboardLayout(raw.keyboardLayout) || !isLocale(raw.locale)) {
-    return { ok: false, code: "INVALID_SETTINGS" };
-  }
-  return { ok: true, value: { displayName: pseudo.value, keyboardLayout: raw.keyboardLayout, locale: raw.locale } };
+  const result = profileUpdateSchema.safeParse(raw);
+  if (result.success) return { ok: true, value: result.data };
+  // Le nom affiché prime : son erreur est rendue même si les autres réglages sont invalides aussi.
+  const pseudoInvalid = result.error.issues.some((issue) => issue.path[0] === "displayName");
+  return { ok: false, code: pseudoInvalid ? "INVALID_PSEUDO" : "INVALID_SETTINGS" };
 }

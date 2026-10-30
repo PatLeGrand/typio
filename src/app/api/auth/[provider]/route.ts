@@ -1,13 +1,16 @@
 import type { NextRequest } from "next/server";
+import { z } from "zod";
 import { getSessionCookieName } from "@/auth/cookie";
 import { getAuthDeps } from "@/auth/deps";
 import { describeError } from "@/auth/errors";
 import { getOAuthProvider } from "@/auth/oauth/config";
 import { loginNoticeLocation, parseOAuthLocale } from "@/auth/oauth/locale";
 import { providerNotFound, toRedirectResponse } from "@/auth/oauth/oauthResponse";
-import { isOAuthProviderName } from "@/auth/oauth/providers";
+import { oauthProviderSchema } from "@/auth/oauth/providers";
 import { startOAuth } from "@/auth/oauth/start";
 import { getClientIp } from "@/auth/rateLimit";
+
+const routeParamsSchema = z.strictObject({ provider: oauthProviderSchema });
 
 /**
  * AUTH-01 : départ de la connexion GitHub ou Discord, `GET /api/auth/{provider}?locale=fr|en`.
@@ -15,8 +18,9 @@ import { getClientIp } from "@/auth/rateLimit";
  * fournisseur. Une route et non une Server Action : c'est une simple navigation (lien).
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
-  const { provider } = await params;
-  if (!isOAuthProviderName(provider)) return providerNotFound();
+  const route = routeParamsSchema.safeParse(await params);
+  if (!route.success) return providerNotFound();
+  const { provider } = route.data;
 
   const rawLocale = request.nextUrl.searchParams.get("locale");
   try {
