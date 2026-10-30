@@ -34,7 +34,7 @@ export function ProfileStats({ stats, history, locale, labels }: Props) {
         <h3 className="font-bold">{labels.chartTitle}</h3>
         {first && last ? <svg className="h-auto w-full" viewBox="0 0 600 270" role="img"
           aria-label={labels.chartSummary.replace("{count}", number.format(history.length)).replace("{first}", number.format(first.wpm)).replace("{last}", number.format(last.wpm))}>
-          <g fill="var(--foreground)" fontSize="18">
+          <g fill="var(--foreground)" className="text-[18px] md:text-[12px]">
             {[0, maximum / 2, maximum].map((value) => <g key={value}>
               <line x1="64" x2="564" y1={y(value)} y2={y(value)} stroke="var(--border)" />
               <text x="54" y={y(value) + 6} textAnchor="end">{number.format(value)}</text>
