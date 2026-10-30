@@ -287,28 +287,24 @@ export function RaceSettingsFields({
             </div>
           </div>
 
-          {/* Capacités (CONF-09) : pas encore disponibles, l'interrupteur reste désactivé. */}
+          {/* Bonus de remontée (CONF-09). */}
           <div className="flex items-center justify-between pt-4">
-            <div className="flex items-center gap-3 opacity-50">
+            <div className="flex items-center gap-3">
               <div className="text-accent-text">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
               </div>
               <div>
-                <FieldHeading className="text-[15px] font-semibold">{dict.abilities.label}</FieldHeading>
-                <p id={id("abilities-help")} className="text-sm text-muted mt-1">{dict.abilities.help}</p>
+                <FieldHeading className="text-[15px] font-semibold">{dict.bonuses.label}</FieldHeading>
+                <p id={id("bonuses-help")} className="text-sm text-muted mt-1">{dict.bonuses.help}</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-4">
-              <span className="text-sm font-semibold text-muted bg-surface border border-border px-2 py-0.5 rounded-full">
-                {dict.abilities.comingSoon}
-              </span>
               <Switch
-                aria-label={dict.abilities.label}
-                aria-describedby={id("abilities-help")}
+                aria-label={dict.bonuses.label}
+                aria-describedby={id("bonuses-help")}
                 checked={value.bonuses}
                 onChange={(bonuses) => onChange({ bonuses })}
-                disabled
-                className="opacity-50"
+                disabled={readOnly}
               />
             </div>
           </div>

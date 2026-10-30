@@ -21,7 +21,7 @@ describe("race route boundary", () => {
     expect(screen.getByRole("heading", { name: copy.leaderboard })).toBeInTheDocument();
     expect(screen.getByTestId("visualizer")).toBeInTheDocument();
     expect(screen.getByText("Aurel")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(copy.status.countdown);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(copy.status.countdown);
     // Ready to type, but the keystrokes only count once the countdown ends.
     const input = screen.getByLabelText(copy.typing.inputLabel) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "x" } });

@@ -1,5 +1,7 @@
 import type { BotLevel } from "@/realtime/protocol";
-import { botProgressAt, planBot } from "./bots";
+import { BOT_FOG_SLOWDOWN_FACTOR, botProgressAt, planBot, replanBot } from "./bots";
+import { applyTextEdits, crossedCheckpoints, resolveCheckpoint, type BonusAward } from "./bonuses";
+import { generateRaceText } from "./textGenerator";
 import type { RaceSettings } from "./config";
 import { computeAccuracy, computeWpm, countCorrectChars } from "./metrics";
 import { createSeededRandom, shuffled } from "./seededRandom";
@@ -18,6 +20,11 @@ import {
  */
 export interface Round {
   id: number;
+  seed: number;
+  checkpointsTriggered: number;
+  bonusEvents: (BonusAward & { at: number })[];
+  texts: Record<string, string>;
+  fogUntil: Record<string, number>;
   session: RaceSession;
   bots: readonly BotEntry[];
 }
@@ -43,7 +50,48 @@ export function createRound(
     level,
     plan: planBot(text, level, settings.inputMode, random),
   }));
-  return { id, session: createRaceSession(settings, text, now), bots };
+  return { id, seed: nameSeed, checkpointsTriggered: 0, bonusEvents: [],
+    texts: Object.fromEntries([PLAYER_ID, ...bots.map((bot) => bot.id)].map((id) => [id, text])),
+    fogUntil: {}, session: createRaceSession(settings, text, now), bots };
+}
+
+/** Traite chaque point une seule fois ; tout le hasard dépend de la graine de la manche. */
+export function applyRoundBonuses(round: Round, now: number): Round {
+  const { session } = round;
+  const settings = session.lifecycle.settings;
+  if (!settings.bonuses || session.lifecycle.phase !== "racing" || now >= session.lifecycle.endsAt) return round;
+  const startsAt = session.lifecycle.startsAt;
+  const elapsedMs = raceElapsedMs(session, now);
+  let current = round;
+  const runners = () => [PLAYER_ID, ...current.bots.map((bot) => bot.id)].map((id) => {
+    const text = current.texts[id];
+    const bot = current.bots.find((bot) => bot.id === id);
+    const position = bot ? botProgressAt(bot.plan, elapsedMs) : countCorrectChars(session.typed, text);
+    return { id, text, active: position < text.length, progress: position / text.length,
+      typedLength: bot ? position : session.typed.length,
+      bonusesReceived: current.bonusEvents.filter((event) => event.recipientId === id).length,
+      fogUntilMs: current.fogUntil[id] ?? 0 };
+  });
+  for (const checkpoint of crossedCheckpoints(Math.max(...runners().map((r) => r.progress)), round.checkpointsTriggered)) {
+    const random = createSeededRandom(round.seed + Math.imul(checkpoint + 1, 0x9e3779b9));
+    const awards = resolveCheckpoint(checkpoint, runners(), now, random, (count) => {
+      const generated = generateRaceText({ ...settings, textMode: "words" }, random);
+      const words = (generated.ok ? generated.text : session.text).split(/\s+/u);
+      return Array.from({ length: count }, () => words[Math.floor(random() * words.length)]);
+    });
+    for (const award of awards) {
+      const text = award.edit ? applyTextEdits(current.texts[award.targetId], [award.edit]) : current.texts[award.targetId];
+      const fogUntil = { ...current.fogUntil, [award.targetId]: award.fogUntilMs ?? current.fogUntil[award.targetId] ?? 0 };
+      current = { ...current, texts: { ...current.texts, [award.targetId]: text }, fogUntil,
+        bonusEvents: [...current.bonusEvents, { ...award, at: now }],
+        session: award.targetId === PLAYER_ID ? { ...current.session, text } : current.session,
+        bots: current.bots.map((bot) => bot.id === award.targetId && bot.level ? { ...bot,
+          plan: replanBot(bot.plan, elapsedMs, text, bot.level, settings.inputMode, random,
+            { untilMs: fogUntil[bot.id] - startsAt, factor: BOT_FOG_SLOWDOWN_FACTOR }) } : bot) };
+    }
+    current = { ...current, checkpointsTriggered: checkpoint + 1 };
+  }
+  return current;
 }
 
 export interface RacerSnapshot {
@@ -81,7 +129,10 @@ export function snapshotRound(round: Round, clock: number, playerName: string): 
 
   const outcome = getPlayerOutcome(session);
   const results = outcome
-    ? buildRaceResults({ textLength: text.length, playerId: PLAYER_ID, playerName, player: outcome, bots })
+    ? buildRaceResults({ playerId: PLAYER_ID, playerName, player: outcome, bots }).map((row) => ({ ...row,
+      bonusesReceived: round.bonusEvents.filter((event) => event.recipientId === row.id).length,
+      bonusTypes: round.bonusEvents.filter((event) => event.recipientId === row.id).map((event) => event.type),
+    }))
     : null;
 
   const live: RacerSnapshot[] = [
@@ -91,7 +142,7 @@ export function snapshotRound(round: Round, clock: number, playerName: string): 
       name: bot.name,
       isPlayer: false,
       level: bot.level,
-      progress: progressOf(botProgressAt(bot.plan, elapsedMs), text.length),
+      progress: progressOf(botProgressAt(bot.plan, elapsedMs), bot.plan.textLength),
     })),
   ];
   // Tri stable : à égalité d'avancement, le joueur reste devant.

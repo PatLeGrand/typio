@@ -24,6 +24,18 @@
     "back": "Retour aux paramètres"
   },
   "raceScreen": {
+    "bonuses": {
+      "types": {
+        "shorten": "−3 mots",
+        "lengthen": "+3 mots",
+        "fog": "Brouillard"
+      },
+      "shorten": "Bonus ! 3 mots retirés de ton texte",
+      "lengthen": "{name} t’a ajouté 3 mots",
+      "fog": "Brouillard !",
+      "sentLengthen": "Ton bonus a ajouté 3 mots à {name}",
+      "sentFog": "Ton bonus a plongé {name} dans le brouillard"
+    },
     "bot": "Bot",
     "botLevels": {"noob": "Noob", "beginner": "Débutant", "intermediate": "Intermédiaire", "expert": "Expert", "impossible": "Impossible"},
     "roomName": "Prairie des Blobs",
@@ -92,7 +104,9 @@
       "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
       "tableTitle": "Résultats de la course",
+      "bonusTypes": {"shorten": "−3 mots", "lengthen": "+3 mots", "fog": "Brouillard"},
       "columns": {
+        "bonuses": "Bonus",
         "rank": "Rang",
         "name": "Nom",
         "wpm": "MPM",
@@ -470,12 +484,11 @@
       "blocking": "Bloquant",
       "blockingDesc": "Corrige chaque erreur pour pouvoir saisir le caractère suivant."
     },
-    "abilities": {
-      "label": "Capacités",
-      "help": "Active les pouvoirs des Blobs pendant la course.",
-      "on": "Activées",
-      "off": "Désactivées",
-      "comingSoon": "bientôt"
+    "bonuses": {
+      "label": "Bonus de remontée",
+      "help": "Aux points de contrôle, les coureurs en retard reçoivent un retrait de mots ou un malus envoyé au meneur.",
+      "on": "Activés",
+      "off": "Désactivés"
     },
     "opponentsSection": {
       "title": "Tes adversaires",

@@ -60,9 +60,9 @@ describe("RaceSettingsFields (editable)", () => {
     expect(onChange).toHaveBeenCalledWith({ excludedCharacters: "@#" });
   });
 
-  it("keeps the abilities switch disabled", () => {
+  it("enables the catch-up bonuses switch", () => {
     renderFields();
-    expect(screen.getByRole("switch", { name: copy.abilities.label })).toBeDisabled();
+    expect(screen.getByRole("switch", { name: copy.bonuses.label })).toBeEnabled();
   });
 
   it("shows the excluded characters error linked to the field", () => {

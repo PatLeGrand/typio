@@ -25,7 +25,7 @@ const outcome = (overrides: Partial<PlayerOutcome>): PlayerOutcome => ({
   ...overrides,
 });
 const build = (player: PlayerOutcome, bots: BotEntry[]) =>
-  buildRaceResults({ textLength: TEXT_LENGTH, playerId: "player", playerName: "Toi", player, bots });
+  buildRaceResults({ playerId: "player", playerName: "Toi", player, bots });
 
 describe("classement final (A-D7, RES-01, RES-02)", () => {
   it("classe les arrivés par temps, bots plus rapides ou plus lents que le joueur", () => {
@@ -80,7 +80,6 @@ describe("classement final (A-D7, RES-01, RES-02)", () => {
     const text = "le petit chat dort sur le canapé du salon";
     const plan = planBot(text, "intermediate", "free", () => 0.5);
     const rows = buildRaceResults({
-      textLength: text.length,
       playerId: "player",
       playerName: "Toi",
       player: outcome({ elapsedMs: botFinishMs(plan) + 1, correctChars: text.length }),

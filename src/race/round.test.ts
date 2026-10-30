@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { botFinishMs, planBot } from "./bots";
 import { BOT_LEVELS, INPUT_MODES } from "../realtime/protocol";
 import { DEFAULT_RACE_SETTINGS, type RaceSettings } from "./config";
-import { createRound, PLAYER_ID, snapshotRound } from "./round";
+import { applyRoundBonuses, createRound, PLAYER_ID, snapshotRound } from "./round";
 import { abandonRaceSession, tickRaceSession, typeIntoRaceSession } from "./session";
 
 const SETTINGS: RaceSettings = { ...DEFAULT_RACE_SETTINGS, bots: ["expert", "expert"], timeLimitSeconds: 60 };
@@ -99,5 +99,67 @@ describe("manche solo (BOT-02, BOT-03, COURSE-02, A-D7)", () => {
     expect(snapshot.endReason).toBe("timeout");
     expect(snapshot.results?.map((row) => row.status)).toEqual(["finished", "unfinished"]);
     expect(snapshot.results?.[0].isPlayer).toBe(false);
+  });
+});
+
+
+describe("bonus en solo", () => {
+  const text = "un deux trois quatre cinq six sept huit neuf dix onze douze";
+  function checkpointRound(seed: number, bonuses = true) {
+    const round = createRound(1, { ...SETTINGS, bonuses, bots: ["expert"] }, text, NAMES, seed, T0, () => 0.5);
+    return { ...round, session: tickRaceSession(round.session, START) };
+  }
+
+  it("franchit un point une seule fois, raccourcit le texte du joueur et lui permet de finir", () => {
+    const round = checkpointRound(3);
+    const before = structuredClone(round);
+    const now = START + 2500;
+    const next = applyRoundBonuses(round, now);
+    expect(next.checkpointsTriggered).toBe(1);
+    expect(next.bonusEvents).toMatchObject([{ checkpoint: 0, recipientId: PLAYER_ID, targetId: PLAYER_ID, type: "shorten" }]);
+    expect(next.session.text).toBe("un cinq six sept huit neuf dix onze douze");
+    expect(round).toEqual(before);
+    expect(applyRoundBonuses(next, now).bonusEvents).toEqual(next.bonusEvents);
+    let session = next.session;
+    for (let index = 1; index <= next.session.text.length; index++) {
+      session = typeIntoRaceSession(session, next.session.text.slice(0, index), now + index);
+    }
+    expect(snapshotRound({ ...next, session }, now + 100, "Toi").results?.find((row) => row.isPlayer))
+      .toMatchObject({ status: "finished", bonusesReceived: 1, bonusTypes: ["shorten"] });
+  });
+
+  it("replanifie le bot ciblé et utilise sa propre longueur pour la progression et les résultats", () => {
+    const round = checkpointRound(3);
+    const session = typeIntoRaceSession(round.session, text.slice(0, 16), START + 1000);
+    const next = applyRoundBonuses({ ...round, session }, START + 1000);
+    expect(next.bonusEvents).toMatchObject([{ recipientId: "bot-0", targetId: "bot-0", type: "shorten" }]);
+    expect(next.bots[0].plan.textLength).toBe(next.texts["bot-0"].length);
+    expect(next.bots[0].plan.textLength).toBeLessThan(text.length);
+    expect(next.bots[0].plan).not.toEqual(round.bots[0].plan);
+    const finish = START + botFinishMs(next.bots[0].plan);
+    const ended = { ...next, session: abandonRaceSession(next.session, finish) };
+    expect(snapshotRound(ended, finish, "Toi").results?.find((row) => row.id === "bot-0"))
+      .toMatchObject({ status: "finished", correctChars: next.texts["bot-0"].length, bonusTypes: ["shorten"] });
+  });
+
+  it.each([[0, "lengthen"], [1, "fog"]] as const)("replanifie le meneur pour le malus %s (%s)", (seed, type) => {
+    const round = checkpointRound(seed);
+    const now = START + 2500;
+    const next = applyRoundBonuses(round, now);
+    expect(next.bonusEvents).toMatchObject([{ recipientId: PLAYER_ID, targetId: "bot-0", type }]);
+    expect(next.bots[0].plan).not.toEqual(round.bots[0].plan);
+    if (type === "lengthen") {
+      expect(next.texts["bot-0"].slice(text.length + 1).split(" ")).toHaveLength(3);
+      expect(next.bots[0].plan.textLength).toBe(next.texts["bot-0"].length);
+    } else {
+      expect(next.fogUntil["bot-0"]).toBe(now + 4000);
+      expect(botFinishMs(next.bots[0].plan)).toBeGreaterThan(botFinishMs(round.bots[0].plan));
+    }
+  });
+
+  it("ne produit aucun effet quand les bonus sont désactivés", () => {
+    const round = checkpointRound(3, false);
+    expect(applyRoundBonuses(round, START + 2500)).toBe(round);
+    expect(round.bonusEvents).toEqual([]);
   });
 });

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BarChart3, Flag, Trophy } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Logo } from "@/components/Logo";
+import { playerBonusMessage, racerBonusLabel } from "@/components/race/bonusAnnouncements";
 import { RaceNoText } from "@/components/race/RaceNoText";
 import { RaceResults } from "@/components/race/RaceResults";
 import { RaceTypingPanel } from "@/components/race/RaceTypingPanel";
@@ -83,6 +84,7 @@ export function RaceScreen({
       name: racer?.level ? `${racer.name} (${labels.bot} · ${labels.botLevels[racer.level]})` : racer?.name ?? id,
       progress: racer?.progress ?? 0,
       isLocal: id === PLAYER_ID,
+      bonusLabel: racerBonusLabel(round.bonusEvents, id, clock, labels.bonuses),
       hue: index === 0 ? LOCAL_HUE : BOT_HUES[(index - 1) % BOT_HUES.length],
     };
   });
@@ -198,6 +200,8 @@ export function RaceScreen({
       ) : (
         <RaceTypingPanel
           labels={labels.typing}
+          fog={(round.fogUntil[PLAYER_ID] ?? 0) > clock}
+          bonusMessage={playerBonusMessage(round.bonusEvents, PLAYER_ID, clock, labels.bonuses, racers)}
           text={round.session.text}
           typed={round.session.typed}
           correctChars={correctChars}

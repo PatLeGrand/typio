@@ -10,13 +10,15 @@ type Props = {
   text: string;
   typed: string;
   correctChars: number;
+  fog?: boolean;
+  bonusMessage?: string;
   onChange: (value: string) => void;
 };
 
 const TEXT_ID = "race-text";
 
 /** Texte à taper (caractères colorés selon la frappe) et champ de saisie, sans copier-coller (COURSE-04). */
-export function RaceTypingPanel({ locale, labels, text, typed, correctChars, onChange }: Props) {
+export function RaceTypingPanel({ locale, labels, text, typed, correctChars, fog = false, bonusMessage = "", onChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   // Pendant une composition (touche morte « ^ » puis « e », IME), la valeur brute est affichée
   // sans être jugée : « ^ » n'est pas une frappe, seul « ê » final compte.
@@ -52,6 +54,8 @@ export function RaceTypingPanel({ locale, labels, text, typed, correctChars, onC
     if (field.selectionStart !== end || field.selectionEnd !== end) field.setSelectionRange(end, end);
   }
 
+  const wordEnd = text.indexOf(" ", typed.length);
+  const fogStart = wordEnd < 0 ? text.length : wordEnd + 1;
   const number = new Intl.NumberFormat(locale);
   const done = text.length === 0 ? 0 : (correctChars / text.length) * 100;
 
@@ -70,6 +74,8 @@ export function RaceTypingPanel({ locale, labels, text, typed, correctChars, onC
         </div>
       </div>
 
+      <p role="status" aria-live="polite" aria-atomic="true" className="text-sm font-bold text-accent-text">{bonusMessage}</p>
+
       <p id={TEXT_ID} className="break-words rounded-card border border-border bg-surface px-4 py-5 font-mono text-lg leading-relaxed sm:px-6 sm:text-2xl">
         {Array.from(text).map((char, index) => {
           const entered = typed[index];
@@ -81,7 +87,7 @@ export function RaceTypingPanel({ locale, labels, text, typed, correctChars, onC
               : entered === char
                 ? "text-success"
                 : "bg-danger/15 text-danger underline decoration-danger";
-          return <span key={index} className={tone}>{char}</span>;
+          return <span key={index} className={`${tone}${fog && index >= fogStart ? " blur-sm" : ""}`}>{char}</span>;
         })}
       </p>
 

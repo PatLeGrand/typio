@@ -1,3 +1,4 @@
+import type { BonusType } from "./bonuses";
 import type { BotLevel } from "@/realtime/protocol";
 import { botFinishMs, botKeystrokesAt, botProgressAt, type BotPlan } from "./bots";
 import { computeAccuracy, computeWpm, type Keystrokes } from "./metrics";
@@ -34,6 +35,8 @@ export interface RaceResultRow {
   accuracy: number;
   timeMs: number;
   correctChars: number;
+  bonusesReceived?: number;
+  bonusTypes?: BonusType[];
 }
 
 type UnrankedRow = Omit<RaceResultRow, "rank">;
@@ -50,13 +53,12 @@ function compareRows(a: UnrankedRow, b: UnrankedRow): number {
 }
 
 export function buildRaceResults(input: {
-  textLength: number;
   playerId: string;
   playerName: string;
   player: PlayerOutcome;
   bots: readonly BotEntry[];
 }): RaceResultRow[] {
-  const { textLength, player, bots } = input;
+  const { player, bots } = input;
   const endMs = player.elapsedMs;
 
   const playerStatus: RacerStatus =
@@ -77,7 +79,7 @@ export function buildRaceResults(input: {
   for (const bot of bots) {
     const finishMs = botFinishMs(bot.plan);
     const finished = finishMs <= endMs;
-    const correctChars = finished ? textLength : botProgressAt(bot.plan, endMs);
+    const correctChars = finished ? bot.plan.textLength : botProgressAt(bot.plan, endMs);
     const timeMs = finished ? finishMs : endMs;
     rows.push({
       id: bot.id,
