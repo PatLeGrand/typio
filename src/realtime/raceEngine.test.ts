@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { applyTextEdits } from "@/race/bonuses";
 import { botFinishMs, botKeystrokesAt, botProgressAt, planBot } from "@/race/bots";
 import { createSeededRandom, shuffled } from "@/race/seededRandom";
 import { generateRaceText } from "@/race/textGenerator";
@@ -308,5 +309,123 @@ describe("série MPM (RES-05)", () => {
     const short = { ...racing(), timeLimitMs: 2_000 };
     expect(tickRace(short, START + 2_000).runners[1].wpmSeries).toEqual([0, 0, 0]);
     expect(tickRace(short, START + 900_000).runners[1].wpmSeries).toHaveLength(3);
+  });
+});
+
+describe("bonus de remontée faisant autorité", () => {
+  const text = "un deux trois quatre cinq six sept huit";
+  function checkpointRace(seed: number, bonuses = true): RaceState {
+    const source = room();
+    source.config.bonuses = bonuses;
+    const race = racing(text, source);
+    return { ...race, seed, runners: race.runners.map((r, i) => i === 0
+      ? { ...r, typed: text.slice(0, 12), position: 12 } : r) };
+  }
+
+  // Sans activation, les points franchis ne changent ni le texte ni les adversaires.
+  it("keeps bonuses disabled by default even after crossing all checkpoints", () => {
+    const race = checkpointRace(3, false);
+    race.runners[0].position = text.length - 1;
+    const next = tickRace(race, START + 1_000);
+    expect(next.checkpointsTriggered).toBe(0);
+    expect(next.bonusEvents).toEqual([]);
+    expect(next.runners.every((r) => r.edits.length === 0 && r.bonusesReceived === 0 && r.fogUntil === null)).toBe(true);
+  });
+
+  // Le raccourcissement doit être utilisable à la frappe et préserver la MPM réelle.
+  it("awards the trailing runner once, accepts their shortened text and finishes it", () => {
+    const race = checkpointRace(3);
+    const before = structuredClone(race);
+    let next = tickRace(race, START + 1_000);
+    expect(next.bonusEvents).toMatchObject([{ checkpoint: 0, recipientId: "guest", targetId: "guest", type: "shorten", at: START + 1_000 }]);
+    expect(next.runners[0].edits).toEqual([]);
+    expect(next.runners[1].bonusesReceived).toBe(1);
+    const shorter = applyTextEdits(text, next.runners[1].edits);
+    expect(shorter).toBe("un cinq six sept huit");
+    expect(tickRace(next, START + 1_000).bonusEvents).toEqual(next.bonusEvents);
+    next = input(next, shorter.split(""), START + 2_000, "guest");
+    expect(next.runners[1]).toMatchObject({ status: "finished", position: shorter.length, finishedAt: START + 2_000 });
+    const snapshot = raceSnapshot(next, START + 2_000).runners[1];
+    expect(snapshot).toMatchObject({ progress: 1, textLength: shorter.length, edits: next.runners[1].edits, fogUntil: null });
+    next = abandonRace(next, "host", START + 20_000);
+    expect(raceSnapshot(next, START + 20_000).bonusEvents).toEqual([]);
+    expect(raceResults(next)?.[0]).toMatchObject({ id: "guest", progress: 1, bonusesReceived: 1, bonusTypes: ["shorten"], wpm: Math.round(shorter.length / 5 / (2 / 60)) });
+    expect(race).toEqual(before);
+  });
+
+  // Un malus ajoute exactement trois mots conformes, sans faire crédit de frappes au meneur.
+  it("adds three configured words to the leader and uses each runner's length in results", () => {
+    const race = checkpointRace(0);
+    race.config = { ...race.config, language: "en", accents: false, uppercase: false, punctuation: false, excludedCharacters: "z" };
+    const next = tickRace(race, START + 1_000);
+    expect(next.bonusEvents).toMatchObject([{ recipientId: "guest", targetId: "host", type: "lengthen" }]);
+    const longer = applyTextEdits(text, next.runners[0].edits);
+    const added = longer.slice(text.length + 1);
+    expect(added.split(" ")).toHaveLength(3);
+    expect(added).toMatch(/^[a-y ]+$/u);
+    expect(next.runners[0].position).toBe(12);
+    expect(next.runners[0].bonusesReceived).toBe(0);
+    const final = { ...next, endedAt: START + 60_000 };
+    expect(raceResults(final)?.find((r) => r.id === "host")?.progress).toBe(12 / longer.length);
+    const ranked = { ...final, runners: final.runners.map((r, i) => ({ ...r, position: i === 0 ? 12 : 11 })) };
+    expect(raceResults(ranked)?.[0].id).toBe("guest");
+    expect(raceResults(final)?.find((r) => r.id === "guest")).toMatchObject({ bonusesReceived: 1, bonusTypes: ["lengthen"] });
+  });
+
+  // Le brouillard humain n'a aucun effet serveur sur la cadence autorisée ou la validation.
+  it("lets a fogged human type normally until finishing", () => {
+    const next = tickRace(checkpointRace(1), START + 1_000);
+    expect(next.runners[0].fogUntil).toBe(START + 5_000);
+    const finished = input(next, text.slice(12).split(""), START + 2_000);
+    expect(finished.runners[0].status).toBe("finished");
+  });
+
+  // Le plafond et le rejeu empêchent les doubles attributions lors de ticks répétés.
+  it("is deterministic for the same seed and caps received bonuses at three", () => {
+    const run = () => {
+      const race = checkpointRace(0);
+      race.runners[0].position = text.length - 1;
+      return tickRace(race, START + 1_000);
+    };
+    const next = run();
+    expect(run()).toEqual(next);
+    expect(next.checkpointsTriggered).toBe(3);
+    expect(next.runners[1].bonusesReceived).toBe(3);
+    expect(tickRace(next, START + 2_000).bonusEvents).toEqual(next.bonusEvents);
+    const capped = checkpointRace(0);
+    capped.runners[1].bonusesReceived = 3;
+    expect(tickRace(capped, START + 1_000).bonusEvents).toEqual([]);
+  });
+
+  // Les trois effets recalculent le futur du bot et lui permettent de finir son texte propre.
+  it.each(["shorten", "lengthen", "fog"] as const)("replans a bot affected by %s and finishes its current text", (type) => {
+    const source = room();
+    source.participants.pop();
+    source.config = { ...source.config, bonuses: true, bots: ["impossible"] };
+    let race = started(source);
+    const bot = race.runners[1];
+    if (!bot.plan) throw new Error("Missing bot plan");
+    let now = START + 100;
+    if (type === "shorten") {
+      race = { ...race, seed: 3, runners: [{ ...race.runners[0], position: Math.ceil(race.text.length * 0.3) }, bot] };
+    } else {
+      race = { ...race, seed: type === "lengthen" ? 0 : 1 };
+      const frame = bot.plan.keyframes.find((f) => f.chars > race.text.length * 0.3);
+      if (!frame) throw new Error("Missing checkpoint frame");
+      now = START + Math.ceil(frame.timeMs);
+    }
+    race = tickRace(race, now);
+    expect(race.bonusEvents[0]).toMatchObject({ type, targetId: "bot-0" });
+    expect(race.runners[1].plan).not.toEqual(bot.plan);
+    const plan = race.runners[1].plan;
+    if (!plan) throw new Error("Missing updated plan");
+    expect(plan.textLength).toBe(applyTextEdits(race.text, race.runners[1].edits).length);
+    if (type === "fog") expect(botFinishMs(plan)).toBeGreaterThan(botFinishMs(bot.plan));
+    race = abandonRace(race, "host", now);
+    const finish = START + botFinishMs(plan);
+    const final = tickRace(race, finish);
+    expect(final.runners[1]).toMatchObject({ status: "finished", position: plan.textLength, finishedAt: finish });
+    expect(raceResults(final)?.find((r) => r.kind === "bot")?.progress).toBe(1);
+    if (type === "shorten") expect(final.runners[1].bonusesReceived).toBe(1);
   });
 });

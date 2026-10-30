@@ -33,6 +33,17 @@ describe("parseCreatePayload", () => {
 });
 
 describe("parseRoomConfigPatch", () => {
+  it("validates bonuses strictly without accepting legacy or client-decided bonuses", () => {
+    for (const bonuses of [true, false]) {
+      expect(parseRoomConfigPatch({ bonuses })).toEqual({ bonuses });
+      expect(parseCreatePayload({ config: { bonuses } })).toEqual({ config: { bonuses }, role: "runner" });
+    }
+    for (const value of [{ bonuses: "true" }, { bonuses: null }, { bonuses: undefined },
+      { abilities: true }, { bonusEvents: [] }, { text: "triché" }]) {
+      expect(parseRoomConfigPatch(value)).toBeNull();
+    }
+  });
+
   it("accepts an empty or partial valid patch", () => {
     expect(parseRoomConfigPatch(undefined)).toEqual({});
     expect(parseRoomConfigPatch({ language: "en", timeLimitSeconds: null })).toEqual({

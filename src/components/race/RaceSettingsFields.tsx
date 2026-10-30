@@ -305,8 +305,8 @@ export function RaceSettingsFields({
               <Switch
                 aria-label={dict.abilities.label}
                 aria-describedby={id("abilities-help")}
-                checked={false}
-                onChange={() => {}}
+                checked={value.bonuses}
+                onChange={(bonuses) => onChange({ bonuses })}
                 disabled
                 className="opacity-50"
               />

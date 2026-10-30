@@ -64,6 +64,18 @@ describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01
     expect(parseRaceSettings({ ...old, botDifficulty: "normal" })).toBeNull();
   });
 
+  it("converts legacy abilities, including legacy bots, and refuses mixed bonus fields", () => {
+    const { bonuses, bots, ...old } = DEFAULT_RACE_SETTINGS;
+    void bonuses;
+    expect(parseRaceSettings({ ...old, bots, abilities: true })).toMatchObject({ bonuses: true });
+    expect(parseRaceSettings({ ...old, abilities: false, botCount: 2, botDifficulty: "normal" }))
+      .toEqual(DEFAULT_RACE_SETTINGS);
+    expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, abilities: false })).toBeNull();
+    expect(parseRaceSettings({ ...old, bots, abilities: "true" })).toBeNull();
+    expect(parseRaceSettings({ ...old, bots, abilities: undefined })).toBeNull();
+    expect(parseRaceSettings({ ...old, bots })).toMatchObject({ bonuses: false });
+  });
+
   it("uses the documented default limit, including when explicit limit is off", () => {
     expect(getEffectiveTimeLimitSeconds(DEFAULT_RACE_SETTINGS)).toBe(300);
     expect(getEffectiveTimeLimitSeconds({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds: 60 })).toBe(60);
