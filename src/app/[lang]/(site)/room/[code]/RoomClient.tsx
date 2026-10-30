@@ -33,7 +33,7 @@ type RoomClientProps = {
 export function RoomClient({ code, role, locale, userId, labels, settingsLabels }: RoomClientProps) {
   const router = useRouter();
   const session = useRoom(userId);
-  const { connection, room, error, join, updateConfig, leave, clearError } = session;
+  const { connection, room, error, kicked, join, updateConfig, leave, clearError } = session;
   useLoginRedirect(connection, locale);
 
   const playHref = prefixWithLocale("/play", locale);
@@ -90,6 +90,11 @@ export function RoomClient({ code, role, locale, userId, labels, settingsLabels 
   useEffect(() => {
     if (leaveRequested && wasInRoom && !inThisRoom) goToPlay();
   }, [leaveRequested, wasInRoom, inThisRoom, goToPlay]);
+
+  // SALLE-07 : expulsé, on retourne sur /play, où le message est affiché.
+  useEffect(() => {
+    if (kicked && wasInRoom && !inThisRoom) goToPlay();
+  }, [kicked, wasInRoom, inThisRoom, goToPlay]);
 
   async function handleLeave(): Promise<void> {
     setLeaving(true);

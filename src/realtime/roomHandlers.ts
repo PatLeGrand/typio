@@ -15,6 +15,8 @@ import {
   parseRaceCommand,
   parseRaceInput,
   parseJoinPayload,
+  parseJoinInvitePayload,
+  parseKickPayload,
   parseRoomConfigPatch,
   RECONNECT_GRACE_MS,
   type Ack,
@@ -101,6 +103,13 @@ export function registerRoomHandlers(
     }
   };
 
+  /** Liste des liens, à l'hôte seulement et à tous ses onglets (SALLE-04, SALLE-08) ; jamais dans `room:state`. */
+  const sendInvites = (code: string, hostId: string): void => {
+    const invites = store.invites(hostId, code);
+    if (!invites) return;
+    for (const s of sockets.of(hostId)) s.emit("room:invites", invites);
+  };
+
   const broadcast = (state: RoomState): void => {
     io.to(state.code).emit("room:state", state);
     deps.syncRace(state.code);
@@ -136,6 +145,7 @@ export function registerRoomHandlers(
       deps.lobbyChanged();
     } else {
       broadcast(state);
+      sendInvites(code, state.hostId); // le départ était peut-être celui de l'hôte (SALLE-08)
     }
     detachUser(code);
   };
@@ -176,6 +186,7 @@ export function registerRoomHandlers(
       if (res.ok) {
         broadcast(res.state);
         resumeRace(code);
+        if (res.state.hostId === user.id) sendInvites(code, user.id);
       }
     }
   } catch (e) {
@@ -233,6 +244,81 @@ export function registerRoomHandlers(
     });
   });
 
+  // SALLE-04 : mêmes limites d'échecs que `room:join`; le jeton, jamais journalisé, n'est que comparé par hachage.
+  socket.on("room:joinInvite", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (joinFailures.isLimited(user.id)) return failure("INVITE_INVALID");
+
+      const payload = parseJoinInvitePayload(payloadInput);
+      if (!payload) {
+        joinFailures.record(user.id);
+        return failure("INVALID_PAYLOAD");
+      }
+
+      const res = store.joinInvite(user, payload.token, payload.role, socket.data.ip, now().getTime());
+      if (!res.ok) {
+        if (res.error === "INVITE_INVALID") joinFailures.record(user.id);
+        return failure(res.error);
+      }
+
+      const { state } = res;
+      attachUser(state.code);
+      timers.cancel(user.id);
+      return {
+        reply: { ok: true, data: { code: state.code } },
+        publish: () => {
+          broadcast(state);
+          resumeRace(state.code);
+          sendInvites(state.code, state.hostId); // le statut du lien vient de changer
+        },
+      };
+    });
+  });
+
+  // SALLE-04 : hôte seulement ; le jeton en clair ne repasse qu'ici, dans l'accusé de l'hôte.
+  socket.on("room:createInvite", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
+      const code = store.roomOf(user.id);
+      if (!code) return failure("NOT_IN_ROOM");
+
+      const res = store.createInvite(user.id, code);
+      if (!res.ok) return failure(res.error);
+      return {
+        reply: { ok: true, data: { id: res.id, token: res.token } },
+        publish: () => sendInvites(code, user.id),
+      };
+    });
+  });
+
+  // SALLE-07 : l'expulsé reçoit `room:kicked`, ses onglets quittent la room Socket.IO, la salle est mise à jour.
+  socket.on("room:kick", (payloadInput, ack) => {
+    respond(ack, () => {
+      const payload = parseKickPayload(payloadInput);
+      if (!payload) return failure("INVALID_PAYLOAD");
+      const code = store.roomOf(user.id);
+      if (!code) return failure("NOT_IN_ROOM");
+
+      const res = store.kick(user.id, code, payload.userId);
+      if (!res.ok) return failure(res.error);
+
+      timers.cancel(payload.userId);
+      const { state } = res;
+      return {
+        reply: { ok: true },
+        publish: () => {
+          for (const s of sockets.of(payload.userId)) {
+            s.emit("room:kicked");
+            void s.leave(code);
+            s.data.roomCode = null;
+          }
+          broadcast(state);
+          sendInvites(code, user.id); // le lien de l'expulsé passe à « révoqué »
+        },
+      };
+    });
+  });
+
   // JOIN-03 : même limite d'échecs et même règle « une seule salle » que `room:join` (SALLE-06).
   socket.on("room:quickJoin", (payloadInput, ack) => {
     respond(ack, () => {
@@ -240,7 +326,7 @@ export function registerRoomHandlers(
       if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
       if (store.roomOf(user.id)) return failure("ALREADY_IN_ROOM");
 
-      const code = store.quickJoinCode();
+      const code = store.quickJoinCode(user.id);
       if (code === null) return failure("NO_ROOM_AVAILABLE");
 
       const res = store.join(user, code, "runner", now().getTime());

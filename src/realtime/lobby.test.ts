@@ -64,7 +64,7 @@ describe("explorateur (JOIN-02, SALLE-03)", () => {
     store.setStatus("AAAAAA", "racing");
     store.updateConfig("host-1", "BBBBBB", { capacity: 2 });
     expect(store.lobby().map((room) => [room.code, room.joinable])).toEqual([["AAAAAA", false], ["BBBBBB", false]]);
-    expect(store.quickJoinCode()).toBeNull();
+    expect(store.quickJoinCode("anyone")).toBeNull();
     expect(toLobbyEntry({ ...store.get("AAAAAA")!, status: "closed" }, 1)).toBeNull();
   });
 

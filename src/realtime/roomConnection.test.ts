@@ -181,7 +181,7 @@ describe("connexion", () => {
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
     expect(socket.connect).toHaveBeenCalledTimes(2);
     expect(connection.getSnapshot()).toEqual({ ...IDLE_SNAPSHOT, connection: "connecting" });
-    expect(socket.listenerCount()).toBe(9);
+    expect(socket.listenerCount()).toBe(11);
   });
 });
 
@@ -575,3 +575,41 @@ describe("multiplayer race", () => {
     expect(socket.emissions[0]).toMatchObject({ event: "race:input", args: [{ ops: ["a", "\b", "\uD83D", "\uDE00"] }], timeoutMs: 0 });
   });
 });
+
+describe("invitations et expulsion (SALLE-04, SALLE-07)", () => {
+  const invites = [{ id: "i1", createdAt: 1, status: "unused" as const, usedBy: null }];
+
+  it("createInvite : renvoie le jeton de l'accusé, émet un objet vide", async () => {
+    startConnected();
+    const result = connection.createInvite();
+    expect(socket.emissions[0]).toMatchObject({ event: "room:createInvite", args: [{}], timeoutMs: ACK_TIMEOUT_MS });
+    socket.emissions[0].ack(null, { ok: true, data: { id: "i1", token: "T".repeat(43) } });
+    await expect(result).resolves.toEqual({ ok: true, data: { id: "i1", token: "T".repeat(43) } });
+  });
+
+  it("garde la liste des liens après un room:state en attente, et l'efface à la fermeture", () => {
+    startConnected();
+    socket.fire("room:state", roomState([ME, OTHER]));
+    socket.fire("room:invites", invites);
+    socket.fire("room:state", roomState([ME, OTHER]));
+    expect(connection.getSnapshot().invites).toEqual(invites);
+
+    socket.fire("room:state", { ...roomState([ME, OTHER]), status: "closed" });
+    expect(connection.getSnapshot().invites).toEqual([]);
+  });
+
+  it("kick : émet { userId } ; room:kicked oublie la salle et marque l'expulsion jusqu'à une nouvelle salle", async () => {
+    startConnected();
+    socket.fire("room:state", roomState([OTHER, ME]));
+    const result = connection.kick(OTHER);
+    expect(socket.emissions[0]).toMatchObject({ event: "room:kick", args: [{ userId: OTHER }] });
+    socket.emissions[0].ack(null, { ok: true });
+    await expect(result).resolves.toEqual({ ok: true, data: undefined });
+
+    socket.fire("room:kicked");
+    expect(connection.getSnapshot()).toMatchObject({ room: null, kicked: true });
+    socket.fire("room:state", roomState([ME]));
+    expect(connection.getSnapshot().kicked).toBe(false);
+  });
+});
+

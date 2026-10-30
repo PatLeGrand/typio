@@ -10,7 +10,7 @@ import { Server } from "socket.io";
 import type { SessionRepository } from "@/auth/session";
 import { authenticateHandshake, isAllowedOrigin } from "./auth";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "./protocol";
-import { createRateLimiter } from "@/auth/rateLimit";
+import { createRateLimiter, getClientIp, ipRateLimitKey } from "@/auth/rateLimit";
 import { createGraceTimers, type GraceTimers } from "./graceTimers";
 import { LOBBY_ROOM, registerRoomHandlers } from "./roomHandlers";
 import { createRoomStore } from "./roomStore";
@@ -102,6 +102,9 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       }
       socket.data.user = identity.user;
       socket.data.roomCode = null;
+      // SALLE-04 : IP vue par Caddy (`x-forwarded-for`), jamais `handshake.address` (le proxy local).
+      const forwarded = socket.handshake.headers["x-forwarded-for"];
+      socket.data.ip = ipRateLimitKey(getClientIp({ get: () => (Array.isArray(forwarded) ? forwarded[0] : forwarded) ?? null }));
       handshakeExpiry.set(socket, identity.expiresAt);
       next();
     } catch {

@@ -630,7 +630,11 @@
       "you": "You",
       "runner": "Runner",
       "spectator": "Spectator",
-      "disconnected": "Disconnected"
+      "disconnected": "Disconnected",
+      "kick": "Remove",
+      "kickConfirm": "Remove {name}? They will not be able to come back.",
+      "kickYes": "Yes, remove",
+      "kickCancel": "Cancel"
     },
     "config": {
       "title": "Settings",
@@ -713,7 +717,33 @@
       "OFFLINE": "You are not connected to the game server. Try again in a moment.",
       "TIMEOUT": "The game server is not answering. Try again in a moment.",
       "INVITE_REQUIRED": "This room is private: you need an invitation link to join.",
-      "NO_ROOM_AVAILABLE": "No room is available right now."
+      "NO_ROOM_AVAILABLE": "No room is available right now.",
+      "INVITE_INVALID": "This invitation link is not valid or can no longer be used.",
+      "INVITE_LIMIT": "You have reached the maximum number of invitation links for this room.",
+      "KICKED": "The host removed you from this room."
+    },
+    "invites": {
+      "title": "Invitations",
+      "intro": "One link per invited person. Each link only works for the first person who uses it.",
+      "create": "Create a link",
+      "empty": "No links yet.",
+      "item": "Link {number}",
+      "created": "Created {date}",
+      "unused": "Unused",
+      "used": "Used by {name}",
+      "revoked": "Revoked",
+      "newLink": "New link, copy it now: it will not be shown again.",
+      "copy": "Copy",
+      "copied": "Link copied",
+      "copyFailed": "Copy failed: select the link and copy it with Ctrl+C."
+    },
+    "invite": {
+      "metaTitle": "Invitation",
+      "title": "Room invitation",
+      "joining": "Joining the room…",
+      "signInRequired": "Sign in or play as a guest to use this invitation link.",
+      "signIn": "Sign in",
+      "guest": "Play as a guest"
     }
   }
 }
