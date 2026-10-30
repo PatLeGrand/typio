@@ -41,15 +41,13 @@ describe("RoomConfigPanel, host", () => {
     fireEvent.click(screen.getByRole("radio", { name: raceSettings.textMode.words }));
     fireEvent.click(screen.getByRole("radio", { name: raceSettings.accents.exclude }));
     fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${raceSettings.inputMode.blocking}`) }));
-    fireEvent.click(screen.getByRole("radio", { name: raceSettings.botDifficulty.hard }));
-    fireEvent.click(screen.getByRole("button", { name: raceSettings.botCount.increase }));
+    fireEvent.click(screen.getByRole("button", { name: raceSettings.bots.add }));
 
     expect(vi.mocked(onChange).mock.calls).toEqual([
       [{ textMode: "words" }],
       [{ accents: false }],
       [{ inputMode: "blocking" }],
-      [{ botDifficulty: "hard" }],
-      [{ botCount: DEFAULT_ROOM_CONFIG.botCount + 1 }],
+      [{ bots: ["intermediate"] }],
     ]);
   });
 
@@ -153,8 +151,8 @@ describe("RoomConfigPanel, host", () => {
 
   it("a refused setting does not change what is shown (room state is the source)", () => {
     setup({ onChange: vi.fn<Send>(async () => ({ ok: false, error: "ROOM_FULL" })) });
-    fireEvent.click(screen.getByRole("button", { name: raceSettings.botCount.increase }));
-    expect(screen.getByText(String(DEFAULT_ROOM_CONFIG.botCount))).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: raceSettings.bots.add }));
+    expect(screen.getByText(String(DEFAULT_ROOM_CONFIG.bots.length))).toBeInTheDocument();
   });
 });
 
@@ -177,7 +175,7 @@ describe("RoomConfigPanel, non-host (CONF-12)", () => {
 
   it("follows the room state without reloading (AC-B2)", () => {
     const { rerender } = setup({ editable: false });
-    rerender({ ...DEFAULT_ROOM_CONFIG, textMode: "words", botCount: 5, inputMode: "blocking" });
+    rerender({ ...DEFAULT_ROOM_CONFIG, textMode: "words", bots: ["intermediate", "intermediate", "intermediate", "intermediate", "intermediate"], inputMode: "blocking" });
 
     expect(screen.getByRole("radio", { name: raceSettings.textMode.words })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("radio", { name: new RegExp(`^${raceSettings.inputMode.blocking}`) })).toHaveAttribute("aria-checked", "true");

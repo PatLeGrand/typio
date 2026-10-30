@@ -1,3 +1,4 @@
+import type { BotLevel } from "@/realtime/protocol";
 import { botProgressAt, planBot } from "./bots";
 import type { RaceSettings } from "./config";
 import { computeAccuracy, computeWpm, countCorrectChars } from "./metrics";
@@ -36,10 +37,11 @@ export function createRound(
   random: () => number,
 ): Round {
   const names = shuffled(botNames, createSeededRandom(nameSeed));
-  const bots = Array.from({ length: settings.botCount }, (_, index): BotEntry => ({
+  const bots = settings.bots.map((level, index): BotEntry => ({
     id: `bot-${index}`,
     name: names[index % names.length],
-    plan: planBot(text, settings.botDifficulty, random),
+    level,
+    plan: planBot(text, level, settings.inputMode, random),
   }));
   return { id, session: createRaceSession(settings, text, now), bots };
 }
@@ -50,6 +52,7 @@ export interface RacerSnapshot {
   isPlayer: boolean;
   /** Avancement sur le texte, de 0 à 100. */
   progress: number;
+  level?: BotLevel;
 }
 
 export interface RoundSnapshot {
@@ -87,6 +90,7 @@ export function snapshotRound(round: Round, clock: number, playerName: string): 
       id: bot.id,
       name: bot.name,
       isPlayer: false,
+      level: bot.level,
       progress: progressOf(botProgressAt(bot.plan, elapsedMs), text.length),
     })),
   ];

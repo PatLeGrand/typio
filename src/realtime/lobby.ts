@@ -15,7 +15,7 @@ export interface LobbyEntry {
 export function toLobbyEntry(state: RoomState, createdAt: number): LobbyEntry | null {
   if (state.config.visibility !== "public" || state.status === "closed") return null;
   const runners =
-    state.participants.filter((participant) => participant.role === "runner").length + state.config.botCount;
+    state.participants.filter((participant) => participant.role === "runner").length + state.config.bots.length;
   const host = state.participants.find((participant) => participant.userId === state.hostId);
   return {
     createdAt,

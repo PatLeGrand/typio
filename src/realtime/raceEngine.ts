@@ -6,7 +6,7 @@ import { createSeededRandom, shuffled } from "@/race/seededRandom";
 import { generateRaceText } from "@/race/textGenerator";
 import fr from "@/i18n/dictionaries/fr.json";
 import en from "@/i18n/dictionaries/en.json";
-import type { RoomConfig, RoomErrorCode, RoomState } from "./protocol";
+import type { BotLevel, RoomConfig, RoomErrorCode, RoomState } from "./protocol";
 
 export type RunnerStatus = "ready" | "typing" | "finished" | "abandoned";
 
@@ -27,6 +27,7 @@ export interface RaceRunner {
   wpmSeries: number[];
   userKind?: "member" | "guest";
   plan?: BotPlan;
+  level?: BotLevel;
 }
 
 export interface RaceState {
@@ -55,7 +56,7 @@ export function startRace(
     return { ok: false, error: "RACE_NOT_ALLOWED" };
   }
   const humans = room.participants.filter((p) => p.role === "runner");
-  if (humans.length === 0 || humans.length + room.config.botCount < 2) {
+  if (humans.length === 0 || humans.length + room.config.bots.length < 2) {
     return { ok: false, error: "NOT_ENOUGH_RUNNERS" };
   }
   const random = createSeededRandom(seed);
@@ -76,9 +77,10 @@ export function startRace(
       endedAt: null,
       runners: [
         ...humans.map((p) => ({ ...runner(p.userId, p.displayName, "human", p.connected), userKind: p.kind })),
-        ...Array.from({ length: room.config.botCount }, (_, index) => ({
+        ...room.config.bots.map((level, index) => ({
           ...runner(`bot-${index}`, names[index % names.length], "bot", true),
-          plan: planBot(generated.text, room.config.botDifficulty, random),
+          level,
+          plan: planBot(generated.text, level, room.config.inputMode, random),
         })),
       ],
     },
@@ -179,7 +181,7 @@ export function raceSnapshot(race: RaceState, now: number) {
   return {
     status: current.status, serverNow: now, startAt: current.startAt, text: current.text,
     runners: current.runners.map((r) => ({
-      id: r.id, name: r.name, kind: r.kind, status: r.status, connected: r.connected,
+      id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), status: r.status, connected: r.connected,
       position: r.position, progress: r.position / current.text.length,
       wpm: computeWpm(r.position, elapsed(current, r, now)), accuracy: computeAccuracy(r.keystrokes),
     })),
@@ -194,7 +196,7 @@ export function raceResults(race: RaceState) {
   return race.runners.map((r) => {
     const timeMs = elapsed(race, r, endedAt);
     return {
-      id: r.id, name: r.name, kind: r.kind,
+      id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}),
       status: r.status === "finished" ? "finished" as const : r.status === "abandoned" ? "abandoned" as const : "unfinished" as const,
       position: r.position, progress: r.position / race.text.length,
       wpm: computeWpm(r.position, timeMs), grossWpm: computeWpm(r.keystrokes.total, timeMs),

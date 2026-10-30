@@ -15,6 +15,7 @@ type RoomConfigPanelProps = {
   config: RoomConfig;
   /** Vrai pour l'hôte : réglages modifiables. Sinon, lecture seule (CONF-12). */
   editable: boolean;
+  runnerCount?: number;
   lang: string;
   labels: Dictionary["room"]["config"];
   settingsLabels: Dictionary["raceSettings"];
@@ -28,7 +29,7 @@ type RoomConfigPanelProps = {
  * ne change rien. Seul le champ des caractères exclus garde un brouillon, envoyé à la sortie du champ
  * ou après une pause de frappe.
  */
-export function RoomConfigPanel({ config, editable, lang, labels, settingsLabels, onChange }: RoomConfigPanelProps) {
+export function RoomConfigPanel({ config, editable, runnerCount, lang, labels, settingsLabels, onChange }: RoomConfigPanelProps) {
   // Brouillon du champ des caractères exclus ; `null` : on affiche la valeur (normalisée) de la salle.
   const [draft, setDraft] = useState<string | null>(null);
   const [excludedError, setExcludedError] = useState<string | null>(null);
@@ -108,6 +109,7 @@ export function RoomConfigPanel({ config, editable, lang, labels, settingsLabels
       <h2 className="text-lg font-bold text-foreground">{labels.title}</h2>
       <RaceSettingsFields
         value={shown}
+        runnerCount={runnerCount}
         onChange={handleChange}
         readOnly={!editable}
         dict={settingsLabels}

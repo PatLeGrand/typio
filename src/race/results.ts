@@ -1,3 +1,4 @@
+import type { BotLevel } from "@/realtime/protocol";
 import { botFinishMs, botKeystrokesAt, botProgressAt, type BotPlan } from "./bots";
 import { computeAccuracy, computeWpm, type Keystrokes } from "./metrics";
 
@@ -19,12 +20,14 @@ export interface BotEntry {
   id: string;
   name: string;
   plan: BotPlan;
+  level?: BotLevel;
 }
 
 export interface RaceResultRow {
   id: string;
   name: string;
   isPlayer: boolean;
+  level?: BotLevel;
   rank: number;
   status: RacerStatus;
   wpm: number;
@@ -79,6 +82,7 @@ export function buildRaceResults(input: {
     rows.push({
       id: bot.id,
       name: bot.name,
+      level: bot.level,
       isPlayer: false,
       status: finished ? "finished" : "unfinished",
       wpm: computeWpm(correctChars, timeMs),

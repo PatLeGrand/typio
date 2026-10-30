@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { DEFAULT_CAPACITY, roomConfigFields } from "@/realtime/protocol";
+import { DEFAULT_CAPACITY, MAX_BOTS, roomConfigFields } from "@/realtime/protocol";
 import type { RoomConfig } from "@/realtime/protocol";
+import { LEGACY_BOT_LEVEL } from "./bots";
 
 /**
  * CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01: race settings. Everything but `abilities` is the room's `RoomConfig`, validated by
@@ -8,7 +9,7 @@ import type { RoomConfig } from "@/realtime/protocol";
  */
 export type RaceSettings = RoomConfig & { abilities: boolean };
 
-export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze({
+export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze<RaceSettings>({
   textMode: "sentences",
   language: "fr",
   accents: true,
@@ -20,15 +21,23 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze({
   excludedCharacters: "",
   timeLimitSeconds: null,
   inputMode: "free",
-  botCount: 2,
-  botDifficulty: "normal",
+  bots: ["intermediate", "intermediate"],
   visibility: "code",
   capacity: DEFAULT_CAPACITY,
   abilities: false,
 });
 
 /** Les champs ajoutés après coup sont facultatifs à la lecture : d'anciens liens `/race?config=` les ignorent. */
-export const raceSettingsSchema = z.strictObject({
+export const raceSettingsSchema = z.preprocess((value) => {
+  const legacy = z.object({
+    botCount: z.number().int().min(0).max(MAX_BOTS),
+    botDifficulty: z.enum(["easy", "normal", "hard"]),
+  }).safeParse(value);
+  if (!legacy.success || typeof value !== "object" || value === null || "bots" in value) return value;
+  const { botCount, botDifficulty, ...rest } = value as Record<string, unknown>;
+  void botCount; void botDifficulty;
+  return { ...rest, bots: Array.from({ length: legacy.data.botCount }, () => LEGACY_BOT_LEVEL[legacy.data.botDifficulty]) };
+}, z.strictObject({
   ...roomConfigFields,
   visibility: roomConfigFields.visibility.default(DEFAULT_RACE_SETTINGS.visibility),
   capacity: roomConfigFields.capacity.default(DEFAULT_CAPACITY),
@@ -37,7 +46,7 @@ export const raceSettingsSchema = z.strictObject({
   numbers: roomConfigFields.numbers.default(DEFAULT_RACE_SETTINGS.numbers),
   uppercase: roomConfigFields.uppercase.default(DEFAULT_RACE_SETTINGS.uppercase),
   abilities: z.boolean(),
-});
+}));
 
 export function parseRaceSettings(value: unknown): RaceSettings | null {
   const result = raceSettingsSchema.safeParse(value);
@@ -57,7 +66,7 @@ export function serializeRaceSettings(settings: RaceSettings): string {
 
 /** Reject malformed or repeated URL parameters rather than silently changing the rules. */
 export function deserializeRaceSettings(config: string | string[] | undefined): RaceSettings | null {
-  if (config === undefined) return { ...DEFAULT_RACE_SETTINGS };
+  if (config === undefined) return { ...DEFAULT_RACE_SETTINGS, bots: [...DEFAULT_RACE_SETTINGS.bots] };
   if (typeof config !== "string" || config.length > 2048) return null;
   try {
     return parseRaceSettings(JSON.parse(config));

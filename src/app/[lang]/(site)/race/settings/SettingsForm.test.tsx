@@ -164,9 +164,9 @@ describe("SettingsForm accessibility and plurals", () => {
 
   it("announces the bot count politely when it changes", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
-    const value = screen.getByText(String(DEFAULT_RACE_SETTINGS.botCount), { selector: "span[aria-live]" });
+    const value = screen.getByText(String(DEFAULT_RACE_SETTINGS.bots.length), { selector: "span[aria-live]" });
     expect(value).toHaveAttribute("aria-live", "polite");
-    fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.botCount.increase }));
-    expect(value).toHaveTextContent(String(DEFAULT_RACE_SETTINGS.botCount + 1));
+    fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.bots.add }));
+    expect(value).toHaveTextContent(String(DEFAULT_RACE_SETTINGS.bots.length + 1));
   });
 });

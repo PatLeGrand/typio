@@ -5,10 +5,10 @@ import { toRaceSettings, toRoomConfig, toRoomConfigPatch } from "./roomSettings"
 
 describe("roomSettings", () => {
   it("toRoomConfig drops abilities and keeps the nine protocol keys", () => {
-    const config = toRoomConfig({ ...DEFAULT_RACE_SETTINGS, botCount: 4 });
+    const config = toRoomConfig({ ...DEFAULT_RACE_SETTINGS, bots: ["intermediate", "intermediate", "intermediate", "intermediate"] });
     expect(config).not.toHaveProperty("abilities");
     expect(Object.keys(config).sort()).toEqual(Object.keys(DEFAULT_ROOM_CONFIG).sort());
-    expect(config.botCount).toBe(4);
+    expect(config.bots).toHaveLength(4);
   });
 
   it("toRaceSettings adds abilities: false", () => {

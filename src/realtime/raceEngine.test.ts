@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { botFinishMs, botKeystrokesAt, botProgressAt } from "@/race/bots";
+import { botFinishMs, botKeystrokesAt, botProgressAt, planBot } from "@/race/bots";
+import { createSeededRandom, shuffled } from "@/race/seededRandom";
+import { generateRaceText } from "@/race/textGenerator";
+import fr from "@/i18n/dictionaries/fr.json";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
-import { DEFAULT_ROOM_CONFIG, type RoomState } from "./protocol";
+import { BOT_LEVELS, DEFAULT_ROOM_CONFIG, INPUT_MODES, type RoomState } from "./protocol";
 import {
   abandonRace, applyInput, expireRunner, raceResults, raceSnapshot,
   setRunnerConnected, startRace, tickRace, type RaceState,
@@ -52,19 +55,19 @@ describe("startRace", () => {
     const spectators = room();
     spectators.participants.forEach((p) => { p.role = "spectator"; });
     expect(startRace(spectators, "host", NOW, 42)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
-    spectators.config.botCount = 2;
+    spectators.config.bots = ["intermediate", "intermediate"];
     expect(startRace(spectators, "host", NOW, 42)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
   });
   it("allows a spectator host with two runners", () => {
     const source = room();
     source.participants[0].role = "spectator";
-    source.config.botCount = 1;
+    source.config.bots = ["intermediate"];
     expect(started(source).runners.map((r) => r.id)).toEqual(["guest", "bot-0"]);
   });
   it("allows one human and one bot, revealing deterministic text and plans at countdown", () => {
     const source = room();
     source.participants.pop();
-    source.config.botCount = 1;
+    source.config.bots = ["intermediate"];
     const before = structuredClone(source);
     const race = started(source);
     expect(race).toEqual(started(source));
@@ -78,6 +81,22 @@ describe("startRace", () => {
     expect(race.timeLimitMs).toBe(300_000);
     source.config.timeLimitSeconds = 60;
     expect(started(source).timeLimitMs).toBe(60_000);
+  });
+  it.each(INPUT_MODES)("creates one plan per configured level and exposes levels (%s)", (inputMode) => {
+    const source = room();
+    source.config = { ...source.config, inputMode, bots: [...BOT_LEVELS] };
+    const race = started(source);
+    const random = createSeededRandom(42);
+    generateRaceText(source.config, random);
+    shuffled(fr.raceScreen.botNames, random);
+    const bots = race.runners.filter((runner) => runner.kind === "bot");
+    expect(bots).toHaveLength(BOT_LEVELS.length);
+    BOT_LEVELS.forEach((level, index) => {
+      expect(bots[index]).toMatchObject({ id: `bot-${index}`, level, plan: planBot(race.text, level, inputMode, random) });
+    });
+    expect(raceSnapshot(race, NOW).runners.filter((runner) => runner.kind === "bot").map((runner) => runner.level)).toEqual(BOT_LEVELS);
+    const finished = tickRace(race, START + race.timeLimitMs);
+    expect(raceResults(finished)?.filter((row) => row.kind === "bot").map((row) => row.level).sort()).toEqual([...BOT_LEVELS].sort());
   });
   it("returns NO_TEXT_AVAILABLE when exclusions empty the pool", () => {
     const source = room();
@@ -144,7 +163,7 @@ describe("applyInput", () => {
     expect(applyInput(race, "outsider", ["a"], START).ok).toBe(false);
     const source = room();
     source.participants[1].role = "spectator";
-    source.config.botCount = 1;
+    source.config.bots = ["intermediate"];
     const withBot = tickRace(started(source), START);
     for (const id of ["guest", "bot-0"]) expect(applyInput(withBot, id, ["a"], START).ok).toBe(false);
     const disconnected = setRunnerConnected(race, "host", false, START);
@@ -200,12 +219,15 @@ describe("lifecycle and disconnection", () => {
     expect(final).toMatchObject({ status: "results", endedAt: START + race.timeLimitMs });
     expect(raceResults(final)?.every((r) => r.status === "unfinished" && r.timeMs === race.timeLimitMs)).toBe(true);
   });
-  it("updates bot progression and finishes at the planned time, bounded by the deadline", () => {
+  it.each(INPUT_MODES)("updates bot progression and finishes at the planned time, bounded by the deadline (%s)", (inputMode) => {
     const source = room();
-    source.config.botCount = 1;
+    source.config.bots = ["intermediate"];
+    source.config.inputMode = inputMode;
     const race = started(source);
     const bot = race.runners[2];
     if (!bot.plan) throw new Error("Missing bot plan");
+    expect(bot.plan.mistakeTimesMs.length).toBeGreaterThan(0);
+    expect(bot.plan.extraCorrectTimesMs.length > 0).toBe(inputMode === "free");
     const now = START + 5_000;
     const next = tickRace(race, now);
     expect(next.runners[2].position).toBe(botProgressAt(bot.plan, 5_000));

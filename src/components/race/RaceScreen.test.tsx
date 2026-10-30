@@ -17,7 +17,7 @@ vi.mock("@/race/raceText", async (importOriginal) => {
   return { createRaceText: vi.fn(actual.createRaceText) };
 });
 
-const SETTINGS: RaceSettings = { ...DEFAULT_RACE_SETTINGS, botCount: 2, botDifficulty: "easy", timeLimitSeconds: 60 };
+const SETTINGS: RaceSettings = { ...DEFAULT_RACE_SETTINGS, bots: ["beginner", "beginner"], timeLimitSeconds: 60 };
 const TEXT = "ab cd";
 
 /** Horloge manuelle : le temps ne bouge que lorsque le test le décide. */
@@ -297,14 +297,14 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     ["fr", "2e", "sur"],
     ["en", "2nd", "of"],
   ] as const)("résultats en %s", (locale, ordinal, of) => {
-    const { labels } = setup({ locale, settings: { botCount: 1 } });
+    const { labels } = setup({ locale, settings: { bots: ["beginner"] } });
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: labels.results.podium })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: labels.results.replay })).toBeInTheDocument();
     expect(screen.getByText(labels.results.statuses.abandoned)).toBeInTheDocument();
-    expect(screen.getAllByText((name) => labels.botNames.includes(name)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText((name) => labels.botNames.some((bot) => name === `${bot} (${labels.bot} · ${labels.botLevels.beginner})`)).length).toBeGreaterThan(0);
   });
 });
 
@@ -330,17 +330,17 @@ describe("RaceScreen : aucun texte (CONF-03)", () => {
 });
 
 describe("RaceScreen : bots (BOT-02, BOT-03)", () => {
-  it("affiche le joueur et botCount bots nommés d'après le dictionnaire", () => {
-    const { labels } = setup({ settings: { botCount: 3 } });
+  it("affiche le joueur et les bots nommés d'après le dictionnaire", () => {
+    const { labels } = setup({ settings: { bots: ["beginner", "beginner", "beginner"] } });
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
     expect(screen.getByTestId("visualizer")).toHaveTextContent("4");
     const names = screen.getAllByRole("listitem").slice(1).map((item) => item.children[1].textContent ?? "");
     expect(new Set(names).size).toBe(3);
-    for (const name of names) expect(labels.botNames).toContain(name);
+    for (const name of names) expect(labels.botNames.map((bot) => `${bot} (${labels.bot} · ${labels.botLevels.beginner})`)).toContain(name);
   });
 
   it("se joue sans bot", () => {
-    setup({ settings: { botCount: 0 } });
+    setup({ settings: { bots: [] } });
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
 });

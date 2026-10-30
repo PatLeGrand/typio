@@ -120,7 +120,7 @@ describe("persistance RES-05", () => {
     });
     try {
       const host = client("member", "member");
-      const created = host.command("room:create", { config: { length: "short", botCount: 1 },
+      const created = host.command("room:create", { config: { length: "short", bots: ["intermediate"] },
         role: mode === "guest" ? "spectator" : "runner" });
       if (!created.ok) throw new Error(created.error);
       const guest = mode === "guest" ? client("guest", "guest") : null;
@@ -169,7 +169,7 @@ describe("persistance RES-05", () => {
     try {
       const host = client("member", "member");
       const visitor = client("guest", "guest");
-      const created = host.command("room:create", { config: { botCount: 1 }, role: "runner" });
+      const created = host.command("room:create", { config: { bots: ["intermediate"] }, role: "runner" });
       if (!created.ok) throw new Error(created.error);
       const code = created.data.code;
       expect(visitor.command("room:join", { code, role: "runner" })).toMatchObject({ ok: true });

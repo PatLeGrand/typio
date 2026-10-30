@@ -11,6 +11,7 @@ function steadyPlan(textLength: number, charsPerSecond: number, mistakeTimesMs: 
       { timeMs: (textLength / charsPerSecond) * 1000, chars: textLength },
     ],
     mistakeTimesMs,
+    extraCorrectTimesMs: [],
   };
 }
 
@@ -77,7 +78,7 @@ describe("classement final (A-D7, RES-01, RES-02)", () => {
   it("fonctionne sans bot et avec de vrais plans", () => {
     expect(build(outcome({}), []).map((row) => row.rank)).toEqual([1]);
     const text = "le petit chat dort sur le canapé du salon";
-    const plan = planBot(text, "normal", () => 0.5);
+    const plan = planBot(text, "intermediate", "free", () => 0.5);
     const rows = buildRaceResults({
       textLength: text.length,
       playerId: "player",

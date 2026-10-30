@@ -5,7 +5,7 @@ import { DEFAULT_RACE_SETTINGS, deserializeRaceSettings, getEffectiveTimeLimitSe
 
 describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01)", () => {
   it("round-trips accents and URL-sensitive exclusions without changing settings", () => {
-    const settings = { ...DEFAULT_RACE_SETTINGS, excludedCharacters: "#%&+?é", botCount: 0 };
+    const settings = { ...DEFAULT_RACE_SETTINGS, excludedCharacters: "#%&+?é", bots: [] };
     const query = new URLSearchParams(serializeRaceSettings(settings));
     expect(deserializeRaceSettings(query.get("config") ?? undefined)).toEqual(settings);
   });
@@ -45,7 +45,23 @@ describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01
   });
 
   it.each([-1, 8, 0.5, "2"])("rejects invalid bot count %s", (botCount) => {
-    expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, botCount })).toBeNull();
+    const { bots, ...old } = DEFAULT_RACE_SETTINGS;
+    void bots;
+    expect(parseRaceSettings({ ...old, botCount, botDifficulty: "normal" })).toBeNull();
+  });
+
+  it("converts legacy links and refuses mixed configurations", () => {
+    const { bots, ...old } = DEFAULT_RACE_SETTINGS;
+    void bots;
+    for (const [difficulty, level] of [["easy", "beginner"], ["normal", "intermediate"], ["hard", "expert"]]) {
+      expect(deserializeRaceSettings(JSON.stringify({ ...old, botCount: 2, botDifficulty: difficulty })))
+        .toMatchObject({ bots: [level, level] });
+    }
+    for (const legacy of [{ botCount: 2 }, { botDifficulty: "normal" }, { botCount: 2, botDifficulty: "normal" }]) {
+      expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, ...legacy })).toBeNull();
+    }
+    expect(parseRaceSettings({ ...old, botCount: 2 })).toBeNull();
+    expect(parseRaceSettings({ ...old, botDifficulty: "normal" })).toBeNull();
   });
 
   it("uses the documented default limit, including when explicit limit is off", () => {
@@ -67,8 +83,8 @@ describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01
   it("returns independent defaults and parsed objects", () => {
     const settings = deserializeRaceSettings(undefined);
     if (!settings) throw new Error("Missing defaults");
-    settings.botCount = 0;
-    expect(DEFAULT_RACE_SETTINGS.botCount).toBe(2);
+    settings.bots.push("noob");
+    expect(DEFAULT_RACE_SETTINGS.bots).toHaveLength(2);
     expect(parseRaceSettings(DEFAULT_RACE_SETTINGS)).not.toBe(DEFAULT_RACE_SETTINGS);
   });
 });
