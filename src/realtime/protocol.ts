@@ -15,8 +15,17 @@ import { isRoomCode, normalizeRoomCode } from "./roomCode";
 
 // ── Constantes métier ───────────────────────────────────────────────────────
 
-/** Plafond de coureurs par salle (H-16). Les spectateurs ne comptent pas. */
-export const MAX_RUNNERS = 20;
+/** Capacité d'une salle (SALLE-05, H-16) : coureurs humains et bots ; les spectateurs ne comptent pas. */
+export const MIN_CAPACITY = 2;
+export const MAX_CAPACITY = 30;
+export const DEFAULT_CAPACITY = 20;
+
+/** Visibilité d'une salle (SALLE-03) : listée et rejoignable, sur code seulement, ou sur invitation. */
+export const ROOM_VISIBILITIES = ["public", "code", "private"] as const;
+export type RoomVisibility = (typeof ROOM_VISIBILITIES)[number];
+
+/** Salles publiques envoyées à l'explorateur au plus (JOIN-02). */
+export const LOBBY_MAX_ROOMS = 100;
 
 /** Délai de grâce d'un participant déconnecté avant son retrait (H-9, ancien SALLE-13). */
 export const RECONNECT_GRACE_MS = 30_000;
@@ -56,6 +65,8 @@ export interface RoomConfig {
   inputMode: InputMode;
   botCount: number;
   botDifficulty: BotDifficulty;
+  visibility: RoomVisibility;
+  capacity: number;
 }
 
 export type RoomConfigPatch = Partial<RoomConfig>;
@@ -70,6 +81,8 @@ export const DEFAULT_ROOM_CONFIG: RoomConfig = {
   inputMode: "free",
   botCount: 0,
   botDifficulty: "normal",
+  visibility: "code",
+  capacity: DEFAULT_CAPACITY,
 };
 
 // ── État de la salle, diffusé en entier à chaque changement (ADR-001) ──────
@@ -98,7 +111,20 @@ export interface RoomState {
   config: RoomConfig;
   /** Dans l'ordre d'arrivée. */
   participants: Participant[];
-  maxRunners: number;
+}
+
+/** Une salle publique de l'explorateur (JOIN-02). La complexité (CONF-05) n'existe pas encore. */
+export interface LobbyRoom {
+  code: string;
+  /** Coureurs humains et bots (SALLE-05). */
+  runners: number;
+  capacity: number;
+  language: TextLanguage;
+  /** Pseudonyme d'affichage de l'hôte. */
+  host: string;
+  status: Exclude<RoomStatus, "closed">;
+  /** Rejoignable maintenant : en attente ou sur les résultats, et non pleine (SALLE-09). */
+  joinable: boolean;
 }
 
 // ── Erreurs : des codes, jamais des phrases (I18N-01, I18N-02, I18N-03, traduites côté client) ──
@@ -110,6 +136,8 @@ export const ROOM_ERROR_CODES = [
   "GUEST_CANNOT_CREATE",
   "ROOM_NOT_FOUND",
   "ROOM_FULL",
+  "INVITE_REQUIRED",
+  "NO_ROOM_AVAILABLE",
   "ALREADY_IN_ROOM",
   "NOT_IN_ROOM",
   "NOT_HOST",
@@ -144,6 +172,11 @@ export interface ClientToServerEvents {
   /** Rejoindre par code (SALLE-02, JOIN-01) comme coureur ou spectateur (SALLE-01, SALLE-05). */
   "room:join": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
   /** Hôte seulement, en `waiting` seulement (CONF-12). */
+  /** Partie rapide (JOIN-03) : entre en coureur dans la meilleure salle publique. */
+  "room:quickJoin": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
+  /** Abonnement à la liste des salles publiques (JOIN-02) ; la liste arrive par `lobby:rooms`. */
+  "lobby:subscribe": (payload: unknown, ack: (res: Ack) => void) => void;
+  "lobby:unsubscribe": (payload: unknown, ack: (res: Ack) => void) => void;
   "room:updateConfig": (patch: unknown, ack: (res: Ack) => void) => void;
   "race:start": (payload: unknown, ack: (res: Ack) => void) => void;
   "race:input": (payload: unknown) => void;
@@ -161,6 +194,8 @@ export interface ServerToClientEvents {
   "race:self": (self: { typed: string; keystrokes: Keystrokes }) => void;
   /** État complet, envoyé à toute la salle après chaque changement. */
   "room:state": (state: RoomState) => void;
+  /** Salles publiques (JOIN-02), regroupées : au plus une diffusion toutes les ~500 ms (PERF-02). */
+  "lobby:rooms": (rooms: LobbyRoom[]) => void;
   /** Erreur non sollicitée (salle fermée, retrait…), hors accusé de réception. */
   "room:error": (error: RoomErrorCode) => void;
 }
@@ -229,6 +264,8 @@ export const roomConfigFields = {
     .max(MAX_BOTS)
     .transform((value) => value + 0), // -0 devient 0
   botDifficulty: z.enum(BOT_DIFFICULTIES),
+  visibility: z.enum(ROOM_VISIBILITIES),
+  capacity: z.number().int().min(MIN_CAPACITY).max(MAX_CAPACITY),
 };
 
 /**
@@ -246,6 +283,8 @@ export const roomConfigPatchSchema = plainObject.pipe(
     inputMode: roomConfigFields.inputMode.exactOptional(),
     botCount: roomConfigFields.botCount.exactOptional(),
     botDifficulty: roomConfigFields.botDifficulty.exactOptional(),
+    visibility: roomConfigFields.visibility.exactOptional(),
+    capacity: roomConfigFields.capacity.exactOptional(),
   }),
 );
 

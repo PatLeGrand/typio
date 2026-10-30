@@ -12,7 +12,8 @@ type ParticipantListProps = {
 
 /** Participants dans l'ordre d'arrivée ; la liste est une zone `aria-live` (SALLE-01, SALLE-05, COURSE-05). */
 export function ParticipantList({ room, currentUserId, labels }: ParticipantListProps) {
-  const runners = room.participants.filter((participant) => participant.role === "runner").length;
+  // SALLE-05 : la capacité compte les coureurs humains et les bots.
+  const runners = room.participants.filter((participant) => participant.role === "runner").length + room.config.botCount;
 
   return (
     <Card className="flex flex-col gap-4 border border-border p-6">
@@ -21,7 +22,7 @@ export function ParticipantList({ room, currentUserId, labels }: ParticipantList
           {labels.title}
         </h2>
         <p className="text-sm text-muted-strong">
-          {labels.runnersCount.replace("{count}", String(runners)).replace("{max}", String(room.maxRunners))}
+          {labels.runnersCount.replace("{count}", String(runners)).replace("{max}", String(room.config.capacity))}
         </p>
       </div>
       <ul aria-labelledby="participants-title" aria-live="polite" className="flex flex-col gap-2">

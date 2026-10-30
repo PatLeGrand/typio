@@ -111,7 +111,7 @@ describe("RaceSettingsFields (read only)", () => {
     for (const radio of screen.getAllByRole("radio")) expect(radio).toBeDisabled();
     expect(screen.getByRole("button", { name: copy.botCount.increase })).toBeDisabled();
     expect(screen.getByRole("button", { name: copy.botCount.decrease })).toBeDisabled();
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("3", { selector: "[aria-live]" })).toBeInTheDocument();
     const input = screen.getByRole("textbox", { name: copy.excludedChars.label });
     expect(input).toHaveValue("xy");
     expect(input).toHaveAttribute("readonly");

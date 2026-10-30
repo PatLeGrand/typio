@@ -12,7 +12,7 @@ import { authenticateHandshake, isAllowedOrigin } from "./auth";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "./protocol";
 import { createRateLimiter } from "@/auth/rateLimit";
 import { createGraceTimers, type GraceTimers } from "./graceTimers";
-import { registerRoomHandlers } from "./roomHandlers";
+import { LOBBY_ROOM, registerRoomHandlers } from "./roomHandlers";
 import { createRoomStore } from "./roomStore";
 import { createSessionExpiryWatcher, type SessionExpiryWatcher } from "./sessionExpiry";
 import { createUserSockets, MAX_SOCKETS_PER_USER, type UserSockets } from "./userSockets";
@@ -29,6 +29,9 @@ export const MAX_MESSAGE_BYTES = 8_192;
  * borne l'énumération des codes de salle (H-5).
  */
 export const JOIN_FAILURE_LIMIT = { limit: 10, windowMs: 60_000 } as const;
+
+/** Intervalle minimal entre deux diffusions de l'explorateur (JOIN-02, PERF-02). */
+export const LOBBY_BROADCAST_MS = 500;
 
 export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
@@ -115,6 +118,24 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
   const raceIntervals = new Map<string, ReturnType<typeof setInterval>>();
   const publishedStatus = new Map<string, string>();
   const lastPublishedAt = new Map<string, number>();
+
+  // Explorateur (JOIN-02) : diffusion regroupée, et seulement si la liste a changé.
+  let lobbyTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastLobby: string | null = null;
+  function lobbyChanged(invalidate = false): void {
+    if (invalidate) lastLobby = null;
+    if (lobbyTimer !== null) return;
+    lobbyTimer = setTimeout(() => {
+      lobbyTimer = null;
+      const rooms = store.lobby();
+      const serialized = JSON.stringify(rooms);
+      if (serialized === lastLobby) return;
+      lastLobby = serialized;
+      io.to(LOBBY_ROOM).emit("lobby:rooms", rooms);
+    }, LOBBY_BROADCAST_MS);
+    lobbyTimer.unref?.();
+  }
+
   function syncRace(code: string): void {
     const snapshot = store.snapshot(code);
     for (const recording of store.takeRecordings()) {
@@ -134,7 +155,10 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     if (snapshot && state && (snapshot.status !== previous ||
       ((state.status === "countdown" || state.status === "racing") &&
         now().getTime() - (lastPublishedAt.get(code) ?? -Infinity) >= 100))) {
-      if (snapshot.status !== previous && previous !== undefined) io.to(code).emit("room:state", state);
+      if (snapshot.status !== previous && previous !== undefined) {
+        io.to(code).emit("room:state", state);
+        lobbyChanged();
+      }
       io.to(code).emit("race:state", snapshot);
       lastPublishedAt.set(code, now().getTime());
       publishedStatus.set(code, snapshot.status);
@@ -165,6 +189,8 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
   httpServer.on("close", () => {
     for (const timer of raceIntervals.values()) clearInterval(timer);
     raceIntervals.clear();
+    if (lobbyTimer !== null) clearTimeout(lobbyTimer);
+    lobbyTimer = null;
     timers.close();
     sessionExpiry.close();
   });
@@ -188,6 +214,8 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       joinFailures,
       raceInputs,
       syncRace,
+      lobbyList: () => store.lobby(),
+      lobbyChanged,
     });
 
     // Après les gestionnaires : une échéance déjà passée coupe le socket tout de suite, et

@@ -23,6 +23,13 @@ describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01
     expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds })).toMatchObject({ timeLimitSeconds });
   });
 
+  it("accepts an old URL without visibility and capacity, filling the defaults", () => {
+    const { visibility, capacity, ...old } = DEFAULT_RACE_SETTINGS;
+    void visibility; void capacity;
+    expect(deserializeRaceSettings(JSON.stringify(old))).toEqual(DEFAULT_RACE_SETTINGS);
+    expect(deserializeRaceSettings(JSON.stringify({ ...old, extra: 1 }))).toBeNull();
+  });
+
   it("refuses an old URL whose duration is not in the list", () => {
     const config = JSON.stringify({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds: 90 });
     expect(deserializeRaceSettings(config)).toBeNull();

@@ -488,6 +488,21 @@
       "guestNotice": "Les invités ne peuvent pas créer de salle. Crée un compte pour inviter des amis.",
       "anonymousNotice": "Pour inviter des amis, tu dois être connecté.",
       "loginLink": "Se connecter"
+    },
+    "roomSection": {
+      "title": "La salle",
+      "subtitle": "Qui peut entrer, et combien de places."
+    },
+    "visibility": {
+      "label": "Visibilité",
+      "public": "Publique : listée, ouverte à tous",
+      "code": "Sur code : avec le code seulement",
+      "private": "Privée : sur invitation seulement",
+      "help": "Seule une salle publique apparaît dans la liste des salles et dans « Faire une course »."
+    },
+    "capacity": {
+      "label": "Capacité",
+      "help": "Coureurs et bots ; les spectateurs ne comptent pas."
     }
   },
   "profile": {
@@ -645,6 +660,35 @@
         "runner": "Coureur",
         "spectator": "Spectateur",
         "button": "Rejoindre"
+      },
+      "quick": {
+        "title": "Faire une course",
+        "description": "Rejoins la salle publique la plus proche d'être pleine.",
+        "button": "Faire une course",
+        "createPublic": "Créer une salle publique"
+      },
+      "explorer": {
+        "title": "Salles publiques",
+        "description": "Choisis une salle ouverte et rejoins-la directement.",
+        "loading": "Chargement des salles…",
+        "empty": "Aucune salle publique pour le moment.",
+        "filterLanguage": "Langue du texte",
+        "allLanguages": "Toutes les langues",
+        "runners": "{count}/{max} coureurs",
+        "host": "Hôte : {name}",
+        "join": "Rejoindre",
+        "full": "Pleine",
+        "unavailable": "Indisponible",
+        "languages": {
+          "fr": "Français",
+          "en": "Anglais"
+        },
+        "status": {
+          "waiting": "En attente",
+          "countdown": "Départ imminent",
+          "racing": "En course",
+          "results": "Résultats"
+        }
       }
     },
     "errors": {
@@ -667,7 +711,9 @@
       "INPUT_REJECTED": "Cette saisie ne peut pas être acceptée.",
       "INTERNAL": "Une erreur est survenue, réessaie dans un instant.",
       "OFFLINE": "Tu n'es pas connecté au serveur de jeu. Réessaie dans un instant.",
-      "TIMEOUT": "Le serveur de jeu ne répond pas. Réessaie dans un instant."
+      "TIMEOUT": "Le serveur de jeu ne répond pas. Réessaie dans un instant.",
+      "INVITE_REQUIRED": "Cette salle est privée : il faut un lien d'invitation pour y entrer.",
+      "NO_ROOM_AVAILABLE": "Aucune salle n'est disponible pour le moment."
     }
   }
 }

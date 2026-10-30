@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createRoomStore, MAX_SPECTATORS } from "./roomStore";
-import { DEFAULT_ROOM_CONFIG, MAX_RUNNERS } from "./protocol";
+import { DEFAULT_ROOM_CONFIG, DEFAULT_CAPACITY } from "./protocol";
 
 describe("roomStore bot capacity", () => {
   const host = { id: "host", displayName: "Host", kind: "member" as const };
@@ -86,7 +86,7 @@ describe("roomStore", () => {
     ]);
     expect(store.get(code)?.participants[0].role).toBe("spectator");
 
-    for (let i = 0; i < MAX_RUNNERS - 5; i++) {
+    for (let i = 0; i < DEFAULT_CAPACITY - 5; i++) {
       expect(store.join({ id: `r${i}`, displayName: `R${i}`, kind: "guest" }, code, "runner", 200).ok).toBe(true);
     }
     expect(store.join(guest, code, "runner", 200)).toEqual({ ok: false, error: "ROOM_FULL" });
@@ -131,7 +131,7 @@ describe("roomStore", () => {
     const code = createRes.state.code;
 
     // Ajouter 19 runners (pour faire 20 au total avec l'hôte)
-    for (let i = 0; i < MAX_RUNNERS - 1; i++) {
+    for (let i = 0; i < DEFAULT_CAPACITY - 1; i++) {
       store.join({ id: `r${i}`, displayName: `R${i}`, kind: "guest" }, code, "runner", 100);
     }
 
@@ -381,5 +381,45 @@ describe("roomStore", () => {
     store.leave(member.id, code);
     expect(store.roomOf(member.id)).toBeNull();
     expect(store.create(member, {}, "runner", 400).ok).toBe(true);
+  });
+});
+
+describe("roomStore visibilité et capacité (SALLE-03, SALLE-05)", () => {
+  const host = { id: "host", displayName: "Host", kind: "member" as const };
+  const other = { id: "other", displayName: "Other", kind: "guest" as const };
+
+  it("refuse le code seul sur une salle privée, sauf à qui y est déjà", () => {
+    const store = createRoomStore();
+    const res = store.create(host, { visibility: "private" }, "runner", 100);
+    if (!res.ok) throw new Error("failed to create");
+    expect(store.join(other, res.state.code, "runner", 200)).toEqual({ ok: false, error: "INVITE_REQUIRED" });
+    expect(store.join(host, res.state.code, "runner", 200).ok).toBe(true);
+    store.updateConfig(host.id, res.state.code, { visibility: "code" });
+    expect(store.join(other, res.state.code, "runner", 200).ok).toBe(true);
+  });
+
+  it("applique la capacité configurée aux coureurs, bots compris, pas aux spectateurs", () => {
+    const store = createRoomStore();
+    const res = store.create(host, { capacity: 3, botCount: 1 }, "runner", 100);
+    if (!res.ok) throw new Error("failed to create");
+    const { code } = res.state;
+    expect(store.join(other, code, "runner", 200).ok).toBe(true);
+    expect(store.join({ id: "third", displayName: "Third", kind: "guest" }, code, "runner", 200))
+      .toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.join({ id: "watcher", displayName: "Watcher", kind: "guest" }, code, "spectator", 200).ok).toBe(true);
+  });
+
+  it("refuse une capacité sous les coureurs et bots présents, ou des bots au-delà", () => {
+    const store = createRoomStore();
+    const res = store.create(host, { botCount: 2 }, "runner", 100);
+    if (!res.ok) throw new Error("failed to create");
+    const { code } = res.state;
+    store.join(other, code, "runner", 200);
+    expect(store.updateConfig(host.id, code, { capacity: 3 })).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.updateConfig(host.id, code, { botCount: 4, capacity: 5 })).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.updateConfig(host.id, code, { capacity: 4 }).ok).toBe(true);
+    expect(store.updateConfig(host.id, code, { botCount: 3 })).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.create({ ...host, id: "h2" }, { capacity: 2, botCount: 2 }, "runner", 300))
+      .toEqual({ ok: false, error: "ROOM_FULL" });
   });
 });

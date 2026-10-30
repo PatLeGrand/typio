@@ -9,9 +9,7 @@ Légende des statuts : **complet** / **partiel** / **non fait**.
 L'énoncé pénalise une fausse déclaration « complet » plus qu'un « partiel » honnête.
 En cas de doute, le statut est « partiel » ou « non fait ». Un « complet » cite toujours un fichier de preuve.
 
-État au 27 octobre 2026, d'après le code de la branche `develop` (dernier commit `8163c4d`).
-Tout ce qui touche à la course multijoueur (progression, classement, résultats partagés) reste à écrire :
-seule la salle d'attente en temps réel et la course solo contre des bots existent.
+État au 29 octobre 2026, d'après le code de la branche `feat/public-rooms` (salles publiques, explorateur et partie rapide).
 
 Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancés par `bun run test`.
 
@@ -58,9 +56,9 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 |---|---|---|---|---|
 | SALLE-01 | complet | `src/realtime/roomStore.ts` (`create`), `src/realtime/protocol.ts` (`parseCreatePayload`), `src/realtime/roomHandlers.ts`, `src/app/[lang]/(site)/race/settings/InviteFriendsButton.tsx` | `src/realtime/roomStore.test.ts`, `protocol.test.ts`, `roomHandlers.test.ts`, `InviteFriendsButton.test.tsx` | Création par un membre, qui devient hôte. L'hôte choisit d'être coureur (par défaut) ou seulement spectateur ; le rôle est validé par le serveur (`room:create` reçoit `{ config, role }`). |
 | SALLE-02 | complet | `src/realtime/roomCode.ts` | `src/realtime/roomCode.test.ts` | Code de 6 caractères sans `0`, `O`, `1`, `I`, `L`, tiré par `crypto.getRandomValues` ; unique parmi les salles ouvertes (H-5). |
-| SALLE-03 | non fait | — | — | Les trois visibilités n'existent pas : toute salle est accessible par son code. |
+| SALLE-03 | partiel | `src/realtime/protocol.ts` (`ROOM_VISIBILITIES`), `src/realtime/roomStore.ts` (`join`), `src/realtime/lobby.ts`, `src/components/race/RaceSettingsFields.tsx` | `src/realtime/roomStore.test.ts`, `src/realtime/lobby.test.ts`, `src/realtime/lobbyHandlers.test.ts` | Visibilité publique, sur code (défaut, H-29) ou privée, réglée par l'hôte et validée par le serveur. Publique : listée et rejoignable directement. Sur code : non listée. Privée : non listée, code seul refusé (`INVITE_REQUIRED`), reconnexion d'un membre déjà présent acceptée. Manque : les liens d'invitation (SALLE-04), donc personne ne peut encore entrer dans une salle privée. |
 | SALLE-04 | non fait | — | — | Aucun lien d'invitation (jeton, usage unique, liaison à l'IP, révocation). Le bouton « Inviter des amis » de `race/settings/InviteFriendsButton.tsx` ouvre une salle ; il ne génère pas de lien. |
-| SALLE-05 | partiel | `src/realtime/protocol.ts` (`MAX_RUNNERS`), `src/realtime/roomStore.ts` | `src/realtime/roomStore.test.ts` | Capacité fixe de 20 coureurs, non configurable (H-16 devient 30, voir plus bas). Les spectateurs ne comptent pas (plafond de 20 spectateurs en plus). |
+| SALLE-05 | complet | `src/realtime/protocol.ts` (`capacity`, `MIN_CAPACITY`, `MAX_CAPACITY`), `src/realtime/roomStore.ts` | `src/realtime/roomStore.test.ts` | Capacité de 2 à 30 (défaut 20) réglée par l'hôte ; elle compte coureurs humains et bots, pas les spectateurs (H-28). Capacité inférieure aux coureurs présents ou bots en trop : `ROOM_FULL`. Vérifié dans l'application le 29 octobre 2026. |
 | SALLE-06 | partiel | `src/realtime/roomStore.ts` (`roomByUser`), `src/app/[lang]/(site)/play/InRoomNotice.tsx` | `src/realtime/roomStore.test.ts` | Une personne n'est que dans une salle, garanti par le serveur ; un deuxième onglet ne crée pas de doublon ; l'interface propose de quitter la salle actuelle. Écart : l'index est en mémoire, pas une contrainte en base de données. |
 | SALLE-07 | non fait | — | — | Aucune commande d'expulsion dans le protocole. |
 | SALLE-08 | partiel | `src/realtime/roomStore.ts` (`removeParticipant`) | `src/realtime/roomStore.test.ts` | Le plus ancien participant connecté devient hôte ; salle fermée quand plus personne. Écarts : s'il ne reste que des déconnectés, le plus ancien d'entre eux hérite du rôle au lieu de fermer la salle ; un invité peut hériter (choix à confirmer, voir « à trancher »). |
@@ -72,8 +70,8 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
 | JOIN-01 | complet | `src/components/home/HomeJoinCodeForm.tsx`, `src/components/home/HomeHero.tsx`, `src/app/[lang]/(site)/play/JoinRoomForm.tsx` | `src/app/[lang]/(site)/page.test.tsx`, `play/JoinRoomForm.test.tsx` | Champ « code de la salle » sur la page d'accueil, qui ouvre la salle ; aussi sur `/play` avec le choix du rôle. Un visiteur non connecté passe par la connexion et doit ressaisir le code ensuite. |
-| JOIN-02 | non fait | — | — | Pas d'explorateur de salles publiques (ni liste, ni filtres, ni mise à jour en direct). |
-| JOIN-03 | non fait | — | — | Pas de bouton « Faire une course » (partie rapide). |
+| JOIN-02 | partiel | `src/realtime/lobby.ts`, `src/realtime/roomHandlers.ts` (`lobby:subscribe`), `src/realtime/server.ts` (`LOBBY_BROADCAST_MS`), `src/app/[lang]/(site)/play/RoomExplorer.tsx` | `src/realtime/lobby.test.ts`, `src/realtime/lobbyHandlers.test.ts` | Liste des salles publiques (100 au plus) avec coureurs et capacité, langue, hôte et état, mise à jour en direct (diffusion regroupée toutes les 500 ms au plus) ; filtre par langue ; salles pleines ou en course affichées comme indisponibles (H-30). Manque : la complexité et son filtre (CONF-05 non fait). Vérifié dans l'application le 29 octobre 2026 (FR/EN, clair/sombre, 360 px). |
+| JOIN-03 | complet | `src/realtime/lobby.ts` (`pickQuickJoin`), `src/realtime/roomStore.ts` (`quickJoinCode`), `src/realtime/roomHandlers.ts` (`room:quickJoin`), `src/app/[lang]/(site)/play/QuickJoinPanel.tsx` | `src/realtime/lobby.test.ts`, `src/realtime/lobbyHandlers.test.ts` | Salle publique joignable et non pleine avec le moins de places restantes, égalité → la plus ancienne. Aucune salle : `NO_ROOM_AVAILABLE` ; un membre peut créer une salle publique avec la config par défaut, un invité voit un état vide. Vérifié dans l'application le 29 octobre 2026. |
 
 ## Configuration de la course (CONF)
 
@@ -91,7 +89,7 @@ Les mêmes réglages servent à la course solo (`src/race/config.ts`) et à la s
 | CONF-08 | complet | `src/race/metrics.ts` (`applyTypedInput`), `src/realtime/raceEngine.ts` | `src/race/metrics.test.ts`, `src/realtime/raceEngine.test.ts` | Mode libre et mode bloquant appliqués en solo et par le serveur en salle. |
 | CONF-09 | non fait | — | — | Pas de bonus de remontée. L'interrupteur « capacités » de `RaceSettings` est sans effet. |
 | CONF-10 | partiel | `src/realtime/protocol.ts` (`botCount`, `botDifficulty`, `MAX_BOTS`), `src/race/bots.ts` | `src/race/bots.test.ts`, `src/realtime/protocol.test.ts` | Ajout et retrait de bots (0 à 7). Écarts : un seul niveau pour tous les bots, trois niveaux au lieu de cinq ; bots joués en solo seulement. |
-| CONF-11 | partiel | `src/realtime/protocol.ts` | — | Visibilité absente (SALLE-03) ; capacité fixe (SALLE-05). |
+| CONF-11 | partiel | `src/realtime/protocol.ts`, `src/components/race/RaceSettingsFields.tsx` | `src/realtime/roomStore.test.ts` | Visibilité et capacité réglables par l'hôte (SALLE-05 complet). Partiel tant que la visibilité privée n'a pas de liens d'invitation (SALLE-03, SALLE-04). |
 | CONF-12 | complet | `src/realtime/roomHandlers.ts` (`room:updateConfig`), `src/app/[lang]/(site)/room/_components/RoomConfigPanel.tsx` | `src/realtime/roomHandlers.test.ts`, `src/app/[lang]/(site)/room/_components/RoomConfigPanel.test.tsx` | Chaque changement de l'hôte est diffusé à toute la salle (`room:state`) ; seul l'hôte peut modifier, en attente seulement. |
 
 ## Déroulement d'une course (COURSE)
@@ -210,7 +208,7 @@ Les hypothèses H-1 à H-18 de l'ancien cahier gardent leur identifiant : le cod
 | H-13 | Next.js sur Vercel, Socket.IO et PostgreSQL sur hébergeurs gratuits | révisée par l'énoncé | TECH-05 et ADR-001 : un seul VPS (Docker, Caddy, PostgreSQL partagé). |
 | H-14 | Disposition du clavier choisie dans le profil | toujours valable | Sert à la carte de chaleur des touches de RES-03. Le réglage existe déjà (`profileSettings.ts`). |
 | H-15 | Pas de clavardage | toujours valable | L'énoncé n'en prévoit pas. |
-| H-16 | 20 coureurs par course | révisée par l'énoncé | SALLE-05 : capacité de 2 à 30, choisie par l'hôte (le code est resté à 20). |
+| H-16 | 20 coureurs par course | révisée par l'énoncé | SALLE-05 : capacité de 2 à 30 choisie par l'hôte, 20 par défaut (`DEFAULT_CAPACITY`). |
 | H-17 | Énergie identique pour tous, rattrapage par les capacités | sans objet | Les personnages, capacités et énergie sont remplacés par les bonus de remontée (BONUS-01 à 04). |
 | H-18 | Personnages débloqués par le nombre de courses terminées | sans objet | Personnages absents de l'énoncé. |
 | H-19 | L'outillage des agents IA (`.claude/`) est hors périmètre de TECH-02 | valable | Ce n'est pas du code de l'application livrée ; l'énoncé (§ 8, `docs/IA.md`) demande de commiter ces fichiers d'instructions d'agent, et ils ne sont ni compilés ni déployés. |
@@ -222,6 +220,9 @@ Les hypothèses H-1 à H-18 de l'ancien cahier gardent leur identifiant : le cod
 | H-25 | Historique réservé aux membres, 20 courses par page | valable | AUTH-03 : un invité qui ouvre l'historique est redirigé vers l'inscription, un visiteur vers la connexion. Pagination par page fixe de 20 (au plus 10 000 pages) ; le détail d'une course n'est visible que par ses participants enregistrés (HIST-01, HIST-02). |
 | H-26 | Statistiques personnelles et records (AUTH-06, RES-04) | valable | Les abandons comptent dans le nombre de courses, mais sont exclus du meilleur MPM, des moyennes MPM/précision et du graphique. Victoire : rang 1, statut finished, au moins deux classés (bots inclus). Record battu : MPM net strictement supérieur au meilleur précédent non abandonné, avec au moins une course précédente admissible ; première course et égalité exclues. Indicateur personal_best persisté dans la transaction ; événement race:records après enregistrement. Profil réservé aux membres : agrégats SQL et courbe SVG des 50 dernières courses non abandonnées, dans l’ordre chronologique, dates localisées. |
 | H-27 | Validation des entrées serveur par Zod | valable | Remplace le choix « zéro dépendance ajoutée » : `zod` devient une dépendance directe (TECH-07). Les fonctions `parse*` et `validate*` gardent leurs signatures et enveloppent des schémas exportés ; seule la query du callback OAuth devient plus stricte (2048 caractères au plus par valeur). |
+| H-28 | Les bots comptent dans la capacité | valable | SALLE-05 : capacité = coureurs humains + bots (cohérent avec H-3 et la piste de PERF-03) ; spectateurs exclus. Une capacité ou un nombre de bots qui ferait dépasser la limite est refusé (`ROOM_FULL`). |
+| H-29 | Visibilité par défaut « sur code » | valable | SALLE-03 : une nouvelle salle n'est pas listée tant que l'hôte ne la rend pas publique (public de 12 à 17 ans). Seule la salle créée depuis « Faire une course » est publique d'emblée (JOIN-03). |
+| H-30 | Explorateur et partie rapide | valable | L'explorateur montre aussi les salles publiques pleines, en décompte ou en course, marquées indisponibles (SALLE-09). Un refus `INVITE_REQUIRED` compte comme échec pour la limite de SALLE-10 : il confirme qu'un code existe. |
 
 ### Choix encore à trancher
 

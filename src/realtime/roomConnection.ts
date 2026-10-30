@@ -11,6 +11,7 @@
 import type { RoomSocket } from "./client";
 import {
   type JoinPayload,
+  type LobbyRoom,
   type ParticipantRole,
   type RoomConfigPatch,
   type RoomErrorCode,
@@ -39,6 +40,8 @@ export interface RoomSnapshot {
   results: Parameters<ServerToClientEvents["race:results"]>[0] | null;
   self: Parameters<ServerToClientEvents["race:self"]>[0] | null;
   raceReceivedAt: number | null;
+  /** Salles publiques (JOIN-02) ; `null` tant que la liste n'est pas arrivée ou sans abonnement. */
+  lobby: LobbyRoom[] | null;
 }
 
 export type ActionResult<T = undefined> =
@@ -60,7 +63,7 @@ export const RESYNC_TIMEOUT_MS = 3_000;
 const UNAUTHENTICATED_MESSAGE = "UNAUTHENTICATED";
 const TOO_MANY_CONNECTIONS_MESSAGE = "TOO_MANY_CONNECTIONS";
 
-export const IDLE_SNAPSHOT: RoomSnapshot = { connection: "idle", room: null, error: null, race: null, results: null, self: null, raceReceivedAt: null };
+export const IDLE_SNAPSHOT: RoomSnapshot = { connection: "idle", room: null, error: null, race: null, results: null, self: null, raceReceivedAt: null, lobby: null };
 
 /**
  * L'état reçu n'est valable que si l'utilisateur y figure ; sinon (il a quitté, ou un autre
@@ -86,6 +89,11 @@ export interface RoomConnection {
   syncUser(userId: string | null): void;
   create(config?: RoomConfigPatch, role?: ParticipantRole): Promise<ActionResult<{ code: string }>>;
   join(payload: JoinPayload): Promise<ActionResult<{ code: string }>>;
+  /** Partie rapide (JOIN-03) : `NO_ROOM_AVAILABLE` s'il n'y a aucune salle. */
+  quickJoin(): Promise<ActionResult<{ code: string }>>;
+  /** Reçoit la liste des salles publiques, et ses mises à jour, dans `lobby` (JOIN-02). */
+  subscribeLobby(): void;
+  unsubscribeLobby(): void;
   updateConfig(patch: RoomConfigPatch): Promise<ActionResult>;
   startRace(): Promise<ActionResult>;
   abandonRace(): Promise<ActionResult>;
@@ -106,6 +114,8 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
   let resyncTimer: ReturnType<typeof setTimeout> | null = null;
   let retryDelay = RETRY_BASE_MS;
   let detach: (() => void) | null = null;
+  /** Abonnement voulu à l'explorateur : renouvelé à chaque (re)connexion. */
+  let lobbyWanted = false;
 
   function update(patch: Partial<RoomSnapshot>): void {
     const next = { ...snapshot, ...patch };
@@ -117,7 +127,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     }
     if (next.connection === snapshot.connection && next.room === snapshot.room && next.error === snapshot.error &&
       next.race === snapshot.race && next.results === snapshot.results && next.self === snapshot.self &&
-      next.raceReceivedAt === snapshot.raceReceivedAt) {
+      next.raceReceivedAt === snapshot.raceReceivedAt && next.lobby === snapshot.lobby) {
       return;
     }
     snapshot = next;
@@ -150,6 +160,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
         }, RESYNC_TIMEOUT_MS);
       }
       update({ connection: "connected" });
+      if (lobbyWanted) target.emit("lobby:subscribe", {}, () => {});
     };
 
     const onDisconnect = (reason: string) => {
@@ -187,6 +198,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     const onRace: ServerToClientEvents["race:state"] = (race) => update({ race, raceReceivedAt: Date.now() });
     const onResults: ServerToClientEvents["race:results"] = (results) => update({ results });
     const onSelf: ServerToClientEvents["race:self"] = (self) => update({ self });
+    const onLobby: ServerToClientEvents["lobby:rooms"] = (lobby) => update({ lobby: lobbyWanted ? lobby : null });
     const onRoomError = (error: RoomErrorCode) => update({ error });
 
     target.on("connect", onConnect);
@@ -197,6 +209,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     target.on("race:state", onRace);
     target.on("race:results", onResults);
     target.on("race:self", onSelf);
+    target.on("lobby:rooms", onLobby);
 
     return () => {
       target.off("connect", onConnect);
@@ -207,6 +220,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
       target.off("race:state", onRace);
       target.off("race:results", onResults);
       target.off("race:self", onSelf);
+      target.off("lobby:rooms", onLobby);
     };
   }
 
@@ -218,6 +232,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     socket?.disconnect();
     socket = null;
     userId = null;
+    lobbyWanted = false;
     retryDelay = RETRY_BASE_MS;
     update({ ...IDLE_SNAPSHOT });
   }
@@ -310,6 +325,30 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
           resolve({ ok: true, data: response.data });
         });
       });
+    },
+
+    quickJoin() {
+      return new Promise((resolve) => {
+        update({ error: null });
+        const target = connectedSocket();
+        if (target === null) return resolve(fail("OFFLINE"));
+        target.timeout(ACK_TIMEOUT_MS).emit("room:quickJoin", {}, (timedOut, response) => {
+          if (timedOut) return resolve(fail("TIMEOUT"));
+          if (!response.ok) return resolve(fail(response.error));
+          resolve({ ok: true, data: response.data });
+        });
+      });
+    },
+
+    subscribeLobby() {
+      lobbyWanted = true;
+      connectedSocket()?.emit("lobby:subscribe", {}, () => {});
+    },
+
+    unsubscribeLobby() {
+      lobbyWanted = false;
+      connectedSocket()?.emit("lobby:unsubscribe", {}, () => {});
+      update({ lobby: null });
     },
 
     startRace: () => raceCommand("race:start"),

@@ -1,14 +1,15 @@
 "use client";
 
 import { useId } from "react";
-import { Bot, SlidersHorizontal, Type } from "lucide-react";
+import { Bot, DoorOpen, SlidersHorizontal, Type } from "lucide-react";
+import { SelectField } from "@/components/SelectField";
 import { RadioCard } from "@/components/race/RadioCard";
 import { Switch } from "@/components/race/Switch";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { formatPlural } from "@/race/format";
 import type { RaceSettings } from "@/race/config";
-import { MAX_BOTS, TIME_LIMITS_SECONDS } from "@/realtime/protocol";
-import type { TimeLimitSeconds } from "@/realtime/protocol";
+import { MAX_BOTS, MAX_CAPACITY, MIN_CAPACITY, ROOM_VISIBILITIES, TIME_LIMITS_SECONDS } from "@/realtime/protocol";
+import type { RoomVisibility, TimeLimitSeconds } from "@/realtime/protocol";
 
 interface RaceSettingsFieldsProps {
   value: RaceSettings;
@@ -49,6 +50,12 @@ export function RaceSettingsFields({
   const FieldHeading = headingLevel === 3 ? "h4" : "h3";
   const uid = useId();
   const id = (name: string) => `${uid}-${name}`;
+
+  const numberFormat = new Intl.NumberFormat(lang);
+  const capacityOptions = Array.from({ length: MAX_CAPACITY - MIN_CAPACITY + 1 }, (_, index) => {
+    const capacity = MIN_CAPACITY + index;
+    return { value: String(capacity), label: numberFormat.format(capacity) };
+  });
 
   const excludedCount = new Set(Array.from(value.excludedCharacters).filter((character) => !/\s/u.test(character))).size;
 
@@ -319,6 +326,44 @@ export function RaceSettingsFields({
               <RadioCard disabled={readOnly} checked={value.botDifficulty === "hard"} onChange={() => onChange({ botDifficulty: "hard" })} label={dict.botDifficulty.hard} className="justify-center text-center" />
             </div>
             <p className="text-xs text-muted">{dict.botDifficulty.help}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 4: SALLE (SALLE-03, SALLE-05) */}
+      <section className="bg-surface border border-border rounded-[24px] p-4 sm:p-8">
+        <div className="flex flex-wrap items-center gap-4 mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-accent-soft text-accent-text flex items-center justify-center">
+            <DoorOpen className="w-6 h-6" aria-hidden="true" />
+          </div>
+          <div>
+            <SectionHeading className="text-xl font-bold text-foreground">{dict.roomSection.title}</SectionHeading>
+            <p className="text-sm text-muted">{dict.roomSection.subtitle}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+          <div className="flex flex-col gap-2">
+            <SelectField
+              label={dict.visibility.label}
+              value={value.visibility}
+              disabled={readOnly}
+              options={ROOM_VISIBILITIES.map((visibility) => ({ value: visibility, label: dict.visibility[visibility] }))}
+              onChange={(event) => onChange({ visibility: event.target.value as RoomVisibility })}
+              aria-describedby={id("visibility-help")}
+            />
+            <p id={id("visibility-help")} className="text-xs text-muted">{dict.visibility.help}</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <SelectField
+              label={dict.capacity.label}
+              value={String(value.capacity)}
+              disabled={readOnly}
+              options={capacityOptions}
+              onChange={(event) => onChange({ capacity: Number(event.target.value) })}
+              aria-describedby={id("capacity-help")}
+            />
+            <p id={id("capacity-help")} className="text-xs text-muted">{dict.capacity.help}</p>
           </div>
         </div>
       </section>

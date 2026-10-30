@@ -13,7 +13,7 @@ export function syncRoomUser(userId: string | null): void {
 }
 
 export type UseRoom = RoomSnapshot &
-  Pick<RoomConnection, "create" | "join" | "updateConfig" | "leave" | "clearError" | "startRace" | "abandonRace" | "restartRace" | "closeRoom" | "sendInput">;
+  Pick<RoomConnection, "create" | "join" | "quickJoin" | "subscribeLobby" | "unsubscribeLobby" | "updateConfig" | "leave" | "clearError" | "startRace" | "abandonRace" | "restartRace" | "closeRoom" | "sendInput">;
 
 /**
  * Salle de l'utilisateur courant. `userId` vient de la session lue côté serveur : le client
@@ -38,6 +38,9 @@ export function useRoom(userId: string): UseRoom {
     ...snapshot,
     create: roomConnection.create,
     join: roomConnection.join,
+    quickJoin: roomConnection.quickJoin,
+    subscribeLobby: roomConnection.subscribeLobby,
+    unsubscribeLobby: roomConnection.unsubscribeLobby,
     updateConfig: roomConnection.updateConfig,
     leave: roomConnection.leave,
     startRace: roomConnection.startRace,
