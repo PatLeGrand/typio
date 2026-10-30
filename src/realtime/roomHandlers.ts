@@ -19,6 +19,7 @@ import {
   RECONNECT_GRACE_MS,
   type Ack,
   type ClientToServerEvents,
+  type LobbyRoom,
   type RoomState,
   type ServerToClientEvents,
   type SocketData,
@@ -47,7 +48,14 @@ export interface RoomHandlerDeps {
   joinFailures: RateLimiter;
   raceInputs: RateLimiter;
   syncRace: (code: string) => void;
+  /** Liste des salles publiques (JOIN-02). */
+  lobbyList: () => LobbyRoom[];
+  /** Annonce un changement possible de la liste : la diffusion aux abonnés est regroupée. */
+  lobbyChanged: (invalidate?: boolean) => void;
 }
+
+/** Room Socket.IO des abonnés à l'explorateur ; ne peut pas être un code de salle (6 caractères). */
+export const LOBBY_ROOM = "lobby";
 
 type AckFailure = Extract<Ack, { ok: false }>;
 
@@ -96,6 +104,7 @@ export function registerRoomHandlers(
   const broadcast = (state: RoomState): void => {
     io.to(state.code).emit("room:state", state);
     deps.syncRace(state.code);
+    deps.lobbyChanged();
   };
 
   const resumeRace = (code: string): void => {
@@ -124,6 +133,7 @@ export function registerRoomHandlers(
     if (state.status === "closed") {
       for (const s of userSockets()) s.emit("room:state", state);
       deps.syncRace(code);
+      deps.lobbyChanged();
     } else {
       broadcast(state);
     }
@@ -202,10 +212,11 @@ export function registerRoomHandlers(
 
       const res = store.join(user, payload.code, payload.role, now().getTime());
       if (!res.ok) {
-        // Seul `ROOM_NOT_FOUND` compte comme échec, avec `INVALID_CODE`. `ROOM_FULL` et
-        // `ALREADY_IN_ROOM` ne comptent pas, par choix : ils ne font pas oracle. Le premier
-        // exige déjà un code exact ; le second ne consulte pas le registre des salles.
-        if (res.error === "ROOM_NOT_FOUND") joinFailures.record(user.id);
+        // `ROOM_NOT_FOUND` compte comme échec, avec `INVALID_CODE`, ainsi qu'`INVITE_REQUIRED` qui
+        // confirme qu'un code existe (SALLE-03, SALLE-10). `ROOM_FULL` et `ALREADY_IN_ROOM` ne
+        // comptent pas, par choix : ils ne font pas oracle. Le premier exige déjà un code exact ;
+        // le second ne consulte pas le registre des salles.
+        if (res.error === "ROOM_NOT_FOUND" || res.error === "INVITE_REQUIRED") joinFailures.record(user.id);
         return failure(res.error);
       }
 
@@ -219,6 +230,56 @@ export function registerRoomHandlers(
           resumeRace(state.code);
         },
       };
+    });
+  });
+
+  // JOIN-03 : même limite d'échecs et même règle « une seule salle » que `room:join` (SALLE-06).
+  socket.on("room:quickJoin", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (joinFailures.isLimited(user.id)) return failure("INVALID_CODE");
+      if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
+      if (store.roomOf(user.id)) return failure("ALREADY_IN_ROOM");
+
+      const code = store.quickJoinCode();
+      if (code === null) return failure("NO_ROOM_AVAILABLE");
+
+      const res = store.join(user, code, "runner", now().getTime());
+      if (!res.ok) return failure(res.error);
+
+      const { state } = res;
+      attachUser(state.code);
+      timers.cancel(user.id);
+      return {
+        reply: { ok: true, data: { code: state.code } },
+        publish: () => {
+          broadcast(state);
+          resumeRace(state.code);
+        },
+      };
+    });
+  });
+
+  // JOIN-02 : seules les salles publiques sont envoyées, à l'abonnement puis à chaque changement.
+  socket.on("lobby:subscribe", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
+      void socket.join(LOBBY_ROOM);
+      return {
+        reply: { ok: true },
+        publish: () => {
+          socket.emit("lobby:rooms", deps.lobbyList());
+          // Les autres abonnés, déjà à jour, reçoivent la liste en double : acceptable, regroupé.
+          deps.lobbyChanged(true);
+        },
+      };
+    });
+  });
+
+  socket.on("lobby:unsubscribe", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
+      void socket.leave(LOBBY_ROOM);
+      return { reply: { ok: true } };
     });
   });
 

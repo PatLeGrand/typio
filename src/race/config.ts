@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { roomConfigFields } from "@/realtime/protocol";
+import { DEFAULT_CAPACITY, roomConfigFields } from "@/realtime/protocol";
 import type { RoomConfig } from "@/realtime/protocol";
 
 /**
@@ -18,10 +18,18 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze({
   inputMode: "free",
   botCount: 2,
   botDifficulty: "normal",
+  visibility: "code",
+  capacity: DEFAULT_CAPACITY,
   abilities: false,
 });
 
-export const raceSettingsSchema = z.strictObject({ ...roomConfigFields, abilities: z.boolean() });
+/** `visibility` et `capacity` sont facultatifs à la lecture : d'anciens liens `/race?config=` les ignorent. */
+export const raceSettingsSchema = z.strictObject({
+  ...roomConfigFields,
+  visibility: roomConfigFields.visibility.default(DEFAULT_RACE_SETTINGS.visibility),
+  capacity: roomConfigFields.capacity.default(DEFAULT_CAPACITY),
+  abilities: z.boolean(),
+});
 
 export function parseRaceSettings(value: unknown): RaceSettings | null {
   const result = raceSettingsSchema.safeParse(value);

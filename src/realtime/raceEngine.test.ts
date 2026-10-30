@@ -11,7 +11,7 @@ const NOW = 1_000;
 const START = NOW + COUNTDOWN_MS;
 function room(): RoomState {
   return {
-    code: "ABCDEF", status: "waiting", hostId: "host", maxRunners: 20,
+    code: "ABCDEF", status: "waiting", hostId: "host",
     config: { ...DEFAULT_ROOM_CONFIG, length: "short" },
     participants: ["host", "guest"].map((id) => ({
       userId: id, displayName: id, kind: "member", role: "runner", connected: true, joinedAt: NOW,

@@ -181,6 +181,6 @@ describe("RoomConfigPanel, non-host (CONF-12)", () => {
 
     expect(screen.getByRole("radio", { name: raceSettings.textMode.words })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("radio", { name: new RegExp(`^${raceSettings.inputMode.blocking}`) })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByText("5")).toBeInTheDocument();
+    expect(screen.getByText("5", { selector: "[aria-live]" })).toBeInTheDocument();
   });
 });

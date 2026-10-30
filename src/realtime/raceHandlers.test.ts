@@ -43,6 +43,8 @@ function setup() {
         const snapshot = store.snapshot(code);
         if (snapshot) io.to(code).emit("race:state", snapshot);
       },
+      lobbyList: () => store.lobby(),
+      lobbyChanged: () => undefined,
     });
     return {
       received, rooms,

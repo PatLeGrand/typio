@@ -3,13 +3,13 @@ import type { NewRace, NewRaceResult } from "@/race/raceRepository";
 import { startRace, applyInput, abandonRace, setRunnerConnected, expireRunner, tickRace, raceSnapshot, raceResults, raceResultRows, type RaceState } from "./raceEngine";
 import {
   DEFAULT_ROOM_CONFIG,
-  MAX_RUNNERS,
   type ParticipantRole,
   type RoomConfigPatch,
   type RoomErrorCode,
   type RoomState,
   type RoomStatus,
 } from "./protocol";
+import { lobbyRooms, pickQuickJoin, toLobbyEntry, type LobbyEntry } from "./lobby";
 import { generateRoomCode, generateUniqueRoomCode } from "./roomCode";
 
 export type RoomResult =
@@ -27,7 +27,6 @@ function cloneState(state: RoomState): RoomState {
     code: state.code,
     status: state.status,
     hostId: state.hostId,
-    maxRunners: state.maxRunners,
     config: { ...state.config },
     participants: state.participants.map((p) => ({ ...p })),
   };
@@ -51,10 +50,10 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
   const generateCode = options.generateCode ?? generateRoomCode;
   const now = options.now ?? Date.now;
   const generateSeed = options.generateSeed ?? (() => randomBytes(4).readUInt32LE());
-  const rooms = new Map<string, RoomState & { race: RaceState | null }>();
+  const rooms = new Map<string, RoomState & { race: RaceState | null; createdAt: number }>();
   const recordings: { race: NewRace; rows: NewRaceResult[] }[] = [];
 
-  function saveRace(room: RoomState & { race: RaceState | null }, race: RaceState): void {
+  function saveRace(room: RoomState & { race: RaceState | null; createdAt: number }, race: RaceState): void {
     if (race.status === "results" && room.race?.status !== "results" && race.endedAt !== null) {
       const rows = raceResultRows(race);
       if (rows.length > 0) recordings.push({
@@ -66,6 +65,21 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     room.race = race;
     room.status = race.status;
   }
+  /** Nombre de coureurs humains et de bots : ce que la capacité compte (SALLE-05). */
+  function runnerSlots(room: RoomState): number {
+    return room.participants.filter((p) => p.role === "runner").length + room.config.botCount;
+  }
+
+  /** Salles publiques non fermées avec leur ancienneté (JOIN-02, JOIN-03). */
+  function lobbyEntries(): LobbyEntry[] {
+    const entries: LobbyEntry[] = [];
+    for (const room of rooms.values()) {
+      const entry = toLobbyEntry(room, room.createdAt);
+      if (entry) entries.push(entry);
+    }
+    return entries;
+  }
+
   /** Index utilisateur → code de sa salle. Tenu à jour par `create`, `join` et `removeParticipant`, seuls à changer les participants. */
   const roomByUser = new Map<string, string>();
 
@@ -142,10 +156,10 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
             joinedAt: now,
           },
         ],
-        maxRunners: MAX_RUNNERS,
       };
+      if (runnerSlots(state) > state.config.capacity) return { ok: false, error: "ROOM_FULL" };
 
-      rooms.set(code, { ...cloneState(state), race: null });
+      rooms.set(code, { ...cloneState(state), race: null, createdAt: now });
       roomByUser.set(user.id, code);
       return { ok: true, state: cloneState(state) };
     },
@@ -173,15 +187,15 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
         return { ok: true, state: cloneState(room) };
       }
 
+      // SALLE-03 : le code seul ne suffit pas pour une salle privée (les liens viendront avec SALLE-04).
+      if (room.config.visibility === "private") return { ok: false, error: "INVITE_REQUIRED" };
+
       if (room.status === "countdown" || room.status === "racing") {
         return { ok: false, error: "RACE_IN_PROGRESS" };
       }
 
       if (role === "runner") {
-        const runnersCount = room.participants.filter(
-          (p) => p.role === "runner"
-        ).length;
-        if (runnersCount + room.config.botCount >= room.maxRunners) {
+        if (runnerSlots(room) >= room.config.capacity) {
           return { ok: false, error: "ROOM_FULL" };
         }
       } else {
@@ -215,14 +229,11 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       if (room.hostId !== userId) return { ok: false, error: "NOT_HOST" };
       if (room.status !== "waiting") return { ok: false, error: "CONFIG_LOCKED" };
 
-      if (
-        patch.botCount !== undefined &&
-        room.participants.filter((participant) => participant.role === "runner").length + patch.botCount > room.maxRunners
-      ) {
-        return { ok: false, error: "ROOM_FULL" };
-      }
+      // SALLE-05 : ni la capacité sous les coureurs et bots présents, ni des bots au-delà de la capacité.
+      const config = { ...room.config, ...patch };
+      if (runnerSlots({ ...room, config }) > config.capacity) return { ok: false, error: "ROOM_FULL" };
 
-      room.config = { ...room.config, ...patch };
+      room.config = config;
       return { ok: true, state: cloneState(room) };
     },
 
@@ -337,6 +348,16 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     },
 
     roomOf,
+
+    /** Liste de l'explorateur (JOIN-02). */
+    lobby() {
+      return lobbyRooms(lobbyEntries());
+    },
+
+    /** Code de la salle que la partie rapide choisit (JOIN-03), ou `null` s'il n'y en a aucune. */
+    quickJoinCode(): string | null {
+      return pickQuickJoin(lobbyEntries())?.room.code ?? null;
+    },
 
     /**
      * Change le statut d'une salle. Au checkpoint 1 rien ne l'appelle hors tests : la course

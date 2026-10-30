@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_ROOM_CONFIG, MAX_RUNNERS, type Participant, type RoomState } from "./protocol";
+import { DEFAULT_ROOM_CONFIG, type Participant, type RoomState } from "./protocol";
 import type { RoomSocket } from "./client";
 import {
   ACK_TIMEOUT_MS,
@@ -94,7 +94,6 @@ function roomState(userIds: string[], code = "ABC234"): RoomState {
     hostId: userIds[0] ?? ME,
     config: DEFAULT_ROOM_CONFIG,
     participants: userIds.map((id) => participant(id)),
-    maxRunners: MAX_RUNNERS,
   };
 }
 
@@ -182,7 +181,7 @@ describe("connexion", () => {
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
     expect(socket.connect).toHaveBeenCalledTimes(2);
     expect(connection.getSnapshot()).toEqual({ ...IDLE_SNAPSHOT, connection: "connecting" });
-    expect(socket.listenerCount()).toBe(8);
+    expect(socket.listenerCount()).toBe(9);
   });
 });
 
