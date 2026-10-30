@@ -177,7 +177,8 @@ export function tickRace(race: RaceState, now: number): RaceState {
   let checkpointsTriggered = race.checkpointsTriggered;
   const bonusEvents = [...race.bonusEvents];
   if (race.config.bonuses && now < deadline) {
-    const maxProgress = Math.max(...runners.map((r) => r.position / applyTextEdits(race.text, r.edits).length));
+    const maxProgress = Math.max(...runners.filter((r) => r.status !== "abandoned")
+      .map((r) => r.position / applyTextEdits(race.text, r.edits).length));
     for (const checkpoint of crossedCheckpoints(maxProgress, checkpointsTriggered)) {
       const random = createSeededRandom(race.seed + Math.imul(checkpoint + 1, 0x9e3779b9));
       const awards = resolveCheckpoint(checkpoint, runners.map((r) => {

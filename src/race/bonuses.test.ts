@@ -70,6 +70,14 @@ describe("points de contrôle et attribution", () => {
       100, () => 0.5, drawWords)).toMatchObject([{ targetId: "first", type: "lengthen" }]);
   });
 
+  it("aide tous les derniers ex æquo, sauf le premier meneur si tous sont à égalité", () => {
+    for (const leaderProgress of [0.6, 0.5]) {
+      const runners = [runner("leader", leaderProgress), runner("last-a", 0.5), runner("last-b", 0.5)];
+      expect(resolveCheckpoint(0, runners, 0, () => 0, drawWords).map((award) => award.recipientId))
+        .toEqual(["last-a", "last-b"]);
+    }
+  });
+
   it("limite les malus à un par point et laisse ensuite seulement l'aide possible", () => {
     const runners = [runner("leader", 0.9), runner("a", 0.4), runner("b", 0.3),
       runner("c", 0.2, { text: "fin" })];

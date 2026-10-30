@@ -129,7 +129,7 @@ export function snapshotRound(round: Round, clock: number, playerName: string): 
 
   const outcome = getPlayerOutcome(session);
   const results = outcome
-    ? buildRaceResults({ playerId: PLAYER_ID, playerName, player: outcome, bots }).map((row) => ({ ...row,
+    ? buildRaceResults({ playerId: PLAYER_ID, playerName, player: outcome, playerTextLength: text.length, bots }).map((row) => ({ ...row,
       bonusesReceived: round.bonusEvents.filter((event) => event.recipientId === row.id).length,
       bonusTypes: round.bonusEvents.filter((event) => event.recipientId === row.id).map((event) => event.type),
     }))

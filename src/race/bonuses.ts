@@ -70,7 +70,7 @@ export function resolveCheckpoint(
   let penaltyUsed = false;
   for (const runner of active) {
     if (runner === leader || runner.bonusesReceived >= 3 ||
-      (runner !== last && (!leader || leader.progress < runner.progress + 0.25))) continue;
+      (runner.progress !== last?.progress && (!leader || leader.progress < runner.progress + 0.25))) continue;
     const edit = shortenEdit(runner.text, runner.typedLength);
     const possible: BonusType[] = edit ? ["shorten"] : [];
     if (leader && !penaltyUsed) {

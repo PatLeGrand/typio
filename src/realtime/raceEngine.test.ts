@@ -332,6 +332,19 @@ describe("bonus de remontée faisant autorité", () => {
     expect(next.runners.every((r) => r.edits.length === 0 && r.bonusesReceived === 0 && r.fogUntil === null)).toBe(true);
   });
 
+  it("does not consume a checkpoint crossed only by an abandoned runner", () => {
+    const race = checkpointRace(3);
+    race.text = "a".repeat(100);
+    race.checkpointsTriggered = 1;
+    race.runners[0] = { ...race.runners[0], position: 60, status: "abandoned", abandonedAt: START + 1_000 };
+    race.runners[1] = { ...race.runners[1], position: 10 };
+    const next = tickRace(race, START + 1_000);
+    expect(next.checkpointsTriggered).toBe(1);
+    expect(next.bonusEvents).toEqual([]);
+    next.runners[1] = { ...next.runners[1], position: 51 };
+    expect(tickRace(next, START + 2_000).checkpointsTriggered).toBe(2);
+  });
+
   // Le raccourcissement doit être utilisable à la frappe et préserver la MPM réelle.
   it("awards the trailing runner once, accepts their shortened text and finishes it", () => {
     const race = checkpointRace(3);

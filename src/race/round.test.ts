@@ -162,4 +162,20 @@ describe("bonus en solo", () => {
     expect(applyRoundBonuses(round, START + 2500)).toBe(round);
     expect(round.bonusEvents).toEqual([]);
   });
+
+  it("classe les non-arrivés par progression sur leurs textes courants de longueurs différentes", () => {
+    const round = checkpointRound(3);
+    const playerText = "a".repeat(100);
+    const bots = [200, 50].map((textLength, index) => ({
+      ...round.bots[0], id: `bot-${index}`, plan: {
+        ...round.bots[0].plan, textLength,
+        keyframes: [{ timeMs: 0, chars: 0 }, { timeMs: 300_000 - index * 150_000, chars: textLength }],
+        mistakeTimesMs: [], extraCorrectTimesMs: [],
+      },
+    }));
+    const session = tickRaceSession({ ...round.session, text: playerText, typed: playerText.slice(0, 30) }, START + 60_000);
+    const results = snapshotRound({ ...round, session, bots }, START + 60_000, "Toi").results;
+    // 20/50 > 30/100 > 40/200, malgré l'ordre inverse des caractères corrects.
+    expect(results?.map((row) => row.id)).toEqual(["bot-1", PLAYER_ID, "bot-0"]);
+  });
 });

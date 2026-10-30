@@ -35,6 +35,7 @@ export interface RaceResultRow {
   accuracy: number;
   timeMs: number;
   correctChars: number;
+  progress: number;
   bonusesReceived?: number;
   bonusTypes?: BonusType[];
 }
@@ -48,7 +49,7 @@ function compareRows(a: UnrankedRow, b: UnrankedRow): number {
   const byStatus = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
   if (byStatus !== 0) return byStatus;
   if (a.status === "finished") return a.timeMs - b.timeMs;
-  if (a.status === "unfinished") return b.correctChars - a.correctChars;
+  if (a.status === "unfinished") return b.progress - a.progress;
   return 0;
 }
 
@@ -56,6 +57,7 @@ export function buildRaceResults(input: {
   playerId: string;
   playerName: string;
   player: PlayerOutcome;
+  playerTextLength: number;
   bots: readonly BotEntry[];
 }): RaceResultRow[] {
   const { player, bots } = input;
@@ -73,6 +75,7 @@ export function buildRaceResults(input: {
       accuracy: computeAccuracy(player.keystrokes),
       timeMs: endMs,
       correctChars: player.correctChars,
+      progress: input.playerTextLength === 0 ? 0 : player.correctChars / input.playerTextLength,
     },
   ];
 
@@ -91,6 +94,7 @@ export function buildRaceResults(input: {
       accuracy: computeAccuracy(botKeystrokesAt(bot.plan, timeMs)),
       timeMs,
       correctChars,
+      progress: bot.plan.textLength === 0 ? 0 : correctChars / bot.plan.textLength,
     });
   }
 
