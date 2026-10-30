@@ -6,7 +6,7 @@ import { createRoomStore } from "./roomStore";
 function entry(code: string, createdAt: number, overrides: Partial<LobbyRoom> = {}): LobbyEntry {
   return {
     createdAt,
-    room: { code, runners: 1, capacity: 20, language: "fr", host: "Host", status: "waiting", joinable: true, ...overrides },
+    room: { code, runners: 1, capacity: 20, language: "fr", complexity: "medium", host: "Host", status: "waiting", joinable: true, ...overrides },
   };
 }
 
@@ -54,8 +54,8 @@ describe("explorateur (JOIN-02, SALLE-03)", () => {
   it("n'expose que les salles publiques, avec bots comptés dans les coureurs", () => {
     const store = storeWith(["code", "public", "private", "public"]);
     expect(store.lobby()).toEqual([
-      { code: "BBBBBB", runners: 2, capacity: DEFAULT_ROOM_CONFIG.capacity, language: "fr", host: "Hôte", status: "waiting", joinable: true },
-      { code: "DDDDDD", runners: 2, capacity: DEFAULT_ROOM_CONFIG.capacity, language: "fr", host: "Hôte", status: "waiting", joinable: true },
+      { code: "BBBBBB", complexity: "medium", runners: 2, capacity: DEFAULT_ROOM_CONFIG.capacity, language: "fr", host: "Hôte", status: "waiting", joinable: true },
+      { code: "DDDDDD", complexity: "medium", runners: 2, capacity: DEFAULT_ROOM_CONFIG.capacity, language: "fr", host: "Hôte", status: "waiting", joinable: true },
     ]);
   });
 

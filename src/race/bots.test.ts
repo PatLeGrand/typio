@@ -23,7 +23,17 @@ function seeded(seed: number): () => number {
 
 function mediumText(seed: number): string {
   const result = generateRaceText(
-    { textMode: "sentences", language: "fr", accents: true, length: "medium", excludedCharacters: "" },
+    {
+      textMode: "sentences",
+      language: "fr",
+      accents: true,
+      length: "medium",
+      excludedCharacters: "",
+      complexity: "medium",
+      punctuation: true,
+      numbers: false,
+      uppercase: true,
+    },
     seeded(seed),
   );
   if (!result.ok) throw new Error("texte indisponible");
