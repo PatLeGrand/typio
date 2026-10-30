@@ -1,3 +1,4 @@
+import type { BonusType } from "./bonuses";
 import type { BotLevel } from "@/realtime/protocol";
 import { botFinishMs, botKeystrokesAt, botProgressAt, type BotPlan } from "./bots";
 import { computeAccuracy, computeWpm, type Keystrokes } from "./metrics";
@@ -34,6 +35,9 @@ export interface RaceResultRow {
   accuracy: number;
   timeMs: number;
   correctChars: number;
+  progress: number;
+  bonusesReceived?: number;
+  bonusTypes?: BonusType[];
 }
 
 type UnrankedRow = Omit<RaceResultRow, "rank">;
@@ -45,18 +49,18 @@ function compareRows(a: UnrankedRow, b: UnrankedRow): number {
   const byStatus = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
   if (byStatus !== 0) return byStatus;
   if (a.status === "finished") return a.timeMs - b.timeMs;
-  if (a.status === "unfinished") return b.correctChars - a.correctChars;
+  if (a.status === "unfinished") return b.progress - a.progress;
   return 0;
 }
 
 export function buildRaceResults(input: {
-  textLength: number;
   playerId: string;
   playerName: string;
   player: PlayerOutcome;
+  playerTextLength: number;
   bots: readonly BotEntry[];
 }): RaceResultRow[] {
-  const { textLength, player, bots } = input;
+  const { player, bots } = input;
   const endMs = player.elapsedMs;
 
   const playerStatus: RacerStatus =
@@ -71,13 +75,14 @@ export function buildRaceResults(input: {
       accuracy: computeAccuracy(player.keystrokes),
       timeMs: endMs,
       correctChars: player.correctChars,
+      progress: input.playerTextLength === 0 ? 0 : player.correctChars / input.playerTextLength,
     },
   ];
 
   for (const bot of bots) {
     const finishMs = botFinishMs(bot.plan);
     const finished = finishMs <= endMs;
-    const correctChars = finished ? textLength : botProgressAt(bot.plan, endMs);
+    const correctChars = finished ? bot.plan.textLength : botProgressAt(bot.plan, endMs);
     const timeMs = finished ? finishMs : endMs;
     rows.push({
       id: bot.id,
@@ -89,6 +94,7 @@ export function buildRaceResults(input: {
       accuracy: computeAccuracy(botKeystrokesAt(bot.plan, timeMs)),
       timeMs,
       correctChars,
+      progress: bot.plan.textLength === 0 ? 0 : correctChars / bot.plan.textLength,
     });
   }
 

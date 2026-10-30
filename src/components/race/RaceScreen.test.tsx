@@ -71,7 +71,7 @@ afterEach(() => {
 describe("RaceScreen : horloge (A-D6, AC-4)", () => {
   it("affiche 3, 2, 1 puis démarre au départ, avec le temps restant visible", () => {
     const { labels } = setup();
-    expect(screen.getByRole("status")).toHaveTextContent(labels.status.countdown);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.countdown);
     expect(screen.getByTestId("countdown")).toHaveTextContent("3");
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
     // Saisie ignorée pendant le compte à rebours.
@@ -82,13 +82,13 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
     expect(screen.getByTestId("countdown")).toHaveTextContent("1");
 
     advance(900);
-    expect(screen.getByRole("status")).toHaveTextContent(labels.status.racing);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.racing);
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
   });
 
   it("annonce le compte à rebours une fois par seconde dans une région polie, puis « partez »", () => {
     const { labels } = setup();
-    const announcement = () => screen.getByText((_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P");
+    const announcement = () => screen.getByText((_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P" && element.getAttribute("role") !== "status");
     expect(announcement()).toHaveTextContent("3");
     advance(1100);
     expect(announcement()).toHaveTextContent("2");
@@ -116,7 +116,7 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
     advance(5000);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.timeout);
     expect(screen.getByRole("timer")).toHaveTextContent("00:00");
-    expect(screen.getByRole("status")).toHaveTextContent(labels.status.finished);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.finished);
     expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
   });
 });
@@ -271,7 +271,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     expect(createRaceText).toHaveBeenCalledTimes(1);
     expect(createRaceText).toHaveBeenCalledWith(settings, random, "first text");
     expect(textOnScreen()).toBe("brand new text");
-    expect(screen.getByRole("status")).toHaveTextContent(labels.status.countdown);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.countdown);
     // Le focus est sur le champ de saisie, pas perdu sur <body>.
     expect(input(labels)).toHaveFocus();
 

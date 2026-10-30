@@ -68,6 +68,7 @@ export interface RoomConfig {
   length: TextLength;
   timeLimitSeconds: TimeLimitSeconds | null;
   accents: boolean;
+  bonuses: boolean;
   complexity: TextComplexity;
   punctuation: boolean;
   numbers: boolean;
@@ -87,6 +88,7 @@ export const DEFAULT_ROOM_CONFIG: RoomConfig = {
   length: "medium",
   timeLimitSeconds: null,
   accents: true,
+  bonuses: false,
   complexity: "medium",
   punctuation: true,
   numbers: false,
@@ -297,6 +299,7 @@ export const roomConfigFields = {
   length: z.enum(TEXT_LENGTHS),
   timeLimitSeconds: z.literal(TIME_LIMITS_SECONDS).nullable(),
   accents: z.boolean(),
+  bonuses: z.boolean(),
   complexity: z.enum(TEXT_COMPLEXITIES),
   punctuation: z.boolean(),
   numbers: z.boolean(),
@@ -319,6 +322,7 @@ export const roomConfigPatchSchema = plainObject.pipe(
     length: roomConfigFields.length.exactOptional(),
     timeLimitSeconds: roomConfigFields.timeLimitSeconds.exactOptional(),
     accents: roomConfigFields.accents.exactOptional(),
+    bonuses: roomConfigFields.bonuses.exactOptional(),
     complexity: roomConfigFields.complexity.exactOptional(),
     punctuation: roomConfigFields.punctuation.exactOptional(),
     numbers: roomConfigFields.numbers.exactOptional(),

@@ -177,8 +177,8 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
                     <span className="font-semibold">{settings.bots.length} · {settings.bots.map((level) => dict.bots.levels[level]).join(", ")}</span>
                   </li>
                   <li className="flex justify-between pb-1">
-                    <span className="text-muted">{dict.abilities.label}</span>
-                    <span className="font-semibold">{dict.abilities.off}</span>
+                    <span className="text-muted">{dict.bonuses.label}</span>
+                    <span className="font-semibold">{settings.bonuses ? dict.bonuses.on : dict.bonuses.off}</span>
                   </li>
                 </ul>
 

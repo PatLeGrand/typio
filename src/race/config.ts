@@ -4,10 +4,10 @@ import type { RoomConfig } from "@/realtime/protocol";
 import { LEGACY_BOT_LEVEL } from "./bots";
 
 /**
- * CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01: race settings. Everything but `abilities` is the room's `RoomConfig`, validated by
+ * CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01: race settings. Settings share the room's `RoomConfig`, validated by
  * the protocol, so the solo page and the room cannot drift apart (B-D3).
  */
-export type RaceSettings = RoomConfig & { abilities: boolean };
+export type RaceSettings = RoomConfig;
 
 export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze<RaceSettings>({
   textMode: "sentences",
@@ -24,11 +24,15 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze<RaceS
   bots: ["intermediate", "intermediate"],
   visibility: "code",
   capacity: DEFAULT_CAPACITY,
-  abilities: false,
+  bonuses: false,
 });
 
 /** Les champs ajoutés après coup sont facultatifs à la lecture : d'anciens liens `/race?config=` les ignorent. */
 export const raceSettingsSchema = z.preprocess((value) => {
+  if (typeof value === "object" && value !== null && "abilities" in value && typeof value.abilities === "boolean" && !("bonuses" in value)) {
+    const { abilities, ...rest } = value;
+    value = { ...rest, bonuses: abilities };
+  }
   const legacy = z.object({
     botCount: z.number().int().min(0).max(MAX_BOTS),
     botDifficulty: z.enum(["easy", "normal", "hard"]),
@@ -45,7 +49,7 @@ export const raceSettingsSchema = z.preprocess((value) => {
   punctuation: roomConfigFields.punctuation.default(DEFAULT_RACE_SETTINGS.punctuation),
   numbers: roomConfigFields.numbers.default(DEFAULT_RACE_SETTINGS.numbers),
   uppercase: roomConfigFields.uppercase.default(DEFAULT_RACE_SETTINGS.uppercase),
-  abilities: z.boolean(),
+  bonuses: roomConfigFields.bonuses.default(false),
 }));
 
 export function parseRaceSettings(value: unknown): RaceSettings | null {

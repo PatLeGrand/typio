@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { RaceSettings } from "@/race/config";
 import { createRaceText } from "@/race/raceText";
-import { createRound, type Round } from "@/race/round";
+import { applyRoundBonuses, createRound, type Round } from "@/race/round";
 import { abandonRaceSession, tickRaceSession, typeIntoRaceSession, type RaceSession } from "@/race/session";
 
 /** Fréquence de rafraîchissement de l'affichage ; le temps, lui, vient toujours de `now()` (A-D6). */
@@ -86,6 +86,7 @@ export function useRaceSession({ settings, initialText, botNames, botNameSeed, n
 
 function updateSession(state: RoundState, clock: number, change: (session: RaceSession) => RaceSession): RoundState {
   if (!state.round) return state;
-  const session = change(state.round.session);
-  return { ...state, clock, round: session === state.round.session ? state.round : { ...state.round, session } };
+  const current = applyRoundBonuses(state.round, clock);
+  const session = change(current.session);
+  return { ...state, clock, round: applyRoundBonuses(session === current.session ? current : { ...current, session }, clock) };
 }

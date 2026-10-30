@@ -11,6 +11,7 @@ export interface Racer {
   isLocal?: boolean;
   /** Rotation de teinte du Blob en degrés (0 = bleu d'origine), pour distinguer les coureurs. */
   hue?: number;
+  bonusLabel?: string;
 }
 
 interface RaceVisualizerProps {
@@ -25,6 +26,7 @@ interface RacerView {
   container: PIXI.Container;
   body: PIXI.Container;
   shadow: PIXI.Graphics;
+  bonus: PIXI.Text;
   x: number; // position affichée (lissée), en px de piste
   vx: number; // vitesse affichée, en px/s
   phase: number; // phase du cycle de saut
@@ -130,9 +132,15 @@ export function RaceVisualizer({
       label.y = -blobTexture.height - 4;
       body.addChild(label);
 
-      container.addChild(shadow, body);
+      const bonus = new PIXI.Text({
+        text: racer.bonusLabel ?? "",
+        style: { fontFamily: "sans-serif", fontSize: 14, fontWeight: "700", fill: 0xffffff, stroke: { color: 0x293c49, width: 4 } },
+      });
+      bonus.anchor.set(0.5, 1);
+      bonus.y = -blobTexture.height - 28;
+      container.addChild(shadow, body, bonus);
       world.addChild(container);
-      return { container, body, shadow, x: startX, vx: 0, phase: 0, intensity: 0 };
+      return { container, body, shadow, bonus, x: startX, vx: 0, phase: 0, intensity: 0 };
     };
 
     const init = async () => {
@@ -209,6 +217,8 @@ export function RaceVisualizer({
             view = createView(racer, blobTexture, target, world);
             views.set(racer.id, view);
           }
+
+          view.bonus.text = racer.bonusLabel ?? "";
 
           // 1. Position : le Blob rejoint sa cible, mais sa vitesse est plafonnée à
           // MAX_SPEED et varie progressivement (pas de démarrage ni d'arrêt brutal).

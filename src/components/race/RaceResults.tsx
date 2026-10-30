@@ -72,6 +72,7 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
               <th scope="col" className="px-4 py-3">{copy.columns.wpm}</th>
               <th scope="col" className="px-4 py-3">{copy.columns.accuracy}</th>
               <th scope="col" className="px-4 py-3">{copy.columns.time}</th>
+              <th scope="col" className="px-4 py-3">{copy.columns.bonuses}</th>
               <th scope="col" className="px-4 py-3">{copy.columns.status}</th>
             </tr>
           </thead>
@@ -85,6 +86,7 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
                   {row.accuracy}%
                 </td>
                 <td className="px-4 py-3 tabular-nums">{formatDuration(row.timeMs)}</td>
+                <td className="px-4 py-3">{row.bonusesReceived ?? 0}{row.bonusTypes?.length ? ` (${row.bonusTypes.map((type) => copy.bonusTypes[type]).join(", ")})` : ""}</td>
                 <td className="px-4 py-3">{copy.statuses[row.status]}</td>
               </tr>
             ))}

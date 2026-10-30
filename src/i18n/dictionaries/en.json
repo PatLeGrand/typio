@@ -24,6 +24,18 @@
     "back": "Back to settings"
   },
   "raceScreen": {
+    "bonuses": {
+      "types": {
+        "shorten": "−3 words",
+        "lengthen": "+3 words",
+        "fog": "Fog"
+      },
+      "shorten": "Bonus! 3 words removed from your text",
+      "lengthen": "{name} added 3 words to your text",
+      "fog": "Fog!",
+      "sentLengthen": "Your bonus added 3 words to {name}",
+      "sentFog": "Your bonus put {name} in fog"
+    },
     "bot": "Bot",
     "botLevels": {"noob": "Noob", "beginner": "Beginner", "intermediate": "Intermediate", "expert": "Expert", "impossible": "Impossible"},
     "roomName": "Blob Meadow",
@@ -92,7 +104,9 @@
       "newPersonalBest": "New personal best!",
       "podium": "Podium",
       "tableTitle": "Race results",
+      "bonusTypes": {"shorten": "−3 words", "lengthen": "+3 words", "fog": "Fog"},
       "columns": {
+        "bonuses": "Bonus",
         "rank": "Rank",
         "name": "Name",
         "wpm": "WPM",
@@ -470,12 +484,11 @@
       "blocking": "Blocking",
       "blockingDesc": "Correct each error before you can type the next character."
     },
-    "abilities": {
-      "label": "Abilities",
-      "help": "Enable Blob powers during the race.",
+    "bonuses": {
+      "label": "Catch-up bonuses",
+      "help": "At checkpoints, trailing racers receive fewer words or send a penalty to the leader.",
       "on": "On",
-      "off": "Off",
-      "comingSoon": "soon"
+      "off": "Off"
     },
     "opponentsSection": {
       "title": "Your opponents",

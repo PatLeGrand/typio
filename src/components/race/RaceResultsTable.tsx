@@ -1,3 +1,4 @@
+import type { BonusType } from "@/race/bonuses";
 import type { BotLevel } from "@/realtime/protocol";
 import type { Dictionary } from "@/i18n/dictionaries";
 
@@ -12,6 +13,8 @@ export type RaceResultsRow = {
   grossWpm: number;
   accuracy: number;
   errors: number;
+  bonusesReceived?: number;
+  bonusTypes?: BonusType[];
   timeMs: number;
   status: "finished" | "unfinished" | "abandoned";
 };
@@ -35,7 +38,7 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId,
       <table className="w-full text-left text-sm">
         <caption className="sr-only">{labels.tableTitle}</caption>
         <thead><tr>
-          {[columns.rank, columns.name, columns.wpm, extraLabels.grossWpm, columns.accuracy, extraLabels.errors, columns.time, columns.status].map((label) => <th key={label} scope="col" className="whitespace-nowrap px-3 py-2">{label}</th>)}
+          {[columns.rank, columns.name, columns.wpm, extraLabels.grossWpm, columns.accuracy, extraLabels.errors, columns.time, columns.bonuses, columns.status].map((label) => <th key={label} scope="col" className="whitespace-nowrap px-3 py-2">{label}</th>)}
         </tr></thead>
         <tbody>{rows.map((row) => (
           <tr key={row.id} className={`border-t border-border ${row.id === highlightId ? "bg-accent-panel font-bold" : ""}`}>
@@ -46,6 +49,7 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId,
             <td className="px-3 py-2">{percent.format(row.accuracy / 100)}</td>
             <td className="px-3 py-2">{number.format(row.errors)}</td>
             <td className="whitespace-nowrap px-3 py-2">{seconds.format(row.timeMs / 1000)}</td>
+            <td className="px-3 py-2">{number.format(row.bonusesReceived ?? 0)}{row.bonusTypes?.length ? ` (${row.bonusTypes.map((type) => labels.bonusTypes[type]).join(", ")})` : ""}</td>
             <td className="px-3 py-2">{labels.statuses[row.status]}</td>
           </tr>
         ))}</tbody>
