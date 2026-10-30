@@ -8,7 +8,7 @@ import { Switch } from "@/components/race/Switch";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { formatPlural } from "@/race/format";
 import type { RaceSettings } from "@/race/config";
-import { MAX_BOTS, MAX_CAPACITY, MIN_CAPACITY, ROOM_VISIBILITIES, TIME_LIMITS_SECONDS } from "@/realtime/protocol";
+import { MAX_BOTS, MAX_CAPACITY, MIN_CAPACITY, ROOM_VISIBILITIES, TEXT_COMPLEXITIES, TIME_LIMITS_SECONDS } from "@/realtime/protocol";
 import type { RoomVisibility, TimeLimitSeconds } from "@/realtime/protocol";
 
 interface RaceSettingsFieldsProps {
@@ -33,7 +33,7 @@ function formatMinutes(template: string, seconds: TimeLimitSeconds): string {
 }
 
 /**
- * Les trois sections de réglages de course (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01), contrôlées par `value`. Partagées par la
+ * Les trois sections de réglages de course (CONF-01 à CONF-10, BOT-01), contrôlées par `value`. Partagées par la
  * page de paramètres (état local) et la salle d'attente (état de la salle, lecture seule hors hôte).
  */
 export function RaceSettingsFields({
@@ -112,6 +112,23 @@ export function RaceSettingsFields({
             </div>
           </div>
 
+          {/* Complexité (CONF-05) */}
+          <div className="sm:col-span-2">
+            <FieldHeading id={id("complexity-label")} className="text-[15px] font-semibold mb-3">{dict.complexity.label}</FieldHeading>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" role="radiogroup" aria-labelledby={id("complexity-label")}>
+              {TEXT_COMPLEXITIES.map((complexity) => (
+                <RadioCard
+                  key={complexity}
+                  disabled={readOnly}
+                  checked={value.complexity === complexity}
+                  onChange={() => onChange({ complexity })}
+                  label={dict.complexity[complexity]}
+                  description={dict.complexity.descriptions[complexity]}
+                />
+              ))}
+            </div>
+          </div>
+
           {/* Accents */}
           <div>
             <FieldHeading id={id("accents-label")} className="text-[15px] font-semibold mb-3">{dict.accents.label}</FieldHeading>
@@ -129,6 +146,21 @@ export function RaceSettingsFields({
                 label={dict.accents.exclude}
               />
             </div>
+          </div>
+
+          {/* Options du texte (CONF-06) */}
+          <div className="flex flex-col gap-4">
+            {(["punctuation", "numbers", "uppercase"] as const).map((option) => (
+              <div key={option} className="flex items-center justify-between gap-3">
+                <span id={id(`${option}-label`)} className="text-[15px] font-semibold">{dict[option].label}</span>
+                <Switch
+                  aria-labelledby={id(`${option}-label`)}
+                  disabled={readOnly}
+                  checked={value[option]}
+                  onChange={(checked) => onChange({ [option]: checked })}
+                />
+              </div>
+            ))}
           </div>
 
           {/* Longueur */}

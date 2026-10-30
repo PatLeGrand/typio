@@ -6,7 +6,7 @@ import { Card } from "@/components/Card";
 import { SelectField } from "@/components/SelectField";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { TEXT_LANGUAGES, type LobbyRoom, type TextLanguage } from "@/realtime/protocol";
+import { TEXT_COMPLEXITIES, TEXT_LANGUAGES, type LobbyRoom, type TextComplexity, type TextLanguage } from "@/realtime/protocol";
 
 type RoomExplorerProps = {
   locale: Locale;
@@ -20,26 +20,41 @@ type RoomExplorerProps = {
 
 /**
  * Explorateur de salles publiques (JOIN-02), mis à jour par le serveur sans rechargement. Filtre par
- * langue côté client ; la complexité (CONF-05) n'existe pas encore et n'est donc pas affichée.
+ * langue et complexité (CONF-05) côté client.
  */
 export function RoomExplorer({ locale, labels, rooms, disabled, onJoin }: RoomExplorerProps) {
   const [language, setLanguage] = useState<TextLanguage | "all">("all");
+  const [complexity, setComplexity] = useState<TextComplexity | "all">("all");
   const numbers = new Intl.NumberFormat(locale);
-  const shown = rooms?.filter((room) => language === "all" || room.language === language) ?? [];
+  const shown = rooms?.filter((room) =>
+    (language === "all" || room.language === language) &&
+    (complexity === "all" || room.complexity === complexity),
+  ) ?? [];
 
   return (
     <Card className="flex flex-col gap-4 border border-border p-6">
       <h2 id="explorer-title" className="text-xl font-bold text-foreground">{labels.title}</h2>
       <p className="text-muted-strong">{labels.description}</p>
-      <SelectField
-        label={labels.filterLanguage}
-        value={language}
-        onChange={(event) => setLanguage(event.target.value === "all" ? "all" : (event.target.value as TextLanguage))}
-        options={[
-          { value: "all", label: labels.allLanguages },
-          ...TEXT_LANGUAGES.map((value) => ({ value, label: labels.languages[value] })),
-        ]}
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <SelectField
+          label={labels.filterLanguage}
+          value={language}
+          onChange={(event) => setLanguage(event.target.value === "all" ? "all" : (event.target.value as TextLanguage))}
+          options={[
+            { value: "all", label: labels.allLanguages },
+            ...TEXT_LANGUAGES.map((value) => ({ value, label: labels.languages[value] })),
+          ]}
+        />
+        <SelectField
+          label={labels.filterComplexity}
+          value={complexity}
+          onChange={(event) => setComplexity(event.target.value as TextComplexity | "all")}
+          options={[
+            { value: "all", label: labels.allComplexities },
+            ...TEXT_COMPLEXITIES.map((value) => ({ value, label: labels.complexities[value] })),
+          ]}
+        />
+      </div>
       {rooms === null ? (
         <p aria-live="polite" className="text-muted-strong">{labels.loading}</p>
       ) : shown.length === 0 ? (
@@ -61,6 +76,8 @@ export function RoomExplorer({ locale, labels, rooms, disabled, onJoin }: RoomEx
                     .replace("{max}", numbers.format(room.capacity))}
                   {" · "}
                   {labels.languages[room.language]}
+                  {" · "}
+                  {labels.complexities[room.complexity]}
                   {" · "}
                   {labels.status[room.status]}
                 </span>
