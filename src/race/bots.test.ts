@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   BOT_LEVEL_PROFILES,
+  BOT_FOG_SLOWDOWN_FACTOR,
   botFinishMs,
   botKeystrokesAt,
   botProgressAt,
   planBot,
+  replanBot,
 } from "./bots";
 import { BOT_LEVELS, INPUT_MODES } from "../realtime/protocol";
 import { generateRaceText } from "./textGenerator";
@@ -223,5 +225,61 @@ describe("botKeystrokesAt", () => {
       }
     }
     expect(withMistakes).toBeGreaterThan(0);
+  });
+});
+
+describe("replanBot", () => {
+  it.each(INPUT_MODES)("préserve progression et frappes jusqu'à la bascule et finit le nouveau texte (%s)", (mode) => {
+    const original = planBot(TEXT, "noob", mode, seeded(5));
+    const snapshot = structuredClone(original);
+    const elapsed = botFinishMs(original) / 3 + 0.37;
+    for (const text of [TEXT.slice(0, -10), TEXT + " encore trois mots"]) {
+      const replanned = replanBot(original, elapsed, text, "noob", mode, seeded(9));
+      for (const time of [0, elapsed / 2, elapsed - 0.001, elapsed,
+        ...original.keyframes.filter((frame) => frame.timeMs <= elapsed).map((frame) => frame.timeMs)]) {
+        expect(botProgressAt(replanned, time)).toBe(botProgressAt(original, time));
+        expect(botKeystrokesAt(replanned, time)).toEqual(botKeystrokesAt(original, time));
+      }
+      expect(botProgressAt(replanned, botFinishMs(replanned))).toBe(text.length);
+      expect(botProgressAt(replanned, botFinishMs(replanned) - 1)).toBeLessThan(text.length);
+      expect(botKeystrokesAt(replanned, botFinishMs(replanned))).toEqual({
+        total: text.length + replanned.extraCorrectTimesMs.length + replanned.mistakeTimesMs.length,
+        correct: text.length + replanned.extraCorrectTimesMs.length,
+      });
+      expect(replanBot(original, elapsed, text, "noob", mode, seeded(9))).toEqual(replanned);
+    }
+    expect(original).toEqual(snapshot);
+  });
+
+  it("ralentit pendant le brouillard puis reprend exactement la vitesse normale", () => {
+    const original = planBot(TEXT, "expert", "blocking", seeded(1));
+    const elapsed = 1000;
+    const duration = 4000;
+    const factor = BOT_FOG_SLOWDOWN_FACTOR;
+    const normal = replanBot(original, elapsed, TEXT, "expert", "blocking", seeded(2));
+    const fog = replanBot(original, elapsed, TEXT, "expert", "blocking", seeded(2),
+      { untilMs: elapsed + duration, factor });
+    for (const delta of [0, 1000, duration - 1, duration, duration + 1000, duration + 5000]) {
+      const normalDelta = delta <= duration ? delta / factor : delta - duration + duration / factor;
+      expect(botProgressAt(fog, elapsed + delta)).toBe(botProgressAt(normal, elapsed + normalDelta));
+      expect(botKeystrokesAt(fog, elapsed + delta)).toEqual(botKeystrokesAt(normal, elapsed + normalDelta));
+    }
+    expect(botFinishMs(fog) - botFinishMs(normal)).toBeCloseTo(duration * (1 - 1 / factor), 0);
+    expect(replanBot(original, elapsed, TEXT, "expert", "blocking", seeded(2),
+      { untilMs: elapsed, factor })).toEqual(normal);
+  });
+
+  it("supporte des replanifications successives et une course déjà finie", () => {
+    const original = planBot(TEXT, "expert", "free", seeded(5));
+    const first = replanBot(original, 1000, TEXT + " suite", "expert", "free", seeded(6));
+    const second = replanBot(first, 2000, TEXT, "expert", "free", seeded(7));
+    for (const time of [0, 500, 1000, 1500, 2000]) {
+      expect(botKeystrokesAt(second, time)).toEqual(botKeystrokesAt(first, time));
+    }
+    const end = botFinishMs(second);
+    const finished = replanBot(second, end, TEXT, "expert", "free", seeded(8));
+    expect(botProgressAt(finished, end)).toBe(TEXT.length);
+    expect(botKeystrokesAt(finished, end)).toEqual(botKeystrokesAt(second, end));
+    expect(botFinishMs(finished)).toBe(end);
   });
 });

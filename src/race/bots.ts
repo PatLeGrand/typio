@@ -33,6 +33,8 @@ const ERROR_NOTICE_MAX_MS = 400;
 /** Délai avant la première frappe, après le départ. */
 const START_DELAY_MIN_MS = 150;
 const START_DELAY_MAX_MS = 450;
+/** Facteur de durée des frappes pendant le brouillard. */
+export const BOT_FOG_SLOWDOWN_FACTOR = 1.6;
 
 /** Point de la courbe : après `timeMs`, le bot a tapé `chars` caractères corrects. */
 interface Keyframe {
@@ -129,6 +131,51 @@ export function planBot(text: string, level: BotLevel, inputMode: InputMode, ran
   });
 
   return { textLength: text.length, keyframes, mistakeTimesMs, extraCorrectTimesMs };
+}
+
+/** Garde tout le passé, puis recalcule seulement le texte restant avec le même moteur. */
+export function replanBot(
+  plan: BotPlan,
+  elapsedMs: number,
+  newText: string,
+  level: BotLevel,
+  inputMode: InputMode,
+  random: () => number,
+  slowdown?: { untilMs: number; factor: number },
+): BotPlan {
+  const chars = botProgressAt(plan, elapsedMs);
+  const past = plan.keyframes.filter((frame) => frame.timeMs <= elapsedMs);
+  const from = past[past.length - 1];
+  const to = plan.keyframes.find((frame) => frame.timeMs > elapsedMs);
+  // Préserver aussi la fraction du segment passé : son arrondi donne toujours `chars`.
+  const boundaryChars = to
+    ? from.chars + (to.chars - from.chars) * (elapsedMs - from.timeMs) / (to.timeMs - from.timeMs)
+    : chars;
+  const suffix = planBot(newText.slice(chars), level, inputMode, random);
+  const factor = Math.max(1, slowdown?.factor ?? 1);
+  const slowDuration = Math.max(0, (slowdown?.untilMs ?? elapsedMs) - elapsedMs) / factor;
+  const timeAt = (timeMs: number) => elapsedMs + timeMs + Math.min(timeMs, slowDuration) * (factor - 1);
+  const future = [...suffix.keyframes];
+  // Couper le segment à la fin du brouillard pour retrouver immédiatement la vitesse normale.
+  const nextIndex = future.findIndex((frame) => frame.timeMs > slowDuration);
+  if (factor > 1 && slowDuration > 0 && nextIndex > 0) {
+    const before = future[nextIndex - 1];
+    const after = future[nextIndex];
+    future.splice(nextIndex, 0, {
+      timeMs: slowDuration,
+      chars: before.chars + (after.chars - before.chars) *
+        (slowDuration - before.timeMs) / (after.timeMs - before.timeMs),
+    });
+  }
+  return {
+    textLength: newText.length,
+    keyframes: [...past, { timeMs: elapsedMs, chars: boundaryChars },
+      ...future.map((frame) => ({ timeMs: timeAt(frame.timeMs), chars: chars + frame.chars }))],
+    mistakeTimesMs: [...plan.mistakeTimesMs.filter((time) => time <= elapsedMs),
+      ...suffix.mistakeTimesMs.map(timeAt)],
+    extraCorrectTimesMs: [...plan.extraCorrectTimesMs.filter((time) => time <= elapsedMs),
+      ...suffix.extraCorrectTimesMs.map(timeAt)],
+  };
 }
 
 /** Nombre de caractères corrects tapés par le bot, `elapsedMs` après le départ (0..longueur). */
