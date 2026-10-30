@@ -55,8 +55,8 @@ export type TimeLimitSeconds = (typeof TIME_LIMITS_SECONDS)[number];
 export const INPUT_MODES = ["free", "blocking"] as const;
 export type InputMode = (typeof INPUT_MODES)[number];
 
-export const BOT_DIFFICULTIES = ["easy", "normal", "hard"] as const;
-export type BotDifficulty = (typeof BOT_DIFFICULTIES)[number];
+export const BOT_LEVELS = ["noob", "beginner", "intermediate", "expert", "impossible"] as const;
+export type BotLevel = (typeof BOT_LEVELS)[number];
 
 export const MAX_BOTS = 7;
 export const MAX_EXCLUDED_INPUT_LENGTH = 100;
@@ -74,8 +74,7 @@ export interface RoomConfig {
   uppercase: boolean;
   excludedCharacters: string;
   inputMode: InputMode;
-  botCount: number;
-  botDifficulty: BotDifficulty;
+  bots: BotLevel[];
   visibility: RoomVisibility;
   capacity: number;
 }
@@ -94,8 +93,7 @@ export const DEFAULT_ROOM_CONFIG: RoomConfig = {
   uppercase: true,
   excludedCharacters: "",
   inputMode: "free",
-  botCount: 0,
-  botDifficulty: "normal",
+  bots: [],
   visibility: "code",
   capacity: DEFAULT_CAPACITY,
 };
@@ -305,13 +303,7 @@ export const roomConfigFields = {
   uppercase: z.boolean(),
   excludedCharacters: excludedCharactersSchema,
   inputMode: z.enum(INPUT_MODES),
-  botCount: z
-    .number()
-    .int()
-    .min(0)
-    .max(MAX_BOTS)
-    .transform((value) => value + 0), // -0 devient 0
-  botDifficulty: z.enum(BOT_DIFFICULTIES),
+  bots: z.array(z.enum(BOT_LEVELS)).max(MAX_BOTS),
   visibility: z.enum(ROOM_VISIBILITIES),
   capacity: z.number().int().min(MIN_CAPACITY).max(MAX_CAPACITY),
 };
@@ -333,8 +325,7 @@ export const roomConfigPatchSchema = plainObject.pipe(
     uppercase: roomConfigFields.uppercase.exactOptional(),
     excludedCharacters: roomConfigFields.excludedCharacters.exactOptional(),
     inputMode: roomConfigFields.inputMode.exactOptional(),
-    botCount: roomConfigFields.botCount.exactOptional(),
-    botDifficulty: roomConfigFields.botDifficulty.exactOptional(),
+    bots: roomConfigFields.bots.exactOptional(),
     visibility: roomConfigFields.visibility.exactOptional(),
     capacity: roomConfigFields.capacity.exactOptional(),
   }),

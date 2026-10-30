@@ -20,8 +20,7 @@ export function toRoomConfig(settings: RaceSettings): RoomConfig {
     uppercase: settings.uppercase,
     excludedCharacters: settings.excludedCharacters,
     inputMode: settings.inputMode,
-    botCount: settings.botCount,
-    botDifficulty: settings.botDifficulty,
+    bots: settings.bots,
     visibility: settings.visibility,
     capacity: settings.capacity,
   };

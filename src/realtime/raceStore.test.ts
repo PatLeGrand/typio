@@ -49,7 +49,7 @@ describe("cycle de course du registre", () => {
     expect(store.get("ABCDEF")?.status).toBe("waiting");
     expect(store.get("ABCDEF")?.participants.length).toBe(3);
     expect(store.snapshot("ABCDEF")).toBeNull();
-    expect(store.updateConfig("host", "ABCDEF", { botCount: 1 }).ok).toBe(true);
+    expect(store.updateConfig("host", "ABCDEF", { bots: ["intermediate"] }).ok).toBe(true);
   });
 
   it("préserve la reprise puis abandonne le déconnecté à l’expiration", () => {

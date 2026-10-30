@@ -24,6 +24,8 @@
     "back": "Back to settings"
   },
   "raceScreen": {
+    "bot": "Bot",
+    "botLevels": {"noob": "Noob", "beginner": "Beginner", "intermediate": "Intermediate", "expert": "Expert", "impossible": "Impossible"},
     "roomName": "Blob Meadow",
     "playerOne": "player",
     "playerOther": "players",
@@ -479,18 +481,19 @@
       "title": "Your opponents",
       "subtitle": "Bots fill the race and follow the same rules as you."
     },
-    "botCount": {
-      "decrease": "Remove a bot",
-      "increase": "Add a bot",
-      "label": "Bot count",
-      "help": "0 to 7 bots · 0 to play without bots"
-    },
-    "botDifficulty": {
-      "label": "Bot difficulty",
-      "help": "A steady pace for a balanced race.",
-      "easy": "Easy",
-      "normal": "Normal",
-      "hard": "Hard"
+    "bots": {
+      "label": "Bots",
+      "add": "Add a bot",
+      "remove": "Remove bot {number}",
+      "level": "Bot {number} level",
+      "help": "{level}: {min}–{max} WPM",
+      "levels": {
+        "noob": "Noob",
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "expert": "Expert",
+        "impossible": "Impossible"
+      }
     },
     "footer": "The same rules apply to everyone. The race begins after a countdown.",
     "summary": {

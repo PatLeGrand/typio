@@ -11,6 +11,7 @@ type ParticipantListProps = {
   room: RoomState;
   /** `users.id` de l'utilisateur courant, pour repérer « toi ». */
   currentUserId: string;
+  raceLabels: Dictionary["raceScreen"];
   labels: Dictionary["room"]["participants"];
   /** Expulsion (SALLE-07) : fournie à l'hôte seulement ; sans elle, aucun bouton. */
   onKick?: (userId: string) => Promise<unknown>;
@@ -20,7 +21,7 @@ type ParticipantListProps = {
  * Participants dans l'ordre d'arrivée ; la liste est une zone `aria-live` (SALLE-01, SALLE-05, COURSE-05).
  * L'hôte peut expulser chaque autre personne, après confirmation (SALLE-07).
  */
-export function ParticipantList({ room, currentUserId, labels, onKick }: ParticipantListProps) {
+export function ParticipantList({ room, currentUserId, labels, raceLabels, onKick }: ParticipantListProps) {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   async function kick(userId: string): Promise<void> {
@@ -34,7 +35,7 @@ export function ParticipantList({ room, currentUserId, labels, onKick }: Partici
   }
 
   // SALLE-05 : la capacité compte les coureurs humains et les bots.
-  const runners = room.participants.filter((participant) => participant.role === "runner").length + room.config.botCount;
+  const runners = room.participants.filter((participant) => participant.role === "runner").length + room.config.bots.length;
 
   return (
     <Card className="flex flex-col gap-4 border border-border p-6">
@@ -73,6 +74,12 @@ export function ParticipantList({ room, currentUserId, labels, onKick }: Partici
                 <Button variant="secondary" className="ml-auto" onClick={() => setConfirming(participant.userId)}>{labels.kick}</Button>
               )
             ) : null}
+          </li>
+        ))}
+        {room.config.bots.map((level, index) => (
+          <li key={`bot-${index}`} className="flex flex-wrap items-center gap-3 rounded-field border border-border px-4 py-3">
+            <Badge>{raceLabels.bot}</Badge>
+            <span>{raceLabels.botLevels[level]}</span>
           </li>
         ))}
       </ul>

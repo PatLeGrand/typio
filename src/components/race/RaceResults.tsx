@@ -55,7 +55,7 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
               className={`flex flex-col gap-1 rounded-card border-2 px-5 py-4 ${row.isPlayer ? "border-accent bg-accent-panel" : "border-border bg-surface"}`}
             >
               <span className="text-2xl font-black text-accent-text">{formatOrdinal(locale, row.rank, labels.ordinal)}</span>
-              <span className="font-extrabold">{row.name}</span>
+              <span className="font-extrabold">{row.name}{row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}</span>
               <span className="text-sm text-muted">{row.wpm} {copy.columns.wpm}</span>
             </li>
           ))}
@@ -79,7 +79,7 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
             {rows.map((row) => (
               <tr key={row.id} className={`border-b border-border last:border-b-0 ${row.isPlayer ? "bg-accent-panel font-bold" : ""}`}>
                 <td className="px-4 py-3">{formatOrdinal(locale, row.rank, labels.ordinal)}</td>
-                <th scope="row" className="px-4 py-3 font-bold">{row.name}</th>
+                <th scope="row" className="px-4 py-3 font-bold">{row.name}{row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}</th>
                 <td className="px-4 py-3 tabular-nums">{row.wpm}</td>
                 <td className="px-4 py-3 tabular-nums">
                   {row.accuracy}%

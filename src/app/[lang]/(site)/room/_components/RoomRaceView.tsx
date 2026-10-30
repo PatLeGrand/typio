@@ -100,7 +100,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
         <h2 className="text-2xl font-bold">{raceLabels.results.tableTitle}</h2>
         {records.includes(userId) && <p role="status">{raceLabels.results.newPersonalBest}</p>}
         {results ? (
-          <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} highlightId={userId} />
+          <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} botLevels={raceLabels.botLevels} highlightId={userId} />
         ) : <p role="status">{labels.loading}</p>}
         {room.hostId === userId ? <div className="flex flex-wrap gap-3">
           <Button disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>{labels.restart}</Button>
@@ -118,10 +118,10 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
         <p aria-live="assertive" aria-atomic="true" className="text-center text-6xl font-bold">{number.format(countdown)}</p>
       </> : <h2 className="text-2xl font-bold">{raceLabels.headline.racing}</h2>}
       {room.status === "countdown" ? <p className="break-words rounded-card border border-border bg-surface p-4 font-mono">{race.text}</p> : null}
-      <RaceVisualizer racers={race.runners.map((r, index) => ({ id: r.id, name: r.kind === "bot" ? `${r.name} (${labels.bot})` : r.name, progress: r.progress * 100, isLocal: r.id === userId, hue: index * 47 }))} />
+      <RaceVisualizer racers={race.runners.map((r, index) => ({ id: r.id, name: r.kind === "bot" ? `${r.name} (${labels.bot}${r.level ? ` · ${raceLabels.botLevels[r.level]}` : ""})` : r.name, progress: r.progress * 100, isLocal: r.id === userId, hue: index * 47 }))} />
       <ol className="flex flex-col gap-2">
         {race.runners.map((r) => <li key={r.id} className={`rounded-card border border-border p-3 ${r.id === userId ? "bg-accent-panel font-bold" : "bg-surface"}`}>
-          {r.name} {r.kind === "bot" ? `(${labels.bot})` : ""} {r.id === userId ? `(${raceLabels.you})` : ""}
+          {r.name} {r.kind === "bot" ? `(${labels.bot}${r.level ? ` · ${raceLabels.botLevels[r.level]}` : ""})` : ""} {r.id === userId ? `(${raceLabels.you})` : ""}
           {" · "}{number.format(r.position)} / {number.format(race.text.length)} {raceLabels.typing.characters}
           {" · "}{number.format(r.wpm)} {raceLabels.results.columns.wpm}
           {" · "}{percent.format(r.accuracy / 100)} {raceLabels.results.columns.accuracy}

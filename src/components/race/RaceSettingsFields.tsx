@@ -8,8 +8,9 @@ import { Switch } from "@/components/race/Switch";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { formatPlural } from "@/race/format";
 import type { RaceSettings } from "@/race/config";
-import { MAX_BOTS, MAX_CAPACITY, MIN_CAPACITY, ROOM_VISIBILITIES, TEXT_COMPLEXITIES, TIME_LIMITS_SECONDS } from "@/realtime/protocol";
-import type { RoomVisibility, TimeLimitSeconds } from "@/realtime/protocol";
+import { BOT_LEVEL_PROFILES } from "@/race/bots";
+import { BOT_LEVELS, MAX_BOTS, MAX_CAPACITY, MIN_CAPACITY, ROOM_VISIBILITIES, TEXT_COMPLEXITIES, TIME_LIMITS_SECONDS } from "@/realtime/protocol";
+import type { BotLevel, RoomVisibility, TimeLimitSeconds } from "@/realtime/protocol";
 
 interface RaceSettingsFieldsProps {
   value: RaceSettings;
@@ -17,6 +18,7 @@ interface RaceSettingsFieldsProps {
   onChange: (patch: Partial<RaceSettings>) => void;
   /** Mêmes sections et mêmes valeurs, contrôles inactifs (non-hôte d'une salle, CONF-12). */
   readOnly?: boolean;
+  runnerCount?: number;
   dict: Dictionary["raceSettings"];
   lang: string;
   /** Message d'erreur du champ des caractères exclus, déjà traduit. */
@@ -40,6 +42,7 @@ export function RaceSettingsFields({
   value,
   onChange,
   readOnly = false,
+  runnerCount = 1,
   dict,
   lang,
   excludedError = null,
@@ -324,41 +327,27 @@ export function RaceSettingsFields({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] gap-x-6 gap-y-2">
-          <div>
-            <FieldHeading className="text-[15px] font-semibold mb-3">{dict.botCount.label}</FieldHeading>
-            <div className="flex items-center justify-between px-4 h-11 border border-border rounded-field mb-2">
-              <button
-                type="button"
-                aria-label={dict.botCount.decrease}
+        <div className="flex flex-col gap-3">
+          <FieldHeading className="text-[15px] font-semibold">{dict.bots.label}</FieldHeading>
+          <span aria-live="polite" aria-atomic="true">{numberFormat.format(value.bots.length)}</span>
+          {value.bots.map((level, index) => (
+            <div key={index} className="flex flex-wrap items-center gap-3">
+              <SelectField
+                label={dict.bots.level.replace("{number}", numberFormat.format(index + 1))}
+                value={level}
                 disabled={readOnly}
-                onClick={() => onChange({ botCount: Math.max(0, value.botCount - 1) })}
-                className="text-accent-text text-xl hover:opacity-80 disabled:opacity-40"
-              >
-                −
-              </button>
-              <span className="font-bold text-[15px]" aria-live="polite" aria-atomic="true">{value.botCount}</span>
-              <button
-                type="button"
-                aria-label={dict.botCount.increase}
-                disabled={readOnly}
-                onClick={() => onChange({ botCount: Math.min(MAX_BOTS, value.botCount + 1) })}
-                className="text-accent-text text-xl hover:opacity-80 disabled:opacity-40"
-              >
-                +
+                options={BOT_LEVELS.map((level) => ({ value: level, label: dict.bots.levels[level] }))}
+                onChange={(event) => onChange({ bots: value.bots.map((current, i) => i === index ? event.target.value as BotLevel : current) })}
+              />
+              <button type="button" disabled={readOnly} className="text-accent-text disabled:opacity-40" onClick={() => onChange({ bots: value.bots.filter((_, i) => i !== index) })}>
+                {dict.bots.remove.replace("{number}", numberFormat.format(index + 1))}
               </button>
             </div>
-            <p className="text-xs text-muted">{dict.botCount.help}</p>
-          </div>
-          <div>
-            <FieldHeading id={id("bot-difficulty-label")} className="text-[15px] font-semibold mb-3">{dict.botDifficulty.label}</FieldHeading>
-            <div className="flex gap-3 mb-2" role="radiogroup" aria-labelledby={id("bot-difficulty-label")}>
-              <RadioCard disabled={readOnly} checked={value.botDifficulty === "easy"} onChange={() => onChange({ botDifficulty: "easy" })} label={dict.botDifficulty.easy} className="justify-center text-center" />
-              <RadioCard disabled={readOnly} checked={value.botDifficulty === "normal"} onChange={() => onChange({ botDifficulty: "normal" })} label={dict.botDifficulty.normal} className="justify-center text-center" />
-              <RadioCard disabled={readOnly} checked={value.botDifficulty === "hard"} onChange={() => onChange({ botDifficulty: "hard" })} label={dict.botDifficulty.hard} className="justify-center text-center" />
-            </div>
-            <p className="text-xs text-muted">{dict.botDifficulty.help}</p>
-          </div>
+          ))}
+          <button type="button" disabled={readOnly || value.bots.length >= MAX_BOTS || runnerCount + value.bots.length >= value.capacity} className="self-start text-accent-text disabled:opacity-40" onClick={() => onChange({ bots: [...value.bots, "intermediate"] })}>
+            {dict.bots.add}
+          </button>
+          <p className="text-xs text-muted">{BOT_LEVELS.map((level) => dict.bots.help.replace("{level}", dict.bots.levels[level]).replace("{min}", numberFormat.format(BOT_LEVEL_PROFILES[level].minWpm)).replace("{max}", numberFormat.format(BOT_LEVEL_PROFILES[level].maxWpm))).join(" · ")}</p>
         </div>
       </section>
 

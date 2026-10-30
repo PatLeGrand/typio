@@ -97,7 +97,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
   }
   /** Nombre de coureurs humains et de bots : ce que la capacité compte (SALLE-05). */
   function runnerSlots(room: RoomState): number {
-    return room.participants.filter((p) => p.role === "runner").length + room.config.botCount;
+    return room.participants.filter((p) => p.role === "runner").length + room.config.bots.length;
   }
 
   /** Salles publiques non fermées avec leur ancienneté (JOIN-02, JOIN-03). */

@@ -24,6 +24,8 @@
     "back": "Retour aux paramètres"
   },
   "raceScreen": {
+    "bot": "Bot",
+    "botLevels": {"noob": "Noob", "beginner": "Débutant", "intermediate": "Intermédiaire", "expert": "Expert", "impossible": "Impossible"},
     "roomName": "Prairie des Blobs",
     "playerOne": "joueur",
     "playerOther": "joueurs",
@@ -479,18 +481,19 @@
       "title": "Tes adversaires",
       "subtitle": "Les bots complètent la course et suivent les mêmes règles que toi."
     },
-    "botCount": {
-      "decrease": "Retirer un bot",
-      "increase": "Ajouter un bot",
-      "label": "Nombre de bots",
-      "help": "De 0 à 7 bots · 0 pour jouer sans bot"
-    },
-    "botDifficulty": {
-      "label": "Difficulté des bots",
-      "help": "Un rythme régulier pour une course équilibrée.",
-      "easy": "Facile",
-      "normal": "Normale",
-      "hard": "Difficile"
+    "bots": {
+      "label": "Bots",
+      "add": "Ajouter un bot",
+      "remove": "Retirer le bot {number}",
+      "level": "Niveau du bot {number}",
+      "help": "{level} : {min}–{max} MPM",
+      "levels": {
+        "noob": "Noob",
+        "beginner": "Débutant",
+        "intermediate": "Intermédiaire",
+        "expert": "Expert",
+        "impossible": "Impossible"
+      }
     },
     "footer": "Les mêmes règles s'appliquent à tous les participants. Le départ sera donné après un compte à rebours.",
     "summary": {

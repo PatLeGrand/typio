@@ -75,7 +75,7 @@ describe("frontière client des courses (COURSE-06)", () => {
     expect(host.command("race:start")).toEqual({ ok: true });
     expect(broadcasts.at(-1)).toMatchObject({ event: "race:state", payload: { status: "countdown" } });
     expect(store.get("ABCDEF")).not.toHaveProperty("race");
-    expect(host.command("room:updateConfig", { botCount: 1 })).toEqual({ ok: false, error: "CONFIG_LOCKED" });
+    expect(host.command("room:updateConfig", { bots: ["intermediate"] })).toEqual({ ok: false, error: "CONFIG_LOCKED" });
   });
 
   it("refuse les entrées invalides et impossibles uniquement à l’émetteur", () => {
@@ -193,7 +193,7 @@ describe("frontière client des courses (COURSE-06)", () => {
     expect(guest.command("room:close")).toEqual({ ok: false, error: "NOT_HOST" });
     expect(host.command("room:restart")).toEqual({ ok: true });
     expect(store.get("ABCDEF")?.participants.length).toBe(3);
-    expect(host.command("room:updateConfig", { botCount: 1 })).toEqual({ ok: true });
+    expect(host.command("room:updateConfig", { bots: ["intermediate"] })).toEqual({ ok: true });
     host.command("race:start");
     at(400_000);
     store.tick("ABCDEF");

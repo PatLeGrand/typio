@@ -694,7 +694,7 @@ describe("diffusions réseau de la course", () => {
     servers.push(server);
     const { token } = server.sessions.signIn("member");
     const socket = await open(server, token);
-    expectOk(await create(socket, { botCount: 1, timeLimitSeconds: 60 }));
+    expectOk(await create(socket, { bots: ["intermediate"], timeLimitSeconds: 60 }));
     const states: string[] = [];
     let results = 0;
     socket.on("race:state", (state) => states.push(state.status));

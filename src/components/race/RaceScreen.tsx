@@ -80,7 +80,7 @@ export function RaceScreen({
     const racer = racers.find((candidate) => candidate.id === id);
     return {
       id,
-      name: racer?.name ?? id,
+      name: racer?.level ? `${racer.name} (${labels.bot} · ${labels.botLevels[racer.level]})` : racer?.name ?? id,
       progress: racer?.progress ?? 0,
       isLocal: id === PLAYER_ID,
       hue: index === 0 ? LOCAL_HUE : BOT_HUES[(index - 1) % BOT_HUES.length],
@@ -145,7 +145,7 @@ export function RaceScreen({
                   className={`flex items-center gap-3 rounded-field px-2.5 py-2 text-sm font-bold ${racer.isPlayer ? "bg-accent-panel text-accent-text" : ""}`}
                 >
                   <span className="w-3 text-xs text-muted">{index + 1}</span>
-                  <span className="flex-1">{racer.name}</span>
+                  <span className="flex-1">{racer.name}{racer.level ? ` (${labels.bot} · ${labels.botLevels[racer.level]})` : ""}</span>
                   <span>{Math.round(racer.progress)}%</span>
                 </li>
               ))}

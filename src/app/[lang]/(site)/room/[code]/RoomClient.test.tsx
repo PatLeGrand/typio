@@ -95,7 +95,7 @@ describe("vue de l'hôte (CONF-12)", () => {
     current = makeUseRoom({ room: hostRoom });
     renderRoom();
     expect(screen.getByRole("button", { name: getDictionary("fr").room.race.start })).toBeInTheDocument();
-    expect(screen.queryByText(/ajouter/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: getDictionary("fr").raceSettings.bots.add })).toBeInTheDocument();
   });
 });
 

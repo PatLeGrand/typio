@@ -29,11 +29,10 @@ describe("RaceSettingsFields (editable)", () => {
     [copy.length.long, { length: "long" }],
     [copy.length.short, { length: "short" }],
     [copy.inputMode.blocking, { inputMode: "blocking" }],
-    [copy.botDifficulty.hard, { botDifficulty: "hard" }],
     [copy.timeLimit.minutes.replace("{minutes}", "3"), { timeLimitSeconds: 180 }],
   ])("choosing %s sends %j", (name, patch) => {
     const onChange = renderFields({ value: { timeLimitSeconds: 60 } });
-    fireEvent.click(screen.getByRole("radio", { name: name === copy.botDifficulty.hard ? name : new RegExp(`^${name}`) }));
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${name}`) }));
     expect(onChange).toHaveBeenCalledWith(patch);
   });
 
@@ -44,14 +43,15 @@ describe("RaceSettingsFields (editable)", () => {
   });
 
   it("steps the bot count and stays within 0..7", () => {
-    const onChange = renderFields({ value: { botCount: 2 } });
-    fireEvent.click(screen.getByRole("button", { name: copy.botCount.increase }));
-    fireEvent.click(screen.getByRole("button", { name: copy.botCount.decrease }));
-    expect(onChange.mock.calls).toEqual([[{ botCount: 3 }], [{ botCount: 1 }]]);
+    const onChange = renderFields({ value: { bots: ["intermediate", "intermediate"] } });
+    fireEvent.change(screen.getByRole("combobox", { name: copy.bots.level.replace("{number}", "2") }), { target: { value: "expert" } });
+    fireEvent.click(screen.getByRole("button", { name: copy.bots.add }));
+    fireEvent.click(screen.getByRole("button", { name: copy.bots.remove.replace("{number}", "1") }));
+    expect(onChange.mock.calls).toEqual([[{ bots: ["intermediate", "expert"] }], [{ bots: ["intermediate", "intermediate", "intermediate"] }], [{ bots: ["intermediate"] }]]);
 
-    const atMax = renderFields({ value: { botCount: 7 } });
-    fireEvent.click(screen.getAllByRole("button", { name: copy.botCount.increase })[1]);
-    expect(atMax).toHaveBeenCalledWith({ botCount: 7 });
+    const atMax = renderFields({ value: { bots: ["intermediate", "intermediate", "intermediate", "intermediate", "intermediate", "intermediate", "intermediate"] } });
+    fireEvent.click(screen.getAllByRole("button", { name: copy.bots.add })[1]);
+    expect(atMax).not.toHaveBeenCalled();
   });
 
   it("sends the typed excluded characters", () => {
@@ -104,13 +104,13 @@ describe("RaceSettingsFields (editable)", () => {
 
 describe("RaceSettingsFields (read only)", () => {
   it("shows the values but disables every control", () => {
-    const onChange = renderFields({ readOnly: true, value: { language: "en", botCount: 3, excludedCharacters: "xy" } });
+    const onChange = renderFields({ readOnly: true, value: { language: "en", bots: ["intermediate", "intermediate", "intermediate"], excludedCharacters: "xy" } });
 
     expect(screen.getByRole("radio", { name: copy.language.en })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("radiogroup", { name: copy.timeLimit.label })).toBeInTheDocument();
     for (const radio of screen.getAllByRole("radio")) expect(radio).toBeDisabled();
-    expect(screen.getByRole("button", { name: copy.botCount.increase })).toBeDisabled();
-    expect(screen.getByRole("button", { name: copy.botCount.decrease })).toBeDisabled();
+    expect(screen.getByRole("button", { name: copy.bots.add })).toBeDisabled();
+    expect(screen.getByRole("button", { name: copy.bots.remove.replace("{number}", "1") })).toBeDisabled();
     expect(screen.getByText("3", { selector: "[aria-live]" })).toBeInTheDocument();
     const input = screen.getByRole("textbox", { name: copy.excludedChars.label });
     expect(input).toHaveValue("xy");

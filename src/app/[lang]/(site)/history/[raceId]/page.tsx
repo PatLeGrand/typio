@@ -37,7 +37,7 @@ export default async function RaceHistoryPage({ params }: {
       <p><time dateTime={race.endedAt.toISOString()}>{date.format(race.endedAt)}</time></p>
       <p>{history.participants.replace("{count}", number.format(race.participantCount))}</p>
       <p className="text-sm text-muted">{history.membersOnly}</p>
-      <RaceResultsTable rows={race.rows} lang={locale} labels={raceScreen.results} extraLabels={room.race} highlightId={user.id} />
+      <RaceResultsTable rows={race.rows} lang={locale} labels={raceScreen.results} extraLabels={room.race} botLevels={raceScreen.botLevels} highlightId={user.id} />
       <Link className="underline" href={prefixWithLocale("/history", locale)}>{history.back}</Link>
     </main>
   );

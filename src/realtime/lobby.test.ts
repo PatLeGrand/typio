@@ -46,7 +46,7 @@ describe("explorateur (JOIN-02, SALLE-03)", () => {
     let index = 0;
     const store = createRoomStore({ generateCode: () => codes[index++] });
     visibilities.forEach((visibility, i) => {
-      store.create({ ...host, id: `host-${i}` }, { visibility, botCount: 1 }, "runner", 100 + i);
+      store.create({ ...host, id: `host-${i}` }, { visibility, bots: ["intermediate"] }, "runner", 100 + i);
     });
     return store;
   }

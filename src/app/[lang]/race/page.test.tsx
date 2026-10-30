@@ -16,7 +16,7 @@ describe("race route boundary", () => {
   it("renders the race screen for validated settings", async () => {
     const copy = getDictionary("en").raceScreen;
     render(await RacePage({ params: Promise.resolve({ lang: "en" }),
-      searchParams: Promise.resolve({ config: JSON.stringify({ ...DEFAULT_RACE_SETTINGS, botCount: 3, timeLimitSeconds: 60 }) }) }));
+      searchParams: Promise.resolve({ config: JSON.stringify({ ...DEFAULT_RACE_SETTINGS, bots: ["intermediate", "intermediate", "intermediate"], timeLimitSeconds: 60 }) }) }));
     expect(screen.getByRole("heading", { name: new RegExp(copy.headline.countdown) })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: copy.leaderboard })).toBeInTheDocument();
     expect(screen.getByTestId("visualizer")).toBeInTheDocument();

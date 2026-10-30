@@ -1,9 +1,11 @@
+import type { BotLevel } from "@/realtime/protocol";
 import type { Dictionary } from "@/i18n/dictionaries";
 
 export type RaceResultsRow = {
   id: string;
   name: string;
   isBot?: boolean;
+  level?: BotLevel;
   personalBest?: boolean;
   rank: number;
   wpm: number;
@@ -20,9 +22,10 @@ type Props = {
   labels: Dictionary["raceScreen"]["results"];
   extraLabels: Pick<Dictionary["room"]["race"], "grossWpm" | "errors" | "bot">;
   highlightId: string;
+  botLevels: Dictionary["raceScreen"]["botLevels"];
 };
 
-export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId }: Props) {
+export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId, botLevels }: Props) {
   const columns = labels.columns;
   const number = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
   const percent = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 1 });
@@ -37,7 +40,7 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId 
         <tbody>{rows.map((row) => (
           <tr key={row.id} className={`border-t border-border ${row.id === highlightId ? "bg-accent-panel font-bold" : ""}`}>
             <td className="px-3 py-2">{number.format(row.rank)}</td>
-            <th scope="row" className="px-3 py-2">{row.name}{row.isBot ? ` (${extraLabels.bot})` : ""}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</th>
+            <th scope="row" className="px-3 py-2">{row.name}{row.isBot ? ` (${extraLabels.bot}${row.level ? ` · ${botLevels[row.level]}` : ""})` : ""}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</th>
             <td className="px-3 py-2">{number.format(row.wpm)}</td>
             <td className="px-3 py-2">{number.format(row.grossWpm)}</td>
             <td className="px-3 py-2">{percent.format(row.accuracy / 100)}</td>

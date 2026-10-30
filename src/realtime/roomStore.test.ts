@@ -21,14 +21,16 @@ describe("roomStore bot capacity", () => {
       ).ok).toBe(true);
     }
 
-    expect(store.updateConfig(host.id, code, { botCount: 3 })).toEqual({ ok: false, error: "ROOM_FULL" });
-    expect(store.get(code)?.config.botCount).toBe(0);
-    expect(store.updateConfig(host.id, code, { botCount: 2 }).ok).toBe(true);
+    expect(store.updateConfig(host.id, code, { bots: ["intermediate", "intermediate", "intermediate"] })).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.get(code)?.config.bots).toHaveLength(0);
+    expect(store.updateConfig(host.id, code, { bots: ["intermediate", "intermediate"] }).ok).toBe(true);
+    expect(store.updateConfig(host.id, code, { bots: ["expert"] }).ok).toBe(true);
+    expect(store.get(code)?.config.bots).toEqual(["expert"]);
   });
 
   it("reserves runner places for bots while spectators can still join", () => {
     const store = createRoomStore();
-    const createRes = store.create(host, { botCount: 5 }, "runner", 100);
+    const createRes = store.create(host, { bots: ["intermediate", "intermediate", "intermediate", "intermediate", "intermediate"] }, "runner", 100);
     if (!createRes.ok) throw new Error("failed to create");
     const code = createRes.state.code;
 
@@ -77,7 +79,7 @@ describe("roomStore", () => {
   });
 
   it("SALLE-01: a spectator host counts toward spectators, not runners or bots", () => {
-    const res = store.create(member, { botCount: 5 }, "spectator", 100);
+    const res = store.create(member, { bots: ["intermediate", "intermediate", "intermediate", "intermediate", "intermediate"] }, "spectator", 100);
     if (!res.ok) throw new Error("failed to create");
     const { code } = res.state;
     expect(res.state.hostId).toBe(member.id);
@@ -90,8 +92,8 @@ describe("roomStore", () => {
       expect(store.join({ id: `r${i}`, displayName: `R${i}`, kind: "guest" }, code, "runner", 200).ok).toBe(true);
     }
     expect(store.join(guest, code, "runner", 200)).toEqual({ ok: false, error: "ROOM_FULL" });
-    expect(store.updateConfig(member.id, code, { botCount: 6 })).toEqual({ ok: false, error: "ROOM_FULL" });
-    expect(store.updateConfig(member.id, code, { botCount: 5 }).ok).toBe(true);
+    expect(store.updateConfig(member.id, code, { bots: ["intermediate", "intermediate", "intermediate", "intermediate", "intermediate", "intermediate"] })).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.updateConfig(member.id, code, { bots: ["intermediate", "intermediate", "intermediate", "intermediate", "intermediate"] }).ok).toBe(true);
 
     for (let i = 0; i < MAX_SPECTATORS - 1; i++) {
       expect(store.join({ id: `s${i}`, displayName: `S${i}`, kind: "guest" }, code, "spectator", 200).ok).toBe(true);
@@ -400,7 +402,7 @@ describe("roomStore visibilité et capacité (SALLE-03, SALLE-05)", () => {
 
   it("applique la capacité configurée aux coureurs, bots compris, pas aux spectateurs", () => {
     const store = createRoomStore();
-    const res = store.create(host, { capacity: 3, botCount: 1 }, "runner", 100);
+    const res = store.create(host, { capacity: 3, bots: ["intermediate"] }, "runner", 100);
     if (!res.ok) throw new Error("failed to create");
     const { code } = res.state;
     expect(store.join(other, code, "runner", 200).ok).toBe(true);
@@ -411,15 +413,15 @@ describe("roomStore visibilité et capacité (SALLE-03, SALLE-05)", () => {
 
   it("refuse une capacité sous les coureurs et bots présents, ou des bots au-delà", () => {
     const store = createRoomStore();
-    const res = store.create(host, { botCount: 2 }, "runner", 100);
+    const res = store.create(host, { bots: ["intermediate", "intermediate"] }, "runner", 100);
     if (!res.ok) throw new Error("failed to create");
     const { code } = res.state;
     store.join(other, code, "runner", 200);
     expect(store.updateConfig(host.id, code, { capacity: 3 })).toEqual({ ok: false, error: "ROOM_FULL" });
-    expect(store.updateConfig(host.id, code, { botCount: 4, capacity: 5 })).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.updateConfig(host.id, code, { bots: ["intermediate", "intermediate", "intermediate", "intermediate"], capacity: 5 })).toEqual({ ok: false, error: "ROOM_FULL" });
     expect(store.updateConfig(host.id, code, { capacity: 4 }).ok).toBe(true);
-    expect(store.updateConfig(host.id, code, { botCount: 3 })).toEqual({ ok: false, error: "ROOM_FULL" });
-    expect(store.create({ ...host, id: "h2" }, { capacity: 2, botCount: 2 }, "runner", 300))
+    expect(store.updateConfig(host.id, code, { bots: ["intermediate", "intermediate", "intermediate"] })).toEqual({ ok: false, error: "ROOM_FULL" });
+    expect(store.create({ ...host, id: "h2" }, { capacity: 2, bots: ["intermediate", "intermediate"] }, "runner", 300))
       .toEqual({ ok: false, error: "ROOM_FULL" });
   });
 });

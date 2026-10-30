@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 // Réglages par défaut de la page de paramètres, côté salle : les neuf clés du protocole.
 const EXPECTED_CONFIG = {
   ...DEFAULT_ROOM_CONFIG,
-  botCount: 2,
+  bots: ["intermediate", "intermediate"],
 };
 
 function renderMember(locale: "fr" | "en") {
