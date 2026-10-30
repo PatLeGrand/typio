@@ -30,7 +30,7 @@ type PlayClientProps = {
  */
 export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps) {
   const router = useRouter();
-  const { connection, room, error, lobby, leave, clearError, create, quickJoin, subscribeLobby, unsubscribeLobby } =
+  const { connection, room, error, kicked, lobby, leave, clearError, create, quickJoin, subscribeLobby, unsubscribeLobby } =
     useRoom(userId);
   useLoginRedirect(connection, locale);
   const [busy, setBusy] = useState(false);
@@ -108,6 +108,7 @@ export function PlayClient({ locale, userId, isGuest, labels }: PlayClientProps)
           onLeave={() => void handleLeave()}
         />
       ) : null}
+      {kicked ? <RoomError code="KICKED" messages={labels.errors} /> : null}
       {error && !(noRoom && error === "NO_ROOM_AVAILABLE") ? <RoomError code={error} messages={labels.errors} /> : null}
       <QuickJoinPanel
         labels={labels.play.quick}

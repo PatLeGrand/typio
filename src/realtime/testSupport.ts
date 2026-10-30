@@ -106,13 +106,14 @@ export async function startTestServer(options: { graceMs?: number; revalidateMs?
       releaseGate();
       gate.current = null;
     },
-    client(token: string | null, origin = TEST_ORIGIN): TestClient {
+    client(token: string | null, origin = TEST_ORIGIN, ip?: string): TestClient {
       const socket: TestClient = connect(url, {
         transports: ["websocket"],
         forceNew: true,
         reconnection: false,
         extraHeaders: {
           origin,
+          ...(ip ? { "x-forwarded-for": ip } : {}),
           ...(token ? { cookie: `typio_session=${token}` } : {}),
         },
       });

@@ -3,6 +3,7 @@ import { Button } from "@/components/Button";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { RoomConfigPatch, RoomState } from "@/realtime/protocol";
 import type { ClientRoomErrorCode } from "@/realtime/roomConnection";
+import { InvitePanel } from "./InvitePanel";
 import { ParticipantList } from "./ParticipantList";
 import { RoomCodeCard } from "./RoomCodeCard";
 import { RoomConfigPanel } from "./RoomConfigPanel";
@@ -48,7 +49,8 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
       {error ? <RoomError code={error} messages={labels.errors} /> : null}
       <RoomCodeCard code={room.code} labels={labels.code} />
       {room.status === "waiting" ? <div className="flex flex-col gap-6">
-        <ParticipantList room={room} currentUserId={userId} labels={labels.participants} />
+        <ParticipantList room={room} currentUserId={userId} labels={labels.participants} onKick={room.hostId === userId ? session.kick : undefined} />
+        {room.hostId === userId ? <InvitePanel invites={session.invites} lang={lang} labels={labels.invites} errors={labels.errors} onCreate={session.createInvite} /> : null}
         <RoomConfigPanel
           config={room.config}
           editable={room.hostId === userId}

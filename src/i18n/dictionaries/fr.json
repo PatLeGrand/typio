@@ -630,7 +630,11 @@
       "you": "Toi",
       "runner": "Coureur",
       "spectator": "Spectateur",
-      "disconnected": "Déconnecté"
+      "disconnected": "Déconnecté",
+      "kick": "Expulser",
+      "kickConfirm": "Expulser {name} ? Cette personne ne pourra plus revenir.",
+      "kickYes": "Oui, expulser",
+      "kickCancel": "Annuler"
     },
     "config": {
       "title": "Configuration",
@@ -713,7 +717,33 @@
       "OFFLINE": "Tu n'es pas connecté au serveur de jeu. Réessaie dans un instant.",
       "TIMEOUT": "Le serveur de jeu ne répond pas. Réessaie dans un instant.",
       "INVITE_REQUIRED": "Cette salle est privée : il faut un lien d'invitation pour y entrer.",
-      "NO_ROOM_AVAILABLE": "Aucune salle n'est disponible pour le moment."
+      "NO_ROOM_AVAILABLE": "Aucune salle n'est disponible pour le moment.",
+      "INVITE_INVALID": "Ce lien d'invitation n'est pas valide ou n'est plus utilisable.",
+      "INVITE_LIMIT": "Tu as atteint le nombre maximal de liens d'invitation pour cette salle.",
+      "KICKED": "L'hôte t'a expulsé de cette salle."
+    },
+    "invites": {
+      "title": "Invitations",
+      "intro": "Un lien par personne invitée. Chaque lien ne marche que pour la première personne qui l'utilise.",
+      "create": "Créer un lien",
+      "empty": "Aucun lien pour le moment.",
+      "item": "Lien {number}",
+      "created": "Créé le {date}",
+      "unused": "Non utilisé",
+      "used": "Utilisé par {name}",
+      "revoked": "Révoqué",
+      "newLink": "Nouveau lien, à copier maintenant : il ne sera plus affiché ensuite.",
+      "copy": "Copier",
+      "copied": "Lien copié",
+      "copyFailed": "Copie impossible : sélectionne le lien et copie-le avec Ctrl+C."
+    },
+    "invite": {
+      "metaTitle": "Invitation",
+      "title": "Invitation à une salle",
+      "joining": "Connexion à la salle…",
+      "signInRequired": "Connecte-toi ou joue en invité pour utiliser ce lien d'invitation.",
+      "signIn": "Se connecter",
+      "guest": "Jouer en invité"
     }
   }
 }

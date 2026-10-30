@@ -24,6 +24,9 @@ export const DEFAULT_CAPACITY = 20;
 export const ROOM_VISIBILITIES = ["public", "code", "private"] as const;
 export type RoomVisibility = (typeof ROOM_VISIBILITIES)[number];
 
+/** Liens d'invitation par salle, révoqués compris (SALLE-04) : borne la mémoire du service. */
+export const MAX_INVITES_PER_ROOM = 50;
+
 /** Salles publiques envoyées à l'explorateur au plus (JOIN-02). */
 export const LOBBY_MAX_ROOMS = 100;
 
@@ -113,6 +116,19 @@ export interface RoomState {
   participants: Participant[];
 }
 
+/**
+ * Un lien d'invitation tel que l'hôte le voit (SALLE-04). Jamais dans `RoomState` : seul l'hôte
+ * le reçoit, par `room:invites`. Le jeton en clair n'y figure pas, seulement un identifiant interne.
+ */
+export interface InviteInfo {
+  id: string;
+  /** Horodatage serveur (ms). */
+  createdAt: number;
+  status: "unused" | "used" | "revoked";
+  /** Pseudonyme d'affichage de la personne liée au lien, une fois utilisé. */
+  usedBy: string | null;
+}
+
 /** Une salle publique de l'explorateur (JOIN-02). La complexité (CONF-05) n'existe pas encore. */
 export interface LobbyRoom {
   code: string;
@@ -137,6 +153,9 @@ export const ROOM_ERROR_CODES = [
   "ROOM_NOT_FOUND",
   "ROOM_FULL",
   "INVITE_REQUIRED",
+  "INVITE_INVALID",
+  "INVITE_LIMIT",
+  "KICKED",
   "NO_ROOM_AVAILABLE",
   "ALREADY_IN_ROOM",
   "NOT_IN_ROOM",
@@ -171,6 +190,12 @@ export interface ClientToServerEvents {
   "room:create": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
   /** Rejoindre par code (SALLE-02, JOIN-01) comme coureur ou spectateur (SALLE-01, SALLE-05). */
   "room:join": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
+  /** Hôte seulement (SALLE-04) : crée un lien ; le jeton en clair n'est renvoyé qu'ici, une seule fois. */
+  "room:createInvite": (payload: unknown, ack: (res: Ack<{ id: string; token: string }>) => void) => void;
+  /** Entrer avec un lien d'invitation (SALLE-04), quelle que soit la visibilité de la salle. */
+  "room:joinInvite": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
+  /** Hôte seulement (SALLE-07) : expulse et bannit un participant ou un spectateur. */
+  "room:kick": (payload: unknown, ack: (res: Ack) => void) => void;
   /** Hôte seulement, en `waiting` seulement (CONF-12). */
   /** Partie rapide (JOIN-03) : entre en coureur dans la meilleure salle publique. */
   "room:quickJoin": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
@@ -194,6 +219,10 @@ export interface ServerToClientEvents {
   "race:self": (self: { typed: string; keystrokes: Keystrokes }) => void;
   /** État complet, envoyé à toute la salle après chaque changement. */
   "room:state": (state: RoomState) => void;
+  /** Liens d'invitation, à l'hôte seulement (SALLE-04, SALLE-08) ; jamais diffusés à la salle. */
+  "room:invites": (invites: InviteInfo[]) => void;
+  /** La personne vient d'être expulsée de sa salle (SALLE-07). */
+  "room:kicked": () => void;
   /** Salles publiques (JOIN-02), regroupées : au plus une diffusion toutes les ~500 ms (PERF-02). */
   "lobby:rooms": (rooms: LobbyRoom[]) => void;
   /** Erreur non sollicitée (salle fermée, retrait…), hors accusé de réception. */
@@ -205,6 +234,8 @@ export interface SocketData {
   user: { id: string; kind: "member" | "guest"; displayName: string };
   /** Code de la salle où se trouve l'utilisateur, s'il y en a une. */
   roomCode: string | null;
+  /** Clé de l'IP du client (`ipRateLimitKey`), calculée à la connexion (SALLE-04). */
+  ip: string;
 }
 
 // ── Validation des charges utiles reçues du client (TECH-07) ────────────────
@@ -324,6 +355,29 @@ export function parseJoinPayload(input: unknown): JoinPayload | "INVALID_PAYLOAD
   const normalized = normalizeRoomCode(result.data.code);
   if (!isRoomCode(normalized)) return "INVALID_CODE";
   return { code: normalized, role: result.data.role };
+}
+
+/** Longueur d'un jeton d'invitation : 32 octets en base64url sans bourrage (SALLE-04). */
+export const INVITE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+
+const inviteTokenSchema = z.string().regex(INVITE_TOKEN_PATTERN);
+
+/** `{ token, role }` de `room:joinInvite` (SALLE-04) ; clés inconnues refusées. */
+export const joinInvitePayloadSchema = plainObject.pipe(
+  z.strictObject({ token: inviteTokenSchema, role: participantRoleSchema }),
+);
+
+export function parseJoinInvitePayload(input: unknown): { token: string; role: ParticipantRole } | null {
+  const result = joinInvitePayloadSchema.safeParse(input);
+  return result.success ? result.data : null;
+}
+
+/** `{ userId }` de `room:kick` (SALLE-07) ; identifiant d'utilisateur (UUID). */
+export const kickPayloadSchema = plainObject.pipe(z.strictObject({ userId: z.uuid() }));
+
+export function parseKickPayload(input: unknown): { userId: string } | null {
+  const result = kickPayloadSchema.safeParse(input);
+  return result.success ? result.data : null;
 }
 
 /** Commandes sans paramètres : objet vide strict, sans identité fournie par le client. */
