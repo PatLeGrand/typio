@@ -30,6 +30,15 @@ describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01
     expect(deserializeRaceSettings(JSON.stringify({ ...old, extra: 1 }))).toBeNull();
   });
 
+  it("accepts an old solo config without the CONF-05/CONF-06 fields, filling the defaults", () => {
+    const { complexity, punctuation, numbers, uppercase, ...old } = DEFAULT_RACE_SETTINGS;
+    void complexity; void punctuation; void numbers; void uppercase;
+    expect(deserializeRaceSettings(JSON.stringify(old))).toMatchObject({
+      complexity: "medium", punctuation: true, numbers: false, uppercase: true,
+    });
+    expect(parseRaceSettings({ ...old, complexity: "extreme" })).toBeNull();
+  });
+
   it("refuses an old URL whose duration is not in the list", () => {
     const config = JSON.stringify({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds: 90 });
     expect(deserializeRaceSettings(config)).toBeNull();

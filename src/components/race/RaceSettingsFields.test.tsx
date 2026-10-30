@@ -33,7 +33,7 @@ describe("RaceSettingsFields (editable)", () => {
     [copy.timeLimit.minutes.replace("{minutes}", "3"), { timeLimitSeconds: 180 }],
   ])("choosing %s sends %j", (name, patch) => {
     const onChange = renderFields({ value: { timeLimitSeconds: 60 } });
-    fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${name}`) }));
+    fireEvent.click(screen.getByRole("radio", { name: name === copy.botDifficulty.hard ? name : new RegExp(`^${name}`) }));
     expect(onChange).toHaveBeenCalledWith(patch);
   });
 

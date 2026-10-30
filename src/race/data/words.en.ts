@@ -23,3 +23,23 @@ export const WORDS_EN: readonly string[] = [
   "strong", "bright", "dark", "red", "blue", "green", "yellow", "white", "black", "quick",
   "quiet", "loud", "warm", "cold", "keyboard", "finger", "screen", "race", "speed", "letter",
 ];
+
+/**
+ * Less frequent or longer English words (6 letters or more), reserved for the "hard"
+ * complexity in words mode (CONF-05). Vocabulary suited to 12-17 year olds.
+ */
+export const RARE_WORDS_EN: readonly string[] = [
+  "abandon", "adventurer", "algorithm", "ambitious", "astronaut", "atmosphere", "authentic",
+  "backpack", "boundary", "brilliant", "calculator", "challenge", "champion", "chemistry",
+  "collection", "community", "concentrate", "confidence", "consequence", "courageous",
+  "creativity", "curiosity", "determined", "dictionary", "difficulty", "discipline",
+  "distraction", "electricity", "endurance", "enthusiasm", "equilibrium", "exceptional",
+  "experience", "explorer", "fantastic", "fascinating", "generosity", "gymnastics",
+  "horizon", "hypothesis", "imaginary", "impatience", "incredible", "ingenious",
+  "inventor", "laboratory", "legendary", "magnificent", "mathematics", "memory",
+  "mysterious", "navigator", "observation", "orchestra", "partnership", "patience",
+  "perseverance", "photograph", "planetary", "precision", "programming", "progress",
+  "provisional", "responsible", "reward", "scientific", "silhouette", "solidarity",
+  "souvenir", "spectacle", "strategy", "surprising", "technology", "tempest",
+  "tournament", "traveller", "vocabulary", "volunteer",
+];

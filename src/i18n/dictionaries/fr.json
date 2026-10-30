@@ -408,6 +408,26 @@
       "fr": "Français",
       "en": "Anglais"
     },
+    "complexity": {
+      "label": "Complexité du texte",
+      "easy": "Facile",
+      "medium": "Moyenne",
+      "hard": "Difficile",
+      "descriptions": {
+        "easy": "Mode mots : 5 lettres au plus. Phrases simples.",
+        "medium": "Mots courants, phrases de complexité intermédiaire.",
+        "hard": "Mode mots : 6 lettres ou plus, mots rares possibles. Phrases longues ou ponctuation variée."
+      }
+    },
+    "punctuation": {
+      "label": "Ponctuation"
+    },
+    "numbers": {
+      "label": "Nombres"
+    },
+    "uppercase": {
+      "label": "Majuscules"
+    },
     "accents": {
       "label": "Accents",
       "include": "Inclus",
@@ -676,6 +696,13 @@
         "description": "Choisis une salle ouverte et rejoins-la directement.",
         "loading": "Chargement des salles…",
         "empty": "Aucune salle publique pour le moment.",
+        "filterComplexity": "Complexité du texte",
+        "allComplexities": "Toutes les complexités",
+        "complexities": {
+          "easy": "Facile",
+          "medium": "Moyenne",
+          "hard": "Difficile"
+        },
         "filterLanguage": "Langue du texte",
         "allLanguages": "Toutes les langues",
         "runners": "{count}/{max} coureurs",

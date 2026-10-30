@@ -408,6 +408,26 @@
       "fr": "French",
       "en": "English"
     },
+    "complexity": {
+      "label": "Text complexity",
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard",
+      "descriptions": {
+        "easy": "Word mode: at most 5 letters. Simple sentences.",
+        "medium": "Common words, sentences of intermediate complexity.",
+        "hard": "Word mode: 6 letters or more, possibly rare words. Long sentences or varied punctuation."
+      }
+    },
+    "punctuation": {
+      "label": "Punctuation"
+    },
+    "numbers": {
+      "label": "Numbers"
+    },
+    "uppercase": {
+      "label": "Uppercase"
+    },
     "accents": {
       "label": "Accents",
       "include": "Included",
@@ -676,6 +696,13 @@
         "description": "Pick an open room and join it directly.",
         "loading": "Loading rooms…",
         "empty": "No public room right now.",
+        "filterComplexity": "Text complexity",
+        "allComplexities": "All complexities",
+        "complexities": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        },
         "filterLanguage": "Text language",
         "allLanguages": "All languages",
         "runners": "{count}/{max} runners",

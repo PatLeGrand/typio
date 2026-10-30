@@ -41,6 +41,10 @@ export type TextMode = (typeof TEXT_MODES)[number];
 export const TEXT_LANGUAGES = ["fr", "en"] as const;
 export type TextLanguage = (typeof TEXT_LANGUAGES)[number];
 
+/** Complexité du texte (CONF-05) : critères mesurables dans `src/race/textGenerator.ts`. */
+export const TEXT_COMPLEXITIES = ["easy", "medium", "hard"] as const;
+export type TextComplexity = (typeof TEXT_COMPLEXITIES)[number];
+
 export const TEXT_LENGTHS = ["short", "medium", "long"] as const;
 export type TextLength = (typeof TEXT_LENGTHS)[number];
 
@@ -64,6 +68,10 @@ export interface RoomConfig {
   length: TextLength;
   timeLimitSeconds: TimeLimitSeconds | null;
   accents: boolean;
+  complexity: TextComplexity;
+  punctuation: boolean;
+  numbers: boolean;
+  uppercase: boolean;
   excludedCharacters: string;
   inputMode: InputMode;
   botCount: number;
@@ -80,6 +88,10 @@ export const DEFAULT_ROOM_CONFIG: RoomConfig = {
   length: "medium",
   timeLimitSeconds: null,
   accents: true,
+  complexity: "medium",
+  punctuation: true,
+  numbers: false,
+  uppercase: true,
   excludedCharacters: "",
   inputMode: "free",
   botCount: 0,
@@ -129,13 +141,14 @@ export interface InviteInfo {
   usedBy: string | null;
 }
 
-/** Une salle publique de l'explorateur (JOIN-02). La complexité (CONF-05) n'existe pas encore. */
+/** Une salle publique de l'explorateur (JOIN-02). Elle porte la complexité du texte (CONF-05). */
 export interface LobbyRoom {
   code: string;
   /** Coureurs humains et bots (SALLE-05). */
   runners: number;
   capacity: number;
   language: TextLanguage;
+  complexity: TextComplexity;
   /** Pseudonyme d'affichage de l'hôte. */
   host: string;
   status: Exclude<RoomStatus, "closed">;
@@ -286,6 +299,10 @@ export const roomConfigFields = {
   length: z.enum(TEXT_LENGTHS),
   timeLimitSeconds: z.literal(TIME_LIMITS_SECONDS).nullable(),
   accents: z.boolean(),
+  complexity: z.enum(TEXT_COMPLEXITIES),
+  punctuation: z.boolean(),
+  numbers: z.boolean(),
+  uppercase: z.boolean(),
   excludedCharacters: excludedCharactersSchema,
   inputMode: z.enum(INPUT_MODES),
   botCount: z
@@ -310,6 +327,10 @@ export const roomConfigPatchSchema = plainObject.pipe(
     length: roomConfigFields.length.exactOptional(),
     timeLimitSeconds: roomConfigFields.timeLimitSeconds.exactOptional(),
     accents: roomConfigFields.accents.exactOptional(),
+    complexity: roomConfigFields.complexity.exactOptional(),
+    punctuation: roomConfigFields.punctuation.exactOptional(),
+    numbers: roomConfigFields.numbers.exactOptional(),
+    uppercase: roomConfigFields.uppercase.exactOptional(),
     excludedCharacters: roomConfigFields.excludedCharacters.exactOptional(),
     inputMode: roomConfigFields.inputMode.exactOptional(),
     botCount: roomConfigFields.botCount.exactOptional(),

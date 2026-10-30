@@ -12,6 +12,10 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze({
   textMode: "sentences",
   language: "fr",
   accents: true,
+  complexity: "medium",
+  punctuation: true,
+  numbers: false,
+  uppercase: true,
   length: "medium",
   excludedCharacters: "",
   timeLimitSeconds: null,
@@ -23,11 +27,15 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze({
   abilities: false,
 });
 
-/** `visibility` et `capacity` sont facultatifs à la lecture : d'anciens liens `/race?config=` les ignorent. */
+/** Les champs ajoutés après coup sont facultatifs à la lecture : d'anciens liens `/race?config=` les ignorent. */
 export const raceSettingsSchema = z.strictObject({
   ...roomConfigFields,
   visibility: roomConfigFields.visibility.default(DEFAULT_RACE_SETTINGS.visibility),
   capacity: roomConfigFields.capacity.default(DEFAULT_CAPACITY),
+  complexity: roomConfigFields.complexity.default(DEFAULT_RACE_SETTINGS.complexity),
+  punctuation: roomConfigFields.punctuation.default(DEFAULT_RACE_SETTINGS.punctuation),
+  numbers: roomConfigFields.numbers.default(DEFAULT_RACE_SETTINGS.numbers),
+  uppercase: roomConfigFields.uppercase.default(DEFAULT_RACE_SETTINGS.uppercase),
   abilities: z.boolean(),
 });
 

@@ -24,6 +24,7 @@ export function toLobbyEntry(state: RoomState, createdAt: number): LobbyEntry | 
       runners,
       capacity: state.config.capacity,
       language: state.config.language,
+      complexity: state.config.complexity,
       host: host?.displayName ?? "",
       status: state.status,
       // SALLE-09 : jamais une course en cours ; SALLE-05 : pas une salle pleine.

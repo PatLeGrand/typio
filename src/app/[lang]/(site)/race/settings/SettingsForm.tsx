@@ -147,6 +147,16 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
                     <span className="font-semibold">{settings.accents ? dict.accents.include : dict.accents.exclude}</span>
                   </li>
                   <li className="flex justify-between border-b border-border pb-3">
+                    <span className="text-muted">{dict.complexity.label}</span>
+                    <span className="font-semibold">{dict.complexity[settings.complexity]}</span>
+                  </li>
+                  {(["punctuation", "numbers", "uppercase"] as const).map((option) => (
+                    <li key={option} className="flex justify-between border-b border-border pb-3">
+                      <span className="text-muted">{dict[option].label}</span>
+                      <span className="font-semibold">{settings[option] ? dict.accents.include : dict.accents.exclude}</span>
+                    </li>
+                  ))}
+                  <li className="flex justify-between border-b border-border pb-3">
                     <span className="text-muted">{dict.length.label}</span>
                     <span className="font-semibold">{settings.length === "short" ? dict.length.short : settings.length === "medium" ? dict.length.medium : dict.length.long}</span>
                   </li>

@@ -23,7 +23,7 @@ type RoomConfigPanelProps = {
 };
 
 /**
- * Configuration de la salle (CONF-01 à CONF-04, CONF-06 à CONF-08, CONF-10, BOT-01) : les mêmes sections que la page de paramètres, modifiables
+ * Configuration de la salle (CONF-01 à CONF-08, CONF-10, BOT-01) : les mêmes sections que la page de paramètres, modifiables
  * pour l'hôte, en lecture seule pour les autres. L'état affiché est celui de la salle : un patch refusé
  * ne change rien. Seul le champ des caractères exclus garde un brouillon, envoyé à la sortie du champ
  * ou après une pause de frappe.

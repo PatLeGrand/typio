@@ -57,6 +57,24 @@ describe("parseRoomConfigPatch", () => {
     });
   });
 
+  it("accepts the complexity and text options (CONF-05, CONF-06)", () => {
+    const patch = { complexity: "hard", punctuation: false, numbers: true, uppercase: false };
+    expect(parseRoomConfigPatch(patch)).toEqual(patch);
+    for (const complexity of ["easy", "medium", "hard"]) {
+      expect(parseRoomConfigPatch({ complexity })).toEqual({ complexity });
+    }
+  });
+
+  it.each([
+    { complexity: "expert" },
+    { complexity: undefined },
+    { punctuation: "yes" },
+    { numbers: 1 },
+    { uppercase: null },
+  ])("refuses invalid complexity or text options: %o", (patch) => {
+    expect(parseRoomConfigPatch(patch)).toBeNull();
+  });
+
   it("refuses unknown keys, out-of-list values and non-objects", () => {
     expect(parseRoomConfigPatch({ hostId: "x" })).toBeNull();
     expect(parseRoomConfigPatch({ language: "de" })).toBeNull();
