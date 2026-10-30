@@ -46,7 +46,7 @@ export default async function HistoryPage({ params, searchParams }: {
           <tbody>{items.map((row) => <tr key={row.raceId} className="border-t border-border">
             <th scope="row" className="whitespace-nowrap px-3 py-2"><time dateTime={row.endedAt.toISOString()}>{date.format(row.endedAt)}</time></th>
             <td className="whitespace-nowrap px-3 py-2">{number.format(row.rank)} / {number.format(row.participantCount)}</td>
-            <td className="px-3 py-2">{number.format(row.wpm)}</td>
+            <td className="px-3 py-2">{number.format(row.wpm)}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{raceScreen.results.personalBest}</span>}</td>
             <td className="px-3 py-2">{percent.format(row.accuracy / 100)}</td>
             <td className="px-3 py-2">{statuses[row.status]}</td>
             <td className="px-3 py-2"><Link className="underline" href={`${href}/${row.raceId}`}>{history.view}</Link></td>

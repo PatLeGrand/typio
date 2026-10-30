@@ -9,6 +9,8 @@ import { prefixWithLocale } from "@/i18n/paths";
 import { requireLocale } from "@/i18n/requireLocale";
 import { ButtonLink } from "@/components/ButtonLink";
 import { isKeyboardLayout } from "@/profile/profileSettings";
+import { ProfileStats } from "@/components/profile/ProfileStats";
+import { createDrizzleProfileStatsRepository } from "@/race/drizzleProfileStatsRepository";
 import { ProfileForm } from "./ProfileForm";
 
 export default async function ProfilePage({ params }: { params: Promise<{ lang: string }> }) {
@@ -33,6 +35,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
 
   const dictionary = getDictionary(locale);
   const { profile } = dictionary;
+  const repository = createDrizzleProfileStatsRepository(getDb());
+  const statistics = currentUser.kind === "member"
+    ? await Promise.all([repository.getUserStats(currentUser.id), repository.getWpmHistory(currentUser.id)])
+    : null;
 
   return (
     <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 md:px-8 md:py-12">
@@ -56,6 +62,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
             </ButtonLink>
           </div>
         </div>
+
+        {statistics && <ProfileStats stats={statistics[0]} history={statistics[1]} locale={locale} labels={profile.stats} />}
 
         <ProfileForm 
           user={currentUser} 

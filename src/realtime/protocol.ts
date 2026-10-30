@@ -154,6 +154,7 @@ export interface ClientToServerEvents {
 
 /** Serveur → client. */
 export interface ServerToClientEvents {
+  "race:records": (records: { userIds: string[] }) => void;
   "race:state": (state: ReturnType<typeof raceSnapshot>) => void;
   "race:results": (results: NonNullable<ReturnType<typeof raceResults>>) => void;
   "race:self": (self: { typed: string; keystrokes: Keystrokes }) => void;

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   index,
   integer,
@@ -128,6 +129,7 @@ export const raceResults = pgTable("race_results", {
   rank: smallint("rank").notNull(),
   status: text("status").$type<"finished" | "unfinished" | "abandoned">().notNull(),
   wpm: real("wpm").notNull(),
+  personalBest: boolean("personal_best").notNull().default(false),
   grossWpm: real("gross_wpm").notNull(),
   accuracy: real("accuracy").notNull(),
   errors: integer("errors").notNull(),

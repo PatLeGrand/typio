@@ -61,7 +61,7 @@ describe("persistance RES-05", () => {
     vi.useFakeTimers();
     transport.broadcasts.length = 0;
     let time = 1_000;
-    const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => {});
+    const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => ["member"]);
     const server = createRealtimeServer({
       sessions: createFakeSessions().repository, allowedOrigins: [],
       now: () => new Date(time), generateSeed: () => 42, raceRepository: { recordRace },
@@ -84,6 +84,12 @@ describe("persistance RES-05", () => {
       await Promise.resolve();
       expect(recordRace).toHaveBeenCalledTimes(1);
       expect(recordRace.mock.calls[0][1].map((row) => row.status)).toEqual(["finished", "finished"]);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(transport.broadcasts.filter((b) => b.event === "race:records")).toEqual([
+        { event: "race:records", payload: { userIds: ["member"] } },
+      ]);
+      expect(transport.broadcasts.findIndex((b) => b.event === "race:records"))
+        .toBeGreaterThan(transport.broadcasts.findIndex((b) => b.event === "race:results"));
       expect(host.command("room:restart").ok).toBe(true);
       time += 1_000;
       expect(host.command("race:start").ok).toBe(true);
@@ -107,7 +113,7 @@ describe("persistance RES-05", () => {
     vi.useFakeTimers();
     transport.broadcasts.length = 0;
     let time = 1_000;
-    const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => {});
+    const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => []);
     const server = createRealtimeServer({
       sessions: createFakeSessions().repository, allowedOrigins: [], graceMs: 10,
       now: () => new Date(time), generateSeed: () => 42, raceRepository: { recordRace },
@@ -153,6 +159,7 @@ describe("persistance RES-05", () => {
     let time = 1_000;
     const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => {
       if (fails) throw new Error("database unavailable");
+      return [];
     });
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const server = createRealtimeServer({

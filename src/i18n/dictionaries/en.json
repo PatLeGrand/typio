@@ -86,6 +86,8 @@
       "back": "Change settings"
     },
     "results": {
+      "personalBest": "Personal best",
+      "newPersonalBest": "New personal best!",
       "podium": "Podium",
       "tableTitle": "Race results",
       "columns": {
@@ -489,6 +491,20 @@
     }
   },
   "profile": {
+    "stats": {
+      "title": "Personal statistics",
+      "empty": "No races recorded yet.",
+      "bestWpm": "Best WPM",
+      "averageWpm": "Average WPM",
+      "averageAccuracy": "Average accuracy",
+      "raceCount": "Races",
+      "wins": "Wins",
+      "noValue": "—",
+      "chartTitle": "WPM of the last 50 non-abandoned races",
+      "chartSummary": "{count} races, from {first} to {last} WPM, in chronological order.",
+      "wpm": "WPM",
+      "noChart": "No non-abandoned races to display."
+    },
     "security": {
       "unlink": "Unlink",
       "linked": "Linked",
