@@ -1,10 +1,15 @@
+import { z } from "zod";
+
 /** Fournisseurs de connexion tiers : GitHub (AUTH-01) et Discord (AUTH-01). */
 export const OAUTH_PROVIDERS = ["github", "discord"] as const;
 
 export type OAuthProviderName = (typeof OAUTH_PROVIDERS)[number];
 
+/** Segment `[provider]` des routes `/api/auth/{provider}` : seul un fournisseur connu passe. */
+export const oauthProviderSchema = z.enum(OAUTH_PROVIDERS);
+
 export function isOAuthProviderName(value: unknown): value is OAuthProviderName {
-  return typeof value === "string" && (OAUTH_PROVIDERS as readonly string[]).includes(value);
+  return oauthProviderSchema.safeParse(value).success;
 }
 
 /** Valeurs de `?oauth=` que la page de connexion sait afficher. */

@@ -1,16 +1,20 @@
 import type { NextRequest } from "next/server";
+import { z } from "zod";
 import { getSessionCookieName } from "@/auth/cookie";
 import { getAuthDeps } from "@/auth/deps";
 import { describeError } from "@/auth/errors";
 import { handleOAuthCallback } from "@/auth/oauth/callback";
+import { parseOAuthCallbackQuery } from "@/auth/oauth/callbackQuery";
 import { getOAuthProvider } from "@/auth/oauth/config";
 import { expiredOAuthCookie, oauthCookieNames } from "@/auth/oauth/cookies";
 import { getOAuthExchangeSemaphore } from "@/auth/oauth/exchangeSemaphore";
 import { loginNoticeLocation, parseOAuthLocale } from "@/auth/oauth/locale";
 import { providerNotFound, toRedirectResponse } from "@/auth/oauth/oauthResponse";
 import { fetchOAuthProfile } from "@/auth/oauth/profile";
-import { isOAuthProviderName } from "@/auth/oauth/providers";
+import { oauthProviderSchema } from "@/auth/oauth/providers";
 import { getClientIp } from "@/auth/rateLimit";
+
+const routeParamsSchema = z.strictObject({ provider: oauthProviderSchema });
 
 /**
  * AUTH-01 : retour du fournisseur, `GET /api/auth/{provider}/callback`. Vérifie le
@@ -18,13 +22,25 @@ import { getClientIp } from "@/auth/rateLimit";
  * le site.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
-  const { provider } = await params;
-  if (!isOAuthProviderName(provider)) return providerNotFound();
+  const route = routeParamsSchema.safeParse(await params);
+  if (!route.success) return providerNotFound();
+  const { provider } = route.data;
 
   const names = oauthCookieNames(provider);
   const cookies = request.cookies;
   const locale = cookies.get(names.locale)?.value;
-  const query = request.nextUrl.searchParams;
+  const query = parseOAuthCallbackQuery(request.nextUrl.searchParams);
+  const failedRedirect = () =>
+    toRedirectResponse({
+      location: loginNoticeLocation(parseOAuthLocale(locale), "failed"),
+      cookies: [
+        expiredOAuthCookie(names.state),
+        expiredOAuthCookie(names.verifier),
+        expiredOAuthCookie(names.locale),
+      ],
+    });
+  // Paramètres démesurés : refusés avant le limiteur et l'échange, cookies temporaires effacés.
+  if (query === null) return failedRedirect();
 
   try {
     return toRedirectResponse(
@@ -38,7 +54,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         {
           provider,
           ip: getClientIp(request.headers),
-          query: { code: query.get("code"), state: query.get("state"), error: query.get("error") },
+          query,
           cookies: {
             state: cookies.get(names.state)?.value,
             verifier: cookies.get(names.verifier)?.value,
@@ -52,13 +68,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // `handleOAuthCallback` rattrape ses propres erreurs : on n'arrive ici que si la
     // configuration de base manque (`DATABASE_URL`). Les cookies temporaires partent quand même.
     console.error("[auth] oauth callback setup failed", { provider, ...describeError(error) });
-    return toRedirectResponse({
-      location: loginNoticeLocation(parseOAuthLocale(locale), "failed"),
-      cookies: [
-        expiredOAuthCookie(names.state),
-        expiredOAuthCookie(names.verifier),
-        expiredOAuthCookie(names.locale),
-      ],
-    });
+    return failedRedirect();
   }
 }

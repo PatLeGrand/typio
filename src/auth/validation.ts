@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { AuthErrorCode } from "./types";
 
 const PASSWORD_MIN_LENGTH = 8;
@@ -57,50 +58,56 @@ function isPseudoCharacter(character: string): boolean {
   return ASCII_LETTER.test(base) && ONLY_DIACRITICS.test(marks.join(""));
 }
 
-export function validateUsername(raw: unknown): ValidationResult<ValidUsername> {
-  if (typeof raw !== "string") return { ok: false, code: "INVALID_USERNAME" };
-  const displayName = raw.trim();
-  if (!USERNAME_PATTERN.test(displayName)) return { ok: false, code: "INVALID_USERNAME" };
-  return { ok: true, value: { username: displayName.toLowerCase(), displayName } };
-}
+/** Schémas partagés client/serveur ; les `validate*` ci-dessous les enveloppent en `ValidationResult`. */
+export const usernameSchema = z
+  .string()
+  .trim()
+  .regex(USERNAME_PATTERN)
+  .transform((displayName): ValidUsername => ({ username: displayName.toLowerCase(), displayName }));
 
 /** Le mot de passe n'est ni rogné ni modifié : les espaces en bord sont valides. */
-export function validatePassword(raw: unknown): ValidationResult<string> {
-  if (typeof raw !== "string") return { ok: false, code: "INVALID_PASSWORD" };
-  const size = length(raw);
-  if (size < PASSWORD_MIN_LENGTH || size > PASSWORD_MAX_LENGTH) {
-    return { ok: false, code: "INVALID_PASSWORD" };
-  }
-  return { ok: true, value: raw };
-}
+export const passwordSchema = z
+  .string()
+  .refine((value) => length(value) >= PASSWORD_MIN_LENGTH && length(value) <= PASSWORD_MAX_LENGTH);
 
 /**
- * Règle appliquée à l'INSCRIPTION seulement : en plus des bornes de `validatePassword`, au
- * moins une lettre et un chiffre (Unicode). La connexion garde `validatePassword`, pour que
+ * Règle appliquée à l'INSCRIPTION seulement : en plus des bornes de `passwordSchema`, au
+ * moins une lettre et un chiffre (Unicode). La connexion garde `passwordSchema`, pour que
  * les comptes créés avant cette règle puissent toujours se connecter.
  */
+export const newPasswordSchema = passwordSchema.refine((value) => LETTER.test(value) && DIGIT.test(value));
+
+export const pseudoSchema = z
+  .string()
+  .trim()
+  .normalize("NFC")
+  .refine(
+    (pseudo) =>
+      length(pseudo) >= PSEUDO_MIN_LENGTH &&
+      length(pseudo) <= PSEUDO_MAX_LENGTH &&
+      Array.from(pseudo).every(isPseudoCharacter) &&
+      VISIBLE_PSEUDO_CHARACTER.test(pseudo),
+  );
+
+function validate<T>(schema: z.ZodType<T>, raw: unknown, code: AuthErrorCode): ValidationResult<T> {
+  const result = schema.safeParse(raw);
+  return result.success ? { ok: true, value: result.data } : { ok: false, code };
+}
+
+export function validateUsername(raw: unknown): ValidationResult<ValidUsername> {
+  return validate(usernameSchema, raw, "INVALID_USERNAME");
+}
+
+export function validatePassword(raw: unknown): ValidationResult<string> {
+  return validate(passwordSchema, raw, "INVALID_PASSWORD");
+}
+
 export function validateNewPassword(raw: unknown): ValidationResult<string> {
-  const result = validatePassword(raw);
-  if (!result.ok) return result;
-  if (!LETTER.test(result.value) || !DIGIT.test(result.value)) {
-    return { ok: false, code: "INVALID_PASSWORD" };
-  }
-  return result;
+  return validate(newPasswordSchema, raw, "INVALID_PASSWORD");
 }
 
 export function validatePseudo(raw: unknown): ValidationResult<string> {
-  if (typeof raw !== "string") return { ok: false, code: "INVALID_PSEUDO" };
-  const pseudo = raw.trim().normalize("NFC");
-  const size = length(pseudo);
-  if (
-    size < PSEUDO_MIN_LENGTH ||
-    size > PSEUDO_MAX_LENGTH ||
-    !Array.from(pseudo).every(isPseudoCharacter) ||
-    !VISIBLE_PSEUDO_CHARACTER.test(pseudo)
-  ) {
-    return { ok: false, code: "INVALID_PSEUDO" };
-  }
-  return { ok: true, value: pseudo };
+  return validate(pseudoSchema, raw, "INVALID_PSEUDO");
 }
 
 /**

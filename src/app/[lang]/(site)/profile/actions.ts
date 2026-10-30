@@ -1,15 +1,23 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/auth/currentUser";
 import { getAuthDeps } from "@/auth/deps";
 import { describeError } from "@/auth/errors";
+import { readForm } from "@/auth/formData";
 import { pseudoSkeleton } from "@/auth/validation";
 import { getDb } from "@/db/shared";
 import { users } from "@/db/schema";
 import { prefixWithLocale } from "@/i18n/paths";
 import { validateProfileUpdate, type ProfileUpdateResult } from "@/profile/profileSettings";
+
+const profileFormSchema = z.strictObject({
+  displayName: z.string().optional(),
+  keyboardLayout: z.string().optional(),
+  locale: z.string().optional(),
+});
 
 /**
  * Met à jour le nom affiché, la disposition du clavier et la langue de l'utilisateur de la
@@ -25,11 +33,7 @@ export async function updateProfile(formData: FormData): Promise<ProfileUpdateRe
     const deps = getAuthDeps();
     if (!deps.limiters.profileUpdates.consume(user.id)) return { ok: false, code: "RATE_LIMITED" };
 
-    const parsed = validateProfileUpdate({
-      displayName: formData.get("displayName"),
-      keyboardLayout: formData.get("keyboardLayout"),
-      locale: formData.get("locale"),
-    });
+    const parsed = validateProfileUpdate(readForm(formData, profileFormSchema));
     if (!parsed.ok) return parsed;
     const { displayName, keyboardLayout, locale } = parsed.value;
 

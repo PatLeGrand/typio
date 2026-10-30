@@ -1,4 +1,5 @@
-import { DEFAULT_ROOM_CONFIG, parseRoomConfigPatch } from "@/realtime/protocol";
+import { z } from "zod";
+import { roomConfigFields } from "@/realtime/protocol";
 import type { RoomConfig } from "@/realtime/protocol";
 
 /**
@@ -20,15 +21,11 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze({
   abilities: false,
 });
 
+export const raceSettingsSchema = z.strictObject({ ...roomConfigFields, abilities: z.boolean() });
+
 export function parseRaceSettings(value: unknown): RaceSettings | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const keys = Object.keys(DEFAULT_RACE_SETTINGS);
-  if (Object.keys(value).length !== keys.length || keys.some((key) => !Object.hasOwn(value, key))) return null;
-  const settings = value as Record<string, unknown>;
-  const { abilities, ...roomConfig } = settings;
-  const parsedRoomConfig = parseRoomConfigPatch(roomConfig);
-  if (parsedRoomConfig === null || typeof abilities !== "boolean") return null;
-  return { ...DEFAULT_ROOM_CONFIG, ...parsedRoomConfig, abilities };
+  const result = raceSettingsSchema.safeParse(value);
+  return result.success ? result.data : null;
 }
 
 /** H-9: disabling an explicit limit keeps the five-minute safety limit. */
