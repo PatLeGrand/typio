@@ -32,7 +32,7 @@ describe("authenticateHandshake", () => {
     const sessions = createFakeSessions();
     const { token, userId } = sessions.signIn("guest", "Zoé");
     const user = await authenticateHandshake(sessions.repository, `typio_session=${token}`, now, "development");
-    expect(user?.user).toEqual({ id: userId, kind: "guest", displayName: "Zoé" });
+    expect(user?.user).toEqual({ id: userId, kind: "guest", displayName: "Zoé", avatarVersion: null });
   });
 
   it("reads the __Host- cookie in production and ignores the development name", async () => {

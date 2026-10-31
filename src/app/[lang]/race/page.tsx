@@ -42,6 +42,8 @@ export default async function RacePage({ params, searchParams }: {
       siteName={dictionary.site.name}
       settings={settings}
       userName={user?.displayName ?? null}
+      userId={user?.id ?? null}
+      avatarVersion={user?.avatarVersion ?? null}
       initialText={createRaceText(settings, Math.random)}
       botNameSeed={drawBotNameSeed()}
     />

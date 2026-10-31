@@ -23,7 +23,7 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
 import { uploadAvatar, removeAvatar } from "./avatarActions";
 
 const member: CurrentUser = {
-  id: "11111111-1111-4111-8111-111111111111", kind: "member", displayName: "Alice", username: "alice", locale: "fr",
+  id: "11111111-1111-4111-8111-111111111111", kind: "member", displayName: "Alice", username: "alice", locale: "fr", avatarVersion: null,
 };
 let now = 0;
 let limiters = createAuthLimiters(() => now);

@@ -31,6 +31,8 @@ export interface RaceRunner {
   wpmSeries: number[];
   missedKeys?: Record<string, number>;
   userKind?: "member" | "guest";
+  /** Version de la photo de profil d'un humain (H-38) ; absent pour un bot. */
+  avatarVersion?: number | null;
   plan?: BotPlan;
   level?: BotLevel;
 }
@@ -87,7 +89,7 @@ export function startRace(
       timeLimitMs: getEffectiveTimeLimitSeconds(room.config) * 1000,
       endedAt: null,
       runners: [
-        ...humans.map((p) => ({ ...runner(p.userId, p.displayName, "human", p.connected), userKind: p.kind })),
+        ...humans.map((p) => ({ ...runner(p.userId, p.displayName, "human", p.connected), userKind: p.kind, avatarVersion: p.avatarVersion })),
         ...room.config.bots.map((level, index) => ({
           ...runner(`bot-${index}`, names[index % names.length], "bot", true),
           level,
@@ -233,7 +235,7 @@ export function raceSnapshot(race: RaceState, now: number) {
     status: current.status, serverNow: now, startAt: current.startAt, text: current.text,
     bonusEvents: current.bonusEvents.filter((event) => event.at >= now - 10_000),
     runners: current.runners.map((r) => ({
-      id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), status: r.status, connected: r.connected,
+      id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), avatarVersion: r.kind === "human" ? r.avatarVersion ?? null : null, status: r.status, connected: r.connected,
       position: r.position, progress: r.position / applyTextEdits(current.text, r.edits).length,
       edits: r.edits, fogUntil: r.fogUntil, textLength: applyTextEdits(current.text, r.edits).length,
       wpm: computeWpm(r.position, elapsed(current, r, now)), accuracy: computeAccuracy(r.keystrokes),
@@ -249,7 +251,7 @@ export function raceResults(race: RaceState) {
   return race.runners.map((r) => {
     const timeMs = elapsed(race, r, endedAt);
     return {
-      id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}),
+      id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), avatarVersion: r.kind === "human" ? r.avatarVersion ?? null : null,
       status: r.status === "finished" ? "finished" as const : r.status === "abandoned" ? "abandoned" as const : "unfinished" as const,
       position: r.position, progress: r.position / applyTextEdits(race.text, r.edits).length,
       bonusesReceived: r.bonusesReceived,

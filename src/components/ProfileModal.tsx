@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, useId } from "react";
-import { X, User, Activity } from "lucide-react";
+import { X, Activity } from "lucide-react";
 import type { CurrentUser } from "@/auth/types";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
+import { Avatar } from "./Avatar";
 import { ButtonLink } from "./ButtonLink";
 
 type ProfileModalProps = {
@@ -72,9 +73,7 @@ export function ProfileModal({ user, dictionary, locale, children }: ProfileModa
             </button>
 
             <div className="flex items-center gap-3 border-b border-border pb-4">
-              <div className="w-12 h-12 rounded-full bg-accent-soft flex items-center justify-center text-accent-text">
-                <User aria-hidden="true" className="w-6 h-6" />
-              </div>
+              <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={48} />
               <div>
                 <h2 id={titleId} className="text-xl font-bold">{user.displayName}</h2>
                 {user.kind === "guest" && (

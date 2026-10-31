@@ -32,6 +32,8 @@ export interface CurrentUser {
   displayName: string;
   username: string | null;
   locale: Locale;
+  /** Numéro de version de la photo de profil (H-38), ou `null` sans photo. */
+  avatarVersion: number | null;
 }
 
 /**

@@ -80,6 +80,7 @@ function participant(userId: string, overrides: Partial<Participant> = {}): Part
     userId,
     displayName: userId === ME ? "Alice" : "Bob",
     kind: "member",
+    avatarVersion: null,
     role: "runner",
     connected: true,
     joinedAt: 1,

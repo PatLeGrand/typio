@@ -21,6 +21,16 @@
   --series-4: #be185d;
   --series-5: #2563eb;
   --series-6: #526515;
+  /* Avatars générés (H-39) : initiale blanche, contraste AA sur chaque couleur, identiques en clair et en sombre. */
+  --avatar-1: #7043d9;
+  --avatar-2: #087f76;
+  --avatar-3: #b45309;
+  --avatar-4: #be185d;
+  --avatar-5: #2563eb;
+  --avatar-6: #526515;
+  --avatar-7: #b42318;
+  --avatar-8: #475569;
+  --avatar-foreground: #ffffff;
   --surface: #ffffff;
   --foreground: #29233d;
   --muted: #777184;
@@ -58,6 +68,16 @@
   --series-4: #f9a8d4;
   --series-5: #93c5fd;
   --series-6: #c4d971;
+  /* Avatars générés (H-39) : initiale blanche, contraste AA sur chaque couleur, identiques en clair et en sombre. */
+  --avatar-1: #7043d9;
+  --avatar-2: #087f76;
+  --avatar-3: #b45309;
+  --avatar-4: #be185d;
+  --avatar-5: #2563eb;
+  --avatar-6: #526515;
+  --avatar-7: #b42318;
+  --avatar-8: #475569;
+  --avatar-foreground: #ffffff;
   --surface: #1f1a2b;
   --foreground: #f4f1fa;
   --muted: #a7a1b6;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Avatar } from "@/components/Avatar";
 import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
@@ -53,7 +54,8 @@ export function ParticipantList({ room, currentUserId, labels, raceLabels, onKic
             key={participant.userId}
             className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-field border border-border px-4 py-3"
           >
-            <span className="font-semibold text-foreground">{participant.displayName}</span>
+            <Avatar name={participant.displayName} seed={participant.userId} userId={participant.userId} avatarVersion={participant.avatarVersion} size={32} />
+            <span className="min-w-0 break-words font-semibold text-foreground">{participant.displayName}</span>
             {participant.kind === "guest" ? <Badge>{labels.guest}</Badge> : null}
             {participant.userId === room.hostId ? <Badge>{labels.host}</Badge> : null}
             {participant.userId === currentUserId ? <Badge tone="surface">{labels.you}</Badge> : null}
@@ -78,6 +80,8 @@ export function ParticipantList({ room, currentUserId, labels, raceLabels, onKic
         ))}
         {room.config.bots.map((level, index) => (
           <li key={`bot-${index}`} className="flex flex-wrap items-center gap-3 rounded-field border border-border px-4 py-3">
+            {/* Le bot n'a pas encore de nom (tiré au départ) : avatar généré à partir de sa place. */}
+            <Avatar name={raceLabels.bot} seed={`bot-${index}`} size={32} />
             <Badge>{raceLabels.bot}</Badge>
             <span>{raceLabels.botLevels[level]}</span>
           </li>

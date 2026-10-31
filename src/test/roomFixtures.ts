@@ -9,6 +9,7 @@ export function makeParticipant(userId: string, overrides: Partial<Participant> 
     userId,
     displayName: userId === ME ? "Alice" : "Bob",
     kind: "member",
+    avatarVersion: null,
     role: "runner",
     connected: true,
     joinedAt: 1,

@@ -7,6 +7,7 @@ import { logout } from "@/auth/actions";
 import { AUTH_FIELDS, type CurrentUser } from "@/auth/types";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
+import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { ButtonLink } from "./ButtonLink";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -56,7 +57,8 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
           {user ? (
             <div className="flex flex-wrap items-center gap-2">
               <ProfileModal user={user} dictionary={dictionary} locale={locale}>
-                <span className="text-sm font-semibold text-foreground flex items-center gap-1">
+                <span className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={28} />
                   {user.displayName}
                   {user.kind === "guest" ? (
                     <span className="text-xs font-normal text-muted ml-0.5">({dictionary.header.guest})</span>

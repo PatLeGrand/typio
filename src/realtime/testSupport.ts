@@ -63,6 +63,7 @@ export function createFakeSessions(gate: { current: Promise<void> | null } = { c
           displayName: name,
           username: kind === "member" ? name : null,
           locale: "fr",
+          avatarVersion: null,
           expiresAt: kind === "guest" ? accountExpiry : null,
         },
       });

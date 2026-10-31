@@ -23,6 +23,7 @@ export interface UserContext {
   id: string;
   displayName: string;
   kind: "member" | "guest";
+  avatarVersion?: number | null;
 }
 
 function cloneState(state: RoomState): RoomState {
@@ -179,6 +180,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       userId: user.id,
       displayName: user.displayName,
       kind: user.kind,
+      avatarVersion: user.avatarVersion ?? null,
       role,
       connected: true,
       joinedAt: now,
@@ -250,6 +252,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
             userId: user.id,
             displayName: user.displayName,
             kind: user.kind,
+            avatarVersion: user.avatarVersion ?? null,
             role,
             connected: true,
             joinedAt: now,

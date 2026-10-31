@@ -27,7 +27,7 @@ const member: CurrentUser = {
   kind: "member",
   displayName: "Alice",
   username: "alice",
-  locale: "fr",
+  locale: "fr", avatarVersion: null,
 };
 
 function props(lang: string, searchParams: Record<string, string | string[] | undefined> = {}) {

@@ -23,7 +23,7 @@ export function createDrizzleRaceHistoryRepository(db: PostgresJsDatabase) {
         .where(and(eq(races.id, raceId), eq(raceResults.userId, userId)));
       if (!race) return null;
       const rows = await db.select({
-        id: raceResults.userId, name: users.displayName, rank: raceResults.rank,
+        id: raceResults.userId, name: users.displayName, avatarVersion: users.avatarVersion, rank: raceResults.rank,
         wpmSeries: raceResults.wpmSeries,
         wpm: raceResults.wpm, grossWpm: raceResults.grossWpm, accuracy: raceResults.accuracy,
         personalBest: raceResults.personalBest, errors: raceResults.errors, timeMs: raceResults.durationMs, status: raceResults.status,

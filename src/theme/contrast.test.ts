@@ -60,6 +60,8 @@ const pairs: ReadonlyArray<readonly [string, string]> = [
   // Panneau d'inscription (ProgressIsland) : textes posés directement sur l'île et la colline.
   ["foreground", "island-sand"],
   ["foreground", "island-mint"],
+  // Initiale blanche des avatars générés (H-39).
+  ...Array.from({ length: 8 }, (_, i) => ["avatar-foreground", `avatar-${i + 1}`] as const),
 ];
 
 describe("contraste WCAG des tokens", () => {

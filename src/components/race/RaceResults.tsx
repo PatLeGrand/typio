@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import { RacePodium } from "./RacePodium";
 import { MissedKeysHeatmap } from "./MissedKeysHeatmap";
 import { WpmChart } from "./WpmChart";
+import { Avatar } from "@/components/Avatar";
+import type { AvatarIdentity } from "@/components/avatar";
 import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
 import type { Locale } from "@/i18n/config";
@@ -16,15 +18,18 @@ type Props = {
   labels: Dictionary["raceScreen"];
   rows: readonly RaceResultRow[];
   headline: string;
+  /** Avatar du joueur local (photo d'un membre) ; les bots ont l'avatar généré de leur nom. */
+  playerAvatar: AvatarIdentity;
   settingsHref: string;
   onReplay: () => void;
 };
 
 /** Écran de résultats (RES-01, RES-02) : podium des trois premiers puis tableau de tous les coureurs. */
-export function RaceResults({ locale, labels, rows, headline, settingsHref, onReplay }: Props) {
+export function RaceResults({ locale, labels, rows, headline, playerAvatar, settingsHref, onReplay }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const copy = labels.results;
-  const displayRows = rows.map((row) => ({ ...row, name: `${row.name}${row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}` }));
+  const avatarOf = (row: RaceResultRow): AvatarIdentity => (row.isPlayer ? playerAvatar : { seed: row.name });
+  const displayRows = rows.map((row) => ({ ...row, avatar: avatarOf(row), name: `${row.name}${row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}` }));
   const player = rows.find((row) => row.isPlayer);
 
   // La fin de course est annoncée en amenant le focus sur le titre.
@@ -67,7 +72,7 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
             {rows.map((row) => (
               <tr key={row.id} className={`border-b border-border last:border-b-0 ${row.isPlayer ? "bg-accent-panel font-bold" : ""}`}>
                 <td className="px-4 py-3">{formatOrdinal(locale, row.rank, labels.ordinal)}</td>
-                <th scope="row" className="px-4 py-3 font-bold">{row.name}{row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}</th>
+                <th scope="row" className="px-4 py-3 font-bold"><span className="inline-flex items-center gap-2"><Avatar name={row.name} {...avatarOf(row)} size={24} />{row.name}{row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}</span></th>
                 <td className="px-4 py-3 tabular-nums">{row.wpm}</td>
                 <td className="px-4 py-3 tabular-nums">
                   {row.accuracy}%

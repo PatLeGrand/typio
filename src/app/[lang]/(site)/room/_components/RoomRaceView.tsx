@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { Avatar } from "@/components/Avatar";
+import { avatarUrl, runnerAvatar } from "@/components/avatar";
 import { Button } from "@/components/Button";
 import { playerBonusMessage, racerBonusLabel } from "@/components/race/bonusAnnouncements";
 import { RacePodium } from "@/components/race/RacePodium";
@@ -102,7 +104,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
 
   if (room.status === "results") {
     const localResult = results?.find((row) => row.id === userId && row.kind === "human");
-    const displayRows = results?.map((row) => ({ ...row, name: `${row.name}${row.kind === "bot" ? ` (${labels.bot}${row.level ? ` · ${raceLabels.botLevels[row.level]}` : ""})` : ""}` }));
+    const displayRows = results?.map((row) => ({ ...row, avatar: runnerAvatar(row), name: `${row.name}${row.kind === "bot" ? ` (${labels.bot}${row.level ? ` · ${raceLabels.botLevels[row.level]}` : ""})` : ""}` }));
     return (
       <section className="flex flex-col gap-4" aria-label={raceLabels.results.tableTitle}>
         <h2 className="text-2xl font-bold">{raceLabels.results.tableTitle}</h2>
@@ -112,7 +114,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
             <RacePodium rows={displayRows} locale={lang} labels={raceLabels} highlightId={userId} />
             <WpmChart rows={displayRows} locale={lang} labels={raceLabels.results} highlightId={userId} />
             {localResult && self?.missedKeys && <MissedKeysHeatmap missedKeys={self.missedKeys} locale={lang} labels={raceLabels.results} />}
-            <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} botLevels={raceLabels.botLevels} highlightId={userId} />
+            <RaceResultsTable rows={results.map((row) => ({ ...row, avatar: runnerAvatar(row), isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} botLevels={raceLabels.botLevels} highlightId={userId} />
           </>
         ) : <p role="status">{labels.loading}</p>}
         {room.hostId === userId ? <div className="flex flex-wrap gap-3">
@@ -131,10 +133,10 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
         <p aria-live="assertive" aria-atomic="true" className="text-center text-6xl font-bold">{number.format(countdown)}</p>
       </> : <h2 className="text-2xl font-bold">{raceLabels.headline.racing}</h2>}
       {room.status === "countdown" ? <p className="break-words rounded-card border border-border bg-surface p-4 font-mono">{text}</p> : null}
-      <RaceVisualizer racers={race.runners.map((r, index) => ({ id: r.id, name: r.kind === "bot" ? `${r.name} (${labels.bot}${r.level ? ` · ${raceLabels.botLevels[r.level]}` : ""})` : r.name, progress: r.progress * 100, isLocal: r.id === userId, hue: index * 47, bonusLabel: racerBonusLabel(race.bonusEvents, r.id, serverTime, raceLabels.bonuses) }))} />
+      <RaceVisualizer racers={race.runners.map((r, index) => ({ id: r.id, name: r.kind === "bot" ? `${r.name} (${labels.bot}${r.level ? ` · ${raceLabels.botLevels[r.level]}` : ""})` : r.name, progress: r.progress * 100, isLocal: r.id === userId, seed: runnerAvatar(r).seed, avatarName: r.name, avatarUrl: avatarUrl(r.kind === "human" ? r.id : undefined, r.avatarVersion), hue: index * 47, bonusLabel: racerBonusLabel(race.bonusEvents, r.id, serverTime, raceLabels.bonuses) }))} />
       <ol className="flex flex-col gap-2">
         {race.runners.map((r) => <li key={r.id} className={`rounded-card border border-border p-3 ${r.id === userId ? "bg-accent-panel font-bold" : "bg-surface"}`}>
-          {r.name} {r.kind === "bot" ? `(${labels.bot}${r.level ? ` · ${raceLabels.botLevels[r.level]}` : ""})` : ""} {r.id === userId ? `(${raceLabels.you})` : ""}
+          <Avatar name={r.name} {...runnerAvatar(r)} size={24} />{" "}{r.name} {r.kind === "bot" ? `(${labels.bot}${r.level ? ` · ${raceLabels.botLevels[r.level]}` : ""})` : ""} {r.id === userId ? `(${raceLabels.you})` : ""}
           {" · "}{number.format(r.position)} / {number.format(r.textLength)} {raceLabels.typing.characters}
           {" · "}{number.format(r.wpm)} {raceLabels.results.columns.wpm}
           {" · "}{percent.format(r.accuracy / 100)} {raceLabels.results.columns.accuracy}
