@@ -7,7 +7,7 @@ import fr from "@/i18n/dictionaries/fr.json";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
 import { BOT_LEVELS, DEFAULT_ROOM_CONFIG, INPUT_MODES, type RoomState } from "./protocol";
 import {
-  abandonRace, applyInput, expireRunner, raceResults, raceSnapshot,
+  abandonRace, applyInput, expireRunner, raceResults, raceResultRows, raceSnapshot,
   setRunnerConnected, startRace, tickRace, type RaceState,
 } from "./raceEngine";
 
@@ -481,4 +481,18 @@ describe("bonus de remontée faisant autorité", () => {
     expect(raceResults(final)?.find((r) => r.kind === "bot")?.progress).toBe(1);
     if (type === "shorten") expect(final.runners[1].bonusesReceived).toBe(1);
   });
+});
+
+// Protège le comptage serveur et la taille du snapshot diffusé en course.
+it("exposes expected missed keys only in human results and persistence rows", () => {
+  const source = room();
+  source.config.bots = ["beginner"];
+  const race = input(racing("abc", source), ["x", "\b", "a", "b", "c"]);
+  const ended = tickRace(race, START + race.timeLimitMs);
+  expect(raceResults(ended)?.find((row) => row.id === "host")?.missedKeys).toEqual({ a: 1 });
+  expect(raceResultRows(ended).find((row) => row.userId === "host")?.missedKeys).toEqual({ a: 1 });
+  expect(raceResults(ended)?.find((row) => row.kind === "bot")).not.toHaveProperty("missedKeys");
+  for (const runner of raceSnapshot(race, START + 1_000).runners) {
+    expect(runner).not.toHaveProperty("missedKeys");
+  }
 });

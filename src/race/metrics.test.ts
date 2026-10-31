@@ -12,8 +12,9 @@ import {
 function type(text: string, inputs: readonly string[], mode: "free" | "blocking" = "free") {
   let typed = "";
   let keystrokes: Keystrokes = NO_KEYSTROKES;
-  for (const next of inputs) ({ typed, keystrokes } = applyTypedInput(typed, next, text, mode, keystrokes));
-  return { typed, keystrokes };
+  let missedKeys: Record<string, number> = {};
+  for (const next of inputs) ({ typed, keystrokes, missedKeys } = applyTypedInput(typed, next, text, mode, keystrokes, missedKeys));
+  return { typed, keystrokes, missedKeys };
 }
 
 describe("computeWpm (A-D6)", () => {
@@ -51,6 +52,12 @@ describe("countCorrectChars", () => {
 });
 
 describe("applyTypedInput", () => {
+  it("cumule les fautes sur le caractère attendu et borne les clés au texte", () => {
+    const result = type("a a", ["x", "", "y", "yz", "yzx", "yzxy"]);
+    expect(result.missedKeys).toEqual({ a: 3, " ": 1 });
+    expect(Object.keys(result.missedKeys)).toHaveLength(2);
+  });
+
   it("AC-5 : 10 caractères justes et 1 faute corrigée donnent 91 %", () => {
     const text = "0123456789";
     const result = type(text, ["0", "01", "012", "0123", "01234", "012345x", "012345", "0123456", "01234567", "012345678", "0123456789"]);
@@ -63,6 +70,7 @@ describe("applyTypedInput", () => {
     const result = type("abc", ["a", "ax", "a", "", "a"]);
     expect(result.typed).toBe("a");
     expect(result.keystrokes).toEqual({ total: 3, correct: 2 });
+    expect(result.missedKeys).toEqual({ b: 1 });
   });
 
   it("mode libre : après une faute, les frappes suivantes sont jugées sur leur position", () => {
@@ -76,6 +84,7 @@ describe("applyTypedInput", () => {
     const result = type("abc", ["a", "ax", "ab", "abc"], "blocking");
     expect(result.typed).toBe("abc");
     expect(result.keystrokes).toEqual({ total: 4, correct: 3 });
+    expect(result.missedKeys).toEqual({ b: 1 });
   });
 
   it("mode bloquant : effacer reste possible", () => {

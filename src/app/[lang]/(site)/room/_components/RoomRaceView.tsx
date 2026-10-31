@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/Button";
 import { playerBonusMessage, racerBonusLabel } from "@/components/race/bonusAnnouncements";
 import { RacePodium } from "@/components/race/RacePodium";
+import { MissedKeysHeatmap } from "@/components/race/MissedKeysHeatmap";
 import { WpmChart } from "@/components/race/WpmChart";
 import { RaceResultsTable } from "@/components/race/RaceResultsTable";
 import { RaceTypingPanel } from "@/components/race/RaceTypingPanel";
@@ -100,6 +101,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   }
 
   if (room.status === "results") {
+    const localResult = results?.find((row) => row.id === userId && row.kind === "human");
     const displayRows = results?.map((row) => ({ ...row, name: `${row.name}${row.kind === "bot" ? ` (${labels.bot}${row.level ? ` · ${raceLabels.botLevels[row.level]}` : ""})` : ""}` }));
     return (
       <section className="flex flex-col gap-4" aria-label={raceLabels.results.tableTitle}>
@@ -109,6 +111,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
           <>
             <RacePodium rows={displayRows} locale={lang} labels={raceLabels} highlightId={userId} />
             <WpmChart rows={displayRows} locale={lang} labels={raceLabels.results} highlightId={userId} />
+            {localResult && <MissedKeysHeatmap missedKeys={localResult.missedKeys ?? {}} locale={lang} labels={raceLabels.results} />}
             <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} botLevels={raceLabels.botLevels} highlightId={userId} />
           </>
         ) : <p role="status">{labels.loading}</p>}

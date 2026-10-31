@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { RacePodium } from "./RacePodium";
+import { MissedKeysHeatmap } from "./MissedKeysHeatmap";
 import { WpmChart } from "./WpmChart";
 import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
@@ -46,6 +47,7 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
 
       <RacePodium rows={displayRows} locale={locale} labels={labels} highlightId={player?.id} />
       <WpmChart rows={displayRows} locale={locale} labels={copy} highlightId={player?.id} />
+      {player && <MissedKeysHeatmap missedKeys={player.missedKeys ?? {}} locale={locale} labels={copy} />}
 
       <div className="overflow-x-auto rounded-card border border-border bg-surface">
         <table className="w-full min-w-[34rem] text-left text-sm">

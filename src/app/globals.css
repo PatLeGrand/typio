@@ -10,6 +10,10 @@
  */
 :root {
   color-scheme: light;
+  --heat-0: var(--surface);
+  --heat-1: #eee7fc;
+  --heat-2: #d3c1f5;
+  --heat-3: #b49cf6;
   --background: #fffcf7;
   --series-1: #7043d9;
   --series-2: #087f76;
@@ -43,6 +47,10 @@
 
 .dark {
   color-scheme: dark;
+  --heat-0: var(--surface);
+  --heat-1: #33254c;
+  --heat-2: #4b3470;
+  --heat-3: #65468e;
   --background: #15121d;
   --series-1: #b49cf6;
   --series-2: #5eead4;

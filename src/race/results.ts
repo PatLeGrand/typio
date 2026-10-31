@@ -16,6 +16,7 @@ export interface PlayerOutcome {
   correctChars: number;
   keystrokes: Keystrokes;
   wpmSeries: number[];
+  missedKeys: Record<string, number>;
 }
 
 export interface BotEntry {
@@ -34,6 +35,7 @@ export interface RaceResultRow {
   status: RacerStatus;
   wpm: number;
   wpmSeries: number[];
+  missedKeys?: Record<string, number>;
   accuracy: number;
   timeMs: number;
   correctChars: number;
@@ -75,6 +77,7 @@ export function buildRaceResults(input: {
       status: playerStatus,
       wpm: computeWpm(player.correctChars, endMs),
       wpmSeries: player.wpmSeries,
+      missedKeys: player.missedKeys,
       accuracy: computeAccuracy(player.keystrokes),
       timeMs: endMs,
       correctChars: player.correctChars,

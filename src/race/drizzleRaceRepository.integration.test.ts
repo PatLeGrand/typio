@@ -46,7 +46,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL race repository", () => {
   }
   function result(userId: string): NewRaceResult {
     return { userId, rank: 1, status: "finished", wpm: 12, grossWpm: 16, accuracy: 75,
-      errors: 1, durationMs: 3_000, progress: 1, wpmSeries: [0, 12, 12] };
+      errors: 1, durationMs: 3_000, progress: 1, wpmSeries: [0, 12, 12], missedKeys: { b: 1 } };
   }
 
   it("insère la configuration, les métriques et la série ; supprime les résultats du membre et détache l’hôte", async () => {
@@ -57,6 +57,11 @@ describe.skipIf(!databaseUrl)("PostgreSQL race repository", () => {
     expect(savedRace).toMatchObject(data);
     const [savedResult] = await client.db.select().from(raceResults).where(eq(raceResults.raceId, data.id!));
     expect(savedResult).toMatchObject({ ...result(hostId), raceId: data.id, createdAt: expect.any(Date) });
+    const history = createDrizzleRaceHistoryRepository(client.db);
+    const detail = await history.getRaceForUser(hostId, data.id!);
+    expect(detail?.missedKeys).toEqual({ b: 1 });
+    expect(detail?.rows[0].wpmSeries).toEqual([0, 12, 12]);
+    expect(detail?.rows[0]).not.toHaveProperty("missedKeys");
     await client.db.delete(users).where(eq(users.id, hostId));
     expect(await client.db.select().from(raceResults).where(eq(raceResults.raceId, data.id!))).toHaveLength(0);
     expect(await client.db.select().from(races).where(eq(races.id, data.id!))).toMatchObject([{ hostId: null }]);

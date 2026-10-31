@@ -74,6 +74,7 @@ describe("session de course (A-D6)", () => {
     session = typeIntoRaceSession(session, "ab", START + 600);
     session = typeIntoRaceSession(session, "abc", START + 700);
     expect(session.lifecycle).toMatchObject({ phase: "results", reason: "completed" });
+    expect(getPlayerOutcome(session)?.missedKeys).toEqual({ a: 1 });
   });
 
   it("mode bloquant : le caractère faux n'entre pas", () => {

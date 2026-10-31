@@ -78,8 +78,8 @@ describe.skipIf(!databaseUrl)("PostgreSQL race history", () => {
     const race = await repository.getRaceForUser(firstUser, raceIds[2]);
     expect(race).toMatchObject({ id: raceIds[2], endedAt: new Date(4_000), participantCount: 4 });
     expect(race?.rows).toEqual([
-      { id: secondUser, name: "Bob", personalBest: false, rank: 1, wpm: 12, grossWpm: 16, accuracy: 75, errors: 1, timeMs: 3_000, status: "finished" },
-      { id: firstUser, name: "Alice", personalBest: false, rank: 2, wpm: 12, grossWpm: 16, accuracy: 75, errors: 1, timeMs: 3_000, status: "abandoned" },
+      { id: secondUser, name: "Bob", personalBest: false, rank: 1, wpm: 12, grossWpm: 16, accuracy: 75, errors: 1, timeMs: 3_000, status: "finished", wpmSeries: [0, 12] },
+      { id: firstUser, name: "Alice", personalBest: false, rank: 2, wpm: 12, grossWpm: 16, accuracy: 75, errors: 1, timeMs: 3_000, status: "abandoned", wpmSeries: [0, 12] },
     ]);
   });
 });

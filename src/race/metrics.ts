@@ -39,6 +39,7 @@ export interface TypedInputResult {
   /** Nouvelle saisie : identique à l'ancienne quand elle est refusée. */
   typed: string;
   keystrokes: Keystrokes;
+  missedKeys: Record<string, number>;
 }
 
 /**
@@ -55,21 +56,29 @@ export function applyTypedInput(
   text: string,
   inputMode: RaceSettings["inputMode"],
   keystrokes: Keystrokes,
+  missedKeys: Record<string, number> = {},
 ): TypedInputResult {
   if (next.length <= previous.length) {
-    if (inputMode === "blocking" && !text.startsWith(next)) return { typed: previous, keystrokes };
-    return { typed: next, keystrokes };
+    if (inputMode === "blocking" && !text.startsWith(next)) return { typed: previous, keystrokes, missedKeys };
+    return { typed: next, keystrokes, missedKeys };
   }
 
   const bounded = next.slice(0, text.length);
+  const misses = { ...missedKeys };
   let total = keystrokes.total;
   let correct = keystrokes.correct;
   for (let index = previous.length; index < bounded.length; index += 1) {
     total += 1;
     if (bounded[index] === text[index]) correct += 1;
+    else {
+      // Les clés viennent uniquement du texte, jamais du caractère envoyé par le client.
+      const start = /[\uDC00-\uDFFF]/u.test(text[index]) ? index - 1 : index;
+      const expected = String.fromCodePoint(text.codePointAt(start)!);
+      misses[expected] = (misses[expected] ?? 0) + 1;
+    }
   }
   const counted = { total, correct };
 
-  if (inputMode === "blocking" && !text.startsWith(bounded)) return { typed: previous, keystrokes: counted };
-  return { typed: bounded, keystrokes: counted };
+  if (inputMode === "blocking" && !text.startsWith(bounded)) return { typed: previous, keystrokes: counted, missedKeys: misses };
+  return { typed: bounded, keystrokes: counted, missedKeys: misses };
 }

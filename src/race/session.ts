@@ -14,12 +14,13 @@ export interface RaceSession {
   typed: string;
   keystrokes: Keystrokes;
   wpmSeries: number[];
+  missedKeys: Record<string, number>;
 }
 
 /** Crée la session et lance aussitôt le compte à rebours. */
 export function createRaceSession(settings: RaceSettings, text: string, now: number): RaceSession {
   const lifecycle = transitionRace(createRaceLifecycle(settings), { type: "start" }, now);
-  return { text, inputMode: settings.inputMode, lifecycle, typed: "", keystrokes: NO_KEYSTROKES, wpmSeries: [] };
+  return { text, inputMode: settings.inputMode, lifecycle, typed: "", keystrokes: NO_KEYSTROKES, wpmSeries: [], missedKeys: {} };
 }
 
 function withLifecycle(session: RaceSession, event: RaceLifecycleEvent, now: number): RaceSession {
@@ -46,8 +47,8 @@ export function typeIntoRaceSession(session: RaceSession, next: string, now: num
   const current = tickRaceSession(session, now);
   if (current.lifecycle.phase !== "racing") return current;
 
-  const { typed, keystrokes } = applyTypedInput(current.typed, next, current.text, current.inputMode, current.keystrokes);
-  const updated = { ...current, typed, keystrokes };
+  const { typed, keystrokes, missedKeys } = applyTypedInput(current.typed, next, current.text, current.inputMode, current.keystrokes, current.missedKeys);
+  const updated = { ...current, typed, keystrokes, missedKeys };
   return typed === current.text ? withLifecycle(updated, { type: "complete" }, now) : updated;
 }
 
@@ -84,5 +85,6 @@ export function getPlayerOutcome(session: RaceSession): PlayerOutcome | null {
     correctChars: lifecycle.reason === "completed" ? session.text.length : countCorrectChars(session.typed, session.text),
     keystrokes: session.keystrokes,
     wpmSeries: session.wpmSeries,
+    missedKeys: session.missedKeys,
   };
 }

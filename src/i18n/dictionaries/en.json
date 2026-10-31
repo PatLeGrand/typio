@@ -103,6 +103,23 @@
       "personalBest": "Personal best",
       "newPersonalBest": "New personal best!",
       "podium": "Podium",
+      "missedKeys": {
+        "title": "Missed keys",
+        "space": "Space",
+        "keyLabel": "{key}: {count} error(s)",
+        "azerty": "French AZERTY keyboard",
+        "qwerty": "US QWERTY keyboard",
+        "legend": "Errors relative to the most missed key",
+        "levels": [
+          "No errors",
+          "1–33%",
+          "34–66%",
+          "67–100%"
+        ],
+        "top": "Most missed keys",
+        "other": "Other characters",
+        "noErrors": "No errors during this race."
+      },
       "wpmChart": {
         "title": "WPM over time",
         "timeAxis": "Time (seconds)",
