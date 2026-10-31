@@ -26,7 +26,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL race history", () => {
     repository = createDrizzleRaceHistoryRepository(client.db);
     await client.db.insert(users).values([
       { id: firstUser, kind: "member", username: firstUser.slice(0, 20), displayName: "Alice" },
-      { id: secondUser, kind: "member", username: secondUser.slice(0, 20), displayName: "Bob" },
+      { id: secondUser, kind: "member", username: secondUser.slice(0, 20), displayName: "Bob", avatarVersion: 7 },
     ]);
     await client.db.insert(races).values(raceIds.map((id) => ({
       id, roomCode: "ABCDEF", hostId: firstUser, config: { ...DEFAULT_ROOM_CONFIG },
@@ -78,8 +78,8 @@ describe.skipIf(!databaseUrl)("PostgreSQL race history", () => {
     const race = await repository.getRaceForUser(firstUser, raceIds[2]);
     expect(race).toMatchObject({ id: raceIds[2], endedAt: new Date(4_000), participantCount: 4 });
     expect(race?.rows).toEqual([
-      { id: secondUser, name: "Bob", personalBest: false, rank: 1, wpm: 12, grossWpm: 16, accuracy: 75, errors: 1, timeMs: 3_000, status: "finished", wpmSeries: [0, 12] },
-      { id: firstUser, name: "Alice", personalBest: false, rank: 2, wpm: 12, grossWpm: 16, accuracy: 75, errors: 1, timeMs: 3_000, status: "abandoned", wpmSeries: [0, 12] },
+      { id: secondUser, name: "Bob", avatarVersion: 7, personalBest: false, rank: 1, wpm: 12, grossWpm: 16, accuracy: 75, errors: 1, timeMs: 3_000, status: "finished", wpmSeries: [0, 12] },
+      { id: firstUser, name: "Alice", avatarVersion: null, personalBest: false, rank: 2, wpm: 12, grossWpm: 16, accuracy: 75, errors: 1, timeMs: 3_000, status: "abandoned", wpmSeries: [0, 12] },
     ]);
   });
 });
