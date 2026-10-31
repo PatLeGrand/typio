@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 import { getCurrentUser } from "@/auth/currentUser";
 import { describeError } from "@/auth/errors";
@@ -18,7 +18,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ user
     const [avatar] = await getDb().select({ image: userAvatars.image }).from(userAvatars)
       .innerJoin(users, eq(userAvatars.userId, users.id))
       .where(and(eq(userAvatars.userId, parsed.data.userId),
-        version.data === null ? undefined : eq(users.avatarVersion, version.data)));
+        version.data === null ? isNotNull(users.avatarVersion) : eq(users.avatarVersion, version.data)));
     if (!avatar) return new Response(null, { status: 404, headers: { "Cache-Control": "no-store" } });
     return new Response(new Uint8Array(avatar.image), {
       headers: {

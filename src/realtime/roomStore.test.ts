@@ -169,6 +169,29 @@ describe("roomStore", () => {
     }
   });
 
+  it.each([
+    ["enter", 2], ["enter", null], ["enter", undefined],
+    ["reconnect", 2], ["reconnect", null], ["reconnect", undefined],
+  ] as const)("H-40: %s refreshes participant and race avatarVersion to %s", (method, avatarVersion) => {
+    let now = 100;
+    store = createRoomStore({ now: () => now, generateSeed: () => 42 });
+    const created = store.create({ ...member, avatarVersion: 1 }, {}, "runner", now);
+    if (!created.ok) throw new Error("failed to create");
+    const code = created.state.code;
+    expect(store.join(member2, code, "runner", now).ok).toBe(true);
+    expect(store.start(member.id, code).ok).toBe(true);
+    now = 4000;
+    store.disconnect(member.id, code);
+
+    const res = method === "enter"
+      ? store.join({ ...member, avatarVersion }, code, "runner", now)
+      : store.reconnect(member.id, code, avatarVersion);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.state.participants.find((p) => p.userId === member.id)?.avatarVersion).toBe(avatarVersion ?? null);
+    expect(store.snapshot(code)?.runners.find((r) => r.id === member.id)?.avatarVersion).toBe(avatarVersion ?? null);
+  });
+
   it("AC-7: Seul l'hôte peut modifier la configuration", () => {
     const createRes = store.create(member, {}, "runner", 100);
     if (!createRes.ok) throw new Error();

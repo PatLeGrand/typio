@@ -156,6 +156,9 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     if (existingParticipant) {
       if (room.race) saveRace(room, setRunnerConnected(room.race, user.id, true, now));
       existingParticipant.connected = true;
+      existingParticipant.avatarVersion = user.avatarVersion ?? null;
+      const runner = room.race?.runners.find((r) => r.id === user.id && r.kind === "human");
+      if (runner) runner.avatarVersion = existingParticipant.avatarVersion;
       return { ok: true, state: cloneState(room) };
     }
 
@@ -382,7 +385,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       return { ok: true, state: cloneState(room) };
     },
 
-    reconnect(userId: string, code: string): RoomResult {
+    reconnect(userId: string, code: string, avatarVersion?: number | null): RoomResult {
       const room = rooms.get(code);
       if (!room) return { ok: false, error: "ROOM_NOT_FOUND" };
 
@@ -390,7 +393,10 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       if (!p) return { ok: false, error: "NOT_IN_ROOM" };
 
       p.connected = true;
+      p.avatarVersion = avatarVersion ?? null;
       if (room.race) saveRace(room, setRunnerConnected(room.race, userId, true, now()));
+      const runner = room.race?.runners.find((r) => r.id === userId && r.kind === "human");
+      if (runner) runner.avatarVersion = p.avatarVersion;
       return { ok: true, state: cloneState(room) };
     },
 
