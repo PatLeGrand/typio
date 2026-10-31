@@ -1,9 +1,11 @@
 import { Trophy } from "lucide-react";
+import { Avatar } from "@/components/Avatar";
+import type { AvatarIdentity } from "@/components/avatar";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { formatOrdinal } from "@/race/format";
 
 type Props = {
-  rows: readonly { id: string; name: string; rank: number; wpm: number }[];
+  rows: readonly { id: string; name: string; rank: number; wpm: number; avatar?: AvatarIdentity }[];
   locale: string;
   labels: Dictionary["raceScreen"];
   highlightId?: string;
@@ -21,7 +23,10 @@ export function RacePodium({ rows, locale, labels, highlightId }: Props) {
         {rows.slice(0, 3).map((row) => (
           <li key={row.id} className={`flex min-w-0 flex-col gap-1 rounded-card border-2 px-5 py-4 ${row.id === highlightId ? "border-accent bg-accent-panel" : "border-border bg-surface"}`}>
             <span className="text-2xl font-black text-accent-text">{formatOrdinal(locale, row.rank, labels.ordinal)}</span>
-            <span className="break-words font-extrabold">{row.name}</span>
+            <span className="flex min-w-0 items-center gap-2">
+              <Avatar name={row.name} {...(row.avatar ?? { seed: row.id })} size={32} />
+              <span className="min-w-0 break-words font-extrabold">{row.name}</span>
+            </span>
             <span className="text-sm text-muted">{number.format(row.wpm)} {labels.results.columns.wpm}</span>
           </li>
         ))}

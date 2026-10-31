@@ -18,7 +18,7 @@ function room(): RoomState {
     code: "ABCDEF", status: "waiting", hostId: "host",
     config: { ...DEFAULT_ROOM_CONFIG, length: "short" },
     participants: ["host", "guest"].map((id) => ({
-      userId: id, displayName: id, kind: "member", role: "runner", connected: true, joinedAt: NOW,
+      userId: id, displayName: id, kind: "member", avatarVersion: null, role: "runner", connected: true, joinedAt: NOW,
     })),
   };
 }

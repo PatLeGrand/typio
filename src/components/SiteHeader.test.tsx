@@ -13,7 +13,7 @@ const member: CurrentUser = {
   kind: "member",
   displayName: "Alice_B",
   username: "alice_b",
-  locale: "fr",
+  locale: "fr", avatarVersion: null,
 };
 const guest: CurrentUser = { ...member, kind: "guest", displayName: "Zoé", username: null };
 

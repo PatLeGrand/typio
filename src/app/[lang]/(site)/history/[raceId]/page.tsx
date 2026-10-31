@@ -39,7 +39,7 @@ export default async function RaceHistoryPage({ params }: {
       <p><time dateTime={race.endedAt.toISOString()}>{date.format(race.endedAt)}</time></p>
       <p>{history.participants.replace("{count}", number.format(race.participantCount))}</p>
       <p className="text-sm text-muted">{history.membersOnly}</p>
-      <RaceResultsTable rows={race.rows} lang={locale} labels={raceScreen.results} extraLabels={room.race} botLevels={raceScreen.botLevels} highlightId={user.id} />
+      <RaceResultsTable rows={race.rows.map((row) => ({ ...row, avatar: { seed: row.id, userId: row.id, avatarVersion: row.avatarVersion } }))} lang={locale} labels={raceScreen.results} extraLabels={room.race} botLevels={raceScreen.botLevels} highlightId={user.id} />
       <WpmChart rows={race.rows} locale={locale} labels={raceScreen.results} highlightId={user.id} />
       <MissedKeysHeatmap missedKeys={race.missedKeys} locale={locale} labels={raceScreen.results} />
       <Link className="underline" href={prefixWithLocale("/history", locale)}>{history.back}</Link>

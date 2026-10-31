@@ -48,7 +48,7 @@ describe("SiteLayout", () => {
       kind: "member",
       displayName: "Alice_B",
       username: "alice_b",
-      locale: "fr",
+      locale: "fr", avatarVersion: null,
     });
     render(await SiteLayout(layoutProps("fr")));
 
@@ -65,7 +65,7 @@ describe("SiteLayout", () => {
       kind: "member",
       displayName: "Alice_B",
       username: "alice_b",
-      locale: "fr",
+      locale: "fr", avatarVersion: null,
     });
     render(await SiteLayout(layoutProps("fr")));
     expect(mocks.guard).toHaveBeenLastCalledWith("11111111-1111-1111-1111-111111111111");
@@ -83,7 +83,7 @@ describe("SiteLayout", () => {
       kind: "guest",
       displayName: "Zoé",
       username: null,
-      locale: "fr",
+      locale: "fr", avatarVersion: null,
     });
     render(await SiteLayout(layoutProps("fr")));
 

@@ -24,7 +24,7 @@ import RaceHistoryPage from "./[raceId]/page";
 
 const member: CurrentUser = {
   id: "11111111-1111-1111-1111-111111111111", kind: "member",
-  displayName: "Alice", username: "alice", locale: "fr",
+  displayName: "Alice", username: "alice", locale: "fr", avatarVersion: null,
 };
 const raceId = "22222222-2222-2222-2222-222222222222";
 const props = { params: Promise.resolve({ lang: "en", raceId }), searchParams: Promise.resolve({}) };

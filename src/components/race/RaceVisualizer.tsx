@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 import { useIsDarkTheme } from "@/theme/useIsDarkTheme";
+import { AVATAR_COLOR_COUNT, avatarColorIndex, avatarColorVar, avatarInitial } from "@/components/avatar";
 
 export interface Racer {
   id: string;
@@ -12,6 +13,12 @@ export interface Racer {
   /** Rotation de teinte du Blob en degrés (0 = bleu d'origine), pour distinguer les coureurs. */
   hue?: number;
   bonusLabel?: string;
+  /** Graine de la couleur de l'avatar généré (H-39) ; `id` par défaut, le nom pour un bot. */
+  seed?: string;
+  /** Nom dont on tire l'initiale de l'avatar généré ; `name` par défaut. */
+  avatarName?: string;
+  /** URL versionnée de la photo (H-38), ou absente : avatar généré. */
+  avatarUrl?: string | null;
 }
 
 interface RaceVisualizerProps {
@@ -47,6 +54,7 @@ const ACCELERATION = 4; // douceur des démarrages/arrêts (plus haut = plus ner
 const CAMERA_RATE = 5; // la caméra est plus lente que le Blob → effet d'élan
 const HOP_HEIGHT = 20; // hauteur max du saut en px
 const CAMERA_ANCHOR = 0.22; // position du joueur local à l'écran (fraction de largeur)
+const AVATAR_SIZE = 22; // diamètre de l'avatar à côté du nom, en px
 
 /** Vrai quand les décors sont déjà déclarés auprès de `PIXI.Assets` (partagé par toutes les scènes). */
 let assetsRegistered = false;
@@ -93,6 +101,9 @@ export function RaceVisualizer({
     const app = new PIXI.Application();
     const layers: Layer[] = [];
     const views = new Map<string, RacerView>();
+    // Textures des photos chargées par cette scène : libérées au démontage.
+    const photoTextures: PIXI.Texture[] = [];
+    let avatarPalette: { colors: string[]; foreground: string } | null = null;
     let cameraX = 0;
     let cameraReady = false;
     let elapsed = 0;
@@ -109,6 +120,56 @@ export function RaceVisualizer({
         sprite.width = app.screen.width;
         sprite.y = app.screen.height - sprite.texture.height - yOffset;
       }
+    };
+
+    /** Couleurs des tokens `--avatar-*`, lues une fois (identiques en clair et en sombre). */
+    const palette = () => {
+      if (!avatarPalette) {
+        const style = getComputedStyle(host);
+        avatarPalette = {
+          colors: Array.from({ length: AVATAR_COLOR_COUNT }, (_, i) => style.getPropertyValue(avatarColorVar(i)).trim() || "gray"),
+          foreground: style.getPropertyValue("--avatar-foreground").trim() || "white",
+        };
+      }
+      return avatarPalette;
+    };
+
+    /** Avatar rond : généré tout de suite, remplacé par la photo si elle charge (sinon il reste). */
+    const createAvatar = (racer: Racer): PIXI.Container => {
+      const radius = AVATAR_SIZE / 2;
+      const { colors, foreground } = palette();
+      const node = new PIXI.Container();
+      const generated = new PIXI.Container();
+      generated.addChild(new PIXI.Graphics().circle(0, 0, radius).fill(colors[avatarColorIndex(racer.seed ?? racer.id)]));
+      const initial = new PIXI.Text({
+        text: avatarInitial(racer.avatarName ?? racer.name),
+        style: { fontFamily: "sans-serif", fontSize: 12, fontWeight: "700", fill: foreground },
+      });
+      initial.anchor.set(0.5);
+      generated.addChild(initial);
+      // Anneau : plus épais et jaune pour le joueur local, qui reste repérable.
+      const ring = new PIXI.Graphics().circle(0, 0, radius).stroke(racer.isLocal ? { width: 3, color: 0xffda70 } : { width: 1.5, color: 0xffffff });
+      node.addChild(generated, ring);
+
+      if (racer.avatarUrl) {
+        const image = new Image();
+        image.onload = () => {
+          if (!isMounted || node.destroyed) return;
+          const texture = PIXI.Texture.from(image);
+          photoTextures.push(texture);
+          const photo = new PIXI.Sprite(texture);
+          photo.anchor.set(0.5);
+          photo.width = AVATAR_SIZE;
+          photo.height = AVATAR_SIZE;
+          const mask = new PIXI.Graphics().circle(0, 0, radius).fill(0xffffff);
+          photo.mask = mask;
+          node.addChildAt(photo, 1);
+          node.addChildAt(mask, 2);
+          generated.visible = false;
+        };
+        image.src = racer.avatarUrl; // repli sur l'avatar généré si le chargement échoue
+      }
+      return node;
     };
 
     const createView = (racer: Racer, blobTexture: PIXI.Texture, startX: number, world: PIXI.Container): RacerView => {
@@ -131,6 +192,11 @@ export function RaceVisualizer({
       label.anchor.set(0.5, 1);
       label.y = -blobTexture.height - 4;
       body.addChild(label);
+
+      const avatar = createAvatar(racer);
+      avatar.x = -label.width / 2 - AVATAR_SIZE / 2 - 4;
+      avatar.y = label.y - label.height / 2;
+      body.addChild(avatar);
 
       const bonus = new PIXI.Text({
         text: racer.bonusLabel ?? "",
@@ -283,6 +349,8 @@ export function RaceVisualizer({
       applyThemeRef.current = null;
       views.clear();
       if (initialized) app.destroy(true, { children: true });
+      for (const texture of photoTextures) texture.destroy(true);
+      photoTextures.length = 0;
     };
   }, []);
 

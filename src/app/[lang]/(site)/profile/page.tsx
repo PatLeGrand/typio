@@ -12,6 +12,7 @@ import { isKeyboardLayout } from "@/profile/profileSettings";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { createDrizzleProfileStatsRepository } from "@/race/drizzleProfileStatsRepository";
 import { ProfileForm } from "./ProfileForm";
+import { AvatarForm } from "./AvatarForm";
 
 export default async function ProfilePage({ params }: { params: Promise<{ lang: string }> }) {
   const locale = requireLocale((await params).lang);
@@ -64,6 +65,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
         </div>
 
         {statistics && <ProfileStats stats={statistics[0]} history={statistics[1]} locale={locale} labels={profile.stats} />}
+
+        {currentUser.kind === "member" && <AvatarForm userId={currentUser.id} displayName={currentUser.displayName}
+          version={dbUser.avatarVersion} labels={profile.avatar} />}
 
         <ProfileForm 
           user={currentUser} 

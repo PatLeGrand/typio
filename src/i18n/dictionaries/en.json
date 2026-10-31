@@ -572,6 +572,22 @@
     }
   },
   "profile": {
+    "avatar": {
+      "title": "Profile photo",
+      "file": "Choose a photo (JPEG, PNG or WebP, up to 2 MB)",
+      "preview": "Current profile photo",
+      "upload": "Upload",
+      "remove": "Remove photo",
+      "saved": "Your profile photo is up to date.",
+      "errors": {
+        "TOO_LARGE": "The photo exceeds the 2 MB limit.",
+        "UNSUPPORTED_TYPE": "Choose a JPEG, PNG or WebP image.",
+        "INVALID_IMAGE": "This image cannot be read. Choose a valid JPEG, PNG or WebP image.",
+        "UNAUTHORIZED": "Sign in with a member account to change your photo.",
+        "RATE_LIMITED": "Too many attempts. Try again later.",
+        "UNKNOWN": "The photo could not be changed. Try again."
+      }
+    },
     "stats": {
       "title": "Personal statistics",
       "empty": "No races recorded yet.",

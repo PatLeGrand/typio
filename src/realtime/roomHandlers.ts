@@ -181,7 +181,7 @@ export function registerRoomHandlers(
     if (code) {
       attachUser(code);
       timers.cancel(user.id);
-      const res = store.reconnect(user.id, code);
+      const res = store.reconnect(user.id, code, user.avatarVersion);
       if (res.ok) {
         broadcast(res.state);
         resumeRace(code);

@@ -12,7 +12,7 @@ vi.mock("@/auth/currentUser", () => ({ getCurrentUser: mocks.getCurrentUser }));
 vi.mock("@/realtime/useRoom", () => ({ useRoom: () => makeUseRoom() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
-const user: CurrentUser = { id: ME, kind: "member", displayName: "Alice", username: "alice", locale: "fr" };
+const user: CurrentUser = { id: ME, kind: "member", displayName: "Alice", username: "alice", locale: "fr", avatarVersion: null };
 
 beforeEach(() => {
   mocks.getCurrentUser.mockResolvedValue(null);

@@ -21,7 +21,7 @@ const member: CurrentUser = {
   kind: "member",
   displayName: "Alice",
   username: "alice",
-  locale: "fr",
+  locale: "fr", avatarVersion: null,
 };
 
 beforeEach(() => {

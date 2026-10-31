@@ -2,12 +2,14 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  customType,
   index,
   integer,
   jsonb,
   real,
   smallint,
   pgTable,
+  pgSequence,
   primaryKey,
   text,
   timestamp,
@@ -16,6 +18,10 @@ import {
 } from "drizzle-orm/pg-core";
 
 import type { RoomConfig } from "@/realtime/protocol";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+// Une version n'est jamais réutilisée, même après retrait puis nouveau téléversement.
+export const avatarVersionSequence = pgSequence("avatar_version_seq", { maxValue: 2_147_483_647 });
 
 /**
  * Comptes : membres (AUTH-01, TEST-03) et invités (AUTH-02, AUTH-03, H-2) dans la même table.
@@ -32,6 +38,7 @@ export const users = pgTable(
     kind: text("kind").notNull(),
     username: text("username"),
     displayName: text("display_name").notNull(),
+    avatarVersion: integer("avatar_version"),
     passwordHash: text("password_hash"),
     keyboardLayout: text("keyboard_layout").notNull().default("qwerty"),
     locale: text("locale").notNull().default("fr"),
@@ -61,6 +68,13 @@ export const users = pgTable(
     ),
   ],
 );
+
+/** Seul le WebP traité est conservé (AUTH-04, SEC-02, H-38). */
+export const userAvatars = pgTable("user_avatars", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  image: bytea("image").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * Sessions maison (ADR-001) : l'identifiant est le SHA-256 hexadécimal du jeton du

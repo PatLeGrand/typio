@@ -112,6 +112,8 @@ export interface Participant {
   userId: string;
   displayName: string;
   kind: "member" | "guest";
+  /** Version de la photo de profil lue à la connexion (H-38, H-40), ou `null` sans photo. */
+  avatarVersion: number | null;
   role: ParticipantRole;
   /** Faux pendant le délai de grâce qui suit une déconnexion (ancien SALLE-13). */
   connected: boolean;
@@ -244,7 +246,7 @@ export interface ServerToClientEvents {
 
 /** Données attachées au socket par le middleware d'authentification du serveur. */
 export interface SocketData {
-  user: { id: string; kind: "member" | "guest"; displayName: string };
+  user: { id: string; kind: "member" | "guest"; displayName: string; avatarVersion: number | null };
   /** Code de la salle où se trouve l'utilisateur, s'il y en a une. */
   roomCode: string | null;
   /** Clé de l'IP du client (`ipRateLimitKey`), calculée à la connexion (SALLE-04). */

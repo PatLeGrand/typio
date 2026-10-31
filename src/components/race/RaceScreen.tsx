@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { BarChart3, Flag, Trophy } from "lucide-react";
+import { avatarUrl, type AvatarIdentity } from "@/components/avatar";
 import { Button } from "@/components/Button";
 import { Logo } from "@/components/Logo";
 import { playerBonusMessage, racerBonusLabel } from "@/components/race/bonusAnnouncements";
@@ -31,6 +32,9 @@ type Props = {
   settings: RaceSettings;
   /** Nom affiché dans l'en-tête, ou `null` pour un visiteur. */
   userName: string | null;
+  /** Identifiant et version de la photo du joueur connecté (membre ou invité), ou `null` pour un visiteur. */
+  userId?: string | null;
+  avatarVersion?: number | null;
   /** Texte tiré côté serveur (hydratation identique), ou `null` si les filtres n'en laissent aucun. */
   initialText: string | null;
   /** Graine des noms de bots, tirée côté serveur avec le texte (hydratation identique). */
@@ -48,6 +52,8 @@ export function RaceScreen({
   siteName,
   settings,
   userName,
+  userId = null,
+  avatarVersion = null,
   initialText,
   botNameSeed,
   now = defaultNow,
@@ -76,6 +82,8 @@ export function RaceScreen({
   const statusTone = racing ? "bg-island-mint text-foreground" : "bg-accent-soft text-accent-text";
   const correctChars = countCorrectChars(round.session.typed, round.session.text);
 
+  const playerAvatar: AvatarIdentity = { seed: userId ?? userName ?? PLAYER_ID, name: userName ?? labels.you, ...(userId ? { userId, avatarVersion } : {}) };
+
   // Les couloirs de la scène restent fixes : seul le classement change l'ordre de la liste.
   const lane: Racer[] = [PLAYER_ID, ...round.bots.map((bot) => bot.id)].map((id, index) => {
     const racer = racers.find((candidate) => candidate.id === id);
@@ -84,6 +92,9 @@ export function RaceScreen({
       name: racer?.level ? `${racer.name} (${labels.bot} · ${labels.botLevels[racer.level]})` : racer?.name ?? id,
       progress: racer?.progress ?? 0,
       isLocal: id === PLAYER_ID,
+      ...(id === PLAYER_ID
+        ? { seed: playerAvatar.seed, avatarName: playerAvatar.name, avatarUrl: avatarUrl(playerAvatar.userId, playerAvatar.avatarVersion) }
+        : { seed: racer?.name ?? id, avatarName: racer?.name ?? id }),
       bonusLabel: racerBonusLabel(round.bonusEvents, id, clock, labels.bonuses),
       hue: index === 0 ? LOCAL_HUE : BOT_HUES[(index - 1) % BOT_HUES.length],
     };
@@ -194,6 +205,7 @@ export function RaceScreen({
           labels={labels}
           rows={results}
           headline={headline}
+          playerAvatar={playerAvatar}
           settingsHref={settingsHref}
           onReplay={replay}
         />
