@@ -26,7 +26,11 @@ export function placeMissedKeys(missedKeys: Record<string, number>, locale: Loca
     const key = character.toLowerCase();
     const placed = keys.find((entry) => entry.key === key) ?? keys.find((entry) => entry.characters.includes(key));
     if (placed) placed.count += count;
-    else other.push({ key: character, count });
+    else {
+      const existing = other.find((entry) => entry.key === key);
+      if (existing) existing.count += count;
+      else other.push({ key, count });
+    }
   }
   const mostMissed = [...keys, ...other].filter((entry) => entry.count > 0).sort((a, b) => b.count - a.count);
   return { rows, other, mostMissed, max: mostMissed[0]?.count ?? 0 };

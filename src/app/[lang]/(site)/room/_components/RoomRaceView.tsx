@@ -111,7 +111,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
           <>
             <RacePodium rows={displayRows} locale={lang} labels={raceLabels} highlightId={userId} />
             <WpmChart rows={displayRows} locale={lang} labels={raceLabels.results} highlightId={userId} />
-            {localResult && <MissedKeysHeatmap missedKeys={localResult.missedKeys ?? {}} locale={lang} labels={raceLabels.results} />}
+            {localResult && self?.missedKeys && <MissedKeysHeatmap missedKeys={self.missedKeys} locale={lang} labels={raceLabels.results} />}
             <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} botLevels={raceLabels.botLevels} highlightId={userId} />
           </>
         ) : <p role="status">{labels.loading}</p>}

@@ -106,7 +106,10 @@
       "missedKeys": {
         "title": "Missed keys",
         "space": "Space",
-        "keyLabel": "{key}: {count} error(s)",
+        "keyLabel": {
+          "one": "{key}: {count} error",
+          "other": "{key}: {count} errors"
+        },
         "azerty": "French AZERTY keyboard",
         "qwerty": "US QWERTY keyboard",
         "legend": "Errors relative to the most missed key",

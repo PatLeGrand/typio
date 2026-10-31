@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { formatPlural } from "@/race/format";
 import { placeMissedKeys } from "@/race/keyboard";
 
 type Props = {
@@ -14,7 +15,7 @@ export function MissedKeysHeatmap({ missedKeys, locale, labels }: Props) {
   const number = new Intl.NumberFormat(locale);
   const name = (key: string) => key === " " ? copy.space : key;
   const description = ({ key, count }: { key: string; count: number }) =>
-    copy.keyLabel.replace("{key}", name(key)).replace("{count}", number.format(count));
+    formatPlural(locale, count, copy.keyLabel).replace("{key}", name(key)).replace("{count}", number.format(count));
   const heatStyle = (level: number): CSSProperties => ({ backgroundColor: `var(--heat-${level})` });
 
   return (

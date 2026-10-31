@@ -167,6 +167,12 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       publishedStatus.set(code, snapshot.status);
       if (snapshot.status === "results" && previous !== "results") {
         const results = store.results(code);
+        for (const participant of state.participants) {
+          const self = store.self(code, participant.userId);
+          if (self) {
+            for (const socket of userSockets.of(participant.userId)) socket.emit("race:self", self);
+          }
+        }
         if (results) io.to(code).emit("race:results", results);
       }
     }

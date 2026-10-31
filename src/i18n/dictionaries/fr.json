@@ -106,7 +106,10 @@
       "missedKeys": {
         "title": "Touches manquées",
         "space": "Espace",
-        "keyLabel": "{key} : {count} faute(s)",
+        "keyLabel": {
+          "one": "{key} : {count} faute",
+          "other": "{key} : {count} fautes"
+        },
         "azerty": "Clavier AZERTY français",
         "qwerty": "Clavier QWERTY américain",
         "legend": "Fautes par rapport à la touche la plus manquée",

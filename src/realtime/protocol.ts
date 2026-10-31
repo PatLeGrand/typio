@@ -229,7 +229,7 @@ export interface ServerToClientEvents {
   "race:records": (records: { userIds: string[] }) => void;
   "race:state": (state: ReturnType<typeof raceSnapshot>) => void;
   "race:results": (results: NonNullable<ReturnType<typeof raceResults>>) => void;
-  "race:self": (self: { typed: string; keystrokes: Keystrokes }) => void;
+  "race:self": (self: { typed: string; keystrokes: Keystrokes; missedKeys?: Record<string, number> }) => void;
   /** État complet, envoyé à toute la salle après chaque changement. */
   "room:state": (state: RoomState) => void;
   /** Liens d'invitation, à l'hôte seulement (SALLE-04, SALLE-08) ; jamais diffusés à la salle. */

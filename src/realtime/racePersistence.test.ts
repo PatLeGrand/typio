@@ -28,15 +28,17 @@ afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 function client(id: string, kind: "member" | "guest") {
   const handlers = new Map<string, ((...args: unknown[]) => void)[]>();
+  const received: { event: string; payload: unknown }[] = [];
   const socket = {
     id, data: { user: { id, kind, displayName: id }, roomCode: null },
     on(event: string, handler: (...args: unknown[]) => void) {
       handlers.set(event, [...handlers.get(event) ?? [], handler]);
     },
-    emit() {}, join() {}, leave() {},
+    emit(event: string, payload: unknown) { received.push({ event, payload }); }, join() {}, leave() {},
   } as unknown as RealtimeSocket;
   transport.connection!(socket);
   return {
+    received,
     command(event: string, payload: unknown = {}): Ack<{ code: string }> {
       let result: Ack<{ code: string }> | undefined;
       const ack = (value: typeof result) => { result = value; };
@@ -75,6 +77,8 @@ describe("persistance RES-05", () => {
       expect(host.command("race:start").ok).toBe(true);
       const snapshot = transport.broadcasts.find((b) => b.event === "race:state")!.payload as ReturnType<typeof raceSnapshot>;
       time = snapshot.startAt + 1_000;
+      host.input([snapshot.text[0] === "x" ? "y" : "x", "\b"]);
+
       for (let i = 0; i < snapshot.text.length; i += 20) {
         time += 1_000;
         host.input(snapshot.text.slice(i, i + 20).split(""));
@@ -83,6 +87,17 @@ describe("persistance RES-05", () => {
       }
       await Promise.resolve();
       expect(recordRace).toHaveBeenCalledTimes(1);
+      expect(host.received).toContainEqual({
+        event: "race:self",
+        payload: expect.objectContaining({ missedKeys: { [snapshot.text[0]]: 1 } }),
+      });
+      expect(other.received).toContainEqual({
+        event: "race:self",
+        payload: expect.objectContaining({ missedKeys: {} }),
+      });
+      const results = transport.broadcasts.find((message) => message.event === "race:results")!.payload;
+      for (const row of results as object[]) expect(row).not.toHaveProperty("missedKeys");
+
       expect(recordRace.mock.calls[0][1].map((row) => row.status)).toEqual(["finished", "finished"]);
       await vi.advanceTimersByTimeAsync(0);
       expect(transport.broadcasts.filter((b) => b.event === "race:records")).toEqual([

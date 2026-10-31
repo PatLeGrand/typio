@@ -484,12 +484,12 @@ describe("bonus de remontée faisant autorité", () => {
 });
 
 // Protège le comptage serveur et la taille du snapshot diffusé en course.
-it("exposes expected missed keys only in human results and persistence rows", () => {
+it("keeps missed keys out of public results and preserves them in persistence rows", () => {
   const source = room();
   source.config.bots = ["beginner"];
   const race = input(racing("abc", source), ["x", "\b", "a", "b", "c"]);
   const ended = tickRace(race, START + race.timeLimitMs);
-  expect(raceResults(ended)?.find((row) => row.id === "host")?.missedKeys).toEqual({ a: 1 });
+  for (const row of raceResults(ended)!) expect(row).not.toHaveProperty("missedKeys");
   expect(raceResultRows(ended).find((row) => row.userId === "host")?.missedKeys).toEqual({ a: 1 });
   expect(raceResults(ended)?.find((row) => row.kind === "bot")).not.toHaveProperty("missedKeys");
   for (const runner of raceSnapshot(race, START + 1_000).runners) {

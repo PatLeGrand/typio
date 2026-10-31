@@ -256,7 +256,6 @@ export function raceResults(race: RaceState) {
       bonusTypes: race.bonusEvents.filter((event) => event.recipientId === r.id).map((event) => event.type),
       wpm: computeWpm(r.position, timeMs), grossWpm: computeWpm(r.keystrokes.total, timeMs),
       wpmSeries: r.kind === "bot" && r.plan ? botWpmSeries(r.plan, timeMs) : r.wpmSeries,
-      ...(r.kind === "human" ? { missedKeys: r.missedKeys ?? {} } : {}),
       accuracy: computeAccuracy(r.keystrokes), errors: r.keystrokes.total - r.keystrokes.correct, timeMs,
     };
   }).sort((a, b) => order[a.status] - order[b.status] ||

@@ -10,6 +10,12 @@ describe("placeMissedKeys", () => {
     expect(placed.max).toBe(6);
     expect(placed.other).toEqual([]);
   });
+  it.each(["fr", "en"] as const)("regroupe la casse hors disposition en %s", (locale) => {
+    const placed = placeMissedKeys({ Ê: 2, ê: 3 }, locale);
+    expect(placed.other).toEqual([{ key: "ê", count: 5 }]);
+    expect(placed.mostMissed).toEqual([{ key: "ê", count: 5 }]);
+    expect(placed.max).toBe(5);
+  });
   it("sépare les caractères absents de la disposition choisie", () => {
     const placed = placeMissedKeys({ A: 1, é: 2, ô: 3, "!": 4 }, "en");
     expect(placed.other).toEqual([{ key: "é", count: 2 }, { key: "ô", count: 3 }]);

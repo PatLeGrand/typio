@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
 
 type Props = {
-  rows: readonly { id: string; name: string; wpm: number; wpmSeries: readonly number[] }[];
+  rows: readonly { id: string; name: string; wpm: number; timeMs: number; wpmSeries: readonly number[] }[];
   locale: string;
   labels: Dictionary["raceScreen"]["results"];
   highlightId?: string;
@@ -11,8 +11,8 @@ type Props = {
 export function WpmChart({ rows, locale, labels, highlightId }: Props) {
   const copy = labels.wpmChart;
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
-  const maxSecond = Math.max(1, ...rows.map((row) => row.wpmSeries.length - 1));
-  const peak = Math.max(1, ...rows.map((row) => Math.max(0, ...row.wpmSeries)));
+  const maxSecond = Math.max(1, ...rows.map((row) => row.timeMs / 1000));
+  const peak = Math.max(1, ...rows.map((row) => Math.max(row.wpm, ...row.wpmSeries.slice(0, Math.ceil(row.timeMs / 1000)))));
   const yStep = Math.max(1, Math.ceil(peak / 4));
   const maxWpm = yStep * 4;
   const xStep = Math.max(1, Math.ceil(maxSecond / 4));
@@ -44,7 +44,7 @@ export function WpmChart({ rows, locale, labels, highlightId }: Props) {
         <text x="260" y="322" textAnchor="middle" fill="currentColor" fontSize="16">{copy.timeAxis}</text>
         <text x="16" y="155" transform="rotate(-90 16 155)" textAnchor="middle" fill="currentColor" fontSize="16">{copy.wpmAxis}</text>
         {rows.map((row, index) => (
-          <polyline key={row.id} points={row.wpmSeries.map((wpm, second) => `${x(second)},${y(wpm)}`).join(" ")} fill="none" className="wpm-series" style={seriesStyle(index)} stroke="currentColor" strokeWidth={row.id === highlightId ? 3 : 1.5} vectorEffect="non-scaling-stroke" />
+          <polyline key={row.id} points={[...row.wpmSeries.flatMap((wpm, second) => second * 1000 < row.timeMs ? [`${x(second)},${y(wpm)}`] : []), `${x(row.timeMs / 1000)},${y(row.wpm)}`].join(" ")} fill="none" className="wpm-series" style={seriesStyle(index)} stroke="currentColor" strokeWidth={row.id === highlightId ? 3 : 1.5} vectorEffect="non-scaling-stroke" />
         ))}
       </svg>
       <ul aria-label={copy.legend} className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
@@ -68,7 +68,7 @@ export function WpmChart({ rows, locale, labels, highlightId }: Props) {
             <tr key={row.id} className="border-t border-border">
               <th scope="row" className="break-words p-2">{row.name}</th>
               <td className="p-2">{number.format(row.wpm)}</td>
-              <td className="p-2">{number.format(Math.max(0, ...row.wpmSeries))}</td>
+              <td className="p-2">{number.format(Math.max(row.wpm, ...row.wpmSeries.slice(0, Math.ceil(row.timeMs / 1000))))}</td>
             </tr>
           ))}</tbody>
         </table>
