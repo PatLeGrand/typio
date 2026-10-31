@@ -103,6 +103,36 @@
       "personalBest": "Record personnel",
       "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
+      "missedKeys": {
+        "title": "Touches manquées",
+        "space": "Espace",
+        "keyLabel": {
+          "one": "{key} : {count} faute",
+          "other": "{key} : {count} fautes"
+        },
+        "azerty": "Clavier AZERTY français",
+        "qwerty": "Clavier QWERTY américain",
+        "legend": "Fautes par rapport à la touche la plus manquée",
+        "levels": [
+          "Aucune faute",
+          "1–33 %",
+          "34–66 %",
+          "67–100 %"
+        ],
+        "top": "Touches les plus manquées",
+        "other": "Autres caractères",
+        "noErrors": "Aucune faute pendant cette course."
+      },
+      "wpmChart": {
+        "title": "Évolution du MPM",
+        "timeAxis": "Temps (secondes)",
+        "wpmAxis": "MPM",
+        "legend": "Participants",
+        "accessibleSummary": "MPM de chaque participant au fil des secondes. Le trait épais indique le joueur local.",
+        "dataSummary": "Résumé des performances",
+        "finalWpm": "MPM final",
+        "peakWpm": "Pic de MPM"
+      },
       "tableTitle": "Résultats de la course",
       "bonusTypes": {"shorten": "−3 mots", "lengthen": "+3 mots", "fog": "Brouillard"},
       "columns": {

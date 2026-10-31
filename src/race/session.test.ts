@@ -74,6 +74,7 @@ describe("session de course (A-D6)", () => {
     session = typeIntoRaceSession(session, "ab", START + 600);
     session = typeIntoRaceSession(session, "abc", START + 700);
     expect(session.lifecycle).toMatchObject({ phase: "results", reason: "completed" });
+    expect(getPlayerOutcome(session)?.missedKeys).toEqual({ a: 1 });
   });
 
   it("mode bloquant : le caractère faux n'entre pas", () => {
@@ -91,6 +92,27 @@ describe("session de course (A-D6)", () => {
     expect(abandonRaceSession(waiting, 2000)).toBe(waiting);
     const session = abandonRaceSession(typeIntoRaceSession(racing(), "a", START + 1000), START + 5000);
     expect(getPlayerOutcome(session)).toMatchObject({ reason: "abandoned", elapsedMs: 5000, correctChars: 1 });
+  });
+
+  // Les secondes viennent de l'horloge, sans doublons ni prolongation après la fin.
+  it("échantillonne la position avec des ticks irréguliers et fige la série à l’arrivée", () => {
+    let session = typeIntoRaceSession(racing(), "a", START + 500);
+    session = tickRaceSession(session, START + 3400);
+    expect(session.wpmSeries).toEqual([0, 12, 6, 4]);
+    expect(tickRaceSession(session, START + 3500)).toBe(session);
+    session = typeIntoRaceSession(session, "abc", START + 3600);
+    expect(getPlayerOutcome(session)?.wpmSeries).toEqual([0, 12, 6, 4]);
+    expect(tickRaceSession(session, START + 9000)).toBe(session);
+  });
+
+  it("fige la série à l’abandon et inclut la seconde limite sans dépasser 601 points", () => {
+    const abandoned = abandonRaceSession(typeIntoRaceSession(racing(), "a", START + 500), START + 1500);
+    expect(tickRaceSession(abandoned, START + 9000).wpmSeries).toEqual([0, 12]);
+    const session = racing({ ...SETTINGS, timeLimitSeconds: 600 });
+    const ended = tickRaceSession(session, START + 900_000);
+    expect(ended.wpmSeries).toHaveLength(601);
+    expect(ended.wpmSeries.every((wpm) => wpm === 0)).toBe(true);
+    expect(getPlayerOutcome(ended)?.wpmSeries).toEqual(ended.wpmSeries);
   });
 
   it("borne le temps écoulé", () => {

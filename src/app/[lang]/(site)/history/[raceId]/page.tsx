@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/auth/currentUser";
+import { WpmChart } from "@/components/race/WpmChart";
+import { MissedKeysHeatmap } from "@/components/race/MissedKeysHeatmap";
 import { RaceResultsTable } from "@/components/race/RaceResultsTable";
 import { getDb } from "@/db/shared";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -38,6 +40,8 @@ export default async function RaceHistoryPage({ params }: {
       <p>{history.participants.replace("{count}", number.format(race.participantCount))}</p>
       <p className="text-sm text-muted">{history.membersOnly}</p>
       <RaceResultsTable rows={race.rows} lang={locale} labels={raceScreen.results} extraLabels={room.race} botLevels={raceScreen.botLevels} highlightId={user.id} />
+      <WpmChart rows={race.rows} locale={locale} labels={raceScreen.results} highlightId={user.id} />
+      <MissedKeysHeatmap missedKeys={race.missedKeys} locale={locale} labels={raceScreen.results} />
       <Link className="underline" href={prefixWithLocale("/history", locale)}>{history.back}</Link>
     </main>
   );

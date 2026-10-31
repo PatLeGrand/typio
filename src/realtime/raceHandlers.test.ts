@@ -137,6 +137,31 @@ describe("frontière client des courses (COURSE-06)", () => {
     expect(host.received).toEqual([]);
   });
 
+  it("reprend les résultats sans divulguer les touches manquées des autres coureurs", () => {
+    const { host, guest, client, store, at } = setup();
+    host.command("race:start");
+    at(6000);
+    const expected = store.snapshot("ABCDEF")!.text[0];
+    guest.input({ ops: [expected === "x" ? "y" : "x"] });
+    guest.command("race:abandon");
+    host.command("race:abandon");
+    guest.disconnect();
+    const returning = client("guest");
+    const reloaded = client("guest");
+    for (const socket of [returning, reloaded]) {
+      expect(socket.received).toContainEqual({
+        event: "race:self",
+        payload: expect.objectContaining({ missedKeys: { [expected]: 1 } }),
+      });
+      const results = socket.received.find((message) => message.event === "race:results")!.payload;
+      for (const row of results as object[]) expect(row).not.toHaveProperty("missedKeys");
+    }
+    const spectator = client("spectator");
+    spectator.command("room:join", { code: "ABCDEF", role: "spectator" });
+    expect(spectator.received.some((message) => message.event === "race:self")).toBe(false);
+    expect(host.received.some((message) => JSON.stringify(message.payload).includes("missedKeys"))).toBe(false);
+  });
+
   it("abandonne après 30 s de grâce et ferme la salle sans humain", () => {
     const { host, guest, store, expirations, at } = setup();
     host.command("race:start");

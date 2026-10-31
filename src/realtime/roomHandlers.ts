@@ -122,12 +122,11 @@ export function registerRoomHandlers(
     if (!snapshot) return;
     for (const s of userSockets()) {
       s.emit("race:state", snapshot);
+      const self = store.self(code, user.id);
+      if (self) s.emit("race:self", self);
       if (snapshot.status === "results") {
         const results = store.results(code);
         if (results) s.emit("race:results", results);
-      } else {
-        const self = store.self(code, user.id);
-        if (self) s.emit("race:self", self);
       }
     }
   };

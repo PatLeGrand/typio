@@ -22,6 +22,8 @@ const outcome = (overrides: Partial<PlayerOutcome>): PlayerOutcome => ({
   elapsedMs: 20_000,
   correctChars: TEXT_LENGTH,
   keystrokes: { total: 11, correct: 10 },
+  wpmSeries: [],
+  missedKeys: {},
   ...overrides,
 });
 const build = (player: PlayerOutcome, bots: BotEntry[]) =>
@@ -29,14 +31,15 @@ const build = (player: PlayerOutcome, bots: BotEntry[]) =>
 
 describe("classement final (A-D7, RES-01, RES-02)", () => {
   it("classe les arrivés par temps, bots plus rapides ou plus lents que le joueur", () => {
-    const rows = build(outcome({}), [bot("fast", 10), bot("slow", 2)]);
+    const rows = build(outcome({ missedKeys: { a: 2 } }), [bot("fast", 10), bot("slow", 2)]);
     expect(rows.map((row) => [row.id, row.rank, row.status])).toEqual([
       ["fast", 1, "finished"],
       ["player", 2, "finished"],
       ["slow", 3, "unfinished"],
     ]);
     expect(rows[0]).toMatchObject({ timeMs: 10_000, wpm: 120, accuracy: 100 });
-    expect(rows[1]).toMatchObject({ timeMs: 20_000, wpm: 60, accuracy: 91 });
+    expect(rows[1]).toMatchObject({ timeMs: 20_000, wpm: 60, accuracy: 91, missedKeys: { a: 2 } });
+    expect(rows[0]).not.toHaveProperty("missedKeys");
   });
 
   it("un bot non arrivé est classé selon sa progression à la fin, avec son MPM sur ce temps", () => {

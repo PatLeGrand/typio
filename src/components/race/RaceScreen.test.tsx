@@ -156,7 +156,7 @@ describe("RaceScreen : saisie (COURSE-04, A-D6)", () => {
     for (const value of ["a", "ab", "abc", "abcd", "abcde", "abcdex", "abcde", "abcdef", "abcdefg", "abcdefgh", "abcdefghi", "abcdefghij"]) {
       type(input(labels), value);
     }
-    expect(screen.getByRole("table")).toHaveTextContent("91%");
+    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent("91%");
     expect(screen.getByText(/ 91% /)).toBeInTheDocument();
   });
 });
@@ -198,7 +198,7 @@ describe("RaceScreen : composition, touches mortes AZERTY et IME", () => {
     type(input(labels), "a");
     composeDeadKey(input(labels), "a", "ê");
     type(input(labels), "aêb");
-    expect(screen.getByRole("table")).toHaveTextContent("100%");
+    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent("100%");
   });
 });
 
@@ -248,7 +248,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.abandoned);
-    const youRow = within(screen.getByRole("table")).getByRole("rowheader", { name: labels.you }).closest("tr") as HTMLElement;
+    const youRow = within(screen.getByRole("table", { name: labels.results.tableTitle })).getByRole("rowheader", { name: labels.you }).closest("tr") as HTMLElement;
     expect(within(youRow).getByText(labels.results.statuses.abandoned)).toBeInTheDocument();
     expect(within(youRow).getAllByRole("cell")[0]).toHaveTextContent("3e");
   });

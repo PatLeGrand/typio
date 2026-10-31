@@ -7,7 +7,7 @@ import fr from "@/i18n/dictionaries/fr.json";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
 import { BOT_LEVELS, DEFAULT_ROOM_CONFIG, INPUT_MODES, type RoomState } from "./protocol";
 import {
-  abandonRace, applyInput, expireRunner, raceResults, raceSnapshot,
+  abandonRace, applyInput, expireRunner, raceResults, raceResultRows, raceSnapshot,
   setRunnerConnected, startRace, tickRace, type RaceState,
 } from "./raceEngine";
 
@@ -290,6 +290,46 @@ it("exposes the server clock with the scheduled start for synchronized countdown
   });
 });
 
+describe("séries des bots aux résultats (RES-03)", () => {
+  // Un plan accélérant rend les points vérifiables, y compris le MPM à l'arrivée.
+  it("échantillonne jusqu’à la fin du bot, indépendamment de la fin de course", () => {
+    const source = room();
+    source.config.bots = ["intermediate"];
+    const race = racing("a".repeat(80), source);
+    race.runners[2].plan = {
+      textLength: 80,
+      keyframes: [0, 5, 20, 45, 80].map((chars, second) => ({ chars, timeMs: second * 1000 })),
+      mistakeTimesMs: [], extraCorrectTimesMs: [],
+    };
+    const ended = tickRace(race, START + race.timeLimitMs);
+    const bot = raceResults(ended)?.find((row) => row.kind === "bot");
+    expect(bot?.wpmSeries).toEqual([0, 60, 120, 180, 240]);
+    expect(bot?.wpmSeries.at(-1)).toBe(bot?.wpm);
+    expect(bot?.timeMs).toBe(4000);
+    expect(raceResults(ended)?.[0].wpmSeries).toHaveLength(5);
+    expect(raceResults(ended)?.find((row) => row.id === "host")?.wpmSeries).toEqual(ended.runners[0].wpmSeries);
+    expect(raceSnapshot(ended, START + race.timeLimitMs).runners[2]).not.toHaveProperty("wpmSeries");
+  });
+
+  it("arrête un bot non arrivé à la limite et borne sa série à 601 points", () => {
+    const source = room();
+    source.config.bots = ["beginner"];
+    const race = racing("a".repeat(1000), source);
+    race.runners[2].plan = {
+      textLength: 1000, keyframes: [{ chars: 0, timeMs: 0 }, { chars: 1000, timeMs: 1_000_000 }],
+      mistakeTimesMs: [], extraCorrectTimesMs: [],
+    };
+    for (const limit of [2500, 600_000]) {
+      const ended = tickRace({ ...race, timeLimitMs: limit }, START + limit + 10_000);
+      const bot = raceResults(ended)?.find((row) => row.kind === "bot");
+      expect(bot?.wpmSeries).toHaveLength(Math.floor(limit / 1000) + 1);
+      expect(bot?.status).toBe("unfinished");
+      expect(bot?.wpmSeries.at(-1)).toBe(12);
+      expect(bot?.wpm).toBe(limit === 2500 ? 10 : 12);
+    }
+  });
+});
+
 describe("série MPM (RES-05)", () => {
   it("complète chaque seconde malgré les ticks irréguliers et fige la série à l’arrivée", () => {
     let race = input(racing(), ["a"], START + 500);
@@ -441,4 +481,18 @@ describe("bonus de remontée faisant autorité", () => {
     expect(raceResults(final)?.find((r) => r.kind === "bot")?.progress).toBe(1);
     if (type === "shorten") expect(final.runners[1].bonusesReceived).toBe(1);
   });
+});
+
+// Protège le comptage serveur et la taille du snapshot diffusé en course.
+it("keeps missed keys out of public results and preserves them in persistence rows", () => {
+  const source = room();
+  source.config.bots = ["beginner"];
+  const race = input(racing("abc", source), ["x", "\b", "a", "b", "c"]);
+  const ended = tickRace(race, START + race.timeLimitMs);
+  for (const row of raceResults(ended)!) expect(row).not.toHaveProperty("missedKeys");
+  expect(raceResultRows(ended).find((row) => row.userId === "host")?.missedKeys).toEqual({ a: 1 });
+  expect(raceResults(ended)?.find((row) => row.kind === "bot")).not.toHaveProperty("missedKeys");
+  for (const runner of raceSnapshot(race, START + 1_000).runners) {
+    expect(runner).not.toHaveProperty("missedKeys");
+  }
 });

@@ -135,6 +135,7 @@ export const raceResults = pgTable("race_results", {
   errors: integer("errors").notNull(),
   durationMs: integer("duration_ms").notNull(),
   progress: real("progress").notNull(),
+  missedKeys: jsonb("missed_keys").$type<Record<string, number>>().notNull().default({}),
   wpmSeries: jsonb("wpm_series").$type<number[]>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [

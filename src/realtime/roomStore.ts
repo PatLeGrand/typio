@@ -469,8 +469,12 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     },
 
     self(code: string, userId: string) {
-      const runner = rooms.get(code)?.race?.runners.find((r) => r.id === userId && r.kind === "human");
-      return runner ? { typed: runner.typed, keystrokes: { ...runner.keystrokes } } : null;
+      const race = rooms.get(code)?.race;
+      const runner = race?.runners.find((r) => r.id === userId && r.kind === "human");
+      return runner ? {
+        typed: runner.typed, keystrokes: { ...runner.keystrokes },
+        ...(race?.status === "results" ? { missedKeys: { ...runner.missedKeys } } : {}),
+      } : null;
     },
 
     roomOf,

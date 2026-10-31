@@ -1,4 +1,4 @@
-import { botFinishMs, botKeystrokesAt, botProgressAt, planBot, replanBot, BOT_FOG_SLOWDOWN_FACTOR, type BotPlan } from "@/race/bots";
+import { botFinishMs, botKeystrokesAt, botProgressAt, botWpmSeries, planBot, replanBot, BOT_FOG_SLOWDOWN_FACTOR, type BotPlan } from "@/race/bots";
 import { applyTextEdits, crossedCheckpoints, resolveCheckpoint, type BonusAward, type TextEdit } from "@/race/bonuses";
 import { getEffectiveTimeLimitSeconds } from "@/race/config";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
@@ -29,6 +29,7 @@ export interface RaceRunner {
   finishedAt: number | null;
   abandonedAt: number | null;
   wpmSeries: number[];
+  missedKeys?: Record<string, number>;
   userKind?: "member" | "guest";
   plan?: BotPlan;
   level?: BotLevel;
@@ -75,6 +76,7 @@ export function startRace(
     keystrokes: { total: 0, correct: 0 }, inputCount: 0, lastActivityAt: now,
     finishedAt: null, abandonedAt: null, wpmSeries: [],
     edits: [], bonusesReceived: 0, fogUntil: null,
+    ...(kind === "human" ? { missedKeys: {} } : {}),
   });
   return {
     ok: true,
@@ -112,7 +114,7 @@ export function applyInput(race: RaceState, userId: string, ops: readonly string
   let updated = { ...runner };
   for (const op of ops) {
     const next = op === "\b" ? updated.typed.slice(0, -1) : updated.typed + op;
-    const input = applyTypedInput(updated.typed, next, text, race.config.inputMode, updated.keystrokes);
+    const input = applyTypedInput(updated.typed, next, text, race.config.inputMode, updated.keystrokes, updated.missedKeys);
     updated = { ...updated, ...input, inputCount: updated.inputCount + 1, lastActivityAt: now, status: "typing" };
     updated.position = countCorrectChars(updated.typed, text);
     if (updated.typed === text) {
@@ -253,6 +255,7 @@ export function raceResults(race: RaceState) {
       bonusesReceived: r.bonusesReceived,
       bonusTypes: race.bonusEvents.filter((event) => event.recipientId === r.id).map((event) => event.type),
       wpm: computeWpm(r.position, timeMs), grossWpm: computeWpm(r.keystrokes.total, timeMs),
+      wpmSeries: r.kind === "bot" && r.plan ? botWpmSeries(r.plan, timeMs) : r.wpmSeries,
       accuracy: computeAccuracy(r.keystrokes), errors: r.keystrokes.total - r.keystrokes.correct, timeMs,
     };
   }).sort((a, b) => order[a.status] - order[b.status] ||
@@ -269,6 +272,7 @@ export function raceResultRows(race: RaceState) {
       userId: row.id, rank: row.rank, status: row.status, wpm: row.wpm,
       grossWpm: row.grossWpm, accuracy: row.accuracy, errors: row.errors,
       durationMs: row.timeMs, progress: row.progress, wpmSeries: [...runner.wpmSeries],
+      missedKeys: { ...runner.missedKeys },
     }];
   }) ?? [];
 }

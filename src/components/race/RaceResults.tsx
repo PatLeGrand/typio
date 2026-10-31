@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Trophy } from "lucide-react";
+import { RacePodium } from "./RacePodium";
+import { MissedKeysHeatmap } from "./MissedKeysHeatmap";
+import { WpmChart } from "./WpmChart";
 import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
 import type { Locale } from "@/i18n/config";
@@ -22,7 +24,7 @@ type Props = {
 export function RaceResults({ locale, labels, rows, headline, settingsHref, onReplay }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const copy = labels.results;
-  const podium = rows.slice(0, 3);
+  const displayRows = rows.map((row) => ({ ...row, name: `${row.name}${row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}` }));
   const player = rows.find((row) => row.isPlayer);
 
   // La fin de course est annoncée en amenant le focus sur le titre.
@@ -43,24 +45,9 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h3 className="flex items-center gap-2 text-lg font-extrabold">
-          <Trophy aria-hidden="true" className="size-5 text-accent-text" />
-          {copy.podium}
-        </h3>
-        <ol className="grid gap-3 sm:grid-cols-3">
-          {podium.map((row) => (
-            <li
-              key={row.id}
-              className={`flex flex-col gap-1 rounded-card border-2 px-5 py-4 ${row.isPlayer ? "border-accent bg-accent-panel" : "border-border bg-surface"}`}
-            >
-              <span className="text-2xl font-black text-accent-text">{formatOrdinal(locale, row.rank, labels.ordinal)}</span>
-              <span className="font-extrabold">{row.name}{row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}</span>
-              <span className="text-sm text-muted">{row.wpm} {copy.columns.wpm}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
+      <RacePodium rows={displayRows} locale={locale} labels={labels} highlightId={player?.id} />
+      <WpmChart rows={displayRows} locale={locale} labels={copy} highlightId={player?.id} />
+      {player && <MissedKeysHeatmap missedKeys={player.missedKeys ?? {}} locale={locale} labels={copy} />}
 
       <div className="overflow-x-auto rounded-card border border-border bg-surface">
         <table className="w-full min-w-[34rem] text-left text-sm">

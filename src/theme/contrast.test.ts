@@ -37,6 +37,9 @@ const MIN_RATIO = 4.5;
 const pairs: ReadonlyArray<readonly [string, string]> = [
   ["foreground", "background"],
   ["foreground", "surface"],
+  ["foreground", "heat-1"],
+  ["foreground", "heat-2"],
+  ["foreground", "heat-3"],
   ["muted", "background"],
   ["muted", "surface"],
   ["muted-strong", "accent-panel"],

@@ -1,0 +1,1 @@
+ALTER TABLE "race_results" ADD COLUMN "missed_keys" jsonb DEFAULT '{}'::jsonb NOT NULL;
