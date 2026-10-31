@@ -40,6 +40,7 @@ export const AUTH_RATE_LIMITS = {
   oauthCallbacks: { limit: 300, windowMs: 15 * MINUTE_MS },
   /** Modifications du profil par utilisateur (clé : `user.id`) : une écriture en base à chaque appel. */
   profileUpdates: { limit: 20, windowMs: 15 * MINUTE_MS },
+  avatarUploads: { limit: 10, windowMs: HOUR_MS },
 } as const;
 
 export interface RateLimiterOptions {
@@ -185,6 +186,7 @@ export interface AuthLimiters {
   oauthStarts: RateLimiter;
   oauthCallbacks: RateLimiter;
   profileUpdates: RateLimiter;
+  avatarUploads: RateLimiter;
 }
 
 export function createAuthLimiters(now: () => number = Date.now): AuthLimiters {
@@ -197,6 +199,7 @@ export function createAuthLimiters(now: () => number = Date.now): AuthLimiters {
     oauthStarts: createRateLimiter({ ...AUTH_RATE_LIMITS.oauthStarts, now }),
     oauthCallbacks: createRateLimiter({ ...AUTH_RATE_LIMITS.oauthCallbacks, now }),
     profileUpdates: createRateLimiter({ ...AUTH_RATE_LIMITS.profileUpdates, now }),
+    avatarUploads: createRateLimiter({ ...AUTH_RATE_LIMITS.avatarUploads, now }),
   };
 }
 

@@ -43,6 +43,13 @@
       "when": 1793476374445,
       "tag": "0005_curly_rhodey",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793480139391,
+      "tag": "0006_whole_meggan",
+      "breakpoints": true
     }
   ]
 }

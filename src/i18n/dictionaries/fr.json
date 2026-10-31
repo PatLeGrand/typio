@@ -572,6 +572,22 @@
     }
   },
   "profile": {
+    "avatar": {
+      "title": "Photo de profil",
+      "file": "Choisir une photo (JPEG, PNG ou WebP, 2 Mo maximum)",
+      "preview": "Photo de profil actuelle",
+      "upload": "Téléverser",
+      "remove": "Retirer la photo",
+      "saved": "Ta photo de profil est à jour.",
+      "errors": {
+        "TOO_LARGE": "La photo dépasse la limite de 2 Mo.",
+        "UNSUPPORTED_TYPE": "Choisis une image JPEG, PNG ou WebP.",
+        "INVALID_IMAGE": "Cette image est illisible. Choisis une image JPEG, PNG ou WebP valide.",
+        "UNAUTHORIZED": "Connecte-toi avec un compte membre pour modifier ta photo.",
+        "RATE_LIMITED": "Trop de tentatives. Réessaie plus tard.",
+        "UNKNOWN": "La photo n’a pas pu être modifiée. Réessaie."
+      }
+    },
     "stats": {
       "title": "Statistiques personnelles",
       "empty": "Aucune course enregistrée pour le moment.",
