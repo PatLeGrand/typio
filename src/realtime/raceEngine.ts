@@ -1,4 +1,4 @@
-import { botFinishMs, botKeystrokesAt, botProgressAt, planBot, replanBot, BOT_FOG_SLOWDOWN_FACTOR, type BotPlan } from "@/race/bots";
+import { botFinishMs, botKeystrokesAt, botProgressAt, botWpmSeries, planBot, replanBot, BOT_FOG_SLOWDOWN_FACTOR, type BotPlan } from "@/race/bots";
 import { applyTextEdits, crossedCheckpoints, resolveCheckpoint, type BonusAward, type TextEdit } from "@/race/bonuses";
 import { getEffectiveTimeLimitSeconds } from "@/race/config";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
@@ -253,6 +253,7 @@ export function raceResults(race: RaceState) {
       bonusesReceived: r.bonusesReceived,
       bonusTypes: race.bonusEvents.filter((event) => event.recipientId === r.id).map((event) => event.type),
       wpm: computeWpm(r.position, timeMs), grossWpm: computeWpm(r.keystrokes.total, timeMs),
+      wpmSeries: r.kind === "bot" && r.plan ? botWpmSeries(r.plan, timeMs) : r.wpmSeries,
       accuracy: computeAccuracy(r.keystrokes), errors: r.keystrokes.total - r.keystrokes.correct, timeMs,
     };
   }).sort((a, b) => order[a.status] - order[b.status] ||

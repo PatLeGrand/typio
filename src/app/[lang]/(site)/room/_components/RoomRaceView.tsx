@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/Button";
 import { playerBonusMessage, racerBonusLabel } from "@/components/race/bonusAnnouncements";
+import { RacePodium } from "@/components/race/RacePodium";
+import { WpmChart } from "@/components/race/WpmChart";
 import { RaceResultsTable } from "@/components/race/RaceResultsTable";
 import { RaceTypingPanel } from "@/components/race/RaceTypingPanel";
 import { RaceVisualizer } from "@/components/race/RaceVisualizer";
@@ -98,12 +100,17 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   }
 
   if (room.status === "results") {
+    const displayRows = results?.map((row) => ({ ...row, name: `${row.name}${row.kind === "bot" ? ` (${labels.bot}${row.level ? ` · ${raceLabels.botLevels[row.level]}` : ""})` : ""}` }));
     return (
       <section className="flex flex-col gap-4" aria-label={raceLabels.results.tableTitle}>
         <h2 className="text-2xl font-bold">{raceLabels.results.tableTitle}</h2>
         {records.includes(userId) && <p role="status">{raceLabels.results.newPersonalBest}</p>}
-        {results ? (
-          <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} botLevels={raceLabels.botLevels} highlightId={userId} />
+        {results && displayRows ? (
+          <>
+            <RacePodium rows={displayRows} locale={lang} labels={raceLabels} highlightId={userId} />
+            <WpmChart rows={displayRows} locale={lang} labels={raceLabels.results} highlightId={userId} />
+            <RaceResultsTable rows={results.map((row) => ({ ...row, isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} botLevels={raceLabels.botLevels} highlightId={userId} />
+          </>
         ) : <p role="status">{labels.loading}</p>}
         {room.hostId === userId ? <div className="flex flex-wrap gap-3">
           <Button disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>{labels.restart}</Button>

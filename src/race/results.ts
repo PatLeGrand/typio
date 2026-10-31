@@ -1,6 +1,6 @@
 import type { BonusType } from "./bonuses";
 import type { BotLevel } from "@/realtime/protocol";
-import { botFinishMs, botKeystrokesAt, botProgressAt, type BotPlan } from "./bots";
+import { botFinishMs, botKeystrokesAt, botProgressAt, botWpmSeries, type BotPlan } from "./bots";
 import { computeAccuracy, computeWpm, type Keystrokes } from "./metrics";
 
 /**
@@ -15,6 +15,7 @@ export interface PlayerOutcome {
   elapsedMs: number;
   correctChars: number;
   keystrokes: Keystrokes;
+  wpmSeries: number[];
 }
 
 export interface BotEntry {
@@ -32,6 +33,7 @@ export interface RaceResultRow {
   rank: number;
   status: RacerStatus;
   wpm: number;
+  wpmSeries: number[];
   accuracy: number;
   timeMs: number;
   correctChars: number;
@@ -72,6 +74,7 @@ export function buildRaceResults(input: {
       isPlayer: true,
       status: playerStatus,
       wpm: computeWpm(player.correctChars, endMs),
+      wpmSeries: player.wpmSeries,
       accuracy: computeAccuracy(player.keystrokes),
       timeMs: endMs,
       correctChars: player.correctChars,
@@ -91,6 +94,7 @@ export function buildRaceResults(input: {
       isPlayer: false,
       status: finished ? "finished" : "unfinished",
       wpm: computeWpm(correctChars, timeMs),
+      wpmSeries: botWpmSeries(bot.plan, timeMs),
       accuracy: computeAccuracy(botKeystrokesAt(bot.plan, timeMs)),
       timeMs,
       correctChars,

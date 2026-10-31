@@ -103,6 +103,16 @@
       "personalBest": "Personal best",
       "newPersonalBest": "New personal best!",
       "podium": "Podium",
+      "wpmChart": {
+        "title": "WPM over time",
+        "timeAxis": "Time (seconds)",
+        "wpmAxis": "WPM",
+        "legend": "Participants",
+        "accessibleSummary": "WPM for each participant over time. The thicker line indicates the local player.",
+        "dataSummary": "Performance summary",
+        "finalWpm": "Final WPM",
+        "peakWpm": "Peak WPM"
+      },
       "tableTitle": "Race results",
       "bonusTypes": {"shorten": "−3 words", "lengthen": "+3 words", "fog": "Fog"},
       "columns": {

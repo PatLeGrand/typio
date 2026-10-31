@@ -290,6 +290,46 @@ it("exposes the server clock with the scheduled start for synchronized countdown
   });
 });
 
+describe("séries des bots aux résultats (RES-03)", () => {
+  // Un plan accélérant rend les points vérifiables, y compris le MPM à l'arrivée.
+  it("échantillonne jusqu’à la fin du bot, indépendamment de la fin de course", () => {
+    const source = room();
+    source.config.bots = ["intermediate"];
+    const race = racing("a".repeat(80), source);
+    race.runners[2].plan = {
+      textLength: 80,
+      keyframes: [0, 5, 20, 45, 80].map((chars, second) => ({ chars, timeMs: second * 1000 })),
+      mistakeTimesMs: [], extraCorrectTimesMs: [],
+    };
+    const ended = tickRace(race, START + race.timeLimitMs);
+    const bot = raceResults(ended)?.find((row) => row.kind === "bot");
+    expect(bot?.wpmSeries).toEqual([0, 60, 120, 180, 240]);
+    expect(bot?.wpmSeries.at(-1)).toBe(bot?.wpm);
+    expect(bot?.timeMs).toBe(4000);
+    expect(raceResults(ended)?.[0].wpmSeries).toHaveLength(5);
+    expect(raceResults(ended)?.find((row) => row.id === "host")?.wpmSeries).toEqual(ended.runners[0].wpmSeries);
+    expect(raceSnapshot(ended, START + race.timeLimitMs).runners[2]).not.toHaveProperty("wpmSeries");
+  });
+
+  it("arrête un bot non arrivé à la limite et borne sa série à 601 points", () => {
+    const source = room();
+    source.config.bots = ["beginner"];
+    const race = racing("a".repeat(1000), source);
+    race.runners[2].plan = {
+      textLength: 1000, keyframes: [{ chars: 0, timeMs: 0 }, { chars: 1000, timeMs: 1_000_000 }],
+      mistakeTimesMs: [], extraCorrectTimesMs: [],
+    };
+    for (const limit of [2500, 600_000]) {
+      const ended = tickRace({ ...race, timeLimitMs: limit }, START + limit + 10_000);
+      const bot = raceResults(ended)?.find((row) => row.kind === "bot");
+      expect(bot?.wpmSeries).toHaveLength(Math.floor(limit / 1000) + 1);
+      expect(bot?.status).toBe("unfinished");
+      expect(bot?.wpmSeries.at(-1)).toBe(12);
+      expect(bot?.wpm).toBe(limit === 2500 ? 10 : 12);
+    }
+  });
+});
+
 describe("série MPM (RES-05)", () => {
   it("complète chaque seconde malgré les ticks irréguliers et fige la série à l’arrivée", () => {
     let race = input(racing(), ["a"], START + 500);

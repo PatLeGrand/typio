@@ -1,5 +1,11 @@
 import type { BotLevel, InputMode } from "../realtime/protocol";
-import type { Keystrokes } from "./metrics";
+import { computeWpm, type Keystrokes } from "./metrics";
+
+/** Indice = seconde depuis le départ, bornée par la fin du bot et les 600 s de course. */
+export function botWpmSeries(plan: BotPlan, endMs: number): number[] {
+  const count = Math.min(601, Math.floor(Math.min(endMs, botFinishMs(plan)) / 1000) + 1);
+  return Array.from({ length: count }, (_, second) => computeWpm(botProgressAt(plan, second * 1000), second * 1000));
+}
 
 /**
  * Simulation des bots (BOT-02, BOT-03, A-D8). Module pur : le hasard est injecté et le temps est un

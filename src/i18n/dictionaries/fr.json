@@ -103,6 +103,16 @@
       "personalBest": "Record personnel",
       "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
+      "wpmChart": {
+        "title": "Évolution du MPM",
+        "timeAxis": "Temps (secondes)",
+        "wpmAxis": "MPM",
+        "legend": "Participants",
+        "accessibleSummary": "MPM de chaque participant au fil des secondes. Le trait épais indique le joueur local.",
+        "dataSummary": "Résumé des performances",
+        "finalWpm": "MPM final",
+        "peakWpm": "Pic de MPM"
+      },
       "tableTitle": "Résultats de la course",
       "bonusTypes": {"shorten": "−3 mots", "lengthen": "+3 mots", "fog": "Brouillard"},
       "columns": {

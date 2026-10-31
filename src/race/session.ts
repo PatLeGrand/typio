@@ -1,6 +1,6 @@
 import { getEffectiveTimeLimitSeconds, type RaceSettings } from "./config";
 import { createRaceLifecycle, transitionRace, type RaceLifecycle, type RaceLifecycleEvent } from "./lifecycle";
-import { applyTypedInput, countCorrectChars, NO_KEYSTROKES, type Keystrokes } from "./metrics";
+import { applyTypedInput, computeWpm, countCorrectChars, NO_KEYSTROKES, type Keystrokes } from "./metrics";
 import type { PlayerOutcome } from "./results";
 
 /**
@@ -13,12 +13,13 @@ export interface RaceSession {
   lifecycle: RaceLifecycle;
   typed: string;
   keystrokes: Keystrokes;
+  wpmSeries: number[];
 }
 
 /** Crée la session et lance aussitôt le compte à rebours. */
 export function createRaceSession(settings: RaceSettings, text: string, now: number): RaceSession {
   const lifecycle = transitionRace(createRaceLifecycle(settings), { type: "start" }, now);
-  return { text, inputMode: settings.inputMode, lifecycle, typed: "", keystrokes: NO_KEYSTROKES };
+  return { text, inputMode: settings.inputMode, lifecycle, typed: "", keystrokes: NO_KEYSTROKES, wpmSeries: [] };
 }
 
 function withLifecycle(session: RaceSession, event: RaceLifecycleEvent, now: number): RaceSession {
@@ -28,7 +29,16 @@ function withLifecycle(session: RaceSession, event: RaceLifecycleEvent, now: num
 
 /** Fait avancer le compte à rebours et la limite de temps ; rend la même session si rien ne change. */
 export function tickRaceSession(session: RaceSession, now: number): RaceSession {
-  return withLifecycle(session, { type: "tick" }, now);
+  const current = withLifecycle(session, { type: "tick" }, now);
+  if (session.lifecycle.phase === "results" || (current.lifecycle.phase !== "racing" && current.lifecycle.phase !== "results")) return current;
+  const count = Math.min(601, Math.floor(raceElapsedMs(current, now) / 1000) + 1);
+  if (current.wpmSeries.length >= count) return current;
+  const wpmSeries = [...current.wpmSeries];
+  const position = countCorrectChars(current.typed, current.text);
+  while (wpmSeries.length < count) {
+    wpmSeries.push(computeWpm(position, wpmSeries.length * 1000));
+  }
+  return { ...current, wpmSeries };
 }
 
 /** Saisie du joueur. Ignorée hors course, et après la limite de temps (la limite prime). */
@@ -73,5 +83,6 @@ export function getPlayerOutcome(session: RaceSession): PlayerOutcome | null {
     elapsedMs: lifecycle.finishedAt - lifecycle.startsAt,
     correctChars: lifecycle.reason === "completed" ? session.text.length : countCorrectChars(session.typed, session.text),
     keystrokes: session.keystrokes,
+    wpmSeries: session.wpmSeries,
   };
 }

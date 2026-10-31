@@ -22,6 +22,7 @@ const outcome = (overrides: Partial<PlayerOutcome>): PlayerOutcome => ({
   elapsedMs: 20_000,
   correctChars: TEXT_LENGTH,
   keystrokes: { total: 11, correct: 10 },
+  wpmSeries: [],
   ...overrides,
 });
 const build = (player: PlayerOutcome, bots: BotEntry[]) =>
