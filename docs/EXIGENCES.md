@@ -159,8 +159,8 @@ Seule la course solo contre des bots existe (`src/race/`, `src/components/race/`
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
 | TEST-01 | complet | `vitest.config.mts`, `src/**/*.test.ts(x)` | tout `src/` | Vitest, 115 fichiers de test, lancés par la CI. Test d'intégration PostgreSQL séparé (`src/auth/repositories.integration.test.ts`). |
-| TEST-02 | non fait | — | — | Pas de Playwright. |
-| TEST-03 | partiel | `src/auth/authFlows.ts` | — | La connexion par identifiant et mot de passe existe (AUTH-01) ; aucun test de bout en bout ne l'utilise encore. |
+| TEST-02 | complet | `playwright.config.ts`, `e2e/`, `.github/workflows/ci.yml` (job `e2e`) | `e2e/setup.spec.ts`, `e2e/auth.spec.ts`, `e2e/room-race.spec.ts`, `e2e/profile.spec.ts`, `e2e/preferences.spec.ts` | Playwright (Chromium) contre un build de production (web sur le port 3100, temps réel sur le 3101) et un PostgreSQL neuf en CI. Parcours couverts : inscription et connexion, invité, salle par code avec un membre et un invité qui courent ensemble en temps réel jusqu'aux résultats, historique, photo de profil, langue et thème mémorisés. 11 tests verts en local (deux exécutions) et en CI le 31 octobre 2026. |
+| TEST-03 | complet | `e2e/setup.spec.ts`, `e2e/auth.helpers.ts`, `e2e/auth.spec.ts` | `e2e/auth.spec.ts` | Les comptes de test sont créés par la page d'inscription avec des identifiants uniques par exécution ; connexion, déconnexion, reconnexion et mauvais mot de passe par identifiant et mot de passe (AUTH-01), jamais par OAuth. |
 
 ## Performance (PERF)
 
