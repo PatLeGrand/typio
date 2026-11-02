@@ -29,7 +29,7 @@ describe("createRaceText (AC-3)", () => {
   });
 
   it("rend null quand aucun texte différent n’est disponible", () => {
-    const settings: RaceSettings = { ...DEFAULT_RACE_SETTINGS, textMode: "words", length: "short" };
+    const settings: RaceSettings = { ...DEFAULT_RACE_SETTINGS, textMode: "words", length: 25 };
     const text = createRaceText(settings, () => 0);
     expect(createRaceText(settings, () => 0, text ?? undefined)).toBeNull();
   });

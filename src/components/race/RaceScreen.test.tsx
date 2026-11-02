@@ -90,6 +90,19 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
   });
 
+  it("sans limite, masque le temps restant et attend les bots après l'arrivée du joueur", () => {
+    const { labels } = setup({ settings: { timeLimitSeconds: null, bots: ["noob"] } });
+    expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+    expect(screen.queryByText(labels.stats.timeLeft)).not.toBeInTheDocument();
+    advance(3000);
+    advance(1000);
+    type(input(labels), TEXT);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.racing);
+    expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
+    advance(60_000);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.finished);
+  });
+
   it("annonce le compte à rebours une fois par seconde dans une région polie, puis « partez »", () => {
     const { labels } = setup();
     const announcement = () => screen.getByText((_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P" && element.getAttribute("role") !== "status");

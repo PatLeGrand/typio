@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_RACE_SETTINGS, type RaceSettings } from "./config";
+import { RACE_SAFETY_LIMIT_SECONDS, DEFAULT_RACE_SETTINGS, type RaceSettings } from "./config";
 import { computeAccuracy } from "./metrics";
 import {
   abandonRaceSession,
@@ -113,6 +113,15 @@ describe("session de course (A-D6)", () => {
     expect(ended.wpmSeries).toHaveLength(601);
     expect(ended.wpmSeries.every((wpm) => wpm === 0)).toBe(true);
     expect(getPlayerOutcome(ended)?.wpmSeries).toEqual(ended.wpmSeries);
+  });
+
+  it("hides the unlimited timer and bounds sampling at the safety cap", () => {
+    const session = racing({ ...SETTINGS, timeLimitSeconds: null });
+    expect(raceTimeLeftMs(session, START + 600_000)).toBeNull();
+    expect(tickRaceSession(session, START + 600_000).lifecycle.phase).toBe("racing");
+    const ended = tickRaceSession(session, START + (RACE_SAFETY_LIMIT_SECONDS + 1) * 1000);
+    expect(ended.lifecycle).toMatchObject({ phase: "results", reason: "timeout" });
+    expect(ended.wpmSeries).toHaveLength(RACE_SAFETY_LIMIT_SECONDS + 1);
   });
 
   it("borne le temps écoulé", () => {

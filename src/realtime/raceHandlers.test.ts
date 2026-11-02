@@ -62,7 +62,7 @@ function setup() {
     };
   }
   const host = client("host");
-  host.command("room:create", { config: { length: "short" } });
+  host.command("room:create", { config: { length: 25 } });
   const guest = client("guest");
   guest.command("room:join", { code: "ABCDEF", role: "runner" });
   return { store, host, guest, client, broadcasts, expirations, at: (value: number) => { time = value; } };
@@ -221,7 +221,7 @@ describe("frontière client des courses (COURSE-06)", () => {
     expect(store.get("ABCDEF")?.participants.length).toBe(3);
     expect(host.command("room:updateConfig", { bots: ["intermediate"] })).toEqual({ ok: true });
     host.command("race:start");
-    at(400_000);
+    at(1_900_000);
     store.tick("ABCDEF");
     expect(host.command("room:close")).toEqual({ ok: true });
     expect(store.roomOf("guest")).toBeNull();

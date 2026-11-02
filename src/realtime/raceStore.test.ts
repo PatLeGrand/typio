@@ -9,7 +9,7 @@ const guest = { id: "guest", displayName: "Invité", kind: "guest" as const };
 function setup() {
   let now = 1000;
   const store = createRoomStore({ corpus: TEST_CORPUS, now: () => now, generateSeed: () => 42, generateCode: () => "ABCDEF" });
-  store.create(host, { length: "short", timeLimitSeconds: 60 }, "runner", now);
+  store.create(host, { length: 25, timeLimitSeconds: 60 }, "runner", now);
   store.join(guest, "ABCDEF", "runner", now);
   return { store, at: (value: number) => { now = value; } };
 }

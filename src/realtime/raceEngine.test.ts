@@ -5,6 +5,7 @@ import { botFinishMs, botKeystrokesAt, botProgressAt, planBot } from "@/race/bot
 import { createSeededRandom, shuffled } from "@/race/seededRandom";
 import { generateRaceText } from "@/race/textGenerator";
 import fr from "@/i18n/dictionaries/fr.json";
+import { RACE_SAFETY_LIMIT_SECONDS } from "@/race/config";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
 import { BOT_LEVELS, DEFAULT_ROOM_CONFIG, INPUT_MODES, type RoomState } from "./protocol";
 import {
@@ -17,7 +18,7 @@ const START = NOW + COUNTDOWN_MS;
 function room(): RoomState {
   return {
     code: "ABCDEF", status: "waiting", hostId: "host",
-    config: { ...DEFAULT_ROOM_CONFIG, length: "short" },
+    config: { ...DEFAULT_ROOM_CONFIG, length: 25 },
     participants: ["host", "guest"].map((id) => ({
       userId: id, displayName: id, kind: "member", avatarVersion: null, role: "runner", connected: true, joinedAt: NOW,
     })),
@@ -36,6 +37,21 @@ function input(race: RaceState, ops: readonly string[], now = START + 1_000, id 
   if (!result.ok) throw new Error(result.error);
   return result.state;
 }
+
+// Sans limite, attendre un coureur inactif ne doit ni finir à cinq minutes ni allouer sans borne.
+it("ends unlimited races when everyone is done or at the 30-minute safety cap", () => {
+  let race = tickRace(racing(), START + 600_000);
+  expect(race.status).toBe("racing");
+  race = abandonRace(race, "guest", START + 600_001);
+  expect(race.status).toBe("racing");
+  race = input(race, ["a", "b", "c"], START + 600_002);
+  expect(race).toMatchObject({ status: "results", endedAt: START + 600_002 });
+  const deadline = START + RACE_SAFETY_LIMIT_SECONDS * 1000;
+  const capped = tickRace(racing(), deadline + 100_000);
+  expect(capped).toMatchObject({ status: "results", endedAt: deadline });
+  expect(capped.runners[0].wpmSeries).toHaveLength(RACE_SAFETY_LIMIT_SECONDS + 1);
+  expect(raceResults(capped)?.every((row) => row.status === "unfinished")).toBe(true);
+});
 
 // Ces gardes protègent les droits de l’hôte et le minimum de coureurs (COURSE-02).
 describe("startRace", () => {
@@ -80,7 +96,7 @@ describe("startRace", () => {
     expect(race.runners.map((r) => r.kind)).toEqual(["human", "bot"]);
     expect(race.runners[1].id).toBe("bot-0");
     expect(race.runners[1].name.length).toBeGreaterThan(0);
-    expect(race.timeLimitMs).toBe(300_000);
+    expect(race.timeLimitMs).toBe(1_800_000);
     source.config.timeLimitSeconds = 60;
     expect(started(source).timeLimitMs).toBe(60_000);
   });

@@ -1,6 +1,6 @@
 import { botFinishMs, botKeystrokesAt, botProgressAt, botWpmSeries, planBot, replanBot, BOT_FOG_SLOWDOWN_FACTOR, type BotPlan } from "@/race/bots";
 import { applyTextEdits, crossedCheckpoints, resolveCheckpoint, type BonusAward, type TextEdit } from "@/race/bonuses";
-import { getEffectiveTimeLimitSeconds } from "@/race/config";
+import { RACE_SAFETY_LIMIT_SECONDS, getEffectiveTimeLimitSeconds } from "@/race/config";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
 import { applyTypedInput, computeAccuracy, computeWpm, countCorrectChars, type Keystrokes } from "@/race/metrics";
 import { createSeededRandom, shuffled } from "@/race/seededRandom";
@@ -161,7 +161,7 @@ export function tickRace(race: RaceState, now: number): RaceState {
   let runners = race.runners.map((r): RaceRunner => {
     if (r.kind === "human") {
       // Indice = seconde depuis le départ ; les ticks tardifs complètent les secondes manquantes.
-      const count = Math.min(601, Math.floor(race.timeLimitMs / 1000) + 1,
+      const count = Math.min(RACE_SAFETY_LIMIT_SECONDS + 1, Math.floor(race.timeLimitMs / 1000) + 1,
         Math.floor(elapsed(race, r, now) / 1000) + 1);
       if (r.wpmSeries.length >= count) return r;
       const wpmSeries = [...r.wpmSeries];

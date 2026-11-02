@@ -73,7 +73,7 @@ describe("persistance RES-05", () => {
     try {
       const host = client("member", "member");
       const other = client("other", "member");
-      const created = host.command("room:create", { config: { length: "short" }, role: "runner" });
+      const created = host.command("room:create", { config: { length: 25 }, role: "runner" });
       if (!created.ok) throw new Error(created.error);
       expect(other.command("room:join", { code: created.data.code, role: "runner" }).ok).toBe(true);
       expect(host.command("race:start").ok).toBe(true);
@@ -138,7 +138,7 @@ describe("persistance RES-05", () => {
     });
     try {
       const host = client("member", "member");
-      const created = host.command("room:create", { config: { length: "short", bots: ["intermediate"] },
+      const created = host.command("room:create", { config: { length: 25, bots: ["intermediate"] },
         role: mode === "guest" ? "spectator" : "runner" });
       if (!created.ok) throw new Error(created.error);
       const guest = mode === "guest" ? client("guest", "guest") : null;
@@ -194,7 +194,7 @@ describe("persistance RES-05", () => {
       expect(visitor.command("room:join", { code, role: "runner" })).toMatchObject({ ok: true });
       expect(host.command("race:start")).toEqual({ ok: true });
       expect(recordRace).not.toHaveBeenCalled();
-      time += 700_000;
+      time += 1_900_000;
       await vi.advanceTimersByTimeAsync(100);
       expect(transport.broadcasts.filter((b) => b.event === "race:results")).toEqual([
         { event: "race:results", payload: expect.arrayContaining([expect.objectContaining({ kind: "bot" })]) },

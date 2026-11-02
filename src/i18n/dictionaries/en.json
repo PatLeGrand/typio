@@ -488,9 +488,16 @@
     },
     "length": {
       "label": "Text length",
+      "words": "{count} words",
       "short": "Short",
       "medium": "Medium",
       "long": "Long"
+    },
+    "includedChars": {
+      "label": "Characters to include",
+      "help": "Each word must contain at least one of these characters (up to 30, case ignored). Exclusions take priority.",
+      "sentencesHelp": "Available in words mode only: corpus sentences are kept whole.",
+      "error": "Too many characters to include (max 100)."
     },
     "excludedChars": {
       "label": "Excluded characters",
@@ -509,9 +516,10 @@
     },
     "timeLimit": {
       "label": "Time limit",
-      "help": "Without a custom limit, the race ends after 5 minutes.",
-      "none": "None (5 min by default)",
+      "help": "Without a limit, the race ends when all racers finish or abandon.",
+      "none": "None",
       "noneShort": "None",
+      "seconds": "{seconds} s",
       "minutes": "{minutes} min"
     },
     "inputMode": {

@@ -343,7 +343,7 @@ describe("état de la salle", () => {
     startConnected();
     socket.fire("room:error", "NOT_HOST");
 
-    void connection.updateConfig({ length: "long" });
+    void connection.updateConfig({ length: 75 });
 
     expect(connection.getSnapshot().error).toBeNull();
   });
@@ -423,7 +423,7 @@ describe("accusés (D8)", () => {
 
     await expect(connection.create()).resolves.toEqual({ ok: false, error: "OFFLINE" });
     await expect(connection.join({ code: "ABC234", role: "runner" })).resolves.toEqual({ ok: false, error: "OFFLINE" });
-    await expect(connection.updateConfig({ length: "long" })).resolves.toEqual({ ok: false, error: "OFFLINE" });
+    await expect(connection.updateConfig({ length: 75 })).resolves.toEqual({ ok: false, error: "OFFLINE" });
     await expect(connection.leave()).resolves.toEqual({ ok: false, error: "OFFLINE" });
 
     expect(socket.emissions).toEqual([]);

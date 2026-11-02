@@ -45,11 +45,11 @@ export type TextLanguage = (typeof TEXT_LANGUAGES)[number];
 export const TEXT_COMPLEXITIES = ["easy", "medium", "hard"] as const;
 export type TextComplexity = (typeof TEXT_COMPLEXITIES)[number];
 
-export const TEXT_LENGTHS = ["short", "medium", "long"] as const;
-export type TextLength = (typeof TEXT_LENGTHS)[number];
+export const TEXT_WORD_COUNTS = [10, 25, 50, 75, 100] as const;
+export type TextLength = (typeof TEXT_WORD_COUNTS)[number];
 
-/** Limites de temps proposées à l'hôte, en secondes ; `null` = défaut de 5 min (CONF-01, H-9). */
-export const TIME_LIMITS_SECONDS = [60, 120, 180, 300, 600] as const;
+/** Limites de temps proposées à l'hôte, en secondes ; `null` = aucune limite (CONF-01). */
+export const TIME_LIMITS_SECONDS = [30, 60, 120, 180, 300, 600] as const;
 export type TimeLimitSeconds = (typeof TIME_LIMITS_SECONDS)[number];
 
 export const INPUT_MODES = ["free", "blocking"] as const;
@@ -74,6 +74,7 @@ export interface RoomConfig {
   numbers: boolean;
   uppercase: boolean;
   excludedCharacters: string;
+  includedCharacters: string;
   inputMode: InputMode;
   bots: BotLevel[];
   visibility: RoomVisibility;
@@ -85,7 +86,7 @@ export type RoomConfigPatch = Partial<RoomConfig>;
 export const DEFAULT_ROOM_CONFIG: RoomConfig = {
   textMode: "sentences",
   language: "fr",
-  length: "medium",
+  length: 25,
   timeLimitSeconds: null,
   accents: true,
   bonuses: false,
@@ -94,6 +95,7 @@ export const DEFAULT_ROOM_CONFIG: RoomConfig = {
   numbers: false,
   uppercase: true,
   excludedCharacters: "",
+  includedCharacters: "",
   inputMode: "free",
   bots: [],
   visibility: "code",
@@ -298,7 +300,7 @@ export function normalizeExcludedCharacters(input: string): string | null {
 export const roomConfigFields = {
   textMode: z.enum(TEXT_MODES),
   language: z.enum(TEXT_LANGUAGES),
-  length: z.enum(TEXT_LENGTHS),
+  length: z.literal(TEXT_WORD_COUNTS),
   timeLimitSeconds: z.literal(TIME_LIMITS_SECONDS).nullable(),
   accents: z.boolean(),
   bonuses: z.boolean(),
@@ -307,6 +309,7 @@ export const roomConfigFields = {
   numbers: z.boolean(),
   uppercase: z.boolean(),
   excludedCharacters: excludedCharactersSchema,
+  includedCharacters: excludedCharactersSchema,
   inputMode: z.enum(INPUT_MODES),
   bots: z.array(z.enum(BOT_LEVELS)).max(MAX_BOTS),
   visibility: z.enum(ROOM_VISIBILITIES),
@@ -330,6 +333,7 @@ export const roomConfigPatchSchema = plainObject.pipe(
     numbers: roomConfigFields.numbers.exactOptional(),
     uppercase: roomConfigFields.uppercase.exactOptional(),
     excludedCharacters: roomConfigFields.excludedCharacters.exactOptional(),
+    includedCharacters: roomConfigFields.includedCharacters.exactOptional(),
     inputMode: roomConfigFields.inputMode.exactOptional(),
     bots: roomConfigFields.bots.exactOptional(),
     visibility: roomConfigFields.visibility.exactOptional(),

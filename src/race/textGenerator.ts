@@ -15,6 +15,7 @@ export type TextGenerationInput = Pick<
   | "accents"
   | "length"
   | "excludedCharacters"
+  | "includedCharacters"
   | "complexity"
   | "punctuation"
   | "numbers"
@@ -25,13 +26,8 @@ export type TextGenerationResult =
   | { ok: true; text: string }
   | { ok: false; error: "NO_TEXT_AVAILABLE" };
 
-/** Longueur visée selon le réglage ; le résultat reste dans ±25 % (CONF-04). */
-export const TEXT_TARGET_LENGTH: Record<RaceSettings["length"], number> = {
-  short: 100,
-  medium: 200,
-  long: 350,
-};
-const TOLERANCE = 0.25;
+/** Phrases entières : ±30 % de mots permet les cibles de 10 à 100 avec le corpus actuel. */
+export const SENTENCE_WORD_COUNT_TOLERANCE = 0.30;
 
 // ── Complexité (CONF-05) : critères mesurables ──────────────────────────────
 
@@ -178,21 +174,22 @@ function assembleOnce(
   targetLength: number,
   random: () => number,
 ): string | null {
-  const min = Math.ceil(targetLength * (1 - TOLERANCE));
-  const max = Math.floor(targetLength * (1 + TOLERANCE));
+  const min = Math.ceil(targetLength * (1 - SENTENCE_WORD_COUNT_TOLERANCE));
+  const max = Math.floor(targetLength * (1 + SENTENCE_WORD_COUNT_TOLERANCE));
   const remaining = [...pool];
   let text = "";
+  let wordCount = 0;
 
-  while (text.length < targetLength) {
-    const used = text.length === 0 ? 0 : text.length + 1;
-    const fitting = remaining.filter((item) => used + item.length <= max);
+  while (wordCount < targetLength) {
+    const fitting = remaining.filter((item) => wordCount + item.split(/\s+/u).length <= max);
     if (fitting.length === 0) break;
     const chosen = fitting[pickIndex(fitting.length, random)];
     remaining.splice(remaining.indexOf(chosen), 1);
     text = text.length === 0 ? chosen : `${text} ${chosen}`;
+    wordCount += chosen.split(/\s+/u).length;
   }
 
-  return text.length >= min ? text : null;
+  return wordCount >= min ? text : null;
 }
 
 /** Nombre inséré en mode mots : 1 à 2 chiffres (facile), jusqu'à 4 (moyen), plus des décimaux (difficile). */
@@ -204,9 +201,6 @@ function randomNumber(complexity: TextComplexity, language: TextLanguage, random
   return `${integer(2)}${separator}${1 + pickIndex(99, random)}`;
 }
 
-/** Plus grand ajout possible à un mot : nombre décimal + marque (`(` et `)` comptent deux). */
-const MAX_TOKEN_OVERHEAD = 10;
-
 /**
  * Mode mots : assemble des jetons séparés par une espace. Des mots distincts, un nombre tous
  * les `NUMBER_EVERY` jetons et une marque tous les `PUNCTUATION_EVERY` jetons si les options
@@ -217,11 +211,10 @@ function assembleWords(
   pool: readonly string[],
   input: TextGenerationInput,
   excluded: ReadonlySet<string>,
+  included: ReadonlySet<string>,
   random: () => number,
 ): string | null {
-  const targetLength = TEXT_TARGET_LENGTH[input.length];
-  const min = Math.ceil(targetLength * (1 - TOLERANCE));
-  const max = Math.floor(targetLength * (1 + TOLERANCE));
+  const targetLength = input.length;
   const remaining = [...pool];
   const marks = WORD_PUNCTUATION_MARKS[input.complexity].filter(
     (mark) => !containsExcluded(mark, excluded),
@@ -230,17 +223,15 @@ function assembleWords(
   let index = 0;
   let capitalizeNext = input.uppercase;
 
-  while (text.length < targetLength) {
-    const used = text.length === 0 ? 0 : text.length + 1;
+  while (index < targetLength) {
     let token: string | null = null;
     if (input.numbers && index % NUMBER_EVERY === NUMBER_EVERY - 1) {
       const number = randomNumber(input.complexity, input.language, random);
-      if (!containsExcluded(number, excluded)) token = number;
+      if (!containsExcluded(number, excluded) && (included.size === 0 || containsExcluded(number, included))) token = number;
     }
     if (token === null) {
-      const fitting = remaining.filter((item) => used + item.length + MAX_TOKEN_OVERHEAD <= max);
-      if (fitting.length === 0) break;
-      const chosen = fitting[pickIndex(fitting.length, random)];
+      if (remaining.length === 0) return null;
+      const chosen = remaining[pickIndex(remaining.length, random)];
       remaining.splice(remaining.indexOf(chosen), 1);
       token = chosen;
     }
@@ -255,7 +246,7 @@ function assembleWords(
     index += 1;
   }
 
-  return text.length >= min && text.length <= max ? text : null;
+  return text;
 }
 
 export function generateRaceText(
@@ -264,6 +255,7 @@ export function generateRaceText(
   corpus: SentenceCorpus = EMPTY_CORPUS,
 ): TextGenerationResult {
   const excluded = parseExcludedCharacters(input.excludedCharacters);
+  const included = parseExcludedCharacters(input.includedCharacters);
 
   if (input.textMode === "sentences") {
     // Une phrase ne se retouche que par les options (ponctuation, majuscules) : on transforme
@@ -279,7 +271,7 @@ export function generateRaceText(
           .filter((sentence) => !containsExcluded(sentence, excluded)),
       ),
     ];
-    const text = assemble(pool, TEXT_TARGET_LENGTH[input.length], random);
+    const text = assemble(pool, input.length, random);
     return text === null ? { ok: false, error: "NO_TEXT_AVAILABLE" } : { ok: true, text };
   }
 
@@ -297,8 +289,9 @@ export function generateRaceText(
         : input.complexity === "hard"
           ? length >= HARD_MIN_WORD_LENGTH
           : true;
-    return fits && !containsExcluded(word, excluded);
+    return fits && !containsExcluded(word, excluded) &&
+      (included.size === 0 || containsExcluded(word, included));
   });
-  const text = assembleWords(pool, input, excluded, random);
+  const text = assembleWords(pool, input, excluded, included, random);
   return text === null ? { ok: false, error: "NO_TEXT_AVAILABLE" } : { ok: true, text };
 }

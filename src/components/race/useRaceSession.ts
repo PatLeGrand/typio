@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import type { RaceSettings } from "@/race/config";
 import { nextRaceText } from "@/app/[lang]/race/actions";
-import { applyRoundBonuses, createRound, type Round } from "@/race/round";
+import { applyRoundBonuses, createRound, snapshotRound, type Round } from "@/race/round";
 import { abandonRaceSession, tickRaceSession, typeIntoRaceSession, type RaceSession } from "@/race/session";
 
 /** Fréquence de rafraîchissement de l'affichage ; le temps, lui, vient toujours de `now()` (A-D6). */
@@ -51,7 +51,7 @@ export function useRaceSession({ settings, initialText, botNames, botNameSeed, n
     };
   });
 
-  const phase = state.round?.session.lifecycle.phase;
+  const phase = state.round ? snapshotRound(state.round, state.clock, "").phase : undefined;
   useEffect(() => {
     if (!phase || phase === "results") return;
     const id = setInterval(() => {
