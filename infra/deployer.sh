@@ -32,6 +32,9 @@ docker compose pull web realtime
 echo "── Application des migrations PostgreSQL"
 docker compose run --rm --no-deps web bun scripts/migrate.ts
 
+echo "── Initialisation des données de démonstration"
+docker compose run --rm --no-deps web bun seed.js
+
 echo "── Redémarrage des conteneurs"
 docker compose up -d web realtime
 

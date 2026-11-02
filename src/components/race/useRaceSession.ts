@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import type { RaceSettings } from "@/race/config";
-import { createRaceText } from "@/race/raceText";
+import { nextRaceText } from "@/app/[lang]/race/actions";
 import { applyRoundBonuses, createRound, type Round } from "@/race/round";
 import { abandonRaceSession, tickRaceSession, typeIntoRaceSession, type RaceSession } from "@/race/session";
 
@@ -21,6 +21,7 @@ interface RoundState {
 
 export interface UseRaceSession {
   round: Round | null;
+  loading: boolean;
   clock: number;
   typeInput: (next: string) => void;
   abandon: () => void;
@@ -40,6 +41,7 @@ interface Options {
 
 /** Porte l'état d'une manche et l'horloge qui la fait vivre ; la logique est dans `src/race`. */
 export function useRaceSession({ settings, initialText, botNames, botNameSeed, now, random }: Options): UseRaceSession {
+  const [loading, startTransition] = useTransition();
   const [state, setState] = useState<RoundState>(() => {
     const t = now();
     return {
@@ -75,13 +77,22 @@ export function useRaceSession({ settings, initialText, botNames, botNameSeed, n
   const previousText = state.round?.session.text;
   const nextCount = state.count + 1;
   const replay = useCallback(() => {
-    const t = now();
-    const text = createRaceText(settings, random, previousText);
-    const round = text === null ? null : createRound(nextCount, settings, text, botNames, Math.floor(random() * 4294967296), t, random);
-    setState({ round, clock: t, count: nextCount });
-  }, [now, random, settings, botNames, previousText, nextCount]);
+    if (loading) return;
+    startTransition(async () => {
+      let text: string | null = null;
+      try {
+        const result = await nextRaceText({ settings, previous: previousText });
+        if (result.ok) text = result.text;
+      } catch {
+        // Une erreur réseau utilise le même écran traduit que NO_TEXT_AVAILABLE.
+      }
+      const t = now();
+      const round = text === null ? null : createRound(nextCount, settings, text, botNames, Math.floor(random() * 4294967296), t, random);
+      setState({ round, clock: t, count: nextCount });
+    });
+  }, [now, random, settings, botNames, previousText, nextCount, loading]);
 
-  return { round: state.round, clock: state.clock, typeInput, abandon, replay };
+  return { round: state.round, loading, clock: state.clock, typeInput, abandon, replay };
 }
 
 function updateSession(state: RoundState, clock: number, change: (session: RaceSession) => RaceSession): RoundState {

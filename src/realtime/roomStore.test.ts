@@ -1,3 +1,4 @@
+import { TEST_CORPUS } from "@/test/corpus";
 import { describe, it, expect, beforeEach } from "vitest";
 import { createRoomStore, MAX_SPECTATORS } from "./roomStore";
 import { DEFAULT_ROOM_CONFIG, DEFAULT_CAPACITY } from "./protocol";
@@ -174,7 +175,7 @@ describe("roomStore", () => {
     ["reconnect", 2], ["reconnect", null], ["reconnect", undefined],
   ] as const)("H-40: %s refreshes participant and race avatarVersion to %s", (method, avatarVersion) => {
     let now = 100;
-    store = createRoomStore({ now: () => now, generateSeed: () => 42 });
+    store = createRoomStore({ corpus: TEST_CORPUS, now: () => now, generateSeed: () => 42 });
     const created = store.create({ ...member, avatarVersion: 1 }, {}, "runner", now);
     if (!created.ok) throw new Error("failed to create");
     const code = created.state.code;

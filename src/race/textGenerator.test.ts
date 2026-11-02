@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { SENTENCES_EN } from "./data/sentences.en";
-import { SENTENCES_FR } from "./data/sentences.fr";
+import { SENTENCES_EN } from "../../scripts/seed/sentences.en";
+import { SENTENCES_FR } from "../../scripts/seed/sentences.fr";
 import { RARE_WORDS_EN, WORDS_EN } from "./data/words.en";
 import { RARE_WORDS_FR, WORDS_FR } from "./data/words.fr";
 import {
   classifySentence,
   EASY_MAX_WORD_LENGTH,
-  generateRaceText,
+  generateRaceText as generate,
   HARD_MIN_WORD_LENGTH,
-  SENTENCES,
   parseExcludedCharacters,
   TEXT_TARGET_LENGTH,
   type TextGenerationInput,
 } from "./textGenerator";
+
+import { TEST_CORPUS as SENTENCES } from "@/test/corpus";
+const generateRaceText: typeof generate = (input, random) => generate(input, random, SENTENCES);
 
 /** Générateur à graine (mulberry32) : même graine, même suite. */
 function seeded(seed: number): () => number {

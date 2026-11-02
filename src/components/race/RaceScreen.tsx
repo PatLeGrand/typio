@@ -59,7 +59,7 @@ export function RaceScreen({
   now = defaultNow,
   random = Math.random,
 }: Props) {
-  const { round, clock, typeInput, abandon, replay } = useRaceSession({
+  const { round, clock, typeInput, abandon, replay, loading } = useRaceSession({
     settings,
     initialText,
     botNames: labels.botNames,
@@ -71,6 +71,7 @@ export function RaceScreen({
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
 
+  if (loading) return <p role="status">{labels.loading}</p>;
   if (!round) return <RaceNoText labels={labels.noText} settingsHref={settingsHref} />;
 
   const snapshot = snapshotRound(round, clock, labels.you);

@@ -1,3 +1,4 @@
+import { TEST_CORPUS } from "@/test/corpus";
 import { describe, expect, it } from "vitest";
 import {
   BOT_LEVEL_PROFILES,
@@ -9,7 +10,9 @@ import {
   replanBot,
 } from "./bots";
 import { BOT_LEVELS, INPUT_MODES } from "../realtime/protocol";
-import { generateRaceText } from "./textGenerator";
+import { generateRaceText as generate } from "./textGenerator";
+
+const generateRaceText: typeof generate = (input, random) => generate(input, random, TEST_CORPUS);
 
 /** Générateur à graine (mulberry32) : même graine, même suite. */
 function seeded(seed: number): () => number {

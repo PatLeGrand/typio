@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { TEST_CORPUS } from "@/test/corpus";
 import { describe, expect, it } from "vitest";
 import { createRateLimiter } from "@/auth/rateLimit";
 import { registerRoomHandlers, type RealtimeSocket } from "./roomHandlers";
@@ -11,7 +12,7 @@ import type { Ack } from "./protocol";
 /** Frontières Socket.IO et minuteurs simulées ; store et moteur réels. */
 function setup() {
   let time = 1000;
-  const store = createRoomStore({ now: () => time, generateSeed: () => 42, generateCode: () => "ABCDEF" });
+  const store = createRoomStore({ corpus: TEST_CORPUS, now: () => time, generateSeed: () => 42, generateCode: () => "ABCDEF" });
   const sockets = createUserSockets();
   const expirations = new Map<string, { delay: number; expire: () => void }>();
   const timers: GraceTimers = {

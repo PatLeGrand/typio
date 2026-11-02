@@ -4,7 +4,7 @@ import { RaceScreen } from "@/components/race/RaceScreen";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
 import { deserializeRaceSettings } from "@/race/config";
-import { createRaceText } from "@/race/raceText";
+import { nextRaceText } from "./actions";
 
 /** Seed for the bot names, drawn on the server with the text so hydration matches. */
 function drawBotNameSeed(): number {
@@ -35,6 +35,7 @@ export default async function RacePage({ params, searchParams }: {
   }
 
   const user = await getCurrentUserForDisplay();
+  const generated = await nextRaceText({ settings });
   return (
     <RaceScreen
       locale={locale}
@@ -44,7 +45,7 @@ export default async function RacePage({ params, searchParams }: {
       userName={user?.displayName ?? null}
       userId={user?.id ?? null}
       avatarVersion={user?.avatarVersion ?? null}
-      initialText={createRaceText(settings, Math.random)}
+      initialText={generated.ok ? generated.text : null}
       botNameSeed={drawBotNameSeed()}
     />
   );

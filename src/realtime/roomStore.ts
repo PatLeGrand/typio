@@ -1,3 +1,4 @@
+import type { SentenceCorpus } from "@/race/textGenerator";
 import { randomBytes } from "node:crypto";
 import { generateToken, hashToken } from "@/auth/token";
 import type { NewRace, NewRaceResult } from "@/race/raceRepository";
@@ -66,6 +67,7 @@ interface StoredRoom extends RoomState {
 export const MAX_SPECTATORS = 20;
 
 export interface RoomStoreOptions {
+  corpus?: SentenceCorpus;
   /** Tirage d'un code candidat ; injectable pour tester la collision (AC-10). */
   generateCode?: () => string;
   generateSeed?: () => number;
@@ -414,7 +416,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     start(userId: string, code: string): RoomResult {
       const room = rooms.get(code);
       if (!room) return { ok: false, error: "ROOM_NOT_FOUND" };
-      const result = startRace(room, userId, now(), generateSeed());
+      const result = startRace(room, userId, now(), generateSeed(), options.corpus);
       if (!result.ok) return result;
       saveRace(room, result.state);
       return { ok: true, state: cloneState(room) };

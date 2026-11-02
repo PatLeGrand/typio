@@ -4,7 +4,7 @@ import { getEffectiveTimeLimitSeconds } from "@/race/config";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
 import { applyTypedInput, computeAccuracy, computeWpm, countCorrectChars, type Keystrokes } from "@/race/metrics";
 import { createSeededRandom, shuffled } from "@/race/seededRandom";
-import { generateRaceText } from "@/race/textGenerator";
+import { generateRaceText, type SentenceCorpus } from "@/race/textGenerator";
 import fr from "@/i18n/dictionaries/fr.json";
 import en from "@/i18n/dictionaries/en.json";
 import type { BotLevel, RoomConfig, RoomErrorCode, RoomState } from "./protocol";
@@ -58,7 +58,7 @@ export type RaceResult =
 const active = (runner: RaceRunner) => runner.status === "ready" || runner.status === "typing";
 
 export function startRace(
-  room: RoomState, userId: string, now: number, seed: number,
+  room: RoomState, userId: string, now: number, seed: number, corpus?: SentenceCorpus,
 ): { ok: true; state: RaceState } | { ok: false; error: RoomErrorCode } {
   if (room.status !== "waiting") return { ok: false, error: "RACE_NOT_ALLOWED" };
   if (room.hostId !== userId) return { ok: false, error: "NOT_HOST" };
@@ -70,7 +70,7 @@ export function startRace(
     return { ok: false, error: "NOT_ENOUGH_RUNNERS" };
   }
   const random = createSeededRandom(seed);
-  const generated = generateRaceText(room.config, random);
+  const generated = generateRaceText(room.config, random, corpus);
   if (!generated.ok) return generated;
   const names = shuffled((room.config.language === "fr" ? fr : en).raceScreen.botNames, random);
   const runner = (id: string, name: string, kind: RaceRunner["kind"], connected: boolean): RaceRunner => ({

@@ -27,6 +27,7 @@ export type AuthFormState =
 
 /** Utilisateur authentifié tel que l'exposent `getCurrentUser()` et le futur service temps réel. */
 export interface CurrentUser {
+  isDemo?: boolean;
   id: string;
   kind: UserKind;
   displayName: string;

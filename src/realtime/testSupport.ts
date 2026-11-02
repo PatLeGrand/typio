@@ -3,6 +3,7 @@
  * Socket.IO authentifiés contre un serveur lancé sur un port libre.
  */
 
+import { TEST_CORPUS } from "@/test/corpus";
 import type { AddressInfo } from "node:net";
 import { io as connect, type Socket } from "socket.io-client";
 import { generateToken, hashToken } from "@/auth/token";
@@ -78,6 +79,7 @@ export async function startTestServer(options: { graceMs?: number; revalidateMs?
   let releaseGate = () => {};
   const sessions = createFakeSessions(gate);
   const { io, httpServer, timers, sessionExpiry, userSockets } = createRealtimeServer({
+    corpus: TEST_CORPUS,
     sessions: sessions.repository,
     allowedOrigins: [TEST_ORIGIN],
     graceMs: options.graceMs,

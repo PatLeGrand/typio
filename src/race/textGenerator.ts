@@ -1,6 +1,4 @@
 import type { RaceSettings } from "./config";
-import { SENTENCES_EN } from "./data/sentences.en";
-import { SENTENCES_FR } from "./data/sentences.fr";
 import { RARE_WORDS_EN, WORDS_EN } from "./data/words.en";
 import { RARE_WORDS_FR, WORDS_FR } from "./data/words.fr";
 import type { TextComplexity, TextLanguage } from "@/realtime/protocol";
@@ -85,18 +83,18 @@ export function classifySentence(sentence: string): TextComplexity {
   return "medium";
 }
 
-function byComplexity(sentences: readonly string[]): Record<TextComplexity, readonly string[]> {
-  return {
-    easy: sentences.filter((sentence) => classifySentence(sentence) === "easy"),
-    medium: sentences.filter((sentence) => classifySentence(sentence) === "medium"),
-    hard: sentences.filter((sentence) => classifySentence(sentence) === "hard"),
+export type SentenceCorpus = Record<TextLanguage, Record<TextComplexity, readonly string[]>>;
+
+export function classifyCorpus(sentences: Record<TextLanguage, readonly string[]>): SentenceCorpus {
+  const classify = (items: readonly string[]) => {
+    const groups: Record<TextComplexity, string[]> = { easy: [], medium: [], hard: [] };
+    for (const sentence of items) groups[classifySentence(sentence)].push(sentence);
+    return groups;
   };
+  return { fr: classify(sentences.fr), en: classify(sentences.en) };
 }
 
-export const SENTENCES: Record<RaceSettings["language"], Record<TextComplexity, readonly string[]>> = {
-  fr: byComplexity(SENTENCES_FR),
-  en: byComplexity(SENTENCES_EN),
-};
+export const EMPTY_CORPUS: SentenceCorpus = classifyCorpus({ fr: [], en: [] });
 const WORDS: Record<RaceSettings["language"], readonly string[]> = {
   fr: WORDS_FR,
   en: WORDS_EN,
@@ -263,6 +261,7 @@ function assembleWords(
 export function generateRaceText(
   input: TextGenerationInput,
   random: () => number,
+  corpus: SentenceCorpus = EMPTY_CORPUS,
 ): TextGenerationResult {
   const excluded = parseExcludedCharacters(input.excludedCharacters);
 
@@ -271,7 +270,7 @@ export function generateRaceText(
     // d'abord, puis on écarte ce qui contient un accent ou un caractère exclu dans sa forme finale.
     const pool = [
       ...new Set(
-        SENTENCES[input.language][input.complexity]
+        corpus[input.language][input.complexity]
           .filter((sentence) => (input.numbers || !/\d/u.test(sentence)) && (input.accents || !hasAccent(sentence)))
           .map((sentence) => {
             const punctuated = input.punctuation ? sentence : removePunctuation(sentence);

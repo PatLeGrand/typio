@@ -20,6 +20,7 @@ export function createDrizzleSessionRepository(db: PostgresJsDatabase): SessionR
         .select({
           sessionExpiresAt: sessions.expiresAt,
           userId: users.id,
+          isDemo: users.isDemo,
           kind: users.kind,
           displayName: users.displayName,
           username: users.username,
@@ -39,6 +40,7 @@ export function createDrizzleSessionRepository(db: PostgresJsDatabase): SessionR
         session: { expiresAt: row.sessionExpiresAt },
         user: {
           id: row.userId,
+          isDemo: row.isDemo,
           kind: row.kind,
           displayName: row.displayName,
           username: row.username,

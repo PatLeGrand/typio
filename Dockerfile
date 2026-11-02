@@ -39,6 +39,7 @@ ENV NEXT_PUBLIC_REALTIME_URL=$NEXT_PUBLIC_REALTIME_URL
 
 RUN bun run build
 RUN bun run build:realtime
+RUN bun run build:seed
 
 # ── 3. L'image servie ───────────────────────────────────────────────────────
 FROM oven/bun:1.4.1-alpine AS runner
@@ -65,6 +66,8 @@ COPY --from=builder --chown=typio:typio /app/.next/standalone ./
 COPY --from=builder --chown=typio:typio /app/.next/static ./.next/static
 COPY --from=builder --chown=typio:typio /app/public ./public
 COPY --from=builder --chown=typio:typio /app/dist/realtime.js ./realtime.js
+COPY --from=builder --chown=typio:typio /app/dist/seed.js ./seed.js
+COPY --from=builder --chown=typio:typio /app/node_modules/@node-rs ./node_modules/@node-rs
 
 # Le déploiement lance les migrations explicitement avant de redémarrer le
 # serveur. Le bundle standalone ne suit pas un script hors du graphe Next : on

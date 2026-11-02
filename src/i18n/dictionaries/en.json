@@ -30,6 +30,7 @@
     "back": "Back to settings"
   },
   "raceScreen": {
+    "loading": "Loading text…",
     "bonuses": {
       "types": {
         "shorten": "−3 words",
@@ -589,6 +590,7 @@
         "TOO_LARGE": "The photo exceeds the 2 MB limit.",
         "UNSUPPORTED_TYPE": "Choose a JPEG, PNG or WebP image.",
         "INVALID_IMAGE": "This image cannot be read. Choose a valid JPEG, PNG or WebP image.",
+        "DEMO_READ_ONLY": "The demo account profile cannot be changed.",
         "UNAUTHORIZED": "Sign in with a member account to change your photo.",
         "RATE_LIMITED": "Too many attempts. Try again later.",
         "UNKNOWN": "The photo could not be changed. Try again."
@@ -662,6 +664,7 @@
     },
     "errors": {
       "INVALID_SETTINGS": "These settings are not valid. Reload the page, then try again.",
+      "DEMO_READ_ONLY": "The demo account profile cannot be changed.",
       "UNAUTHORIZED": "Your session has expired. Sign in again to edit your profile."
     },
     "note": "These settings follow you in all your races. On your keys, get set, go!"

@@ -4,17 +4,21 @@ import { RaceScreen } from "./RaceScreen";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { DEFAULT_RACE_SETTINGS, serializeRaceSettings, type RaceSettings } from "@/race/config";
-import { createRaceText } from "@/race/raceText";
+import { nextRaceText } from "@/app/[lang]/race/actions";
 
 // La scène Pixi n'a pas de sens dans jsdom : un faux visualiseur expose juste les coureurs.
 vi.mock("@/components/race/RaceVisualizer", () => ({
   RaceVisualizer: ({ racers }: { racers: { id: string }[] }) => <div data-testid="visualizer">{racers.length}</div>,
 }));
 
-// Le vrai générateur, mais espionné : on vérifie que « Rejouer » demande bien un nouveau tirage.
-vi.mock("@/race/raceText", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/race/raceText")>();
-  return { createRaceText: vi.fn(actual.createRaceText) };
+// La server action est la frontière réseau ; le corpus reste côté serveur.
+vi.mock("@/app/[lang]/race/actions", async () => {
+  const { createRaceText } = await import("@/race/raceText");
+  const { TEST_CORPUS } = await import("@/test/corpus");
+  return { nextRaceText: vi.fn(async ({ settings, previous }: { settings: RaceSettings; previous?: string }) => {
+    const text = createRaceText(settings, Math.random, previous, TEST_CORPUS);
+    return text === null ? { ok: false as const, error: "NO_TEXT_AVAILABLE" as const } : { ok: true as const, text };
+  }) };
 });
 
 const SETTINGS: RaceSettings = { ...DEFAULT_RACE_SETTINGS, bots: ["beginner", "beginner"], timeLimitSeconds: 60 };
@@ -253,7 +257,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     expect(within(youRow).getAllByRole("cell")[0]).toHaveTextContent("3e");
   });
 
-  it("Rejouer lance une nouvelle manche avec les mêmes réglages et un nouveau texte (AC-6)", () => {
+  it("Rejouer lance une nouvelle manche avec les mêmes réglages et un nouveau texte (AC-6)", async () => {
     let seed = 0;
     const random = () => {
       seed = (seed + 0.318) % 1;
@@ -264,12 +268,12 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
 
-    vi.mocked(createRaceText).mockClear();
-    vi.mocked(createRaceText).mockReturnValueOnce("brand new text");
-    fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
+    vi.mocked(nextRaceText).mockClear();
+    vi.mocked(nextRaceText).mockResolvedValueOnce({ ok: true, text: "brand new text" });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
     // Nouveau tirage, mêmes réglages, en évitant le texte précédent ; son résultat est celui affiché.
-    expect(createRaceText).toHaveBeenCalledTimes(1);
-    expect(createRaceText).toHaveBeenCalledWith(settings, random, "first text");
+    expect(nextRaceText).toHaveBeenCalledTimes(1);
+    expect(nextRaceText).toHaveBeenCalledWith({ settings, previous: "first text" });
     expect(textOnScreen()).toBe("brand new text");
     expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.countdown);
     // Le focus est sur le champ de saisie, pas perdu sur <body>.
@@ -278,7 +282,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     // Avec le vrai générateur, le deuxième tirage donne un texte différent du précédent.
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
-    fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
     expect(textOnScreen()).not.toBe("brand new text");
     expect(textOnScreen()?.length).toBeGreaterThan(50);
   });
@@ -323,11 +327,23 @@ describe("RaceScreen : aucun texte (CONF-03)", () => {
     expect(screen.queryByTestId("visualizer")).not.toBeInTheDocument();
   });
 
-  it("affiche le message si le texte d'une nouvelle manche est introuvable", () => {
-    const { labels } = setup({ settings: { excludedCharacters: "a e i o u y" } });
+  it("annonce le chargement puis affiche une erreur si la requête échoue", async () => {
+    let rejectRequest: (error: Error) => void = () => {};
+    vi.mocked(nextRaceText).mockImplementationOnce(() => new Promise((_, reject) => { rejectRequest = reject; }));
+    const { labels } = setup();
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
+    expect(screen.getByRole("status")).toHaveTextContent(labels.loading);
+    await act(async () => { rejectRequest(new Error("network unavailable")); });
+    expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.message);
+  });
+
+  it("affiche le message si le texte d'une nouvelle manche est introuvable", async () => {
+    const { labels } = setup({ settings: { excludedCharacters: "a e i o u y" } });
+    advance(3000);
+    fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
     expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.message);
   });
 });

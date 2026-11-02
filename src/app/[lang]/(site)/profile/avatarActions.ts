@@ -18,6 +18,7 @@ export async function uploadAvatar(formData: FormData): Promise<AvatarResult> {
   try {
     const user = await getCurrentUser();
     if (!user || user.kind !== "member") return { ok: false, code: "UNAUTHORIZED" };
+    if (user.isDemo) return { ok: false, code: "DEMO_READ_ONLY" };
     if (!getAuthDeps().limiters.avatarUploads.consume(user.id)) return { ok: false, code: "RATE_LIMITED" };
 
     const parsed = avatarFileSchema.safeParse(formData.get("avatar"));
@@ -48,6 +49,7 @@ export async function removeAvatar(): Promise<AvatarResult> {
   try {
     const user = await getCurrentUser();
     if (!user || user.kind !== "member") return { ok: false, code: "UNAUTHORIZED" };
+    if (user.isDemo) return { ok: false, code: "DEMO_READ_ONLY" };
     if (!getAuthDeps().limiters.profileUpdates.consume(user.id)) return { ok: false, code: "RATE_LIMITED" };
     await getDb().transaction(async (tx) => {
       await tx.update(users).set({ avatarVersion: null }).where(eq(users.id, user.id));

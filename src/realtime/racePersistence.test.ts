@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { TEST_CORPUS } from "@/test/corpus";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RaceRepository } from "@/race/raceRepository";
 import type { Ack } from "./protocol";
@@ -65,6 +66,7 @@ describe("persistance RES-05", () => {
     let time = 1_000;
     const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => ["member"]);
     const server = createRealtimeServer({
+      corpus: TEST_CORPUS,
       sessions: createFakeSessions().repository, allowedOrigins: [],
       now: () => new Date(time), generateSeed: () => 42, raceRepository: { recordRace },
     });
@@ -130,6 +132,7 @@ describe("persistance RES-05", () => {
     let time = 1_000;
     const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => []);
     const server = createRealtimeServer({
+      corpus: TEST_CORPUS,
       sessions: createFakeSessions().repository, allowedOrigins: [], graceMs: 10,
       now: () => new Date(time), generateSeed: () => 42, raceRepository: { recordRace },
     });
@@ -178,6 +181,7 @@ describe("persistance RES-05", () => {
     });
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const server = createRealtimeServer({
+      corpus: TEST_CORPUS,
       sessions: createFakeSessions().repository, allowedOrigins: [],
       now: () => new Date(time), generateSeed: () => 42, raceRepository: { recordRace },
     });

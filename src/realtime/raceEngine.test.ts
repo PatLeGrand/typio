@@ -1,3 +1,4 @@
+import { TEST_CORPUS } from "@/test/corpus";
 import { describe, expect, it } from "vitest";
 import { applyTextEdits } from "@/race/bonuses";
 import { botFinishMs, botKeystrokesAt, botProgressAt, planBot } from "@/race/bots";
@@ -23,7 +24,7 @@ function room(): RoomState {
   };
 }
 function started(source = room()): RaceState {
-  const result = startRace(source, "host", NOW, 42);
+  const result = startRace(source, "host", NOW, 42, TEST_CORPUS);
   if (!result.ok) throw new Error(result.error);
   return result.state;
 }
@@ -39,25 +40,25 @@ function input(race: RaceState, ops: readonly string[], now = START + 1_000, id 
 // Ces gardes protègent les droits de l’hôte et le minimum de coureurs (COURSE-02).
 describe("startRace", () => {
   it.each(["countdown", "racing", "results", "closed"] as const)("rejects a %s room", (status) => {
-    expect(startRace({ ...room(), status }, "host", NOW, 42)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
+    expect(startRace({ ...room(), status }, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
   });
   it("requires the host, present and connected", () => {
-    expect(startRace(room(), "guest", NOW, 42)).toEqual({ ok: false, error: "NOT_HOST" });
+    expect(startRace(room(), "guest", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NOT_HOST" });
     const source = room();
     source.participants[0].connected = false;
-    expect(startRace(source, "host", NOW, 42)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
+    expect(startRace(source, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
     source.participants.shift();
-    expect(startRace(source, "host", NOW, 42)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
+    expect(startRace(source, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
   });
   it("rejects one human and excludes spectators, even with bots but no human runner", () => {
     const source = room();
     source.participants.pop();
-    expect(startRace(source, "host", NOW, 42)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
+    expect(startRace(source, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
     const spectators = room();
     spectators.participants.forEach((p) => { p.role = "spectator"; });
-    expect(startRace(spectators, "host", NOW, 42)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
+    expect(startRace(spectators, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
     spectators.config.bots = ["intermediate", "intermediate"];
-    expect(startRace(spectators, "host", NOW, 42)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
+    expect(startRace(spectators, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
   });
   it("allows a spectator host with two runners", () => {
     const source = room();
@@ -88,7 +89,7 @@ describe("startRace", () => {
     source.config = { ...source.config, inputMode, bots: [...BOT_LEVELS] };
     const race = started(source);
     const random = createSeededRandom(42);
-    generateRaceText(source.config, random);
+    generateRaceText(source.config, random, TEST_CORPUS);
     shuffled(fr.raceScreen.botNames, random);
     const bots = race.runners.filter((runner) => runner.kind === "bot");
     expect(bots).toHaveLength(BOT_LEVELS.length);
@@ -102,7 +103,7 @@ describe("startRace", () => {
   it("returns NO_TEXT_AVAILABLE when exclusions empty the pool", () => {
     const source = room();
     source.config.excludedCharacters = "abcdefghijklmnopqrstuvwxyz";
-    expect(startRace(source, "host", NOW, 42)).toEqual({ ok: false, error: "NO_TEXT_AVAILABLE" });
+    expect(startRace(source, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NO_TEXT_AVAILABLE" });
   });
 });
 

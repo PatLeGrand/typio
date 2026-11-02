@@ -53,6 +53,14 @@ beforeEach(() => {
 });
 
 describe("avatar actions", () => {
+  it("refuse le téléversement et le retrait sur le compte de démonstration", async () => {
+    mocks.getCurrentUser.mockResolvedValue({ ...member, isDemo: true });
+    expect(await uploadAvatar(form("text"))).toEqual({ ok: false, code: "DEMO_READ_ONLY" });
+    expect(await removeAvatar()).toEqual({ ok: false, code: "DEMO_READ_ONLY" });
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.getAuthDeps).not.toHaveBeenCalled();
+  });
+
   it.each([null, { ...member, kind: "guest" as const, username: null }])("refuse %j sans écriture ni consommation", async (user) => {
     mocks.getCurrentUser.mockResolvedValue(user);
     expect(await uploadAvatar(form("text"))).toEqual({ ok: false, code: "UNAUTHORIZED" });

@@ -4,6 +4,10 @@ import RacePage from "./page";
 import { DEFAULT_RACE_SETTINGS } from "@/race/config";
 import { getDictionary } from "@/i18n/dictionaries";
 
+vi.mock("@/race/drizzleTextCorpusRepository", async () => {
+  const { TEST_CORPUS } = await import("@/test/corpus");
+  return { textCorpusRepository: { load: async () => TEST_CORPUS } };
+});
 vi.mock("@/auth/currentUser", () => ({ getCurrentUserForDisplay: async () => ({ displayName: "Aurel", kind: "member" }) }));
 vi.mock("@/components/race/RaceVisualizer", () => ({ RaceVisualizer: () => <div data-testid="visualizer" /> }));
 
