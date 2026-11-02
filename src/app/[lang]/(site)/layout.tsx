@@ -1,6 +1,7 @@
 import { getCurrentUserForDisplay } from "@/auth/currentUser";
 import { schedulePurge } from "@/auth/schedulePurge";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
 import { RoomSessionGuard } from "@/realtime/RoomSessionGuard";
@@ -19,6 +20,7 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
       <SiteHeader locale={locale} dictionary={getDictionary(locale)} user={user} />
       <RoomSessionGuard userId={user?.id ?? null} />
       {children}
+      <SiteFooter locale={locale} labels={getDictionary(locale).footer} />
     </>
   );
 }

@@ -24,7 +24,7 @@ type LanguageSwitcherProps = {
  * rechargement complet. Une navigation côté client le re-rendrait dans le
  * navigateur, et React 19 avertit alors qu'il re-rend le `<script>` du thème.
  *
- * Le nom accessible est le texte visible (WCAG 2.5.3) ; `lang` indique la langue
+ * Le nom accessible commence par le texte visible (WCAG 2.5.3) ; `lang` indique la langue
  * de ce texte et `hrefLang` celle de la cible.
  */
 export function LanguageSwitcher({ locale, labels, compact = false }: LanguageSwitcherProps) {
@@ -36,7 +36,7 @@ export function LanguageSwitcher({ locale, labels, compact = false }: LanguageSw
       href={getPathInLocale(pathname, target)}
       hrefLang={target}
       lang={target}
-      aria-label={compact ? labels.names[target] : undefined}
+      aria-label={compact ? `${target.toUpperCase()} — ${labels.names[target]}` : undefined}
       className="inline-flex min-h-11 items-center rounded-field border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-accent-soft"
     >
       {compact ? <Globe2 aria-hidden="true" className="mr-2 size-[18px]" /> : null}
