@@ -102,8 +102,9 @@
       "autoValidate": "Ends automatically at the last character"
     },
     "noText": {
+      "rateLimited": "Too many text requests. Try again in a minute.",
       "title": "No text available",
-      "message": "The chosen settings leave no text (language, accents, excluded characters). Loosen them to start the race.",
+      "message": "The chosen settings leave no text (language, accents, excluded or included characters). Loosen them to start the race.",
       "back": "Change settings"
     },
     "results": {
@@ -587,6 +588,7 @@
     }
   },
   "profile": {
+    "demoReadOnly": "Read-only demonstration account.",
     "avatar": {
       "title": "Profile photo",
       "file": "Choose a photo (JPEG, PNG or WebP, up to 2 MB)",
@@ -690,6 +692,7 @@
   },
   "room": {
     "race": {
+      "finishCountdown": "First runner finished: {time} left to finish.",
       "start": "Start race",
       "restart": "Restart",
       "close": "Close room",
@@ -815,7 +818,7 @@
       "CONFIG_LOCKED": "The settings are locked.",
       "RACE_NOT_ALLOWED": "The race cannot start in this state.",
       "NOT_ENOUGH_RUNNERS": "At least two runners are required, including one human.",
-      "NO_TEXT_AVAILABLE": "No text matches these settings.",
+      "NO_TEXT_AVAILABLE": "No text matches these settings (excluded or included characters).",
       "RACE_NOT_RUNNING": "The race is not running.",
       "RACE_IN_PROGRESS": "A race is already in progress in this room.",
       "INPUT_REJECTED": "This input cannot be accepted.",

@@ -8,6 +8,7 @@ vi.mock("@/race/drizzleTextCorpusRepository", async () => {
   const { TEST_CORPUS } = await import("@/test/corpus");
   return { textCorpusRepository: { load: async () => TEST_CORPUS } };
 });
+vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-forwarded-for": "203.0.113.8" }) }));
 vi.mock("@/auth/currentUser", () => ({ getCurrentUserForDisplay: async () => ({ displayName: "Aurel", kind: "member" }) }));
 vi.mock("@/components/race/RaceVisualizer", () => ({ RaceVisualizer: () => <div data-testid="visualizer" /> }));
 

@@ -413,10 +413,10 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       return room ? cloneState(room) : null;
     },
 
-    start(userId: string, code: string): RoomResult {
+    start(userId: string, code: string, corpus = options.corpus): RoomResult {
       const room = rooms.get(code);
       if (!room) return { ok: false, error: "ROOM_NOT_FOUND" };
-      const result = startRace(room, userId, now(), generateSeed(), options.corpus);
+      const result = startRace(room, userId, now(), generateSeed(), corpus);
       if (!result.ok) return result;
       saveRace(room, result.state);
       return { ok: true, state: cloneState(room) };

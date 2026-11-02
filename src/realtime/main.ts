@@ -18,7 +18,7 @@ const allowedOrigins = (process.env.APP_ORIGIN ?? "http://localhost:3000")
 
 const { db, close } = createDatabaseClient();
 const { io, httpServer } = createRealtimeServer({
-  corpus: await createDrizzleTextCorpusRepository(() => db).load(),
+  loadCorpus: createDrizzleTextCorpusRepository(() => db).load,
   sessions: createDrizzleSessionRepository(db),
   raceRepository: createDrizzleRaceRepository(db),
   allowedOrigins,

@@ -20,7 +20,10 @@ export function createDrizzleTextCorpusRepository(database: () => PostgresJsData
           console.error("[corpus] load failed", describeError(error));
           return EMPTY_CORPUS;
         }
-      })();
+      })().then((loaded) => {
+        if (!Object.values(loaded).some((groups) => Object.values(groups).some((items) => items.length > 0))) corpus = undefined;
+        return loaded;
+      });
       return corpus;
     },
   };

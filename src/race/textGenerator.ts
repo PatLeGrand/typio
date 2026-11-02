@@ -202,7 +202,8 @@ function randomNumber(complexity: TextComplexity, language: TextLanguage, random
 }
 
 /**
- * Mode mots : assemble des jetons séparés par une espace. Des mots distincts, un nombre tous
+ * Mode mots : assemble des jetons séparés par une espace. Des mots distincts (réutilisés si
+ * le vocabulaire inclus est épuisé), un nombre tous
  * les `NUMBER_EVERY` jetons et une marque tous les `PUNCTUATION_EVERY` jetons si les options
  * sont actives. Un nombre ou une marque qui contiendrait un caractère exclu est remplacé par
  * un mot nu : la contrainte porte sur le texte final (CONF-07).
@@ -230,6 +231,9 @@ function assembleWords(
       if (!containsExcluded(number, excluded) && (included.size === 0 || containsExcluded(number, included))) token = number;
     }
     if (token === null) {
+      // Un filtre inclus peut laisser moins de mots que la longueur demandée.
+      // Réutiliser ce vocabulaire permet de conserver la contrainte sur chaque mot.
+      if (remaining.length === 0 && included.size > 0) remaining.push(...pool);
       if (remaining.length === 0) return null;
       const chosen = remaining[pickIndex(remaining.length, random)];
       remaining.splice(remaining.indexOf(chosen), 1);

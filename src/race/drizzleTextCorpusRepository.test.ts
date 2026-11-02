@@ -16,6 +16,25 @@ describe("text corpus repository", () => {
     expect(await repository.load()).toBe(first);
     expect(from).toHaveBeenCalledTimes(1);
   });
+  it.each([false, true])("réessaie après un premier chargement vide ou en erreur (%s)", async (fails) => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const from = vi.fn().mockImplementationOnce(async () => {
+        if (fails) throw new Error("database unavailable");
+        return [];
+      }).mockResolvedValue([{ language: "fr", content: "Le chat dort sur le lit." }]);
+      const repository = createDrizzleTextCorpusRepository(() => ({ select: () => ({ from }) }) as unknown as PostgresJsDatabase);
+      const [first, concurrent] = await Promise.all([repository.load(), repository.load()]);
+      expect(first).toEqual(EMPTY_CORPUS);
+      expect(concurrent).toBe(first);
+      const recovered = await repository.load();
+      expect(recovered).not.toEqual(EMPTY_CORPUS);
+      expect(await repository.load()).toBe(recovered);
+      expect(from).toHaveBeenCalledTimes(2);
+    } finally {
+      log.mockRestore();
+    }
+  });
   it("rend un corpus vide quand la base est indisponible et journalise sans paramètres", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     try {

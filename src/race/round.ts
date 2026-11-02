@@ -1,8 +1,8 @@
 import type { BotLevel } from "@/realtime/protocol";
-import { BOT_FOG_SLOWDOWN_FACTOR, botFinishMs, botProgressAt, planBot, replanBot } from "./bots";
+import { BOT_FOG_SLOWDOWN_FACTOR, botProgressAt, planBot, replanBot } from "./bots";
 import { applyTextEdits, crossedCheckpoints, resolveCheckpoint, type BonusAward } from "./bonuses";
 import { generateRaceText } from "./textGenerator";
-import { getEffectiveTimeLimitSeconds, type RaceSettings } from "./config";
+import type { RaceSettings } from "./config";
 import { computeAccuracy, computeWpm, countCorrectChars } from "./metrics";
 import { createSeededRandom, shuffled } from "./seededRandom";
 import { buildRaceResults, type BotEntry, type RaceResultRow } from "./results";
@@ -124,19 +124,12 @@ export function snapshotRound(round: Round, clock: number, playerName: string): 
   const { session, bots } = round;
   const { lifecycle, text } = session;
   const outcome = getPlayerOutcome(session);
-  // Sans limite choisie, l'arrivée ou l'abandon du joueur laisse les bots terminer (C-12).
-  const endMs = outcome && lifecycle.settings.timeLimitSeconds === null
-    ? Math.min(getEffectiveTimeLimitSeconds(lifecycle.settings) * 1000,
-      Math.max(outcome.elapsedMs, ...bots.map((bot) => botFinishMs(bot.plan))))
-    : outcome?.elapsedMs;
-  const waitingForBots = outcome !== null && endMs !== undefined && "startsAt" in lifecycle && clock < lifecycle.startsAt + endMs;
-  const phase = lifecycle.phase === "results" && !waitingForBots ? "results" : lifecycle.phase === "racing" || waitingForBots ? "racing" : "countdown";
-  const elapsedMs = outcome && endMs !== undefined && "startsAt" in lifecycle
-    ? Math.max(outcome.elapsedMs, Math.min(clock - lifecycle.startsAt, endMs))
-    : raceElapsedMs(session, clock);
+  const endMs = outcome?.elapsedMs;
+  const phase = lifecycle.phase === "preparing" ? "countdown" : lifecycle.phase;
+  const elapsedMs = outcome?.elapsedMs ?? raceElapsedMs(session, clock);
   const playerChars = countCorrectChars(session.typed, text);
 
-  const results = outcome && !waitingForBots
+  const results = outcome
     ? buildRaceResults({ playerId: PLAYER_ID, playerName, player: outcome, playerTextLength: text.length, bots, botsElapsedMs: endMs }).map((row) => ({ ...row,
       bonusesReceived: round.bonusEvents.filter((event) => event.recipientId === row.id).length,
       bonusTypes: round.bonusEvents.filter((event) => event.recipientId === row.id).map((event) => event.type),
@@ -170,9 +163,6 @@ export function snapshotRound(round: Round, clock: number, playerName: string): 
     racers,
     playerRank: racers.findIndex((racer) => racer.isPlayer) + 1,
     results,
-    endReason: phase === "results"
-      ? lifecycle.settings.timeLimitSeconds === null && bots.some((bot) => botFinishMs(bot.plan) > (endMs ?? 0))
-        ? "timeout" : outcome?.reason ?? null
-      : null,
+    endReason: phase === "results" ? outcome?.reason ?? null : null,
   };
 }

@@ -10,7 +10,7 @@ import { COUNTDOWN_MS } from "@/race/lifecycle";
 import { BOT_LEVELS, DEFAULT_ROOM_CONFIG, INPUT_MODES, type RoomState } from "./protocol";
 import {
   abandonRace, applyInput, expireRunner, raceResults, raceResultRows, raceSnapshot,
-  setRunnerConnected, startRace, tickRace, type RaceState,
+  setRunnerConnected, startRace, tickRace, UNLIMITED_FINISH_GRACE_MS, type RaceState,
 } from "./raceEngine";
 
 const NOW = 1_000;
@@ -512,4 +512,44 @@ it("keeps missed keys out of public results and preserves them in persistence ro
   for (const runner of raceSnapshot(race, START + 1_000).runners) {
     expect(runner).not.toHaveProperty("missedKeys");
   }
+});
+
+it("donne 60 secondes après le premier humain arrivé, puis classe le coureur inactif", () => {
+  const race = input(racing(), ["a", "b", "c"]);
+  const deadline = START + 1000 + UNLIMITED_FINISH_GRACE_MS;
+  expect(raceSnapshot(race, START + 1000).finishDeadline).toBe(deadline);
+  expect(tickRace(race, deadline - 1).status).toBe("racing");
+  const ended = tickRace(race, deadline + 10_000);
+  expect(ended).toMatchObject({ status: "results", endedAt: deadline });
+  expect(raceResults(ended)?.find((row) => row.id === "guest")?.status).toBe("unfinished");
+});
+
+it("déclenche aussi le délai avec un bot et borne les ticks tardifs à cette échéance", () => {
+  const source = room();
+  source.config = { ...source.config, bots: ["expert", "noob"] };
+  const race = started(source);
+  const firstFinish = Math.min(...race.runners.filter((r) => r.plan).map((r) => botFinishMs(r.plan!)));
+  const deadline = START + firstFinish + UNLIMITED_FINISH_GRACE_MS;
+  expect(raceSnapshot(race, START + firstFinish).finishDeadline).toBe(deadline);
+  const ended = tickRace(race, deadline + 100_000);
+  expect(ended).toMatchObject({ status: "results", endedAt: deadline });
+  const slow = ended.runners.find((r) => r.level === "noob")!;
+  expect(slow.position).toBe(botProgressAt(slow.plan!, deadline - START));
+});
+
+it("garde la limite choisie même après une arrivée", () => {
+  const source = room();
+  source.config = { ...source.config, timeLimitSeconds: 180 };
+  const race = input(racing("abc", source), ["a", "b", "c"]);
+  expect(raceSnapshot(race, START + 1000).finishDeadline).toBeNull();
+  expect(tickRace(race, START + 61_000).status).toBe("racing");
+});
+
+it("laisse une minute entière si la première arrivée précède de peu le plafond de sécurité", () => {
+  const finishAt = START + RACE_SAFETY_LIMIT_SECONDS * 1000 - 1000;
+  const race = input(racing(), ["a", "b", "c"], finishAt);
+  const deadline = finishAt + UNLIMITED_FINISH_GRACE_MS;
+  expect(tickRace(race, START + RACE_SAFETY_LIMIT_SECONDS * 1000).status).toBe("racing");
+  expect(applyInput(race, "guest", ["a"], START + RACE_SAFETY_LIMIT_SECONDS * 1000 + 1).ok).toBe(true);
+  expect(tickRace(race, deadline)).toMatchObject({ status: "results", endedAt: deadline });
 });

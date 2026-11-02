@@ -37,6 +37,7 @@ type Props = {
   avatarVersion?: number | null;
   /** Texte tiré côté serveur (hydratation identique), ou `null` si les filtres n'en laissent aucun. */
   initialText: string | null;
+  initialError?: "RATE_LIMITED";
   /** Graine des noms de bots, tirée côté serveur avec le texte (hydratation identique). */
   botNameSeed: number;
   /** Horloge en ms ; injectable pour les tests (A-D6). */
@@ -55,13 +56,15 @@ export function RaceScreen({
   userId = null,
   avatarVersion = null,
   initialText,
+  initialError,
   botNameSeed,
   now = defaultNow,
   random = Math.random,
 }: Props) {
-  const { round, clock, typeInput, abandon, replay, loading } = useRaceSession({
+  const { round, clock, typeInput, abandon, replay, loading, error } = useRaceSession({
     settings,
     initialText,
+    initialError,
     botNames: labels.botNames,
     botNameSeed,
     now,
@@ -72,7 +75,7 @@ export function RaceScreen({
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
 
   if (loading) return <p role="status">{labels.loading}</p>;
-  if (!round) return <RaceNoText labels={labels.noText} settingsHref={settingsHref} />;
+  if (!round) return <RaceNoText labels={labels.noText} settingsHref={settingsHref} rateLimited={error === "RATE_LIMITED"} />;
 
   const snapshot = snapshotRound(round, clock, labels.you);
   const { phase, racers, results } = snapshot;

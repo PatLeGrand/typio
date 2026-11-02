@@ -55,6 +55,20 @@ export type RaceResult =
   | { ok: true; state: RaceState }
   | { ok: false; state: RaceState; error: RoomErrorCode };
 
+/** Sans limite, le premier arrivé (humain ou bot) laisse une minute aux autres. */
+export const UNLIMITED_FINISH_GRACE_MS = 60_000;
+
+function raceDeadline(race: RaceState, now: number): number {
+  const safetyDeadline = race.startAt + race.timeLimitMs;
+  if (race.config.timeLimitSeconds !== null) return safetyDeadline;
+  const finishes = race.runners.flatMap((runner) => {
+    const at = runner.finishedAt ?? (runner.kind === "bot" && runner.plan && active(runner)
+      ? race.startAt + botFinishMs(runner.plan) : null);
+    return at !== null && at <= Math.min(now, safetyDeadline) ? [at] : [];
+  });
+  return finishes.length > 0 ? Math.min(...finishes) + UNLIMITED_FINISH_GRACE_MS : safetyDeadline;
+}
+
 const active = (runner: RaceRunner) => runner.status === "ready" || runner.status === "typing";
 
 export function startRace(
@@ -103,7 +117,7 @@ export function startRace(
 /** Aucun lot refusé n’est appliqué, même partiellement ; seul le temps avance. */
 export function applyInput(race: RaceState, userId: string, ops: readonly string[], now: number): RaceResult {
   race = tickRace(race, now);
-  if (race.status !== "racing" || now < race.startAt || now >= race.startAt + race.timeLimitMs) {
+  if (race.status !== "racing" || now < race.startAt || now >= raceDeadline(race, now)) {
     return { ok: false, state: race, error: "RACE_NOT_RUNNING" };
   }
   const runner = race.runners.find((r) => r.id === userId && r.kind === "human");
@@ -156,12 +170,12 @@ export function expireRunner(race: RaceState, userId: string, now: number): Race
 
 export function tickRace(race: RaceState, now: number): RaceState {
   if (race.status === "results" || now < race.startAt) return race;
-  const deadline = race.startAt + race.timeLimitMs;
+  const deadline = raceDeadline(race, now);
   const elapsedMs = Math.min(now, deadline) - race.startAt;
   let runners = race.runners.map((r): RaceRunner => {
     if (r.kind === "human") {
       // Indice = seconde depuis le départ ; les ticks tardifs complètent les secondes manquantes.
-      const count = Math.min(RACE_SAFETY_LIMIT_SECONDS + 1, Math.floor(race.timeLimitMs / 1000) + 1,
+      const count = Math.min(RACE_SAFETY_LIMIT_SECONDS + UNLIMITED_FINISH_GRACE_MS / 1000 + 1, Math.floor((deadline - race.startAt) / 1000) + 1,
         Math.floor(elapsed(race, r, now) / 1000) + 1);
       if (r.wpmSeries.length >= count) return r;
       const wpmSeries = [...r.wpmSeries];
@@ -226,13 +240,15 @@ export function tickRace(race: RaceState, now: number): RaceState {
 
 function elapsed(race: RaceState, runner: RaceRunner, now: number): number {
   return Math.max(0, Math.min(runner.finishedAt ?? runner.abandonedAt ?? race.endedAt ?? now,
-    race.startAt + race.timeLimitMs) - race.startAt);
+    raceDeadline(race, now)) - race.startAt);
 }
 
 export function raceSnapshot(race: RaceState, now: number) {
   const current = tickRace(race, now);
   return {
     status: current.status, serverNow: now, startAt: current.startAt, text: current.text,
+    finishDeadline: current.config.timeLimitSeconds === null && current.runners.some((runner) => runner.finishedAt !== null)
+      ? raceDeadline(current, now) : null,
     bonusEvents: current.bonusEvents.filter((event) => event.at >= now - 10_000),
     runners: current.runners.map((r) => ({
       id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), avatarVersion: r.kind === "human" ? r.avatarVersion ?? null : null, status: r.status, connected: r.connected,

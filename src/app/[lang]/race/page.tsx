@@ -46,6 +46,7 @@ export default async function RacePage({ params, searchParams }: {
       userId={user?.id ?? null}
       avatarVersion={user?.avatarVersion ?? null}
       initialText={generated.ok ? generated.text : null}
+      initialError={!generated.ok && generated.error === "RATE_LIMITED" ? "RATE_LIMITED" : undefined}
       botNameSeed={drawBotNameSeed()}
     />
   );

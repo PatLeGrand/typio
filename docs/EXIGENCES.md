@@ -341,7 +341,7 @@ Les C-n ne sont pas des exigences : on garde leur règle quand elle tranche enco
 | C-9 | Reconnexion et AFK | COURSE-08 | 30 secondes, puis abandon. |
 | C-10 | Texte « qui a du sens » gratuit | CONF-03, H-10 | Corpus du domaine public en base. |
 | C-11 | Blacklist et mode phrase | CONF-07, H-11 | Choix à confirmer. |
-| C-12 | Fin de course sans limite de temps | COURSE-09 | Tous terminés ou abandonnés. |
+| C-12 | Fin de course sans limite de temps | COURSE-09 | Solo : résultats dès l’arrivée ou l’abandon du joueur, bots classés à cet instant. Salle : tous terminés ou abandonnés, ou 60 s après le premier arrivé (humain ou bot) ; plafond de sécurité de 30 min si personne ne termine. |
 | C-13 | Équipes | hors énoncé | Extension conservée, non prioritaire (SALLE-11). |
 | C-14 | Tablette et clavier virtuel | DES-06, H-12 | Message « clavier physique » sur mobile. |
 | C-15 | Heatmap et disposition du clavier | RES-03, H-14 | — |

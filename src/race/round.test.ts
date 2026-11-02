@@ -92,17 +92,19 @@ describe("manche solo (BOT-02, BOT-03, COURSE-02, A-D7)", () => {
     expect(snapshot.results?.[0]).toMatchObject({ isPlayer: true, status: "finished" });
   });
 
-  it.each(["completed", "abandoned"])("sans limite, attend les bots après %s sans modifier le temps du joueur", (reason) => {
+  it.each(["completed", "abandoned"])("sans limite, affiche les résultats dès %s et fige les bots", (reason) => {
     const round = createRound(1, { ...SETTINGS, timeLimitSeconds: null, bots: ["noob"] }, TEXT, NAMES, 7, T0, () => 0.5);
     const session = tickRaceSession(round.session, START);
     const ended = { ...round, session: reason === "completed"
       ? typeIntoRaceSession(session, TEXT, START + 1000)
       : abandonRaceSession(session, START + 1000) };
-    expect(snapshotRound(ended, START + 1000, "Toi")).toMatchObject({ phase: "racing", results: null, timeLeftMs: null });
+    const immediate = snapshotRound(ended, START + 1000, "Toi");
+    expect(immediate).toMatchObject({ phase: "results", elapsedMs: 1000, timeLeftMs: null, endReason: reason });
     const snapshot = snapshotRound(ended, START + botFinishMs(round.bots[0].plan), "Toi");
     expect(snapshot.phase).toBe("results");
     expect(snapshot.results?.find((row) => row.isPlayer)?.timeMs).toBe(1000);
-    expect(snapshot.results?.find((row) => !row.isPlayer)?.status).toBe("finished");
+    expect(snapshot.results?.find((row) => !row.isPlayer)?.status).toBe("unfinished");
+    expect(snapshot.results).toEqual(immediate.results);
   });
 
   it("fin par le temps : les bots non arrivés sont classés selon leur progression", () => {

@@ -102,8 +102,9 @@
       "autoValidate": "Fin automatique au dernier caractère"
     },
     "noText": {
+      "rateLimited": "Trop de demandes de texte. Réessaie dans une minute.",
       "title": "Aucun texte disponible",
-      "message": "Les réglages choisis ne laissent aucun texte (langue, accents, caractères exclus). Assouplis-les pour lancer la course.",
+      "message": "Les réglages choisis ne laissent aucun texte (langue, accents, caractères exclus ou inclus). Assouplis-les pour lancer la course.",
       "back": "Modifier les réglages"
     },
     "results": {
@@ -587,6 +588,7 @@
     }
   },
   "profile": {
+    "demoReadOnly": "Compte de démonstration en lecture seule.",
     "avatar": {
       "title": "Photo de profil",
       "file": "Choisir une photo (JPEG, PNG ou WebP, 2 Mo maximum)",
@@ -690,6 +692,7 @@
   },
   "room": {
     "race": {
+      "finishCountdown": "Premier coureur arrivé : {time} pour terminer.",
       "start": "Lancer la course",
       "restart": "Relancer",
       "close": "Fermer la salle",
@@ -815,7 +818,7 @@
       "CONFIG_LOCKED": "La configuration est verrouillée.",
       "RACE_NOT_ALLOWED": "La course ne peut pas démarrer dans cet état.",
       "NOT_ENOUGH_RUNNERS": "Il faut au moins deux coureurs, dont un humain.",
-      "NO_TEXT_AVAILABLE": "Aucun texte ne correspond à ces réglages.",
+      "NO_TEXT_AVAILABLE": "Aucun texte ne correspond à ces réglages (caractères exclus ou inclus).",
       "RACE_NOT_RUNNING": "La course n'est pas en cours.",
       "RACE_IN_PROGRESS": "Une course est déjà en cours dans cette salle.",
       "INPUT_REJECTED": "Cette saisie ne peut pas être acceptée.",

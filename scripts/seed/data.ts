@@ -13,7 +13,6 @@ export const SEED_USER_IDS = [1, 2, 3].map((id) => `de000000-0000-4000-8000-${St
 export const SEED_RACE_IDS = [1, 2, 3].map((id) => `de000001-0000-4000-8000-${String(id).padStart(12, "0")}`);
 
 export async function seedDatabase(db: PostgresJsDatabase): Promise<void> {
-  const passwordHash = await hashPassword(DEMO_PASSWORD);
   await db.transaction(async (tx) => {
     // Deux déploiements simultanés ne doivent pas créer un historique partiel.
     await tx.execute(sql`select pg_advisory_xact_lock(73491204)`);
@@ -21,7 +20,11 @@ export async function seedDatabase(db: PostgresJsDatabase): Promise<void> {
       const sentences = language === "fr" ? SENTENCES_FR : SENTENCES_EN;
       await tx.insert(textPassages).values(sentences.map((content) => ({ language, content }))).onConflictDoNothing();
     }
+    let passwordHash: string | undefined;
     for (const [index, id] of SEED_USER_IDS.entries()) {
+      const [existing] = await tx.select({ id: users.id }).from(users).where(eq(users.id, id));
+      if (existing) continue;
+      passwordHash ??= await hashPassword(DEMO_PASSWORD);
       await tx.insert(users).values({
         id, kind: "member", isDemo: true,
         username: index === 0 ? DEMO_USERNAME : `demo${index + 1}`,

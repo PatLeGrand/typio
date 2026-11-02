@@ -38,6 +38,7 @@ export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, 
 
 export interface RealtimeServerOptions {
   corpus?: SentenceCorpus;
+  loadCorpus?: () => Promise<SentenceCorpus>;
   sessions: SessionRepository;
   raceRepository?: RaceRepository;
   /** Origines autorisées à ouvrir une connexion, par exemple `https://typio.aether-manager.ca`. */
@@ -224,6 +225,7 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       sockets: userSockets,
       joinFailures,
       raceInputs,
+      loadCorpus: options.loadCorpus,
       syncRace,
       lobbyList: () => store.lobby(),
       lobbyChanged,

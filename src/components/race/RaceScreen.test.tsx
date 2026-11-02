@@ -36,7 +36,7 @@ function advance(ms: number) {
   });
 }
 
-function setup(overrides: { settings?: Partial<RaceSettings>; locale?: Locale; initialText?: string | null; random?: () => number } = {}) {
+function setup(overrides: { settings?: Partial<RaceSettings>; locale?: Locale; initialText?: string | null; initialError?: "RATE_LIMITED"; random?: () => number } = {}) {
   const locale = overrides.locale ?? "fr";
   const labels = getDictionary(locale).raceScreen;
   const settings = { ...SETTINGS, ...overrides.settings };
@@ -48,6 +48,7 @@ function setup(overrides: { settings?: Partial<RaceSettings>; locale?: Locale; i
       settings={settings}
       userName="Aurel"
       initialText={overrides.initialText === undefined ? TEXT : overrides.initialText}
+      initialError={overrides.initialError}
       botNameSeed={7}
       now={now}
       random={overrides.random ?? (() => 0.5)}
@@ -90,14 +91,14 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
   });
 
-  it("sans limite, masque le temps restant et attend les bots après l'arrivée du joueur", () => {
+  it("sans limite, masque le temps restant et affiche les résultats dès l'arrivée du joueur", () => {
     const { labels } = setup({ settings: { timeLimitSeconds: null, bots: ["noob"] } });
     expect(screen.queryByRole("timer")).not.toBeInTheDocument();
     expect(screen.queryByText(labels.stats.timeLeft)).not.toBeInTheDocument();
     advance(3000);
     advance(1000);
     type(input(labels), TEXT);
-    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.racing);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.finished);
     expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
     advance(60_000);
     expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.finished);
@@ -375,4 +376,18 @@ describe("RaceScreen : bots (BOT-02, BOT-03)", () => {
     setup({ settings: { bots: [] } });
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
+});
+
+it.each(["fr", "en"] as const)("distingue la limitation de débit initiale d’un corpus vide (%s)", (locale) => {
+  const { labels } = setup({ locale, initialText: null, initialError: "RATE_LIMITED" });
+  expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.rateLimited);
+});
+
+it("affiche l’erreur de débit renvoyée lors d’une nouvelle manche", async () => {
+  vi.mocked(nextRaceText).mockResolvedValueOnce({ ok: false, error: "RATE_LIMITED" });
+  const { labels } = setup();
+  advance(3000);
+  fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
+  expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.rateLimited);
 });

@@ -94,8 +94,8 @@ describe("generateRaceText", () => {
     }
     expect(generateRaceText({ ...BASE, textMode: "words", includedCharacters: "a", excludedCharacters: "a" }, seeded(4)))
       .toEqual({ ok: false, error: "NO_TEXT_AVAILABLE" });
-    expect(generateRaceText({ ...BASE, textMode: "words", includedCharacters: "œ", length: 100 }, seeded(4)))
-      .toEqual({ ok: false, error: "NO_TEXT_AVAILABLE" });
+    expect(textOf({ ...BASE, ...PLAIN, textMode: "words", includedCharacters: "œ", length: 100 }, 4).split(" "))
+      .toHaveLength(100);
   });
 
   it("ignores inclusions in sentences mode", () => {
@@ -458,4 +458,13 @@ describe("parseExcludedCharacters", () => {
     expect(parseExcludedCharacters("   ").size).toBe(0);
     expect(parseExcludedCharacters("").size).toBe(0);
   });
+});
+
+// CONF-07 : chaque longueur reste atteignable avec un caractère inclus courant.
+it.each(LENGTHS)("génère %s mots contenant a, même avec un vocabulaire filtré court", (length) => {
+  for (let seed = 1; seed <= 10; seed += 1) {
+    const text = textOf({ ...BASE, ...PLAIN, textMode: "words", language: "fr", complexity: "medium", includedCharacters: "a", length }, seed);
+    expect(text.split(/\s+/u)).toHaveLength(length);
+    expect(text.split(/\s+/u).every((word) => word.toLowerCase().includes("a"))).toBe(true);
+  }
 });

@@ -22,6 +22,7 @@ interface RoundState {
 export interface UseRaceSession {
   round: Round | null;
   loading: boolean;
+  error: "RATE_LIMITED" | null;
   clock: number;
   typeInput: (next: string) => void;
   abandon: () => void;
@@ -32,6 +33,7 @@ export interface UseRaceSession {
 interface Options {
   settings: RaceSettings;
   initialText: string | null;
+  initialError?: "RATE_LIMITED";
   botNames: readonly string[];
   /** Graine des noms de bots de la première manche (tirée côté serveur avec le texte). */
   botNameSeed: number;
@@ -40,7 +42,8 @@ interface Options {
 }
 
 /** Porte l'état d'une manche et l'horloge qui la fait vivre ; la logique est dans `src/race`. */
-export function useRaceSession({ settings, initialText, botNames, botNameSeed, now, random }: Options): UseRaceSession {
+export function useRaceSession({ settings, initialText, initialError, botNames, botNameSeed, now, random }: Options): UseRaceSession {
+  const [error, setError] = useState<"RATE_LIMITED" | null>(initialError ?? null);
   const [loading, startTransition] = useTransition();
   const [state, setState] = useState<RoundState>(() => {
     const t = now();
@@ -80,9 +83,11 @@ export function useRaceSession({ settings, initialText, botNames, botNameSeed, n
     if (loading) return;
     startTransition(async () => {
       let text: string | null = null;
+      setError(null);
       try {
         const result = await nextRaceText({ settings, previous: previousText });
         if (result.ok) text = result.text;
+        else if (result.error === "RATE_LIMITED") setError(result.error);
       } catch {
         // Une erreur réseau utilise le même écran traduit que NO_TEXT_AVAILABLE.
       }
@@ -92,7 +97,7 @@ export function useRaceSession({ settings, initialText, botNames, botNameSeed, n
     });
   }, [now, random, settings, botNames, previousText, nextCount, loading]);
 
-  return { round: state.round, loading, clock: state.clock, typeInput, abandon, replay };
+  return { round: state.round, error, loading, clock: state.clock, typeInput, abandon, replay };
 }
 
 function updateSession(state: RoundState, clock: number, change: (session: RaceSession) => RaceSession): RoundState {
