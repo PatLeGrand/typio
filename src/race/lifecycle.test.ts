@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_RACE_SETTINGS } from "./config";
 import { createRaceLifecycle, transitionRace } from "./lifecycle";
 
-describe("race lifecycle (COURSE-1, COURSE-3, H-9)", () => {
+describe("race lifecycle (COURSE-03, COURSE-09, H-9)", () => {
   const prepare = () => createRaceLifecycle(DEFAULT_RACE_SETTINGS);
   const countdown = () => transitionRace(prepare(), { type: "start" }, 1000);
   const racing = () => transitionRace(countdown(), { type: "tick" }, 4000);
@@ -30,7 +30,7 @@ describe("race lifecycle (COURSE-1, COURSE-3, H-9)", () => {
     expect(result).toMatchObject({ phase: "results", finishedAt: 10000, reason: "completed" });
     expect(transitionRace(result, { type: "reset" }, 11000)).toEqual(prepare());
   });
-  it("lets a runner abandon only while racing, and expiry still wins (COURSE-5)", () => {
+  it("lets a runner abandon only while racing, and expiry still wins (COURSE-07)", () => {
     const waiting = countdown();
     expect(transitionRace(waiting, { type: "abandon" }, 2000)).toBe(waiting);
     expect(transitionRace(racing(), { type: "abandon" }, 12000)).toMatchObject({ phase: "results", finishedAt: 12000, reason: "abandoned" });

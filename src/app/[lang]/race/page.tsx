@@ -13,7 +13,7 @@ function drawBotNameSeed(): number {
 
 /**
  * Entry boundary: validates the settings, draws the first text on the server (so the client
- * hydrates the same text, TEXTE-2) and hands both to the playable race screen.
+ * hydrates the same text, CONF-02, CONF-04, CONF-06, CONF-07) and hands both to the playable race screen.
  */
 export default async function RacePage({ params, searchParams }: {
   params: Promise<{ lang: string }>;
@@ -42,6 +42,8 @@ export default async function RacePage({ params, searchParams }: {
       siteName={dictionary.site.name}
       settings={settings}
       userName={user?.displayName ?? null}
+      userId={user?.id ?? null}
+      avatarVersion={user?.avatarVersion ?? null}
       initialText={createRaceText(settings, Math.random)}
       botNameSeed={drawBotNameSeed()}
     />

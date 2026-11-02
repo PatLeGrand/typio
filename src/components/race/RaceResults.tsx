@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Trophy } from "lucide-react";
+import { RacePodium } from "./RacePodium";
+import { MissedKeysHeatmap } from "./MissedKeysHeatmap";
+import { WpmChart } from "./WpmChart";
+import { Avatar } from "@/components/Avatar";
+import type { AvatarIdentity } from "@/components/avatar";
 import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
 import type { Locale } from "@/i18n/config";
@@ -14,15 +18,20 @@ type Props = {
   labels: Dictionary["raceScreen"];
   rows: readonly RaceResultRow[];
   headline: string;
+  /** Avatar du joueur local (photo d'un membre) ; les bots ont l'avatar généré de leur nom. */
+  playerAvatar: AvatarIdentity;
   settingsHref: string;
   onReplay: () => void;
 };
 
-/** Écran de résultats (RES-1, RES-2) : podium des trois premiers puis tableau de tous les coureurs. */
-export function RaceResults({ locale, labels, rows, headline, settingsHref, onReplay }: Props) {
+/** Écran de résultats (RES-01, RES-02) : podium des trois premiers puis tableau de tous les coureurs. */
+export function RaceResults({ locale, labels, rows, headline, playerAvatar, settingsHref, onReplay }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const copy = labels.results;
-  const podium = rows.slice(0, 3);
+  const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+  const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+  const avatarOf = (row: RaceResultRow): AvatarIdentity => (row.isPlayer ? playerAvatar : { seed: row.name });
+  const displayRows = rows.map((row) => ({ ...row, avatar: avatarOf(row), name: `${row.name}${row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}` }));
   const player = rows.find((row) => row.isPlayer);
 
   // La fin de course est annoncée en amenant le focus sur le titre.
@@ -37,32 +46,17 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
         {player ? (
           <p className="text-sm text-muted">
             {formatOrdinal(locale, player.rank, labels.ordinal)} {labels.rankOf} {rows.length}
-            {" · "}{player.wpm} {copy.columns.wpm}
-            {" · "}{player.accuracy}% {copy.columns.accuracy}
+            {" · "}{number.format(player.wpm)} {copy.columns.wpm}
+            {" · "}{percent.format(player.accuracy / 100)} {copy.columns.accuracy}
           </p>
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h3 className="flex items-center gap-2 text-lg font-extrabold">
-          <Trophy aria-hidden="true" className="size-5 text-accent-text" />
-          {copy.podium}
-        </h3>
-        <ol className="grid gap-3 sm:grid-cols-3">
-          {podium.map((row) => (
-            <li
-              key={row.id}
-              className={`flex flex-col gap-1 rounded-card border-2 px-5 py-4 ${row.isPlayer ? "border-accent bg-accent-panel" : "border-border bg-surface"}`}
-            >
-              <span className="text-2xl font-black text-accent-text">{formatOrdinal(locale, row.rank, labels.ordinal)}</span>
-              <span className="font-extrabold">{row.name}</span>
-              <span className="text-sm text-muted">{row.wpm} {copy.columns.wpm}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
+      <RacePodium rows={displayRows} locale={locale} labels={labels} highlightId={player?.id} />
+      <WpmChart rows={displayRows} locale={locale} labels={copy} highlightId={player?.id} />
+      {player && <MissedKeysHeatmap missedKeys={player.missedKeys ?? {}} locale={locale} labels={copy} />}
 
-      <div className="overflow-x-auto rounded-card border border-border bg-surface">
+      <div tabIndex={0} role="region" aria-label={copy.tableTitle} className="overflow-x-auto rounded-card border border-border bg-surface">
         <table className="w-full min-w-[34rem] text-left text-sm">
           <caption className="sr-only">{copy.tableTitle}</caption>
           <thead className="border-b border-border text-xs text-muted">
@@ -72,6 +66,7 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
               <th scope="col" className="px-4 py-3">{copy.columns.wpm}</th>
               <th scope="col" className="px-4 py-3">{copy.columns.accuracy}</th>
               <th scope="col" className="px-4 py-3">{copy.columns.time}</th>
+              <th scope="col" className="px-4 py-3">{copy.columns.bonuses}</th>
               <th scope="col" className="px-4 py-3">{copy.columns.status}</th>
             </tr>
           </thead>
@@ -79,12 +74,13 @@ export function RaceResults({ locale, labels, rows, headline, settingsHref, onRe
             {rows.map((row) => (
               <tr key={row.id} className={`border-b border-border last:border-b-0 ${row.isPlayer ? "bg-accent-panel font-bold" : ""}`}>
                 <td className="px-4 py-3">{formatOrdinal(locale, row.rank, labels.ordinal)}</td>
-                <th scope="row" className="px-4 py-3 font-bold">{row.name}</th>
-                <td className="px-4 py-3 tabular-nums">{row.wpm}</td>
+                <th scope="row" className="px-4 py-3 font-bold"><span className="inline-flex items-center gap-2"><Avatar name={row.name} {...avatarOf(row)} size={24} />{row.name}{row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}</span></th>
+                <td className="px-4 py-3 tabular-nums">{number.format(row.wpm)}</td>
                 <td className="px-4 py-3 tabular-nums">
-                  {row.accuracy}%
+                  {percent.format(row.accuracy / 100)}
                 </td>
                 <td className="px-4 py-3 tabular-nums">{formatDuration(row.timeMs)}</td>
+                <td className="px-4 py-3">{row.bonusesReceived ?? 0}{row.bonusTypes?.length ? ` (${row.bonusTypes.map((type) => copy.bonusTypes[type]).join(", ")})` : ""}</td>
                 <td className="px-4 py-3">{copy.statuses[row.status]}</td>
               </tr>
             ))}

@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { SENTENCES_EN } from "./data/sentences.en";
 import { SENTENCES_FR } from "./data/sentences.fr";
-import { WORDS_EN } from "./data/words.en";
-import { WORDS_FR } from "./data/words.fr";
+import { RARE_WORDS_EN, WORDS_EN } from "./data/words.en";
+import { RARE_WORDS_FR, WORDS_FR } from "./data/words.fr";
 import {
+  classifySentence,
+  EASY_MAX_WORD_LENGTH,
   generateRaceText,
+  HARD_MIN_WORD_LENGTH,
+  SENTENCES,
   parseExcludedCharacters,
   TEXT_TARGET_LENGTH,
   type TextGenerationInput,
@@ -28,7 +32,14 @@ const BASE: TextGenerationInput = {
   accents: true,
   length: "medium",
   excludedCharacters: "",
+  complexity: "medium",
+  punctuation: true,
+  numbers: false,
+  uppercase: true,
 };
+
+/** Mots nus : ni ponctuation, ni majuscules, ni nombres (le texte se découpe sur les espaces). */
+const PLAIN = { punctuation: false, uppercase: false, numbers: false } as const;
 
 function textOf(input: TextGenerationInput, seed: number): string {
   const result = generateRaceText(input, seeded(seed));
@@ -38,6 +49,8 @@ function textOf(input: TextGenerationInput, seed: number): string {
 
 const LENGTHS = ["short", "medium", "long"] as const;
 const MODES = ["sentences", "words"] as const;
+const COMPLEXITIES = ["easy", "medium", "hard"] as const;
+const PUNCTUATION_SIGNS = /[.,;:!?«»"()…–]/u;
 const LANGUAGES = ["fr", "en"] as const;
 
 describe("données de textes", () => {
@@ -73,7 +86,7 @@ describe("generateRaceText", () => {
   it("respecte la langue en mode mots", () => {
     for (const language of LANGUAGES) {
       const bank = new Set(language === "fr" ? WORDS_FR : WORDS_EN);
-      const words = textOf({ ...BASE, textMode: "words", language }, 3).split(" ");
+      const words = textOf({ ...BASE, ...PLAIN, textMode: "words", language }, 3).split(" ");
       for (const word of words) expect(bank.has(word)).toBe(true);
     }
   });
@@ -152,7 +165,7 @@ describe("generateRaceText", () => {
   it("sans accents, un mot est remplacé par sa forme sans diacritiques (œ devient oe)", () => {
     const all = new Set<string>();
     for (let seed = 1; seed <= 200; seed++) {
-      for (const word of textOf({ ...BASE, textMode: "words", accents: false, length: "long" }, seed).split(" ")) {
+      for (const word of textOf({ ...BASE, ...PLAIN, textMode: "words", accents: false, length: "long" }, seed).split(" ")) {
         all.add(word);
       }
     }
@@ -165,7 +178,7 @@ describe("generateRaceText", () => {
   it("les mots accentués restent intacts avec accents", () => {
     const all = new Set<string>();
     for (let seed = 1; seed <= 100; seed++) {
-      for (const word of textOf({ ...BASE, textMode: "words", length: "long" }, seed).split(" ")) {
+      for (const word of textOf({ ...BASE, ...PLAIN, textMode: "words", length: "long" }, seed).split(" ")) {
         all.add(word);
       }
     }
@@ -226,6 +239,187 @@ describe("generateRaceText", () => {
     expect(result.ok).toBe(true);
     const zero = generateRaceText(BASE, () => 0);
     expect(zero.ok).toBe(true);
+  });
+});
+
+describe("complexité, ponctuation, nombres et majuscules (CONF-05, CONF-06)", () => {
+  const cases = LANGUAGES.flatMap((language) =>
+    MODES.flatMap((textMode) =>
+      COMPLEXITIES.flatMap((complexity) => LENGTHS.map((length) => ({ language, textMode, complexity, length }))),
+    ),
+  );
+
+  it("génère un texte dans la tolérance pour chaque combinaison, avec les défauts et sans accents", () => {
+    for (const combination of cases) {
+      for (const accents of combination.language === "fr" ? [true, false] : [true]) {
+        const target = TEXT_TARGET_LENGTH[combination.length];
+        for (let seed = 1; seed <= 8; seed++) {
+          const text = textOf({ ...BASE, ...combination, accents }, seed);
+          expect(text.length).toBeGreaterThanOrEqual(target * 0.75);
+          expect(text.length).toBeLessThanOrEqual(target * 1.25);
+          if (!accents) expect(text.normalize("NFD")).not.toMatch(/\p{M}/u);
+        }
+      }
+    }
+  });
+
+  it("génère aussi un texte avec toutes les options, y compris les nombres", () => {
+    for (const combination of cases) {
+      for (let seed = 1; seed <= 5; seed++) {
+        const input = { ...BASE, ...combination, numbers: true, accents: combination.language === "en" };
+        expect(generateRaceText(input, seeded(seed)).ok).toBe(true);
+      }
+    }
+  });
+
+  it("garde assez de phrases par niveau et par langue, dont des phrases sans accent et des nombres", () => {
+    for (const language of LANGUAGES) {
+      for (const complexity of COMPLEXITIES) {
+        const sentences = SENTENCES[language][complexity];
+        expect(sentences.length).toBeGreaterThanOrEqual(15);
+        expect(sentences.filter((sentence) => /\d/u.test(sentence)).length).toBeGreaterThanOrEqual(2);
+        const plain = sentences.filter((sentence) => !/\d/u.test(sentence) && sentence.normalize("NFD") === sentence);
+        expect(plain.length).toBeGreaterThanOrEqual(10);
+      }
+    }
+  });
+
+  it("classe les phrases par mesures calculées", () => {
+    expect(classifySentence("Le chat dort sur le lit et le chien dort sur le tapis.")).toBe("easy");
+    expect(classifySentence("Dans le jardin, les abeilles volent autour des fleurs jaunes.")).toBe("medium");
+    expect(classifySentence("Cette photographie montre un magnifique coucher de soleil.")).toBe("hard");
+    // Deux signes spéciaux suffisent pour « difficile », un seul empêche « facile ».
+    expect(classifySentence("Viens vite ! Il est la ; le bus part.")).toBe("hard");
+    expect(classifySentence("Le chat dort sur le lit ?")).toBe("medium");
+    expect(classifySentence("Le chat dort sur le lit, et le chien aussi.")).toBe("easy");
+  });
+
+  it("en phrases, chaque phrase du texte vient du niveau demandé", () => {
+    for (const language of LANGUAGES) {
+      for (const complexity of COMPLEXITIES) {
+        const levels = SENTENCES[language];
+        const others = COMPLEXITIES.filter((level) => level !== complexity).flatMap((level) => levels[level]);
+        for (let seed = 1; seed <= 10; seed++) {
+          const text = textOf({ ...BASE, language, complexity, length: "long" }, seed);
+          expect(others.some((sentence) => text.includes(sentence))).toBe(false);
+          expect(levels[complexity].some((sentence) => text.includes(sentence))).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("en mots, facile n'a aucun mot de plus de 5 lettres et difficile aucun de moins de 6", () => {
+    for (const language of LANGUAGES) {
+      for (let seed = 1; seed <= 20; seed++) {
+        const easy = textOf({ ...BASE, ...PLAIN, textMode: "words", language, complexity: "easy" }, seed).split(" ");
+        for (const word of easy) expect([...word].length).toBeLessThanOrEqual(EASY_MAX_WORD_LENGTH);
+        const hard = textOf({ ...BASE, ...PLAIN, textMode: "words", language, complexity: "hard" }, seed).split(" ");
+        for (const word of hard) expect([...word].length).toBeGreaterThanOrEqual(HARD_MIN_WORD_LENGTH);
+      }
+    }
+  });
+
+  it("en mots difficile, les mots rares s'ajoutent à la liste courante", () => {
+    for (const [language, rare, common] of [["fr", RARE_WORDS_FR, WORDS_FR], ["en", RARE_WORDS_EN, WORDS_EN]] as const) {
+      const all = new Set<string>();
+      for (let seed = 1; seed <= 60; seed++) {
+        for (const word of textOf({ ...BASE, ...PLAIN, textMode: "words", language, complexity: "hard", length: "long" }, seed).split(" ")) {
+          all.add(word);
+        }
+      }
+      expect(rare.some((word) => all.has(word))).toBe(true);
+      expect(common.some((word) => word.length >= HARD_MIN_WORD_LENGTH && all.has(word))).toBe(true);
+    }
+  });
+
+  it("ponctuation désactivée : aucun signe, ni en phrases ni en mots, apostrophes et traits d'union gardés", () => {
+    let kept = false;
+    for (const combination of cases) {
+      for (let seed = 1; seed <= 4; seed++) {
+        const text = textOf({ ...BASE, ...combination, punctuation: false }, seed);
+        expect(text).not.toMatch(PUNCTUATION_SIGNS);
+        expect(text).not.toMatch(/ {2}/);
+        if (/[a-z]['-][a-z]/iu.test(text)) kept = true;
+      }
+    }
+    expect(kept).toBe(true);
+  });
+
+  it("ponctuation activée en mots : des signes apparaissent, plus riches en difficile qu'en facile", () => {
+    const signs = (complexity: (typeof COMPLEXITIES)[number]) => {
+      const found = new Set<string>();
+      for (let seed = 1; seed <= 40; seed++) {
+        const text = textOf({ ...BASE, textMode: "words", complexity, length: "long" }, seed);
+        for (const sign of text.match(/[.,;:!?()]/gu) ?? []) found.add(sign);
+      }
+      return found;
+    };
+    expect([...signs("easy")].sort()).toEqual([",", "."]);
+    expect(signs("medium").has("?")).toBe(true);
+    expect(signs("medium").has(";")).toBe(false);
+    for (const sign of [";", ":", "(", ")"]) expect(signs("hard").has(sign)).toBe(true);
+  });
+
+  it("majuscules désactivées : tout est en minuscules ; activées en mots : début de texte et après . ? !", () => {
+    for (const combination of cases) {
+      const text = textOf({ ...BASE, ...combination, uppercase: false }, 3);
+      expect(text).toBe(text.toLowerCase());
+    }
+    for (let seed = 1; seed <= 20; seed++) {
+      const text = textOf({ ...BASE, textMode: "words", length: "long" }, seed);
+      expect(text).toMatch(/^\p{Lu}/u);
+      expect(text.replace(/(?:^|[.?!] )\(?\p{Lu}/gu, "")).not.toMatch(/\p{Lu}/u);
+      expect(text).not.toMatch(/[.?!] \(?\p{Ll}/u);
+    }
+  });
+
+  it("nombres désactivés : aucun chiffre ; activés en mots : des chiffres, dans la limite du niveau", () => {
+    for (const combination of cases) {
+      for (let seed = 1; seed <= 4; seed++) {
+        expect(textOf({ ...BASE, ...combination, numbers: false }, seed)).not.toMatch(/\d/u);
+      }
+    }
+    for (const language of LANGUAGES) {
+      const maxDigits = { easy: 2, medium: 4, hard: 4 } as const;
+      for (const complexity of COMPLEXITIES) {
+        let digits = false;
+        let decimal = false;
+        for (let seed = 1; seed <= 30; seed++) {
+          const text = textOf({ ...BASE, ...PLAIN, numbers: true, textMode: "words", language, complexity, length: "long" }, seed);
+          for (const token of text.split(" ").filter((word) => /\d/u.test(word))) {
+            digits = true;
+            if (/[.,]/u.test(token)) {
+              decimal = true;
+              expect(token).toMatch(language === "fr" ? /^\d{1,2},\d{1,2}$/u : /^\d{1,2}\.\d{1,2}$/u);
+            } else {
+              expect(token.length).toBeLessThanOrEqual(maxDigits[complexity]);
+            }
+          }
+        }
+        expect(digits).toBe(true);
+        expect(decimal).toBe(complexity === "hard");
+      }
+    }
+  });
+
+  it("nombres activés en phrases : les phrases à chiffres deviennent possibles", () => {
+    const texts = Array.from({ length: 40 }, (_, seed) => textOf({ ...BASE, numbers: true, length: "long" }, seed + 1));
+    expect(texts.some((text) => /\d/u.test(text))).toBe(true);
+  });
+
+  it("les caractères exclus et les accents valent sur le texte final, ponctuation et nombres compris", () => {
+    for (const combination of cases) {
+      for (let seed = 1; seed <= 4; seed++) {
+        const text = textOf(
+          { ...BASE, ...combination, numbers: true, accents: false, excludedCharacters: ", ? 1 7 (" },
+          seed,
+        );
+        expect(text).not.toMatch(/[,?17(]/u);
+        expect(text.normalize("NFD")).not.toMatch(/\p{M}/u);
+      }
+    }
+    // Une ponctuation retirée n'est plus un caractère à exclure.
+    expect(generateRaceText({ ...BASE, punctuation: false, excludedCharacters: ", ." }, seeded(1)).ok).toBe(true);
   });
 });
 

@@ -106,6 +106,7 @@ export async function validateSession(
     displayName: user.displayName,
     username: user.username,
     locale: user.locale,
+    avatarVersion: user.avatarVersion,
   };
 }
 

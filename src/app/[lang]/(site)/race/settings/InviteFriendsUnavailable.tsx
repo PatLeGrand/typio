@@ -12,7 +12,7 @@ type InviteFriendsUnavailableProps = {
 };
 
 /**
- * « Inviter des amis » désactivé pour un invité ou un visiteur non connecté (SALLE-12) : la raison est
+ * « Inviter des amis » désactivé pour un invité ou un visiteur non connecté (AUTH-03) : la raison est
  * affichée et reliée au bouton. Aucune connexion à la salle n'est ouverte.
  */
 export function InviteFriendsUnavailable({ kind, lang, labels }: InviteFriendsUnavailableProps) {

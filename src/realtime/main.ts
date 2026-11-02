@@ -6,6 +6,7 @@
 
 import { createDrizzleSessionRepository } from "@/auth/drizzleSessionRepository";
 import { createDatabaseClient } from "@/db/client";
+import { createDrizzleRaceRepository } from "@/race/drizzleRaceRepository";
 import { createRealtimeServer } from "./server";
 
 const port = Number(process.env.REALTIME_PORT ?? 3001);
@@ -17,6 +18,7 @@ const allowedOrigins = (process.env.APP_ORIGIN ?? "http://localhost:3000")
 const { db, close } = createDatabaseClient();
 const { io, httpServer } = createRealtimeServer({
   sessions: createDrizzleSessionRepository(db),
+  raceRepository: createDrizzleRaceRepository(db),
   allowedOrigins,
 });
 

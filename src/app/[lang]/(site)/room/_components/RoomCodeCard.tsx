@@ -13,7 +13,7 @@ type RoomCodeCardProps = {
 type CopyFeedback = "none" | "copied" | "selected";
 
 /**
- * Code de la salle en grand (SALLE-4) avec un bouton pour le copier. Sans API presse-papiers
+ * Code de la salle en grand (SALLE-02, JOIN-01) avec un bouton pour le copier. Sans API presse-papiers
  * (contexte non sécurisé, vieux navigateur) ou si elle refuse, le code est sélectionné pour
  * que l'élève le copie lui-même.
  */

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from "vitest";
-import type { Ack, JoinPayload, RoomState } from "./protocol";
+import type { Ack, JoinPayload, ParticipantRole, RoomState } from "./protocol";
 import { startTestServer, waitForConnection, type TestClient } from "./testSupport";
 
 type TestServer = Awaited<ReturnType<typeof startTestServer>>;
@@ -35,8 +35,8 @@ function emitAck<T>(emit: (ack: (res: T) => void) => void): Promise<T> {
   return new Promise((resolve) => emit(resolve));
 }
 
-const create = (socket: TestClient, config: unknown = {}) =>
-  emitAck<CreateAck>((ack) => socket.emit("room:create", config, ack));
+const create = (socket: TestClient, config: unknown = {}, role: ParticipantRole = "runner") =>
+  emitAck<CreateAck>((ack) => socket.emit("room:create", { config, role }, ack));
 
 const join = (socket: TestClient, payload: unknown) =>
   emitAck<CreateAck>((ack) => socket.emit("room:join", payload, ack));
@@ -107,6 +107,29 @@ describe("roomHandlers (lot 2)", () => {
     expect(state.config.textMode).toBe("words");
   });
 
+  it("SALLE-01: the member can create as a spectator host", async () => {
+    const server = await start();
+    const user = server.sessions.signIn("member");
+    const socket = await open(server, user.token);
+    const statePromise = waitForState(socket, (s) => s.participants.length === 1);
+    expectOk(await create(socket, {}, "spectator"));
+    const state = await statePromise;
+    expect(state.hostId).toBe(user.userId);
+    expect(participant(state, user.userId)?.role).toBe("spectator");
+  });
+
+  it.each([{ role: "host" }, { config: {}, hostId: "x" }, { config: { language: "de" } }])(
+    "rejects an invalid create payload without creating a room: %o", async (payload) => {
+      const server = await start();
+      const user = server.sessions.signIn("member");
+      const socket = await open(server, user.token);
+      expect(await emitAck<CreateAck>((ack) => socket.emit("room:create", payload, ack))).toEqual({
+        ok: false, error: "INVALID_PAYLOAD",
+      });
+      expectOk(await create(socket));
+    },
+  );
+
   it("AC-2: invité B rejoint, A et B reçoivent le même room:state à 2 participants", async () => {
     const server = await start();
     const socketA = await open(server, server.sessions.signIn("member").token);
@@ -121,7 +144,7 @@ describe("roomHandlers (lot 2)", () => {
     expect(stateA).toEqual(stateB);
   });
 
-  it("AC-2: un code saisi en minuscules avec un tiret est normalisé (SALLE-4)", async () => {
+  it("AC-2: un code saisi en minuscules avec un tiret est normalisé (SALLE-02, JOIN-01)", async () => {
     const server = await start();
     const socketA = await open(server, server.sessions.signIn("member").token);
     const code = expectOk(await create(socketA));
@@ -131,7 +154,7 @@ describe("roomHandlers (lot 2)", () => {
     expect(expectOk(await join(socketB, { code: typed, role: "spectator" }))).toBe(code);
   });
 
-  it("AC-3 (SALLE-10): A change la langue, B reçoit le room:state sans rien demander", async () => {
+  it("AC-3 (CONF-12): A change la langue, B reçoit le room:state sans rien demander", async () => {
     const server = await start();
     const { socketA, socketB } = await roomWithTwo(server);
     const statePromiseB = waitForState(socketB, (s) => s.config.language === "en");
@@ -181,7 +204,7 @@ describe("roomHandlers (lot 2)", () => {
     });
   });
 
-  it("AC-7 (SALLE-15): A quitte, B reçoit un état où il est hôte", async () => {
+  it("AC-7 (SALLE-08): A quitte, B reçoit un état où il est hôte", async () => {
     const server = await start();
     const { userB, socketA, socketB } = await roomWithTwo(server);
     const statePromiseB = waitForState(socketB, (s) => s.participants.length === 1);
@@ -191,7 +214,7 @@ describe("roomHandlers (lot 2)", () => {
     expect((await statePromiseB).hostId).toBe(userB.userId);
   });
 
-  it("AC-8 (SALLE-13): B se déconnecte, A voit connected: false ; B revient par room:join, même joinedAt", async () => {
+  it("AC-8 (ancien SALLE-13): B se déconnecte, A voit connected: false ; B revient par room:join, même joinedAt", async () => {
     const server = await start();
     const { userB, socketA, socketB, code, joined } = await roomWithTwo(server);
     const joinedAt = participant(joined, userB.userId)?.joinedAt;
@@ -278,7 +301,7 @@ describe("roomHandlers: reconnexion, onglets et départ (D1 à D4)", () => {
     expect(server.timers.size).toBe(0);
   });
 
-  it("S-2 (SALLE-15): l'hôte déconnecté qui expire passe le rôle au participant connecté", async () => {
+  it("S-2 (SALLE-08): l'hôte déconnecté qui expire passe le rôle au participant connecté", async () => {
     const server = await start(100);
     const { userA, userB, socketA, socketB } = await roomWithTwo(server);
     const transferred = waitForState(socketB, (s) => !participant(s, userA.userId));
@@ -388,7 +411,7 @@ describe("roomHandlers: reconnexion, onglets et départ (D1 à D4)", () => {
     expectOk(await join(otherTab, { code, role: "spectator" }));
   });
 
-  it("S-4 (SALLE-15): après leave, A peut créer une autre salle", async () => {
+  it("S-4 (SALLE-06): après leave, A peut créer une autre salle", async () => {
     const server = await start();
     const { code, socketA } = await roomWithTwo(server);
     expect(await leave(socketA)).toEqual({ ok: true });
@@ -562,7 +585,7 @@ describe("roomHandlers: abus (énumération, connexions, taille, session)", () =
     const socket = await open(server, server.sessions.signIn("member").token);
     const closed = new Promise<string>((resolve) => socket.once("disconnect", resolve));
 
-    socket.emit("room:create", { textMode: "x".repeat(20_000) }, () => undefined);
+    socket.emit("room:create", { config: { textMode: "x".repeat(20_000) }, role: "runner" }, () => undefined);
 
     expect(await closed).toBeTruthy();
   });
@@ -661,5 +684,39 @@ describe("roomHandlers: abus (énumération, connexions, taille, session)", () =
 
     expect(socket.connected).toBe(true);
     expect(server.sessionExpiry.size).toBe(1);
+  });
+});
+
+describe("diffusions réseau de la course", () => {
+  it("diffuse le décompte, limite les instantanés et publie les résultats au tick", async () => {
+    let time = Date.now();
+    const server = await startTestServer({ now: () => new Date(time), generateSeed: () => 42 });
+    servers.push(server);
+    const { token } = server.sessions.signIn("member");
+    const socket = await open(server, token);
+    expectOk(await create(socket, { bots: ["intermediate"], timeLimitSeconds: 60 }));
+    const states: string[] = [];
+    let results = 0;
+    socket.on("race:state", (state) => states.push(state.status));
+    socket.on("race:results", () => { results++; });
+    expect(await emitAck<Ack>((ack) => socket.emit("race:start", {}, ack))).toEqual({ ok: true });
+    await pause(30);
+    expect(states).toEqual(["countdown"]);
+    for (let n = 0; n < 12; n++) socket.emit("race:input", { ops: [] });
+    await pause(120);
+    // L’horloge injectée n’avance pas : ni les entrées ni l’intervalle ne rediffusent.
+    expect(states).toEqual(["countdown"]);
+    time += 3000;
+    await pause(120);
+    expect(states).toEqual(["countdown", "racing"]);
+    time += 60_000;
+    await pause(120);
+    expect(states).toEqual(["countdown", "racing", "results"]);
+    expect(results).toBe(1);
+    time += 1000;
+    await pause(120);
+    expect(states.length).toBe(3);
+    expect(results).toBe(1);
+    expect(await emitAck<Ack>((ack) => socket.emit("room:close", {}, ack))).toEqual({ ok: true });
   });
 });

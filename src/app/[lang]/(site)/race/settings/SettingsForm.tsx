@@ -14,7 +14,7 @@ import type { Dictionary } from "@/i18n/dictionaries";
 import { InviteFriendsButton } from "./InviteFriendsButton";
 import { InviteFriendsUnavailable } from "./InviteFriendsUnavailable";
 
-/** Qui regarde la page : décide si « Inviter des amis » est possible (SALLE-1, SALLE-12). */
+/** Qui regarde la page : décide si « Inviter des amis » est possible (SALLE-01, AUTH-03). */
 export type InviteAccess =
   | { kind: "member"; userId: string; roomErrors: Dictionary["room"]["errors"] }
   | { kind: "guest" }
@@ -130,7 +130,7 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
               {/* Card Body */}
               <div className="p-8 pb-6 flex-1 flex flex-col">
                 <p className="text-sm text-muted mb-6">
-                  {dict.summary.participants.replace("{bots}", settings.botCount.toString()).replace("{total}", (settings.botCount + 1).toString())}
+                  {dict.summary.participants.replace("{bots}", settings.bots.length.toString()).replace("{total}", (settings.bots.length + 1).toString())}
                 </p>
 
                 <ul className="flex flex-col gap-3 text-sm mb-8">
@@ -146,6 +146,16 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
                     <span className="text-muted">{dict.accents.label}</span>
                     <span className="font-semibold">{settings.accents ? dict.accents.include : dict.accents.exclude}</span>
                   </li>
+                  <li className="flex justify-between border-b border-border pb-3">
+                    <span className="text-muted">{dict.complexity.label}</span>
+                    <span className="font-semibold">{dict.complexity[settings.complexity]}</span>
+                  </li>
+                  {(["punctuation", "numbers", "uppercase"] as const).map((option) => (
+                    <li key={option} className="flex justify-between border-b border-border pb-3">
+                      <span className="text-muted">{dict[option].label}</span>
+                      <span className="font-semibold">{settings[option] ? dict.accents.include : dict.accents.exclude}</span>
+                    </li>
+                  ))}
                   <li className="flex justify-between border-b border-border pb-3">
                     <span className="text-muted">{dict.length.label}</span>
                     <span className="font-semibold">{settings.length === "short" ? dict.length.short : settings.length === "medium" ? dict.length.medium : dict.length.long}</span>
@@ -163,12 +173,12 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
                     <span className="font-semibold">{settings.inputMode === "free" ? dict.inputMode.free : dict.inputMode.blocking}</span>
                   </li>
                   <li className="flex justify-between border-b border-border pb-3">
-                    <span className="text-muted">{dict.botCount.label}</span>
-                    <span className="font-semibold">{settings.botCount} · {settings.botDifficulty === "easy" ? dict.botDifficulty.easy : settings.botDifficulty === "normal" ? dict.botDifficulty.normal : dict.botDifficulty.hard}</span>
+                    <span className="text-muted">{dict.bots.label}</span>
+                    <span className="font-semibold">{settings.bots.length} · {settings.bots.map((level) => dict.bots.levels[level]).join(", ")}</span>
                   </li>
                   <li className="flex justify-between pb-1">
-                    <span className="text-muted">{dict.abilities.label}</span>
-                    <span className="font-semibold">{dict.abilities.off}</span>
+                    <span className="text-muted">{dict.bonuses.label}</span>
+                    <span className="font-semibold">{settings.bonuses ? dict.bonuses.on : dict.bonuses.off}</span>
                   </li>
                 </ul>
 

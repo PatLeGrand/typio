@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 import { useIsDarkTheme } from "@/theme/useIsDarkTheme";
+import { AVATAR_COLOR_COUNT, avatarColorIndex, avatarColorVar, avatarInitial } from "@/components/avatar";
 
 export interface Racer {
   id: string;
@@ -11,6 +12,13 @@ export interface Racer {
   isLocal?: boolean;
   /** Rotation de teinte du Blob en degrés (0 = bleu d'origine), pour distinguer les coureurs. */
   hue?: number;
+  bonusLabel?: string;
+  /** Graine de la couleur de l'avatar généré (H-39) ; `id` par défaut, le nom pour un bot. */
+  seed?: string;
+  /** Nom dont on tire l'initiale de l'avatar généré ; `name` par défaut. */
+  avatarName?: string;
+  /** URL versionnée de la photo (H-38), ou absente : avatar généré. */
+  avatarUrl?: string | null;
 }
 
 interface RaceVisualizerProps {
@@ -25,6 +33,7 @@ interface RacerView {
   container: PIXI.Container;
   body: PIXI.Container;
   shadow: PIXI.Graphics;
+  bonus: PIXI.Text;
   x: number; // position affichée (lissée), en px de piste
   vx: number; // vitesse affichée, en px/s
   phase: number; // phase du cycle de saut
@@ -45,6 +54,7 @@ const ACCELERATION = 4; // douceur des démarrages/arrêts (plus haut = plus ner
 const CAMERA_RATE = 5; // la caméra est plus lente que le Blob → effet d'élan
 const HOP_HEIGHT = 20; // hauteur max du saut en px
 const CAMERA_ANCHOR = 0.22; // position du joueur local à l'écran (fraction de largeur)
+const AVATAR_SIZE = 22; // diamètre de l'avatar à côté du nom, en px
 
 /** Vrai quand les décors sont déjà déclarés auprès de `PIXI.Assets` (partagé par toutes les scènes). */
 let assetsRegistered = false;
@@ -52,7 +62,7 @@ let assetsRegistered = false;
 // (la caméra suit le joueur local, la piste est bien plus longue que l'écran).
 const EDGE_MARGIN = 70; // px entre le Blob et le bord de l'écran
 
-// Couleurs de la scène par thème (UI-3). Les décors sont des SVG clairs : en thème sombre on
+// Couleurs de la scène par thème (DES-05, A11Y-01). Les décors sont des SVG clairs : en thème sombre on
 // assombrit le fond et on teinte (multiplie) chaque calque.
 const SCENE_COLORS = {
   light: { background: 0xdcf2fa, layers: { cloud: 0xffffff, "meadow-distant": 0xffffff, meadow: 0xffffff, track: 0xffffff } },
@@ -91,6 +101,10 @@ export function RaceVisualizer({
     const app = new PIXI.Application();
     const layers: Layer[] = [];
     const views = new Map<string, RacerView>();
+    // Textures des photos chargées par cette scène : libérées au démontage.
+    const photoTextures: PIXI.Texture[] = [];
+    const hueTextures = new Map<number, PIXI.Texture>();
+    let avatarPalette: { colors: string[]; foreground: string } | null = null;
     let cameraX = 0;
     let cameraReady = false;
     let elapsed = 0;
@@ -109,17 +123,90 @@ export function RaceVisualizer({
       }
     };
 
+    /** Couleurs des tokens `--avatar-*`, lues une fois (identiques en clair et en sombre). */
+    const palette = () => {
+      if (!avatarPalette) {
+        const style = getComputedStyle(host);
+        avatarPalette = {
+          colors: Array.from({ length: AVATAR_COLOR_COUNT }, (_, i) => style.getPropertyValue(avatarColorVar(i)).trim() || "gray"),
+          foreground: style.getPropertyValue("--avatar-foreground").trim() || "white",
+        };
+      }
+      return avatarPalette;
+    };
+
+    /** Avatar rond : généré tout de suite, remplacé par la photo si elle charge (sinon il reste). */
+    const createAvatar = (racer: Racer): PIXI.Container => {
+      const radius = AVATAR_SIZE / 2;
+      const { colors, foreground } = palette();
+      const node = new PIXI.Container();
+      const generated = new PIXI.Container();
+      generated.addChild(new PIXI.Graphics().circle(0, 0, radius).fill(colors[avatarColorIndex(racer.seed ?? racer.id)]));
+      const initial = new PIXI.Text({
+        text: avatarInitial(racer.avatarName ?? racer.name),
+        style: { fontFamily: "sans-serif", fontSize: 12, fontWeight: "700", fill: foreground },
+      });
+      initial.anchor.set(0.5);
+      generated.addChild(initial);
+      // Anneau : plus épais et jaune pour le joueur local, qui reste repérable.
+      const ring = new PIXI.Graphics().circle(0, 0, radius).stroke(racer.isLocal ? { width: 3, color: 0xffda70 } : { width: 1.5, color: 0xffffff });
+      node.addChild(generated, ring);
+
+      if (racer.avatarUrl) {
+        const image = new Image();
+        image.onload = () => {
+          if (!isMounted || node.destroyed) return;
+          const canvas = document.createElement("canvas");
+          const size = Math.ceil(AVATAR_SIZE * (window.devicePixelRatio || 1));
+          canvas.width = canvas.height = size;
+          const context = canvas.getContext("2d");
+          if (!context) return;
+          context.beginPath();
+          context.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+          context.clip();
+          context.drawImage(image, 0, 0, size, size);
+          const texture = PIXI.Texture.from(canvas);
+          photoTextures.push(texture);
+          const photo = new PIXI.Sprite(texture);
+          photo.anchor.set(0.5);
+          photo.width = AVATAR_SIZE;
+          photo.height = AVATAR_SIZE;
+          node.addChildAt(photo, 1);
+          generated.visible = false;
+        };
+        image.src = racer.avatarUrl; // repli sur l'avatar généré si le chargement échoue
+      }
+      return node;
+    };
+
     const createView = (racer: Racer, blobTexture: PIXI.Texture, startX: number, world: PIXI.Container): RacerView => {
       const container = new PIXI.Container();
       const shadow = new PIXI.Graphics().ellipse(0, 0, 34, 8).fill({ color: 0x000000, alpha: 0.18 });
       const body = new PIXI.Container();
-      const sprite = new PIXI.Sprite(blobTexture);
-      sprite.anchor.set(0.5, 1); // pivot aux pieds : squash & stretch au sol
+      let texture = blobTexture;
       if (racer.hue) {
-        const hueFilter = new PIXI.ColorMatrixFilter();
-        hueFilter.hue(racer.hue, false);
-        sprite.filters = [hueFilter];
+        const cached = hueTextures.get(racer.hue);
+        if (cached) {
+          texture = cached;
+        } else {
+          const source = new PIXI.Sprite(blobTexture);
+          const hueFilter = new PIXI.ColorMatrixFilter();
+          hueFilter.hue(racer.hue, false);
+          hueFilter.resolution = app.renderer.resolution;
+          source.filters = [hueFilter];
+          texture = app.renderer.generateTexture({
+            target: source,
+            frame: new PIXI.Rectangle(0, 0, blobTexture.width, blobTexture.height),
+            resolution: app.renderer.resolution,
+            antialias: true,
+          });
+          hueTextures.set(racer.hue, texture);
+          source.destroy();
+          hueFilter.destroy();
+        }
       }
+      const sprite = new PIXI.Sprite(texture);
+      sprite.anchor.set(0.5, 1); // pivot aux pieds : squash & stretch au sol
       body.addChild(sprite);
 
       const label = new PIXI.Text({
@@ -130,9 +217,20 @@ export function RaceVisualizer({
       label.y = -blobTexture.height - 4;
       body.addChild(label);
 
-      container.addChild(shadow, body);
+      const avatar = createAvatar(racer);
+      avatar.x = -label.width / 2 - AVATAR_SIZE / 2 - 4;
+      avatar.y = label.y - label.height / 2;
+      body.addChild(avatar);
+
+      const bonus = new PIXI.Text({
+        text: racer.bonusLabel ?? "",
+        style: { fontFamily: "sans-serif", fontSize: 14, fontWeight: "700", fill: 0xffffff, stroke: { color: 0x293c49, width: 4 } },
+      });
+      bonus.anchor.set(0.5, 1);
+      bonus.y = -blobTexture.height - 28;
+      container.addChild(shadow, body, bonus);
       world.addChild(container);
-      return { container, body, shadow, x: startX, vx: 0, phase: 0, intensity: 0 };
+      return { container, body, shadow, bonus, x: startX, vx: 0, phase: 0, intensity: 0 };
     };
 
     const init = async () => {
@@ -191,6 +289,11 @@ export function RaceVisualizer({
         elapsed += dt;
         const list = racersRef.current;
         const length = trackLengthRef.current;
+        const groundBottom = Math.max(0, app.screen.height - 34);
+        // Garde les pieds sur la piste visible et une marge pour le Blob et son saut.
+        const groundTop = Math.min(groundBottom, Math.max(blobTexture.height + HOP_HEIGHT + AVATAR_SIZE + 8,
+          app.screen.height - PIXI.Assets.get<PIXI.Texture>("track").height));
+        const laneGap = Math.min(14, (groundBottom - groundTop) / Math.max(1, list.length - 1));
 
         // Distances aux autres coureurs, bornées à ce que l'écran peut montrer.
         const localRacer = list.find((r) => r.isLocal) ?? list[0];
@@ -209,6 +312,8 @@ export function RaceVisualizer({
             view = createView(racer, blobTexture, target, world);
             views.set(racer.id, view);
           }
+
+          view.bonus.text = racer.bonusLabel ?? "";
 
           // 1. Position : le Blob rejoint sa cible, mais sa vitesse est plafonnée à
           // MAX_SPEED et varie progressivement (pas de démarrage ni d'arrêt brutal).
@@ -230,7 +335,7 @@ export function RaceVisualizer({
           view.phase += dt * (5 + k * 7);
           const s = Math.abs(Math.sin(view.phase)); // 0 au sol, 1 à l'apogée
 
-          const groundY = app.screen.height - 34 - index * 14;
+          const groundY = groundBottom - index * laneGap;
           const hop = s * HOP_HEIGHT * k;
           const breathing = Math.sin(elapsed * 2.5 + index) * 0.02 * (1 - k);
 
@@ -273,6 +378,10 @@ export function RaceVisualizer({
       applyThemeRef.current = null;
       views.clear();
       if (initialized) app.destroy(true, { children: true });
+      for (const texture of photoTextures) texture.destroy(true);
+      photoTextures.length = 0;
+      for (const texture of hueTextures.values()) texture.destroy(true);
+      hueTextures.clear();
     };
   }, []);
 

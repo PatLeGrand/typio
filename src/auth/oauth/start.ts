@@ -28,7 +28,7 @@ export interface OAuthStartInput {
 }
 
 /**
- * AUTH-2, AUTH-3 : départ du flux. Génère `state` (et `codeVerifier` pour Discord, PKCE), les
+ * AUTH-01 : départ du flux. Génère `state` (et `codeVerifier` pour Discord, PKCE), les
  * place dans des cookies temporaires, et renvoie l'URL d'autorisation du fournisseur.
  *
  * Un MEMBRE déjà connecté n'a rien à faire ici (le flux ne sait ni lier ni changer de compte) :

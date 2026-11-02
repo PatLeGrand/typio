@@ -146,7 +146,7 @@ describe.each(["fr", "en"] as const)("déjà dans une salle (D7) (%s)", (locale)
   });
 });
 
-describe.each(["fr", "en"] as const)("invité (SALLE-12) (%s)", (locale) => {
+describe.each(["fr", "en"] as const)("invité (AUTH-03) (%s)", (locale) => {
   it("création désactivée, raison affichée et reliée au bouton ; rejoindre reste possible", () => {
     const labels = renderPlay(locale, { isGuest: true });
     const create = screen.getByRole("button", { name: labels.play.create.button });

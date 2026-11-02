@@ -9,7 +9,10 @@ import { prefixWithLocale } from "@/i18n/paths";
 import { requireLocale } from "@/i18n/requireLocale";
 import { ButtonLink } from "@/components/ButtonLink";
 import { isKeyboardLayout } from "@/profile/profileSettings";
+import { ProfileStats } from "@/components/profile/ProfileStats";
+import { createDrizzleProfileStatsRepository } from "@/race/drizzleProfileStatsRepository";
 import { ProfileForm } from "./ProfileForm";
+import { AvatarForm } from "./AvatarForm";
 
 export default async function ProfilePage({ params }: { params: Promise<{ lang: string }> }) {
   const locale = requireLocale((await params).lang);
@@ -33,6 +36,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
 
   const dictionary = getDictionary(locale);
   const { profile } = dictionary;
+  const repository = createDrizzleProfileStatsRepository(getDb());
+  const statistics = currentUser.kind === "member"
+    ? await Promise.all([repository.getUserStats(currentUser.id), repository.getWpmHistory(currentUser.id)])
+    : null;
 
   return (
     <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 md:px-8 md:py-12">
@@ -46,13 +53,21 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
               {profile.description}
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex flex-wrap gap-2">
+            {currentUser.kind === "member" && <ButtonLink href={prefixWithLocale("/history", locale)} variant="secondary">
+              {dictionary.history.title}
+            </ButtonLink>}
             <ButtonLink href={prefixWithLocale("/race", locale)} variant="secondary">
               <ArrowLeft aria-hidden="true" className="w-4 h-4" />
               {profile.backToCourses}
             </ButtonLink>
           </div>
         </div>
+
+        {statistics && <ProfileStats stats={statistics[0]} history={statistics[1]} locale={locale} labels={profile.stats} />}
+
+        {currentUser.kind === "member" && <AvatarForm userId={currentUser.id} displayName={currentUser.displayName}
+          version={dbUser.avatarVersion} labels={profile.avatar} />}
 
         <ProfileForm 
           user={currentUser} 

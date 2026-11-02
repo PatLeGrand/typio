@@ -22,7 +22,7 @@ export function createRaceLifecycle(settings: RaceSettings): RaceLifecycle {
   return { phase: "preparing", settings: Object.freeze(parsed) };
 }
 
-/** COURSE-1, COURSE-3, COURSE-5, H-9. Multiplayer callers must check host and runner guards first. */
+/** COURSE-03, COURSE-09, COURSE-07, H-9. Multiplayer callers must check host and runner guards first. */
 export function transitionRace(state: RaceLifecycle, event: RaceLifecycleEvent, now: number): RaceLifecycle {
   if (!Number.isFinite(now) || now < 0) throw new Error("INVALID_RACE_TIME");
   if (event.type === "reset") return state.phase === "results" ? createRaceLifecycle(state.settings) : state;

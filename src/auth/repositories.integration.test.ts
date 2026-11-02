@@ -9,7 +9,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDatabaseClient } from "@/db/client";
-import { oauthAccounts, sessions, users } from "@/db/schema";
+import { oauthAccounts, sessions, userAvatars, users } from "@/db/schema";
 import { createDrizzleUserRepository } from "./drizzleUserRepository";
 import { createDrizzleOAuthRepository } from "./oauth/drizzleOAuthRepository";
 import { OAuthAccountTakenError } from "./oauth/oauthRepository";
@@ -271,6 +271,8 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
     const expired = await userRepository.createGuest({ displayName: `old${suffix}`, locale: "fr", expiresAt: past });
     const alive = await userRepository.createGuest({ displayName: `new${suffix}`, locale: "fr", expiresAt: future });
     createdUserIds.push(alive.id);
+    // Défense en profondeur : même une photo héritée d'un ancien chemin disparaît à la purge.
+    await client.db.insert(userAvatars).values({ userId: expired.id, image: Buffer.from("processed-webp") });
     await createSession(sessionRepository, { userId: expired.id, kind: "guest", remember: false }, new Date());
     const member = await newMember(`stay${suffix}`);
 
@@ -279,6 +281,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
     expect(deleted).toBeGreaterThanOrEqual(1);
     expect(await client.db.select().from(users).where(eq(users.id, expired.id))).toHaveLength(0);
     expect(await client.db.select().from(sessions).where(eq(sessions.userId, expired.id))).toHaveLength(0);
+    expect(await client.db.select().from(userAvatars).where(eq(userAvatars.userId, expired.id))).toHaveLength(0);
     expect(await client.db.select().from(users).where(eq(users.id, alive.id))).toHaveLength(1);
     expect(await client.db.select().from(users).where(eq(users.id, member))).toHaveLength(1);
     expect(await userRepository.deleteExpiredGuests(new Date(), 0)).toBe(0);
@@ -298,6 +301,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
 
   it("destroySession deletes the row, and deleting the user cascades to its sessions", async () => {
     const userId = await newMember(`cascade${suffix}`);
+    await client.db.insert(userAvatars).values({ userId, image: Buffer.from("processed-webp") });
     const first = await createSession(sessionRepository, { userId, kind: "member", remember: false }, new Date());
     await createSession(sessionRepository, { userId, kind: "member", remember: false }, new Date());
 
@@ -306,6 +310,7 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
 
     await client.db.delete(users).where(eq(users.id, userId));
     expect(await client.db.select().from(sessions).where(eq(sessions.userId, userId))).toHaveLength(0);
+    expect(await client.db.select().from(userAvatars).where(eq(userAvatars.userId, userId))).toHaveLength(0);
   });
 
   describe("oauth_accounts", () => {

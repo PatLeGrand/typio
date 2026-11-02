@@ -23,7 +23,7 @@ const FORM_FIELDS: readonly AuthField[] = ["pseudo"];
 const FIELD_IDS = { pseudo: "guest-pseudo" } as const;
 const HINT_ID = "guest-pseudo-hint";
 
-/** Jeu en invité avec un simple pseudo (AUTH-4). */
+/** Jeu en invité avec un simple pseudo (AUTH-02, AUTH-03). */
 export function GuestForm({ locale, labels, common }: GuestFormProps) {
   const [state, formAction, pending] = useActionState(continueAsGuest, IDLE);
   // Contrôlé : React 19 vide les champs non contrôlés après une action, erreur comprise.

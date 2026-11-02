@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/login">): 
 }
 
 /**
- * AUTH-1 : GitHub et Discord d'abord (AUTH-2, AUTH-3 ; actifs s'ils sont configurés), puis
+ * AUTH-01, TEST-03 : GitHub et Discord d'abord (AUTH-01 ; actifs s'ils sont configurés), puis
  * l'identifiant, en dernier. `?oauth=` affiche le résultat d'une connexion tierce ratée.
  */
 export default async function LoginPage({ params, searchParams }: PageProps<"/[lang]/login">) {

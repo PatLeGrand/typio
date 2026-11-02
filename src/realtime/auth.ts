@@ -67,5 +67,5 @@ export async function authenticateHandshake(
   const accountExpiry = record.user.expiresAt;
   const sessionExpiry = record.session.expiresAt;
   const expiresAt = accountExpiry && accountExpiry < sessionExpiry ? accountExpiry : sessionExpiry;
-  return { user: { id: user.id, kind: user.kind, displayName: user.displayName }, expiresAt };
+  return { user: { id: user.id, kind: user.kind, displayName: user.displayName, avatarVersion: user.avatarVersion }, expiresAt };
 }

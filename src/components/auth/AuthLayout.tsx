@@ -25,9 +25,11 @@ export function AuthLayout({ locale, dictionary, panel, children }: AuthLayoutPr
     <div className="mx-auto grid min-h-dvh w-full max-w-[1440px] gap-6 p-4 sm:p-6 lg:grid-cols-2">
       <div className="mx-auto flex w-full min-w-0 max-w-[660px] flex-col">
         <header className="py-2 lg:px-8 lg:pt-6">
-          <Link href={`/${locale}`} className="inline-block rounded-field">
-            <Logo name={dictionary.site.name} tagline={dictionary.brand.tagline} />
-          </Link>
+          <nav aria-label={dictionary.navigation.main}>
+            <Link href={`/${locale}`} className="inline-block rounded-field">
+              <Logo name={dictionary.site.name} tagline={dictionary.brand.tagline} />
+            </Link>
+          </nav>
         </header>
         <main className="flex flex-1 items-center justify-center py-10">
           <div className="w-full max-w-[448px]">{children}</div>

@@ -73,6 +73,26 @@ bun run db:migrate
 `db:migrate` exige `DATABASE_URL`. Avec Compose, elle est fournie
 automatiquement.
 
+### Tests de bout en bout
+
+Préparer une base PostgreSQL de test avec `DATABASE_URL` (exportée ou dans
+`.env.local`), puis appliquer les migrations et installer Chromium :
+
+```bash
+bun run db:migrate
+bunx playwright install chromium
+bun run test:e2e
+```
+
+Playwright construit Next en production avec
+`NEXT_PUBLIC_REALTIME_URL=http://localhost:3101`, puis démarre le web sur
+`http://localhost:3100` et le serveur temps réel sur le port 3101. Ces ports
+sont réservés aux E2E ; hors CI, les serveurs déjà présents sont réutilisés
+(ils doivent utiliser cette même configuration de production).
+Le projet `setup` inscrit deux membres uniques par l'interface et sauvegarde
+leurs sessions dans `e2e/.auth/`. Les tests créent leurs propres données :
+aucun compte préexistant n'est nécessaire. Vitest exclut le dossier `e2e/`.
+
 ## Comment ça se déploie
 
 Deux moitiés, séparées exprès.
@@ -88,14 +108,14 @@ l'OOM killer de Linux ne tue pas forcément le build — il pourrait choisir la
 base PostgreSQL de la famille.
 
 ```bash
-ssh root@164.90.160.137 "cd /srv/typio/infra && ./deployer.sh"
+ssh ubuntu@socle.aether-manager.ca "cd /srv/typio/infra && sudo ./deployer.sh"
 ```
 
 Le script récupère l'image, redémarre le conteneur et attend que Next réponde
 vraiment avant de rendre la main. Pour revenir à une version précise :
 
 ```bash
-TAG=sha-a1b2c3d ./deployer.sh
+sudo TAG=sha-a1b2c3d ./deployer.sh
 ```
 
 ### Le déploiement n'est pas automatique, et c'est voulu
@@ -110,7 +130,7 @@ de gagner une commande. Le déploiement reste donc une action délibérée.
 
 | | |
 |---|---|
-| VPS | `164.90.160.137` — Ubuntu 24.04, 1 vCPU, 1,9 Go |
+| VPS | `socle.aether-manager.ca` (`57.131.165.168`) — Ubuntu 24.04, 2 vCPU, 3,7 Go |
 | Frontal | Caddy (TLS automatique), déjà en place pour d'autres domaines |
 | Port interne | `127.0.0.1:8018` |
 | Chemin | `/srv/typio/infra` |

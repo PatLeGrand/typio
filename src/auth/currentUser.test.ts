@@ -56,6 +56,7 @@ describe("getCurrentUser", () => {
       displayName: "Alice",
       username: "alice",
       locale: "fr",
+      avatarVersion: null,
     });
   });
 

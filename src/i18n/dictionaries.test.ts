@@ -65,12 +65,12 @@ describe("messages d'erreur d'authentification", () => {
 });
 
 describe("messages d'erreur de la salle", () => {
-  const expectedCodes = [...ROOM_ERROR_CODES, "OFFLINE", "TIMEOUT"];
+  const expectedCodes = [...ROOM_ERROR_CODES, "OFFLINE", "TIMEOUT", "ROOM_CLOSED"];
 
   it.each([
     ["fr", fr],
     ["en", en],
-  ])("un message par code du protocole, plus OFFLINE et TIMEOUT, et aucun en trop (%s)", (_locale, dictionary) => {
+  ])("un message par code du protocole et du client, et aucun en trop (%s)", (_locale, dictionary) => {
     expect(Object.keys(dictionary.room.errors).sort()).toEqual([...expectedCodes].sort());
   });
 });

@@ -99,6 +99,7 @@ describe("validateSession", () => {
       displayName: "Alice",
       username: "alice",
       locale: "en",
+      avatarVersion: null,
     });
   });
 
@@ -119,7 +120,7 @@ describe("validateSession", () => {
     const grant = await createSession(sessions, { userId: memberId, kind: "member", remember: false }, NOW);
     const user = await validateSession(sessions, grant.token, NOW);
 
-    expect(Object.keys(user ?? {}).sort()).toEqual(["displayName", "id", "kind", "locale", "username"]);
+    expect(Object.keys(user ?? {}).sort()).toEqual(["avatarVersion", "displayName", "id", "kind", "locale", "username"]);
   });
 
   it("returns null for an unknown token", async () => {

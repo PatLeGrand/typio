@@ -7,6 +7,7 @@ import { logout } from "@/auth/actions";
 import { AUTH_FIELDS, type CurrentUser } from "@/auth/types";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
+import { Avatar } from "./Avatar";
 import { Button } from "./Button";
 import { ButtonLink } from "./ButtonLink";
 import { LanguageSwitcher } from "./LanguageSwitcher";
@@ -45,7 +46,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
         <Link href={`/${locale}`} className="rounded-field">
           <Logo name={dictionary.site.name} />
         </Link>
-        <nav className="order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted lg:order-none lg:flex lg:w-auto" aria-label={dictionary.home.navigation.preview}>
+        <nav className="order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted lg:order-none lg:flex lg:w-auto" aria-label={dictionary.navigation.main}>
           <Link href={`/${locale}#why`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.why}</Link>
           <Link href={`/${locale}#preview`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
           <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>
@@ -56,7 +57,8 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
           {user ? (
             <div className="flex flex-wrap items-center gap-2">
               <ProfileModal user={user} dictionary={dictionary} locale={locale}>
-                <span className="text-sm font-semibold text-foreground flex items-center gap-1">
+                <span className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={28} />
                   {user.displayName}
                   {user.kind === "guest" ? (
                     <span className="text-xs font-normal text-muted ml-0.5">({dictionary.header.guest})</span>

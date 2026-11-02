@@ -1,0 +1,1 @@
+ALTER TABLE "race_results" ADD COLUMN "personal_best" boolean DEFAULT false NOT NULL;

@@ -1,4 +1,28 @@
 {
+  "navigation": {
+    "main": "Navigation principale",
+    "footer": "Liens du pied de page",
+    "preferences": "Préférences",
+    "account": "Compte"
+  },
+  "history": {
+    "title": "Historique",
+    "description": "Retrouve tes courses terminées, de la plus récente à la plus ancienne.",
+    "detailTitle": "Résultats de la course",
+    "date": "Date",
+    "actions": "Détail",
+    "view": "Voir",
+    "empty": "Aucune course sur cette page.",
+    "play": "Jouer",
+    "firstPage": "Revenir à la page 1",
+    "pagination": "Pagination de l’historique",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page {page}",
+    "participants": "Participants : {count}",
+    "membersOnly": "Seuls les résultats des membres sont enregistrés. Les invités et les bots ne figurent pas dans ce tableau.",
+    "back": "Retour à l’historique"
+  },
   "raceEntry": {
     "title": "Course",
     "pending": "Tes réglages sont prêts. La course jouable sera disponible prochainement.",
@@ -6,6 +30,20 @@
     "back": "Retour aux paramètres"
   },
   "raceScreen": {
+    "bonuses": {
+      "types": {
+        "shorten": "−3 mots",
+        "lengthen": "+3 mots",
+        "fog": "Brouillard"
+      },
+      "shorten": "Bonus ! 3 mots retirés de ton texte",
+      "lengthen": "{name} t’a ajouté 3 mots",
+      "fog": "Brouillard !",
+      "sentLengthen": "Ton bonus a ajouté 3 mots à {name}",
+      "sentFog": "Ton bonus a plongé {name} dans le brouillard"
+    },
+    "bot": "Bot",
+    "botLevels": {"noob": "Noob", "beginner": "Débutant", "intermediate": "Intermédiaire", "expert": "Expert", "impossible": "Impossible"},
     "roomName": "Prairie des Blobs",
     "playerOne": "joueur",
     "playerOther": "joueurs",
@@ -53,7 +91,7 @@
       "few": "{rank}e",
       "other": "{rank}e"
     },
-    "trackProgress": "% du parcours",
+    "trackProgress": "du parcours",
     "typing": {
       "title": "À tes touches, prêt, pars !",
       "characters": "caractères",
@@ -68,9 +106,43 @@
       "back": "Modifier les réglages"
     },
     "results": {
+      "personalBest": "Record personnel",
+      "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
+      "missedKeys": {
+        "title": "Touches manquées",
+        "space": "Espace",
+        "keyLabel": {
+          "one": "{key} : {count} faute",
+          "other": "{key} : {count} fautes"
+        },
+        "azerty": "Clavier AZERTY français",
+        "qwerty": "Clavier QWERTY américain",
+        "legend": "Fautes par rapport à la touche la plus manquée",
+        "levels": [
+          "Aucune faute",
+          "1–33 %",
+          "34–66 %",
+          "67–100 %"
+        ],
+        "top": "Touches les plus manquées",
+        "other": "Autres caractères",
+        "noErrors": "Aucune faute pendant cette course."
+      },
+      "wpmChart": {
+        "title": "Évolution du MPM",
+        "timeAxis": "Temps (secondes)",
+        "wpmAxis": "MPM",
+        "legend": "Participants",
+        "accessibleSummary": "MPM de chaque participant au fil des secondes. Le trait épais indique le joueur local.",
+        "dataSummary": "Résumé des performances",
+        "finalWpm": "MPM final",
+        "peakWpm": "Pic de MPM"
+      },
       "tableTitle": "Résultats de la course",
+      "bonusTypes": {"shorten": "−3 mots", "lengthen": "+3 mots", "fog": "Brouillard"},
       "columns": {
+        "bonuses": "Bonus",
         "rank": "Rang",
         "name": "Nom",
         "wpm": "MPM",
@@ -112,7 +184,12 @@
   "home": {
     "tagline": "Défie tes amis dans des courses de dactylographie et vois qui tape le plus vite.",
     "createRace": "Créer une course",
-    "joinWithCode": "Rejoindre avec un code",
+    "joinByCode": {
+      "label": "Code de la salle",
+      "placeholder": "Ex. : ABC234",
+      "button": "Rejoindre",
+      "invalidCode": "Code de salle invalide : saisis les 6 caractères du code."
+    },
     "signIn": "Se connecter",
     "playAsGuest": "Jouer en invité",
     "signUp": "Créer un compte",
@@ -383,6 +460,26 @@
       "fr": "Français",
       "en": "Anglais"
     },
+    "complexity": {
+      "label": "Complexité du texte",
+      "easy": "Facile",
+      "medium": "Moyenne",
+      "hard": "Difficile",
+      "descriptions": {
+        "easy": "Mode mots : 5 lettres au plus. Phrases simples.",
+        "medium": "Mots courants, phrases de complexité intermédiaire.",
+        "hard": "Mode mots : 6 lettres ou plus, mots rares possibles. Phrases longues ou ponctuation variée."
+      }
+    },
+    "punctuation": {
+      "label": "Ponctuation"
+    },
+    "numbers": {
+      "label": "Nombres"
+    },
+    "uppercase": {
+      "label": "Majuscules"
+    },
     "accents": {
       "label": "Accents",
       "include": "Inclus",
@@ -423,29 +520,29 @@
       "blocking": "Bloquant",
       "blockingDesc": "Corrige chaque erreur pour pouvoir saisir le caractère suivant."
     },
-    "abilities": {
-      "label": "Capacités",
-      "help": "Active les pouvoirs des Blobs pendant la course.",
-      "on": "Activées",
-      "off": "Désactivées",
-      "comingSoon": "bientôt"
+    "bonuses": {
+      "label": "Bonus de remontée",
+      "help": "Aux points de contrôle, les coureurs en retard reçoivent un retrait de mots ou un malus envoyé au meneur.",
+      "on": "Activés",
+      "off": "Désactivés"
     },
     "opponentsSection": {
       "title": "Tes adversaires",
       "subtitle": "Les bots complètent la course et suivent les mêmes règles que toi."
     },
-    "botCount": {
-      "decrease": "Retirer un bot",
-      "increase": "Ajouter un bot",
-      "label": "Nombre de bots",
-      "help": "De 0 à 7 bots · 0 pour jouer sans bot"
-    },
-    "botDifficulty": {
-      "label": "Difficulté des bots",
-      "help": "Un rythme régulier pour une course équilibrée.",
-      "easy": "Facile",
-      "normal": "Normale",
-      "hard": "Difficile"
+    "bots": {
+      "label": "Bots",
+      "add": "Ajouter un bot",
+      "remove": "Retirer le bot {number}",
+      "level": "Niveau du bot {number}",
+      "help": "{level} : {min}–{max} MPM",
+      "levels": {
+        "noob": "Noob",
+        "beginner": "Débutant",
+        "intermediate": "Intermédiaire",
+        "expert": "Expert",
+        "impossible": "Impossible"
+      }
     },
     "footer": "Les mêmes règles s'appliquent à tous les participants. Le départ sera donné après un compte à rebours.",
     "summary": {
@@ -457,12 +554,60 @@
     },
     "invite": {
       "button": "Inviter des amis",
+      "roleLabel": "Ton rôle dans la salle",
+      "runner": "Coureur",
+      "spectator": "Spectateur seulement",
       "guestNotice": "Les invités ne peuvent pas créer de salle. Crée un compte pour inviter des amis.",
       "anonymousNotice": "Pour inviter des amis, tu dois être connecté.",
       "loginLink": "Se connecter"
+    },
+    "roomSection": {
+      "title": "La salle",
+      "subtitle": "Qui peut entrer, et combien de places."
+    },
+    "visibility": {
+      "label": "Visibilité",
+      "public": "Publique : listée, ouverte à tous",
+      "code": "Sur code : avec le code seulement",
+      "private": "Privée : sur invitation seulement",
+      "help": "Seule une salle publique apparaît dans la liste des salles et dans « Faire une course »."
+    },
+    "capacity": {
+      "label": "Capacité",
+      "help": "Coureurs et bots ; les spectateurs ne comptent pas."
     }
   },
   "profile": {
+    "avatar": {
+      "title": "Photo de profil",
+      "file": "Choisir une photo (JPEG, PNG ou WebP, 2 Mo maximum)",
+      "preview": "Photo de profil actuelle",
+      "upload": "Téléverser",
+      "remove": "Retirer la photo",
+      "saved": "Ta photo de profil est à jour.",
+      "errors": {
+        "TOO_LARGE": "La photo dépasse la limite de 2 Mo.",
+        "UNSUPPORTED_TYPE": "Choisis une image JPEG, PNG ou WebP.",
+        "INVALID_IMAGE": "Cette image est illisible. Choisis une image JPEG, PNG ou WebP valide.",
+        "UNAUTHORIZED": "Connecte-toi avec un compte membre pour modifier ta photo.",
+        "RATE_LIMITED": "Trop de tentatives. Réessaie plus tard.",
+        "UNKNOWN": "La photo n’a pas pu être modifiée. Réessaie."
+      }
+    },
+    "stats": {
+      "title": "Statistiques personnelles",
+      "empty": "Aucune course enregistrée pour le moment.",
+      "bestWpm": "Meilleur MPM",
+      "averageWpm": "MPM moyen",
+      "averageAccuracy": "Précision moyenne",
+      "raceCount": "Courses",
+      "wins": "Victoires",
+      "noValue": "—",
+      "chartTitle": "MPM des 50 dernières courses non abandonnées",
+      "chartSummary": "{count} courses, de {first} à {last} MPM, en ordre chronologique.",
+      "wpm": "MPM",
+      "noChart": "Aucune course non abandonnée à afficher."
+    },
     "security": {
       "unlink": "Délier",
       "linked": "Relié",
@@ -533,9 +678,26 @@
     "close": "Fermer"
   },
   "room": {
-    "metaTitle": "Salle d'attente",
+    "race": {
+      "start": "Lancer la course",
+      "restart": "Relancer",
+      "close": "Fermer la salle",
+      "bot": "Bot",
+      "grossWpm": "MPM brut",
+      "errors": "Erreurs",
+      "loading": "Chargement de la course…",
+      "stay": "Vous pouvez rester pour la prochaine course ou quitter la salle.",
+      "keyboard": "Pour participer, utilisez un ordinateur avec un clavier physique.",
+      "reconnecting": "Reconnexion en cours. La saisie reprendra avec votre progression enregistrée.",
+      "confirmAbandon": "Abandonner cette course ?",
+      "confirm": "Oui, abandonner",
+      "cancel": "Continuer la course"
+    },
+    "metaTitle": "Salle",
     "loading": "Chargement de la salle…",
     "title": "Salle d'attente",
+    "raceTitle": "Course",
+    "resultsTitle": "Résultats",
     "back": "Retour au choix de salle",
     "leave": "Quitter",
     "connection": {
@@ -556,7 +718,11 @@
       "you": "Toi",
       "runner": "Coureur",
       "spectator": "Spectateur",
-      "disconnected": "Déconnecté"
+      "disconnected": "Déconnecté",
+      "kick": "Expulser",
+      "kickConfirm": "Expulser {name} ? Cette personne ne pourra plus revenir.",
+      "kickYes": "Oui, expulser",
+      "kickCancel": "Annuler"
     },
     "config": {
       "title": "Configuration",
@@ -586,6 +752,42 @@
         "runner": "Coureur",
         "spectator": "Spectateur",
         "button": "Rejoindre"
+      },
+      "quick": {
+        "title": "Faire une course",
+        "description": "Rejoins la salle publique la plus proche d'être pleine.",
+        "button": "Faire une course",
+        "createPublic": "Créer une salle publique"
+      },
+      "explorer": {
+        "title": "Salles publiques",
+        "description": "Choisis une salle ouverte et rejoins-la directement.",
+        "loading": "Chargement des salles…",
+        "empty": "Aucune salle publique pour le moment.",
+        "filterComplexity": "Complexité du texte",
+        "allComplexities": "Toutes les complexités",
+        "complexities": {
+          "easy": "Facile",
+          "medium": "Moyenne",
+          "hard": "Difficile"
+        },
+        "filterLanguage": "Langue du texte",
+        "allLanguages": "Toutes les langues",
+        "runners": "{count}/{max} coureurs",
+        "host": "Hôte : {name}",
+        "join": "Rejoindre",
+        "full": "Pleine",
+        "unavailable": "Indisponible",
+        "languages": {
+          "fr": "Français",
+          "en": "Anglais"
+        },
+        "status": {
+          "waiting": "En attente",
+          "countdown": "Départ imminent",
+          "racing": "En course",
+          "results": "Résultats"
+        }
       }
     },
     "errors": {
@@ -597,11 +799,46 @@
       "ROOM_FULL": "Cette salle est déjà pleine.",
       "ALREADY_IN_ROOM": "Tu es déjà dans une autre salle.",
       "NOT_IN_ROOM": "Tu n'es plus dans cette salle.",
-      "NOT_HOST": "Seul l'hôte peut modifier la configuration.",
+      "ROOM_CLOSED": "La salle a été fermée par l'hôte.",
+      "NOT_HOST": "Cette action est réservée à l'hôte.",
       "CONFIG_LOCKED": "La configuration est verrouillée.",
+      "RACE_NOT_ALLOWED": "La course ne peut pas démarrer dans cet état.",
+      "NOT_ENOUGH_RUNNERS": "Il faut au moins deux coureurs, dont un humain.",
+      "NO_TEXT_AVAILABLE": "Aucun texte ne correspond à ces réglages.",
+      "RACE_NOT_RUNNING": "La course n'est pas en cours.",
+      "RACE_IN_PROGRESS": "Une course est déjà en cours dans cette salle.",
+      "INPUT_REJECTED": "Cette saisie ne peut pas être acceptée.",
       "INTERNAL": "Une erreur est survenue, réessaie dans un instant.",
       "OFFLINE": "Tu n'es pas connecté au serveur de jeu. Réessaie dans un instant.",
-      "TIMEOUT": "Le serveur de jeu ne répond pas. Réessaie dans un instant."
+      "TIMEOUT": "Le serveur de jeu ne répond pas. Réessaie dans un instant.",
+      "INVITE_REQUIRED": "Cette salle est privée : il faut un lien d'invitation pour y entrer.",
+      "NO_ROOM_AVAILABLE": "Aucune salle n'est disponible pour le moment.",
+      "INVITE_INVALID": "Ce lien d'invitation n'est pas valide ou n'est plus utilisable.",
+      "INVITE_LIMIT": "Tu as atteint le nombre maximal de liens d'invitation pour cette salle.",
+      "KICKED": "L'hôte t'a expulsé de cette salle."
+    },
+    "invites": {
+      "title": "Invitations",
+      "intro": "Un lien par personne invitée. Chaque lien ne marche que pour la première personne qui l'utilise.",
+      "create": "Créer un lien",
+      "empty": "Aucun lien pour le moment.",
+      "item": "Lien {number}",
+      "created": "Créé le {date}",
+      "unused": "Non utilisé",
+      "used": "Utilisé par {name}",
+      "revoked": "Révoqué",
+      "newLink": "Nouveau lien, à copier maintenant : il ne sera plus affiché ensuite.",
+      "copy": "Copier",
+      "copied": "Lien copié",
+      "copyFailed": "Copie impossible : sélectionne le lien et copie-le avec Ctrl+C."
+    },
+    "invite": {
+      "metaTitle": "Invitation",
+      "title": "Invitation à une salle",
+      "joining": "Connexion à la salle…",
+      "signInRequired": "Connecte-toi ou joue en invité pour utiliser ce lien d'invitation.",
+      "signIn": "Se connecter",
+      "guest": "Jouer en invité"
     }
   }
 }

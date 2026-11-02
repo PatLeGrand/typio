@@ -2,7 +2,7 @@ import { hash, verify } from "@node-rs/argon2";
 import { createSemaphore, type Semaphore } from "./semaphore";
 
 /**
- * Paramètres argon2id recommandés par l'OWASP (AUTH-5) : 19 MiB, 2 passes, 1 thread.
+ * Paramètres argon2id recommandés par l'OWASP (SEC-03) : 19 MiB, 2 passes, 1 thread.
  * L'algorithme n'est pas passé : argon2id est le défaut de @node-rs/argon2 (et `Algorithm`,
  * une `const enum` ambiante, est inutilisable avec `isolatedModules`). Le test du préfixe
  * `$argon2id$v=19$m=19456,t=2,p=1$` garantit l'absence de dérive.

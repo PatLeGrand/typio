@@ -37,8 +37,15 @@ const MIN_RATIO = 4.5;
 const pairs: ReadonlyArray<readonly [string, string]> = [
   ["foreground", "background"],
   ["foreground", "surface"],
+  ["foreground", "heat-1"],
+  ["foreground", "heat-2"],
+  ["foreground", "heat-3"],
   ["muted", "background"],
   ["muted", "surface"],
+  ["muted", "accent-panel"],
+  ["muted", "accent-soft"],
+  ["muted", "island-mint"],
+  ["muted", "island-sand"],
   ["muted-strong", "accent-panel"],
   ["accent-text", "background"],
   ["accent-text", "surface"],
@@ -57,6 +64,8 @@ const pairs: ReadonlyArray<readonly [string, string]> = [
   // Panneau d'inscription (ProgressIsland) : textes posés directement sur l'île et la colline.
   ["foreground", "island-sand"],
   ["foreground", "island-mint"],
+  // Initiale blanche des avatars générés (H-39).
+  ...Array.from({ length: 8 }, (_, i) => ["avatar-foreground", `avatar-${i + 1}`] as const),
 ];
 
 describe("contraste WCAG des tokens", () => {
@@ -77,5 +86,21 @@ describe("contraste WCAG des tokens", () => {
 
   it("les deux thèmes définissent les mêmes tokens de couleur", () => {
     expect(Object.keys(readTokens(".dark")).sort()).toEqual(Object.keys(readTokens(":root")).sort());
+  });
+
+  it("le texte discret clair garde une marge de contraste sur le panneau violet", () => {
+    const tokens = readTokens(":root");
+    expect(contrastRatio(tokens.muted, tokens["accent-panel"])).toBeGreaterThanOrEqual(4.6);
+    expect(luminance(tokens["muted-strong"])).toBeLessThan(luminance(tokens.muted));
+  });
+
+  it.each([":root", ".dark"])("la pastille Entrée à 10 %% de blanc reste lisible (%s)", (selector) => {
+    const tokens = readTokens(selector);
+    const background = `#${[1, 3, 5].map((i) => {
+      const base = Number.parseInt(tokens.accent.slice(i, i + 2), 16);
+      const overlay = Number.parseInt(tokens["accent-foreground"].slice(i, i + 2), 16);
+      return Math.round(base * 0.9 + overlay * 0.1).toString(16).padStart(2, "0");
+    }).join("")}`;
+    expect(contrastRatio(tokens["accent-foreground"], background)).toBeGreaterThanOrEqual(MIN_RATIO);
   });
 });

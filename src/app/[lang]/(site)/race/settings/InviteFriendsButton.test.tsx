@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 // Réglages par défaut de la page de paramètres, côté salle : les neuf clés du protocole.
 const EXPECTED_CONFIG = {
   ...DEFAULT_ROOM_CONFIG,
-  botCount: 2,
+  bots: ["intermediate", "intermediate"],
 };
 
 function renderMember(locale: "fr" | "en") {
@@ -44,8 +44,21 @@ describe.each(["fr", "en"] as const)("Inviter des amis, membre (%s)", (locale) =
 
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(`/${locale}/room/XYZ789`));
     expect(create).toHaveBeenCalledTimes(1);
-    expect(create).toHaveBeenCalledWith({ ...EXPECTED_CONFIG, textMode: "words" });
+    expect(create).toHaveBeenCalledWith({ ...EXPECTED_CONFIG, textMode: "words" }, "runner");
     expect(create.mock.calls[0][0]).not.toHaveProperty("abilities");
+  });
+
+  it("SALLE-01: sends the spectator role chosen by the host", async () => {
+    const create = vi.fn<UseRoom["create"]>(async () => ({ ok: true, data: { code: "XYZ789" } }));
+    mocks.useRoom.mockImplementation(() => makeUseRoom({ create }));
+    const { raceSettings } = renderMember(locale);
+
+    expect(screen.getByRole("radio", { name: raceSettings.invite.runner })).toBeChecked();
+    fireEvent.click(screen.getByRole("radio", { name: raceSettings.invite.spectator }));
+    fireEvent.click(screen.getByRole("button", { name: raceSettings.invite.button }));
+
+    await waitFor(() => expect(create).toHaveBeenCalledWith(EXPECTED_CONFIG, "spectator"));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(`/${locale}/room/XYZ789?role=spectator`));
   });
 
   it("disables the button while the call is pending", async () => {

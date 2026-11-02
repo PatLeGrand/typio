@@ -1,3 +1,20 @@
+## Feuille de route vers la remise finale (énoncé du 27 octobre 2026)
+
+Source : statuts **partiel / non fait** de [EXIGENCES.md](../EXIGENCES.md).
+Les fiches et l'audit historiques ci-dessous restent des repères ; l'[énoncé final](../enonce.md) fait foi.
+Les lots couvrent aussi les exigences déjà complètes à préserver dans leur périmètre.
+
+- [ ] **1. Conformité technique** — TECH-02, TECH-07, TECH-09, TECH-10 ; seed et persistance TECH-04 : TypeScript intégral, schémas serveur, CI et environnement documenté.
+- [ ] **2. Livrables du checkpoint 1** — DES-01 à DES-03 à compléter par Patrick ; vérifier `DEMARCHE-CREATIVE.md`, `EXIGENCES.md` et `ARCHITECTURE.md` (§ 7.1, COURSE-01, TECH-04, TECH-06).
+- [ ] **3. Salles et accès** — SALLE-03 à SALLE-10, JOIN-02, JOIN-03 ; compléter aussi SALLE-01, JOIN-01 et AUTH-02/AUTH-03 (créateur spectateur, code sur l'accueil, pseudo et avatar invité), sécuriser les droits SEC-01.
+- [ ] **4. Course multijoueur** — COURSE-01 à COURSE-11, PERF-02, PERF-03, TECH-06 : serveur autoritaire, décompte, progression limitée, reconnexion, classement et piste mesurée avec 30 participants.
+- [ ] **5. Bots** — BOT-01 à BOT-05 : cinq niveaux par bot, comportement humain et simulation serveur.
+- [ ] **6. Configuration** — CONF-01 à CONF-12 : corpus en base (CONF-03), complexité mesurable (CONF-05), autres réglages et diffusion commune.
+- [ ] **7. Bonus** — BONUS-01 à BONUS-04 : attribution, effets et calculs cohérents avec l'annexe A.
+- [ ] **8. Résultats, historique et profil** — RES-01 à RES-05, HIST-01/HIST-02, AUTH-04 à AUTH-06, SEC-02 : persistance, graphiques, records et téléversements sécurisés.
+- [ ] **9. Design final et accessibilité** — DES-04 à DES-06, A11Y-01 à A11Y-04, PERF-01, I18N-01 à I18N-03 : piste signature, mobile, audit clavier/sémantique, traductions et formats locaux, mesure Lighthouse.
+- [ ] **10. Tests et remise finale** — TEST-02/TEST-03 ; README et documents finaux (§ 8 : captures, installation, environnement, compte de démonstration, architecture, matrice, démarche créative, bilan IA), dépôt partagé et production revérifiée (TECH-05).
+
 # Reprise du travail Gemini — audit du 8 octobre 2026 et plan d'implémentation
 
 Ce dossier sert à reprendre le travail n'importe où (autre poste, autre session, autre

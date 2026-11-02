@@ -34,12 +34,13 @@ export const AUTH_RATE_LIMITS = {
   registrations: { limit: 60, windowMs: HOUR_MS },
   /** Créations d'invité par IP (une classe, plusieurs parties dans l'heure). */
   guests: { limit: 120, windowMs: HOUR_MS },
-  /** Départs d'une connexion GitHub ou Discord par IP (AUTH-2, AUTH-3) : borne l'abus massif. */
+  /** Départs d'une connexion GitHub ou Discord par IP (AUTH-01) : borne l'abus massif. */
   oauthStarts: { limit: 300, windowMs: 15 * MINUTE_MS },
   /** Retours de GitHub ou Discord par IP, comptés AVANT tout échange de code (requête sortante). */
   oauthCallbacks: { limit: 300, windowMs: 15 * MINUTE_MS },
   /** Modifications du profil par utilisateur (clé : `user.id`) : une écriture en base à chaque appel. */
   profileUpdates: { limit: 20, windowMs: 15 * MINUTE_MS },
+  avatarUploads: { limit: 10, windowMs: HOUR_MS },
 } as const;
 
 export interface RateLimiterOptions {
@@ -185,6 +186,7 @@ export interface AuthLimiters {
   oauthStarts: RateLimiter;
   oauthCallbacks: RateLimiter;
   profileUpdates: RateLimiter;
+  avatarUploads: RateLimiter;
 }
 
 export function createAuthLimiters(now: () => number = Date.now): AuthLimiters {
@@ -197,6 +199,7 @@ export function createAuthLimiters(now: () => number = Date.now): AuthLimiters {
     oauthStarts: createRateLimiter({ ...AUTH_RATE_LIMITS.oauthStarts, now }),
     oauthCallbacks: createRateLimiter({ ...AUTH_RATE_LIMITS.oauthCallbacks, now }),
     profileUpdates: createRateLimiter({ ...AUTH_RATE_LIMITS.profileUpdates, now }),
+    avatarUploads: createRateLimiter({ ...AUTH_RATE_LIMITS.avatarUploads, now }),
   };
 }
 

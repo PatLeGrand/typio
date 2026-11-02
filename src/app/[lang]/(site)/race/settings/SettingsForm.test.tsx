@@ -22,7 +22,7 @@ describe("SettingsForm", () => {
     fireEvent.keyDown(phrases, { key: "ArrowRight" });
     expect(screen.getByRole("radio", { name: "Mots" })).toHaveFocus();
     expect(screen.getByRole("radio", { name: "Mots" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("switch", { name: fr.raceSettings.abilities.label })).toBeDisabled();
+    expect(screen.getByRole("switch", { name: fr.raceSettings.bonuses.label })).toBeEnabled();
   });
 
   it("offers no limit and the protocol durations as radio choices, with no free numeric field", () => {
@@ -156,17 +156,17 @@ describe("SettingsForm accessibility and plurals", () => {
     expect(screen.getByText("2 characters excluded")).toBeInTheDocument();
   });
 
-  it("describes the time limit group and the abilities switch by their help text", () => {
+  it("describes the time limit group and the bonuses switch by their help text", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
     expect(screen.getByRole("radiogroup", { name: fr.raceSettings.timeLimit.label })).toHaveAccessibleDescription(fr.raceSettings.timeLimit.help);
-    expect(screen.getByRole("switch", { name: fr.raceSettings.abilities.label })).toHaveAccessibleDescription(fr.raceSettings.abilities.help);
+    expect(screen.getByRole("switch", { name: fr.raceSettings.bonuses.label })).toHaveAccessibleDescription(fr.raceSettings.bonuses.help);
   });
 
   it("announces the bot count politely when it changes", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
-    const value = screen.getByText(String(DEFAULT_RACE_SETTINGS.botCount), { selector: "span[aria-live]" });
+    const value = screen.getByText(String(DEFAULT_RACE_SETTINGS.bots.length), { selector: "span[aria-live]" });
     expect(value).toHaveAttribute("aria-live", "polite");
-    fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.botCount.increase }));
-    expect(value).toHaveTextContent(String(DEFAULT_RACE_SETTINGS.botCount + 1));
+    fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.bots.add }));
+    expect(value).toHaveTextContent(String(DEFAULT_RACE_SETTINGS.bots.length + 1));
   });
 });

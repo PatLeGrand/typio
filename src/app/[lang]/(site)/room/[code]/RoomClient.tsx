@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/i18n/config";
-import type { Dictionary } from "@/i18n/dictionaries";
+import { getDictionary, type Dictionary } from "@/i18n/dictionaries";
 import { prefixWithLocale } from "@/i18n/paths";
 import type { ParticipantRole, RoomConfigPatch } from "@/realtime/protocol";
 import { isRoomCode } from "@/realtime/roomCode";
@@ -27,12 +27,13 @@ type RoomClientProps = {
 };
 
 /**
- * Salle d'attente (SALLE-7, SALLE-10, SALLE-13, SALLE-15). Rejoint la salle de l'URL une
+ * Salle d'attente (SALLE-01, SALLE-05, COURSE-05, CONF-12, ancien SALLE-13, SALLE-08). Rejoint la salle de l'URL une
  * seule fois par montage (D6) ; quitter la page sans « Quitter » ne quitte pas la salle (D7).
  */
 export function RoomClient({ code, role, locale, userId, labels, settingsLabels }: RoomClientProps) {
   const router = useRouter();
-  const { connection, room, error, join, updateConfig, leave, clearError } = useRoom(userId);
+  const session = useRoom(userId);
+  const { connection, room, error, kicked, join, updateConfig, leave, clearError } = session;
   useLoginRedirect(connection, locale);
 
   const playHref = prefixWithLocale("/play", locale);
@@ -90,6 +91,11 @@ export function RoomClient({ code, role, locale, userId, labels, settingsLabels 
     if (leaveRequested && wasInRoom && !inThisRoom) goToPlay();
   }, [leaveRequested, wasInRoom, inThisRoom, goToPlay]);
 
+  // SALLE-07 : expulsé, on retourne sur /play, où le message est affiché.
+  useEffect(() => {
+    if (kicked && wasInRoom && !inThisRoom) goToPlay();
+  }, [kicked, wasInRoom, inThisRoom, goToPlay]);
+
   async function handleLeave(): Promise<void> {
     setLeaving(true);
     setLeaveRequested(true);
@@ -113,8 +119,10 @@ export function RoomClient({ code, role, locale, userId, labels, settingsLabels 
     ? "INVALID_CODE"
     : inThisRoom
       ? null
-      : (joinError ??
-        (wasInRoom && !leaveRequested && connection === "connected" ? "NOT_IN_ROOM" : null));
+      : error === "ROOM_CLOSED"
+        ? "ROOM_CLOSED"
+        : (joinError ??
+          (wasInRoom && !leaveRequested && connection === "connected" ? "NOT_IN_ROOM" : null));
 
   return (
     <div className="flex flex-col gap-6">
@@ -124,6 +132,8 @@ export function RoomClient({ code, role, locale, userId, labels, settingsLabels 
       ) : inThisRoom ? (
         <RoomView
           room={room}
+          session={session}
+          raceLabels={getDictionary(locale).raceScreen}
           userId={userId}
           labels={labels}
           settingsLabels={settingsLabels}

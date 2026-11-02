@@ -2,6 +2,7 @@ import { ButtonLink } from "@/components/ButtonLink";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { HomeMediaPlaceholder } from "./HomeMediaPlaceholder";
+import { HomeJoinCodeForm } from "./HomeJoinCodeForm";
 
 type HomeHeroProps = {
   home: Dictionary["home"];
@@ -22,11 +23,9 @@ export function HomeHero({ home, locale }: HomeHeroProps) {
             <span className="block">{home.hero.titleLine2}</span>
           </h1>
           <p className="max-w-[610px] text-base leading-[1.65] text-muted sm:text-lg">{home.hero.description}</p>
-          <div className="flex w-full flex-col justify-center gap-3 pt-1 sm:w-auto sm:flex-row sm:gap-4">
+          <div className="flex w-full flex-col items-stretch justify-center gap-3 pt-1 sm:w-auto sm:items-center sm:gap-4">
             <ButtonLink href={`/${locale}/race/settings`}>{home.createRace}</ButtonLink>
-            <ButtonLink href={`/${locale}/play`} variant="secondary">
-              {home.joinWithCode}
-            </ButtonLink>
+            <HomeJoinCodeForm labels={home.joinByCode} locale={locale} />
           </div>
         </div>
         <HomeMediaPlaceholder

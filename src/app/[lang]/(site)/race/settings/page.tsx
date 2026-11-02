@@ -22,7 +22,7 @@ export default async function RaceSettingsPage({ params, searchParams }: {
   const dict = getDictionary(locale);
   // Back from a race: `?config=` pre-fills the choices; an invalid one falls back to the defaults.
   const initialSettings = deserializeRaceSettings((await searchParams).config) ?? { ...DEFAULT_RACE_SETTINGS };
-  // Les invités et les visiteurs jouent seuls ; seul un membre peut inviter des amis (SALLE-12).
+  // Les invités et les visiteurs jouent seuls ; seul un membre peut inviter des amis (AUTH-03).
   const user = await getCurrentUser();
   const invite: InviteAccess = !user
     ? { kind: "anonymous" }

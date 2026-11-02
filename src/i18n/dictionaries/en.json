@@ -1,4 +1,28 @@
 {
+  "navigation": {
+    "main": "Main navigation",
+    "footer": "Footer links",
+    "preferences": "Preferences",
+    "account": "Account"
+  },
+  "history": {
+    "title": "History",
+    "description": "Find your completed races, from newest to oldest.",
+    "detailTitle": "Race results",
+    "date": "Date",
+    "actions": "Details",
+    "view": "View",
+    "empty": "No races on this page.",
+    "play": "Play",
+    "firstPage": "Back to page 1",
+    "pagination": "Race history pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page}",
+    "participants": "Participants: {count}",
+    "membersOnly": "Only member results are saved. Guests and bots do not appear in this table.",
+    "back": "Back to history"
+  },
   "raceEntry": {
     "title": "Race",
     "pending": "Your settings are ready. The playable race is coming soon.",
@@ -6,6 +30,20 @@
     "back": "Back to settings"
   },
   "raceScreen": {
+    "bonuses": {
+      "types": {
+        "shorten": "−3 words",
+        "lengthen": "+3 words",
+        "fog": "Fog"
+      },
+      "shorten": "Bonus! 3 words removed from your text",
+      "lengthen": "{name} added 3 words to your text",
+      "fog": "Fog!",
+      "sentLengthen": "Your bonus added 3 words to {name}",
+      "sentFog": "Your bonus put {name} in fog"
+    },
+    "bot": "Bot",
+    "botLevels": {"noob": "Noob", "beginner": "Beginner", "intermediate": "Intermediate", "expert": "Expert", "impossible": "Impossible"},
     "roomName": "Blob Meadow",
     "playerOne": "player",
     "playerOther": "players",
@@ -53,7 +91,7 @@
       "few": "{rank}rd",
       "other": "{rank}th"
     },
-    "trackProgress": "% of the track",
+    "trackProgress": "of the track",
     "typing": {
       "title": "On your keys, get set, go!",
       "characters": "characters",
@@ -68,9 +106,43 @@
       "back": "Change settings"
     },
     "results": {
+      "personalBest": "Personal best",
+      "newPersonalBest": "New personal best!",
       "podium": "Podium",
+      "missedKeys": {
+        "title": "Missed keys",
+        "space": "Space",
+        "keyLabel": {
+          "one": "{key}: {count} error",
+          "other": "{key}: {count} errors"
+        },
+        "azerty": "French AZERTY keyboard",
+        "qwerty": "US QWERTY keyboard",
+        "legend": "Errors relative to the most missed key",
+        "levels": [
+          "No errors",
+          "1–33%",
+          "34–66%",
+          "67–100%"
+        ],
+        "top": "Most missed keys",
+        "other": "Other characters",
+        "noErrors": "No errors during this race."
+      },
+      "wpmChart": {
+        "title": "WPM over time",
+        "timeAxis": "Time (seconds)",
+        "wpmAxis": "WPM",
+        "legend": "Participants",
+        "accessibleSummary": "WPM for each participant over time. The thicker line indicates the local player.",
+        "dataSummary": "Performance summary",
+        "finalWpm": "Final WPM",
+        "peakWpm": "Peak WPM"
+      },
       "tableTitle": "Race results",
+      "bonusTypes": {"shorten": "−3 words", "lengthen": "+3 words", "fog": "Fog"},
       "columns": {
+        "bonuses": "Bonus",
         "rank": "Rank",
         "name": "Name",
         "wpm": "WPM",
@@ -112,7 +184,12 @@
   "home": {
     "tagline": "Challenge your friends to typing races and see who types the fastest.",
     "createRace": "Create a race",
-    "joinWithCode": "Join with a code",
+    "joinByCode": {
+      "label": "Room code",
+      "placeholder": "E.g. ABC234",
+      "button": "Join",
+      "invalidCode": "Invalid room code: enter the 6 characters of the code."
+    },
     "signIn": "Sign in",
     "playAsGuest": "Play as a guest",
     "signUp": "Create an account",
@@ -383,6 +460,26 @@
       "fr": "French",
       "en": "English"
     },
+    "complexity": {
+      "label": "Text complexity",
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard",
+      "descriptions": {
+        "easy": "Word mode: at most 5 letters. Simple sentences.",
+        "medium": "Common words, sentences of intermediate complexity.",
+        "hard": "Word mode: 6 letters or more, possibly rare words. Long sentences or varied punctuation."
+      }
+    },
+    "punctuation": {
+      "label": "Punctuation"
+    },
+    "numbers": {
+      "label": "Numbers"
+    },
+    "uppercase": {
+      "label": "Uppercase"
+    },
     "accents": {
       "label": "Accents",
       "include": "Included",
@@ -423,29 +520,29 @@
       "blocking": "Blocking",
       "blockingDesc": "Correct each error before you can type the next character."
     },
-    "abilities": {
-      "label": "Abilities",
-      "help": "Enable Blob powers during the race.",
+    "bonuses": {
+      "label": "Catch-up bonuses",
+      "help": "At checkpoints, trailing racers receive fewer words or send a penalty to the leader.",
       "on": "On",
-      "off": "Off",
-      "comingSoon": "soon"
+      "off": "Off"
     },
     "opponentsSection": {
       "title": "Your opponents",
       "subtitle": "Bots fill the race and follow the same rules as you."
     },
-    "botCount": {
-      "decrease": "Remove a bot",
-      "increase": "Add a bot",
-      "label": "Bot count",
-      "help": "0 to 7 bots · 0 to play without bots"
-    },
-    "botDifficulty": {
-      "label": "Bot difficulty",
-      "help": "A steady pace for a balanced race.",
-      "easy": "Easy",
-      "normal": "Normal",
-      "hard": "Hard"
+    "bots": {
+      "label": "Bots",
+      "add": "Add a bot",
+      "remove": "Remove bot {number}",
+      "level": "Bot {number} level",
+      "help": "{level}: {min}–{max} WPM",
+      "levels": {
+        "noob": "Noob",
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "expert": "Expert",
+        "impossible": "Impossible"
+      }
     },
     "footer": "The same rules apply to everyone. The race begins after a countdown.",
     "summary": {
@@ -457,12 +554,60 @@
     },
     "invite": {
       "button": "Invite friends",
+      "roleLabel": "Your role in the room",
+      "runner": "Runner",
+      "spectator": "Spectator only",
       "guestNotice": "Guests cannot create a room. Create an account to invite friends.",
       "anonymousNotice": "You need to be signed in to invite friends.",
       "loginLink": "Sign in"
+    },
+    "roomSection": {
+      "title": "Room",
+      "subtitle": "Who can join, and how many seats."
+    },
+    "visibility": {
+      "label": "Visibility",
+      "public": "Public: listed, open to everyone",
+      "code": "Code only: join with the code",
+      "private": "Private: invitation only",
+      "help": "Only a public room shows in the room list and in \"Quick race\"."
+    },
+    "capacity": {
+      "label": "Capacity",
+      "help": "Runners and bots; spectators don't count."
     }
   },
   "profile": {
+    "avatar": {
+      "title": "Profile photo",
+      "file": "Choose a photo (JPEG, PNG or WebP, up to 2 MB)",
+      "preview": "Current profile photo",
+      "upload": "Upload",
+      "remove": "Remove photo",
+      "saved": "Your profile photo is up to date.",
+      "errors": {
+        "TOO_LARGE": "The photo exceeds the 2 MB limit.",
+        "UNSUPPORTED_TYPE": "Choose a JPEG, PNG or WebP image.",
+        "INVALID_IMAGE": "This image cannot be read. Choose a valid JPEG, PNG or WebP image.",
+        "UNAUTHORIZED": "Sign in with a member account to change your photo.",
+        "RATE_LIMITED": "Too many attempts. Try again later.",
+        "UNKNOWN": "The photo could not be changed. Try again."
+      }
+    },
+    "stats": {
+      "title": "Personal statistics",
+      "empty": "No races recorded yet.",
+      "bestWpm": "Best WPM",
+      "averageWpm": "Average WPM",
+      "averageAccuracy": "Average accuracy",
+      "raceCount": "Races",
+      "wins": "Wins",
+      "noValue": "—",
+      "chartTitle": "WPM of the last 50 non-abandoned races",
+      "chartSummary": "{count} races, from {first} to {last} WPM, in chronological order.",
+      "wpm": "WPM",
+      "noChart": "No non-abandoned races to display."
+    },
     "security": {
       "unlink": "Unlink",
       "linked": "Linked",
@@ -533,9 +678,26 @@
     "close": "Close"
   },
   "room": {
-    "metaTitle": "Waiting room",
+    "race": {
+      "start": "Start race",
+      "restart": "Restart",
+      "close": "Close room",
+      "bot": "Bot",
+      "grossWpm": "Gross WPM",
+      "errors": "Errors",
+      "loading": "Loading race…",
+      "stay": "You can stay for the next race or leave the room.",
+      "keyboard": "To participate, use a computer with a physical keyboard.",
+      "reconnecting": "Reconnecting. Typing will resume from your saved progress.",
+      "confirmAbandon": "Give up this race?",
+      "confirm": "Yes, give up",
+      "cancel": "Continue racing"
+    },
+    "metaTitle": "Room",
     "loading": "Loading the room…",
     "title": "Waiting room",
+    "raceTitle": "Race",
+    "resultsTitle": "Results",
     "back": "Back to the room picker",
     "leave": "Leave",
     "connection": {
@@ -556,7 +718,11 @@
       "you": "You",
       "runner": "Runner",
       "spectator": "Spectator",
-      "disconnected": "Disconnected"
+      "disconnected": "Disconnected",
+      "kick": "Remove",
+      "kickConfirm": "Remove {name}? They will not be able to come back.",
+      "kickYes": "Yes, remove",
+      "kickCancel": "Cancel"
     },
     "config": {
       "title": "Settings",
@@ -586,6 +752,42 @@
         "runner": "Runner",
         "spectator": "Spectator",
         "button": "Join"
+      },
+      "quick": {
+        "title": "Quick race",
+        "description": "Join the public room closest to being full.",
+        "button": "Quick race",
+        "createPublic": "Create a public room"
+      },
+      "explorer": {
+        "title": "Public rooms",
+        "description": "Pick an open room and join it directly.",
+        "loading": "Loading rooms…",
+        "empty": "No public room right now.",
+        "filterComplexity": "Text complexity",
+        "allComplexities": "All complexities",
+        "complexities": {
+          "easy": "Easy",
+          "medium": "Medium",
+          "hard": "Hard"
+        },
+        "filterLanguage": "Text language",
+        "allLanguages": "All languages",
+        "runners": "{count}/{max} runners",
+        "host": "Host: {name}",
+        "join": "Join",
+        "full": "Full",
+        "unavailable": "Unavailable",
+        "languages": {
+          "fr": "French",
+          "en": "English"
+        },
+        "status": {
+          "waiting": "Waiting",
+          "countdown": "Starting soon",
+          "racing": "Racing",
+          "results": "Results"
+        }
       }
     },
     "errors": {
@@ -597,11 +799,46 @@
       "ROOM_FULL": "This room is already full.",
       "ALREADY_IN_ROOM": "You are already in another room.",
       "NOT_IN_ROOM": "You are no longer in this room.",
-      "NOT_HOST": "Only the host can change the settings.",
+      "ROOM_CLOSED": "The host closed the room.",
+      "NOT_HOST": "Only the host can perform this action.",
       "CONFIG_LOCKED": "The settings are locked.",
+      "RACE_NOT_ALLOWED": "The race cannot start in this state.",
+      "NOT_ENOUGH_RUNNERS": "At least two runners are required, including one human.",
+      "NO_TEXT_AVAILABLE": "No text matches these settings.",
+      "RACE_NOT_RUNNING": "The race is not running.",
+      "RACE_IN_PROGRESS": "A race is already in progress in this room.",
+      "INPUT_REJECTED": "This input cannot be accepted.",
       "INTERNAL": "Something went wrong, please try again in a moment.",
       "OFFLINE": "You are not connected to the game server. Try again in a moment.",
-      "TIMEOUT": "The game server is not answering. Try again in a moment."
+      "TIMEOUT": "The game server is not answering. Try again in a moment.",
+      "INVITE_REQUIRED": "This room is private: you need an invitation link to join.",
+      "NO_ROOM_AVAILABLE": "No room is available right now.",
+      "INVITE_INVALID": "This invitation link is not valid or can no longer be used.",
+      "INVITE_LIMIT": "You have reached the maximum number of invitation links for this room.",
+      "KICKED": "The host removed you from this room."
+    },
+    "invites": {
+      "title": "Invitations",
+      "intro": "One link per invited person. Each link only works for the first person who uses it.",
+      "create": "Create a link",
+      "empty": "No links yet.",
+      "item": "Link {number}",
+      "created": "Created {date}",
+      "unused": "Unused",
+      "used": "Used by {name}",
+      "revoked": "Revoked",
+      "newLink": "New link, copy it now: it will not be shown again.",
+      "copy": "Copy",
+      "copied": "Link copied",
+      "copyFailed": "Copy failed: select the link and copy it with Ctrl+C."
+    },
+    "invite": {
+      "metaTitle": "Invitation",
+      "title": "Room invitation",
+      "joining": "Joining the room…",
+      "signInRequired": "Sign in or play as a guest to use this invitation link.",
+      "signIn": "Sign in",
+      "guest": "Play as a guest"
     }
   }
 }

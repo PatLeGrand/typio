@@ -10,14 +10,18 @@
 
 import type { RoomSocket } from "./client";
 import {
+  type InviteInfo,
   type JoinPayload,
+  type LobbyRoom,
+  type ParticipantRole,
   type RoomConfigPatch,
   type RoomErrorCode,
   type RoomState,
+  type ServerToClientEvents,
 } from "./protocol";
 
 /** Codes d'erreur propres au client (D8), traduits comme ceux du serveur. */
-export type ClientRoomErrorCode = RoomErrorCode | "OFFLINE" | "TIMEOUT";
+export type ClientRoomErrorCode = RoomErrorCode | "OFFLINE" | "TIMEOUT" | "ROOM_CLOSED";
 
 export type ConnectionStatus =
   | "idle"
@@ -33,6 +37,16 @@ export interface RoomSnapshot {
   /** Salle de l'utilisateur courant, ou `null` s'il n'est dans aucune salle. */
   room: RoomState | null;
   error: ClientRoomErrorCode | null;
+  race: Parameters<ServerToClientEvents["race:state"]>[0] | null;
+  results: Parameters<ServerToClientEvents["race:results"]>[0] | null;
+  self: Parameters<ServerToClientEvents["race:self"]>[0] | null;
+  raceReceivedAt: number | null;
+  /** Salles publiques (JOIN-02) ; `null` tant que la liste n'est pas arrivée ou sans abonnement. */
+  lobby: LobbyRoom[] | null;
+  /** Liens d'invitation de la salle, reçus par l'hôte seulement (SALLE-04). */
+  invites: InviteInfo[];
+  /** Expulsé de sa salle (SALLE-07) : affiché sur `/play` jusqu'à l'entrée dans une autre salle. */
+  kicked: boolean;
 }
 
 export type ActionResult<T = undefined> =
@@ -54,14 +68,17 @@ export const RESYNC_TIMEOUT_MS = 3_000;
 const UNAUTHENTICATED_MESSAGE = "UNAUTHENTICATED";
 const TOO_MANY_CONNECTIONS_MESSAGE = "TOO_MANY_CONNECTIONS";
 
-export const IDLE_SNAPSHOT: RoomSnapshot = { connection: "idle", room: null, error: null };
+/** Même tableau à chaque fois : l'égalité de référence évite des mises à jour inutiles. */
+const NO_INVITES: InviteInfo[] = [];
+
+export const IDLE_SNAPSHOT: RoomSnapshot = { connection: "idle", room: null, error: null, race: null, results: null, self: null, raceReceivedAt: null, lobby: null, invites: NO_INVITES, kicked: false };
 
 /**
  * L'état reçu n'est valable que si l'utilisateur y figure ; sinon (il a quitté, ou un autre
  * onglet l'a fait) il n'est plus dans une salle (D3).
  */
 export function roomForUser(state: RoomState, userId: string): RoomState | null {
-  return state.participants.some((participant) => participant.userId === userId) ? state : null;
+  return state.status !== "closed" && state.participants.some((participant) => participant.userId === userId) ? state : null;
 }
 
 export interface RoomConnection {
@@ -78,9 +95,25 @@ export interface RoomConnection {
   stop(): void;
   /** Coupe le socket s'il appartient à un autre utilisateur que `userId` (ou si `userId` est `null`). */
   syncUser(userId: string | null): void;
-  create(config?: RoomConfigPatch): Promise<ActionResult<{ code: string }>>;
+  create(config?: RoomConfigPatch, role?: ParticipantRole): Promise<ActionResult<{ code: string }>>;
   join(payload: JoinPayload): Promise<ActionResult<{ code: string }>>;
+  /** Partie rapide (JOIN-03) : `NO_ROOM_AVAILABLE` s'il n'y a aucune salle. */
+  quickJoin(): Promise<ActionResult<{ code: string }>>;
+  /** Reçoit la liste des salles publiques, et ses mises à jour, dans `lobby` (JOIN-02). */
+  subscribeLobby(): void;
+  unsubscribeLobby(): void;
+  /** Entre avec un lien d'invitation (SALLE-04). */
+  joinInvite(token: string, role: ParticipantRole): Promise<ActionResult<{ code: string }>>;
+  /** Hôte : crée un lien ; le jeton en clair n'est renvoyé que cette fois (SALLE-04). */
+  createInvite(): Promise<ActionResult<{ id: string; token: string }>>;
+  /** Hôte : expulse un participant ou un spectateur (SALLE-07). */
+  kick(userId: string): Promise<ActionResult>;
   updateConfig(patch: RoomConfigPatch): Promise<ActionResult>;
+  startRace(): Promise<ActionResult>;
+  abandonRace(): Promise<ActionResult>;
+  restartRace(): Promise<ActionResult>;
+  closeRoom(): Promise<ActionResult>;
+  sendInput(ops: string[]): void;
   leave(): Promise<ActionResult>;
   clearError(): void;
 }
@@ -95,10 +128,23 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
   let resyncTimer: ReturnType<typeof setTimeout> | null = null;
   let retryDelay = RETRY_BASE_MS;
   let detach: (() => void) | null = null;
+  /** Abonnement voulu à l'explorateur : renouvelé à chaque (re)connexion. */
+  let lobbyWanted = false;
 
   function update(patch: Partial<RoomSnapshot>): void {
     const next = { ...snapshot, ...patch };
-    if (next.connection === snapshot.connection && next.room === snapshot.room && next.error === snapshot.error) {
+    if (next.room === null || next.room.status === "waiting" || next.room.status === "closed") {
+      next.race = null;
+      next.results = null;
+      next.self = null;
+      next.raceReceivedAt = null;
+    }
+    // Les liens vivent en salle d'attente : seule la sortie ou la fermeture de la salle les efface.
+    if (next.room === null || next.room.status === "closed") next.invites = NO_INVITES;
+    if (next.connection === snapshot.connection && next.room === snapshot.room && next.error === snapshot.error &&
+      next.race === snapshot.race && next.results === snapshot.results && next.self === snapshot.self &&
+      next.raceReceivedAt === snapshot.raceReceivedAt && next.lobby === snapshot.lobby &&
+      next.invites === snapshot.invites && next.kicked === snapshot.kicked) {
       return;
     }
     snapshot = next;
@@ -131,6 +177,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
         }, RESYNC_TIMEOUT_MS);
       }
       update({ connection: "connected" });
+      if (lobbyWanted) target.emit("lobby:subscribe", {}, () => {});
     };
 
     const onDisconnect = (reason: string) => {
@@ -158,17 +205,37 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
     const onState = (state: RoomState) => {
       resyncTimer = clearTimer(resyncTimer);
-      // L'erreur n'est pas effacée ici : un refus doit rester lisible jusqu'à la prochaine action de l'élève.
-      update({ room: userId === null ? null : roomForUser(state, userId) });
+      // Un refus reste lisible jusqu'à la prochaine action, sauf si la salle a été fermée.
+      const room = userId === null ? null : roomForUser(state, userId);
+      update({
+        room,
+        error: state.status === "closed" ? "ROOM_CLOSED" : snapshot.error,
+        kicked: room !== null ? false : snapshot.kicked,
+      });
     };
 
+    const onRace: ServerToClientEvents["race:state"] = (race) => update({ race, raceReceivedAt: Date.now() });
+    const onResults: ServerToClientEvents["race:results"] = (results) => update({ results });
+    const onSelf: ServerToClientEvents["race:self"] = (self) => update({ self });
+    const onLobby: ServerToClientEvents["lobby:rooms"] = (lobby) => update({ lobby: lobbyWanted ? lobby : null });
     const onRoomError = (error: RoomErrorCode) => update({ error });
+    const onInvites: ServerToClientEvents["room:invites"] = (invites) => update({ invites });
+    const onKicked = () => {
+      resyncTimer = clearTimer(resyncTimer);
+      update({ room: null, kicked: true });
+    };
 
     target.on("connect", onConnect);
     target.on("disconnect", onDisconnect);
     target.on("connect_error", onConnectError);
     target.on("room:state", onState);
     target.on("room:error", onRoomError);
+    target.on("room:invites", onInvites);
+    target.on("room:kicked", onKicked);
+    target.on("race:state", onRace);
+    target.on("race:results", onResults);
+    target.on("race:self", onSelf);
+    target.on("lobby:rooms", onLobby);
 
     return () => {
       target.off("connect", onConnect);
@@ -176,6 +243,12 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
       target.off("connect_error", onConnectError);
       target.off("room:state", onState);
       target.off("room:error", onRoomError);
+      target.off("room:invites", onInvites);
+      target.off("room:kicked", onKicked);
+      target.off("race:state", onRace);
+      target.off("race:results", onResults);
+      target.off("race:self", onSelf);
+      target.off("lobby:rooms", onLobby);
     };
   }
 
@@ -187,6 +260,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     socket?.disconnect();
     socket = null;
     userId = null;
+    lobbyWanted = false;
     retryDelay = RETRY_BASE_MS;
     update({ ...IDLE_SNAPSHOT });
   }
@@ -203,6 +277,19 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
   /** Socket utilisable pour émettre, ou `null` : on n'émet jamais hors connexion (D8). */
   function connectedSocket(): RoomSocket | null {
     return socket !== null && socket.connected ? socket : null;
+  }
+
+  function raceCommand(event: "race:start" | "race:abandon" | "room:restart" | "room:close"): Promise<ActionResult> {
+    return new Promise((resolve) => {
+      update({ error: null });
+      const target = connectedSocket();
+      if (target === null) return resolve(fail("OFFLINE"));
+      target.timeout(ACK_TIMEOUT_MS).emit(event, {}, (timedOut, response) => {
+        if (timedOut) return resolve(fail("TIMEOUT"));
+        if (!response.ok) return resolve(fail(response.error));
+        resolve({ ok: true, data: undefined });
+      });
+    });
   }
 
   return {
@@ -241,13 +328,13 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
       target.connect();
     },
 
-    create(config) {
+    create(config, role = "runner") {
       return new Promise((resolve) => {
         update({ error: null });
         const target = connectedSocket();
         if (target === null) return resolve(fail("OFFLINE"));
         // `{}` et non `undefined` : un argument `undefined` arriverait en `null` côté serveur.
-        target.timeout(ACK_TIMEOUT_MS).emit("room:create", config ?? {}, (timedOut, response) => {
+        target.timeout(ACK_TIMEOUT_MS).emit("room:create", { config: config ?? {}, role }, (timedOut, response) => {
           if (timedOut) return resolve(fail("TIMEOUT"));
           if (!response.ok) return resolve(fail(response.error));
           resolve({ ok: true, data: response.data });
@@ -266,6 +353,77 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
           resolve({ ok: true, data: response.data });
         });
       });
+    },
+
+    quickJoin() {
+      return new Promise((resolve) => {
+        update({ error: null });
+        const target = connectedSocket();
+        if (target === null) return resolve(fail("OFFLINE"));
+        target.timeout(ACK_TIMEOUT_MS).emit("room:quickJoin", {}, (timedOut, response) => {
+          if (timedOut) return resolve(fail("TIMEOUT"));
+          if (!response.ok) return resolve(fail(response.error));
+          resolve({ ok: true, data: response.data });
+        });
+      });
+    },
+
+    joinInvite(token, role) {
+      return new Promise((resolve) => {
+        update({ error: null });
+        const target = connectedSocket();
+        if (target === null) return resolve(fail("OFFLINE"));
+        target.timeout(ACK_TIMEOUT_MS).emit("room:joinInvite", { token, role }, (timedOut, response) => {
+          if (timedOut) return resolve(fail("TIMEOUT"));
+          if (!response.ok) return resolve(fail(response.error));
+          resolve({ ok: true, data: response.data });
+        });
+      });
+    },
+
+    createInvite() {
+      return new Promise((resolve) => {
+        update({ error: null });
+        const target = connectedSocket();
+        if (target === null) return resolve(fail("OFFLINE"));
+        target.timeout(ACK_TIMEOUT_MS).emit("room:createInvite", {}, (timedOut, response) => {
+          if (timedOut) return resolve(fail("TIMEOUT"));
+          if (!response.ok) return resolve(fail(response.error));
+          resolve({ ok: true, data: response.data });
+        });
+      });
+    },
+
+    kick(userId) {
+      return new Promise((resolve) => {
+        update({ error: null });
+        const target = connectedSocket();
+        if (target === null) return resolve(fail("OFFLINE"));
+        target.timeout(ACK_TIMEOUT_MS).emit("room:kick", { userId }, (timedOut, response) => {
+          if (timedOut) return resolve(fail("TIMEOUT"));
+          if (!response.ok) return resolve(fail(response.error));
+          resolve({ ok: true, data: undefined });
+        });
+      });
+    },
+
+    subscribeLobby() {
+      lobbyWanted = true;
+      connectedSocket()?.emit("lobby:subscribe", {}, () => {});
+    },
+
+    unsubscribeLobby() {
+      lobbyWanted = false;
+      connectedSocket()?.emit("lobby:unsubscribe", {}, () => {});
+      update({ lobby: null });
+    },
+
+    startRace: () => raceCommand("race:start"),
+    abandonRace: () => raceCommand("race:abandon"),
+    restartRace: () => raceCommand("room:restart"),
+    closeRoom: () => raceCommand("room:close"),
+    sendInput(ops) {
+      connectedSocket()?.emit("race:input", { ops });
     },
 
     updateConfig(patch) {

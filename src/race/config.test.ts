@@ -3,9 +3,9 @@ import { TIME_LIMITS_SECONDS } from "@/realtime/protocol";
 import { DEFAULT_RACE_SETTINGS, deserializeRaceSettings, getEffectiveTimeLimitSeconds,
   parseRaceSettings, serializeRaceSettings } from "./config";
 
-describe("race settings boundary (CONFIG-1..9)", () => {
+describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01)", () => {
   it("round-trips accents and URL-sensitive exclusions without changing settings", () => {
-    const settings = { ...DEFAULT_RACE_SETTINGS, excludedCharacters: "#%&+?é", botCount: 0 };
+    const settings = { ...DEFAULT_RACE_SETTINGS, excludedCharacters: "#%&+?é", bots: [] };
     const query = new URLSearchParams(serializeRaceSettings(settings));
     expect(deserializeRaceSettings(query.get("config") ?? undefined)).toEqual(settings);
   });
@@ -23,13 +23,57 @@ describe("race settings boundary (CONFIG-1..9)", () => {
     expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds })).toMatchObject({ timeLimitSeconds });
   });
 
+  it("accepts an old URL without visibility and capacity, filling the defaults", () => {
+    const { visibility, capacity, ...old } = DEFAULT_RACE_SETTINGS;
+    void visibility; void capacity;
+    expect(deserializeRaceSettings(JSON.stringify(old))).toEqual(DEFAULT_RACE_SETTINGS);
+    expect(deserializeRaceSettings(JSON.stringify({ ...old, extra: 1 }))).toBeNull();
+  });
+
+  it("accepts an old solo config without the CONF-05/CONF-06 fields, filling the defaults", () => {
+    const { complexity, punctuation, numbers, uppercase, ...old } = DEFAULT_RACE_SETTINGS;
+    void complexity; void punctuation; void numbers; void uppercase;
+    expect(deserializeRaceSettings(JSON.stringify(old))).toMatchObject({
+      complexity: "medium", punctuation: true, numbers: false, uppercase: true,
+    });
+    expect(parseRaceSettings({ ...old, complexity: "extreme" })).toBeNull();
+  });
+
   it("refuses an old URL whose duration is not in the list", () => {
     const config = JSON.stringify({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds: 90 });
     expect(deserializeRaceSettings(config)).toBeNull();
   });
 
   it.each([-1, 8, 0.5, "2"])("rejects invalid bot count %s", (botCount) => {
-    expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, botCount })).toBeNull();
+    const { bots, ...old } = DEFAULT_RACE_SETTINGS;
+    void bots;
+    expect(parseRaceSettings({ ...old, botCount, botDifficulty: "normal" })).toBeNull();
+  });
+
+  it("converts legacy links and refuses mixed configurations", () => {
+    const { bots, ...old } = DEFAULT_RACE_SETTINGS;
+    void bots;
+    for (const [difficulty, level] of [["easy", "beginner"], ["normal", "intermediate"], ["hard", "expert"]]) {
+      expect(deserializeRaceSettings(JSON.stringify({ ...old, botCount: 2, botDifficulty: difficulty })))
+        .toMatchObject({ bots: [level, level] });
+    }
+    for (const legacy of [{ botCount: 2 }, { botDifficulty: "normal" }, { botCount: 2, botDifficulty: "normal" }]) {
+      expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, ...legacy })).toBeNull();
+    }
+    expect(parseRaceSettings({ ...old, botCount: 2 })).toBeNull();
+    expect(parseRaceSettings({ ...old, botDifficulty: "normal" })).toBeNull();
+  });
+
+  it("converts legacy abilities, including legacy bots, and refuses mixed bonus fields", () => {
+    const { bonuses, bots, ...old } = DEFAULT_RACE_SETTINGS;
+    void bonuses;
+    expect(parseRaceSettings({ ...old, bots, abilities: true })).toMatchObject({ bonuses: true });
+    expect(parseRaceSettings({ ...old, abilities: false, botCount: 2, botDifficulty: "normal" }))
+      .toEqual(DEFAULT_RACE_SETTINGS);
+    expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, abilities: false })).toBeNull();
+    expect(parseRaceSettings({ ...old, bots, abilities: "true" })).toBeNull();
+    expect(parseRaceSettings({ ...old, bots, abilities: undefined })).toBeNull();
+    expect(parseRaceSettings({ ...old, bots })).toMatchObject({ bonuses: false });
   });
 
   it("uses the documented default limit, including when explicit limit is off", () => {
@@ -51,8 +95,8 @@ describe("race settings boundary (CONFIG-1..9)", () => {
   it("returns independent defaults and parsed objects", () => {
     const settings = deserializeRaceSettings(undefined);
     if (!settings) throw new Error("Missing defaults");
-    settings.botCount = 0;
-    expect(DEFAULT_RACE_SETTINGS.botCount).toBe(2);
+    settings.bots.push("noob");
+    expect(DEFAULT_RACE_SETTINGS.bots).toHaveLength(2);
     expect(parseRaceSettings(DEFAULT_RACE_SETTINGS)).not.toBe(DEFAULT_RACE_SETTINGS);
   });
 });

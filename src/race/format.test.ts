@@ -15,7 +15,7 @@ describe("formatOrdinal (A-D9)", () => {
   });
 });
 
-describe("formatPlural (UI-5)", () => {
+describe("formatPlural (I18N-01, I18N-02, I18N-03)", () => {
   it("français : 0 et 1 au singulier, le reste au pluriel", () => {
     const { count } = getDictionary("fr").raceSettings.excludedChars;
     expect([0, 1, 2, 5].map((n) => formatPlural("fr", n, count).replace("{count}", String(n)))).toEqual([

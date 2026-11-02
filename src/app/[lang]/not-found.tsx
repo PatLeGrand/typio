@@ -6,6 +6,7 @@ import { MascotIllustration } from "@/components/auth/MascotIllustration";
 import { ButtonLink } from "@/components/ButtonLink";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Logo } from "@/components/Logo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { defaultLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -23,10 +24,10 @@ export default function NotFoundPage() {
         <Link href={`/${locale}`} className="rounded-field">
           <Logo name={dictionary.site.name} tagline={dictionary.brand.tagline} />
         </Link>
-        <div className="flex flex-wrap items-center gap-2">
+        <nav aria-label={dictionary.navigation.preferences} className="flex flex-wrap items-center gap-2">
           <LanguageSwitcher locale={locale} labels={dictionary.language} />
           <ThemeToggle labels={dictionary.theme} />
-        </div>
+        </nav>
       </header>
 
       <main className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:gap-12 lg:py-12">
@@ -47,6 +48,7 @@ export default function NotFoundPage() {
           <MascotIllustration labels={dictionary.illustration} />
         </div>
       </main>
+      <SiteFooter locale={locale} labels={dictionary.footer} />
     </div>
   );
 }

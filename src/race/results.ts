@@ -1,8 +1,10 @@
-import { botFinishMs, botKeystrokesAt, botProgressAt, type BotPlan } from "./bots";
+import type { BonusType } from "./bonuses";
+import type { BotLevel } from "@/realtime/protocol";
+import { botFinishMs, botKeystrokesAt, botProgressAt, botWpmSeries, type BotPlan } from "./bots";
 import { computeAccuracy, computeWpm, type Keystrokes } from "./metrics";
 
 /**
- * Classement final d'une course (A-D7, COURSE-3, COURSE-5, RES-1, RES-2). Module pur.
+ * Classement final d'une course (A-D7, COURSE-09, COURSE-07, RES-01, RES-02). Module pur.
  * Tous les temps sont en ms depuis le départ, à l'instant où la course se termine pour le joueur.
  */
 export type RacerStatus = "finished" | "unfinished" | "abandoned";
@@ -13,24 +15,33 @@ export interface PlayerOutcome {
   elapsedMs: number;
   correctChars: number;
   keystrokes: Keystrokes;
+  wpmSeries: number[];
+  missedKeys: Record<string, number>;
 }
 
 export interface BotEntry {
   id: string;
   name: string;
   plan: BotPlan;
+  level?: BotLevel;
 }
 
 export interface RaceResultRow {
   id: string;
   name: string;
   isPlayer: boolean;
+  level?: BotLevel;
   rank: number;
   status: RacerStatus;
   wpm: number;
+  wpmSeries: number[];
+  missedKeys?: Record<string, number>;
   accuracy: number;
   timeMs: number;
   correctChars: number;
+  progress: number;
+  bonusesReceived?: number;
+  bonusTypes?: BonusType[];
 }
 
 type UnrankedRow = Omit<RaceResultRow, "rank">;
@@ -42,18 +53,18 @@ function compareRows(a: UnrankedRow, b: UnrankedRow): number {
   const byStatus = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
   if (byStatus !== 0) return byStatus;
   if (a.status === "finished") return a.timeMs - b.timeMs;
-  if (a.status === "unfinished") return b.correctChars - a.correctChars;
+  if (a.status === "unfinished") return b.progress - a.progress;
   return 0;
 }
 
 export function buildRaceResults(input: {
-  textLength: number;
   playerId: string;
   playerName: string;
   player: PlayerOutcome;
+  playerTextLength: number;
   bots: readonly BotEntry[];
 }): RaceResultRow[] {
-  const { textLength, player, bots } = input;
+  const { player, bots } = input;
   const endMs = player.elapsedMs;
 
   const playerStatus: RacerStatus =
@@ -65,26 +76,32 @@ export function buildRaceResults(input: {
       isPlayer: true,
       status: playerStatus,
       wpm: computeWpm(player.correctChars, endMs),
+      wpmSeries: player.wpmSeries,
+      missedKeys: player.missedKeys,
       accuracy: computeAccuracy(player.keystrokes),
       timeMs: endMs,
       correctChars: player.correctChars,
+      progress: input.playerTextLength === 0 ? 0 : player.correctChars / input.playerTextLength,
     },
   ];
 
   for (const bot of bots) {
     const finishMs = botFinishMs(bot.plan);
     const finished = finishMs <= endMs;
-    const correctChars = finished ? textLength : botProgressAt(bot.plan, endMs);
+    const correctChars = finished ? bot.plan.textLength : botProgressAt(bot.plan, endMs);
     const timeMs = finished ? finishMs : endMs;
     rows.push({
       id: bot.id,
       name: bot.name,
+      level: bot.level,
       isPlayer: false,
       status: finished ? "finished" : "unfinished",
       wpm: computeWpm(correctChars, timeMs),
+      wpmSeries: botWpmSeries(bot.plan, timeMs),
       accuracy: computeAccuracy(botKeystrokesAt(bot.plan, timeMs)),
       timeMs,
       correctChars,
+      progress: bot.plan.textLength === 0 ? 0 : correctChars / bot.plan.textLength,
     });
   }
 

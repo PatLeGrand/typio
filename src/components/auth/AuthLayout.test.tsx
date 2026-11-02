@@ -15,6 +15,7 @@ describe("AuthLayout", () => {
     );
 
     expect(screen.getByRole("banner")).toHaveTextContent(dictionary.site.name);
+    expect(screen.getByRole("navigation", { name: dictionary.navigation.main })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: new RegExp(dictionary.site.name) })).toHaveAttribute("href", `/${locale}`);
     expect(screen.getByRole("main")).toHaveTextContent("formulaire");
     expect(screen.getByRole("complementary")).toHaveTextContent("panneau");

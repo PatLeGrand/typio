@@ -1,4 +1,4 @@
-/** Frequent English words, lowercase, for the "words" text mode (TEXTE-1, H-10). */
+/** Frequent English words, lowercase, for the "words" text mode (CONF-03, H-10). */
 export const WORDS_EN: readonly string[] = [
   "the", "be", "to", "of", "and", "a", "in", "that", "have", "it", "for", "not", "on", "with",
   "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her",
@@ -22,4 +22,24 @@ export const WORDS_EN: readonly string[] = [
   "long", "short", "big", "little", "old", "young", "fast", "slow", "easy", "hard", "happy",
   "strong", "bright", "dark", "red", "blue", "green", "yellow", "white", "black", "quick",
   "quiet", "loud", "warm", "cold", "keyboard", "finger", "screen", "race", "speed", "letter",
+];
+
+/**
+ * Less frequent or longer English words (6 letters or more), reserved for the "hard"
+ * complexity in words mode (CONF-05). Vocabulary suited to 12-17 year olds.
+ */
+export const RARE_WORDS_EN: readonly string[] = [
+  "abandon", "adventurer", "algorithm", "ambitious", "astronaut", "atmosphere", "authentic",
+  "backpack", "boundary", "brilliant", "calculator", "challenge", "champion", "chemistry",
+  "collection", "community", "concentrate", "confidence", "consequence", "courageous",
+  "creativity", "curiosity", "determined", "dictionary", "difficulty", "discipline",
+  "distraction", "electricity", "endurance", "enthusiasm", "equilibrium", "exceptional",
+  "experience", "explorer", "fantastic", "fascinating", "generosity", "gymnastics",
+  "horizon", "hypothesis", "imaginary", "impatience", "incredible", "ingenious",
+  "inventor", "laboratory", "legendary", "magnificent", "mathematics", "memory",
+  "mysterious", "navigator", "observation", "orchestra", "partnership", "patience",
+  "perseverance", "photograph", "planetary", "precision", "programming", "progress",
+  "provisional", "responsible", "reward", "scientific", "silhouette", "solidarity",
+  "souvenir", "spectacle", "strategy", "surprising", "technology", "tempest",
+  "tournament", "traveller", "vocabulary", "volunteer",
 ];

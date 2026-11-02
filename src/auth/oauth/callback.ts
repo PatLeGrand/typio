@@ -28,7 +28,7 @@ export interface OAuthCallbackInput {
 }
 
 /**
- * AUTH-2, AUTH-3 : retour du fournisseur. Ordre : limiteur par IP (avant tout travail), puis le
+ * AUTH-01 : retour du fournisseur. Ordre : limiteur par IP (avant tout travail), puis le
  * `state` (un lien forgé ne doit rien pouvoir faire, pas même afficher « annulé »), puis le
  * refus de l'utilisateur, puis l'échange du code, borné par un sémaphore. Toute erreur renvoie à
  * la page de connexion avec un message, jamais de détail. Les cookies temporaires sont TOUJOURS

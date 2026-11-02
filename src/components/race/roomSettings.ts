@@ -1,12 +1,12 @@
 import type { RaceSettings } from "@/race/config";
 import type { RoomConfig, RoomConfigPatch } from "@/realtime/protocol";
 
-/** Réglages de course d'une salle : `abilities` (CONFIG-9) n'existe pas encore côté salle, il reste faux. */
+/** Réglages partagés entre la salle et la course. */
 export function toRaceSettings(config: RoomConfig): RaceSettings {
-  return { ...config, abilities: false };
+  return { ...config };
 }
 
-/** Réglages envoyés à `room:create` : tous, sauf `abilities`. */
+/** Réglages envoyés à `room:create`. */
 export function toRoomConfig(settings: RaceSettings): RoomConfig {
   return {
     textMode: settings.textMode,
@@ -14,16 +14,20 @@ export function toRoomConfig(settings: RaceSettings): RoomConfig {
     length: settings.length,
     timeLimitSeconds: settings.timeLimitSeconds,
     accents: settings.accents,
+    bonuses: settings.bonuses,
+    complexity: settings.complexity,
+    punctuation: settings.punctuation,
+    numbers: settings.numbers,
+    uppercase: settings.uppercase,
     excludedCharacters: settings.excludedCharacters,
     inputMode: settings.inputMode,
-    botCount: settings.botCount,
-    botDifficulty: settings.botDifficulty,
+    bots: settings.bots,
+    visibility: settings.visibility,
+    capacity: settings.capacity,
   };
 }
 
-/** Patch envoyé à `room:updateConfig` : seulement des clés du protocole, jamais `abilities`. */
+/** Patch envoyé à `room:updateConfig`. */
 export function toRoomConfigPatch(patch: Partial<RaceSettings>): RoomConfigPatch {
-  const { abilities, ...roomPatch } = patch;
-  void abilities;
-  return roomPatch;
+  return patch;
 }

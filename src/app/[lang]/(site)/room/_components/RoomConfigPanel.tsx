@@ -13,8 +13,9 @@ export const EXCLUDED_SEND_DELAY_MS = 500;
 
 type RoomConfigPanelProps = {
   config: RoomConfig;
-  /** Vrai pour l'hôte : réglages modifiables. Sinon, lecture seule (SALLE-10). */
+  /** Vrai pour l'hôte : réglages modifiables. Sinon, lecture seule (CONF-12). */
   editable: boolean;
+  runnerCount?: number;
   lang: string;
   labels: Dictionary["room"]["config"];
   settingsLabels: Dictionary["raceSettings"];
@@ -23,12 +24,12 @@ type RoomConfigPanelProps = {
 };
 
 /**
- * Configuration de la salle (CONFIG-1 à 8) : les mêmes sections que la page de paramètres, modifiables
+ * Configuration de la salle (CONF-01 à CONF-08, CONF-10, BOT-01) : les mêmes sections que la page de paramètres, modifiables
  * pour l'hôte, en lecture seule pour les autres. L'état affiché est celui de la salle : un patch refusé
  * ne change rien. Seul le champ des caractères exclus garde un brouillon, envoyé à la sortie du champ
  * ou après une pause de frappe.
  */
-export function RoomConfigPanel({ config, editable, lang, labels, settingsLabels, onChange }: RoomConfigPanelProps) {
+export function RoomConfigPanel({ config, editable, runnerCount, lang, labels, settingsLabels, onChange }: RoomConfigPanelProps) {
   // Brouillon du champ des caractères exclus ; `null` : on affiche la valeur (normalisée) de la salle.
   const [draft, setDraft] = useState<string | null>(null);
   const [excludedError, setExcludedError] = useState<string | null>(null);
@@ -108,6 +109,7 @@ export function RoomConfigPanel({ config, editable, lang, labels, settingsLabels
       <h2 className="text-lg font-bold text-foreground">{labels.title}</h2>
       <RaceSettingsFields
         value={shown}
+        runnerCount={runnerCount}
         onChange={handleChange}
         readOnly={!editable}
         dict={settingsLabels}

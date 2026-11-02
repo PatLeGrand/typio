@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [develop, main]
   push:
-    branches: [develop, main]
+    branches: ["**"]
   workflow_dispatch:
 
 permissions:
@@ -31,6 +31,8 @@ jobs:
           bun-version-file: package.json
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Type check
+        run: bun run typecheck
       - name: Unit tests
         run: bun run test
       - name: Lint
@@ -75,14 +77,61 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Apply database migrations
         run: bun run db:migrate
-      # Seul test qui vérifie le schéma contre un vrai PostgreSQL : index unique
-      # sans casse, CHECK, cascade des sessions, purges par lots. Le job `quality`
+      # Tests qui vérifient le schéma contre un vrai PostgreSQL : index unique
+      # sans casse, CHECK, cascades, résultats des courses, purges par lots. Le job `quality`
       # n'a pas de base et l'ignore.
       - name: PostgreSQL integration tests
-        run: bun run test src/auth/repositories.integration.test.ts
+        run: bun run test src/auth/repositories.integration.test.ts src/race/drizzleRaceRepository.integration.test.ts src/race/raceHistory.integration.test.ts
       - name: Validate local Compose
         run: docker compose config --quiet
       - name: Validate VPS Compose
         env:
           MDP_TYPIO: validation-only
         run: docker compose -f infra/docker-compose.yml config --quiet
+
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: typio
+          POSTGRES_PASSWORD: typio
+          POSTGRES_DB: typio
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U typio -d typio"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CI: "true"
+      DATABASE_URL: postgresql://typio:typio@localhost:5432/typio
+      APP_ORIGIN: http://localhost:3100
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Apply database migrations
+        run: bun run db:migrate
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+      - name: End-to-end tests
+        run: bun run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/

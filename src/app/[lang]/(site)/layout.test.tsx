@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>(),
   schedulePurge: vi.fn(),
   guard: vi.fn(),
+  pathname: "/fr",
 }));
 vi.mock("@/realtime/RoomSessionGuard", () => ({
   RoomSessionGuard: (props: { userId: string | null }) => {
@@ -20,7 +21,7 @@ vi.mock("@/auth/schedulePurge", () => ({ schedulePurge: mocks.schedulePurge }));
 // SiteHeader contient un composant client qui lit le chemin courant.
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
-  usePathname: () => "/fr",
+  usePathname: () => mocks.pathname,
 }));
 
 import SiteLayout from "./layout";
@@ -31,6 +32,7 @@ function layoutProps(lang: string) {
 
 beforeEach(() => {
   mocks.guard.mockClear();
+  mocks.pathname = "/fr";
   mocks.getCurrentUserForDisplay.mockResolvedValue(null);
 });
 
@@ -40,6 +42,15 @@ describe("SiteLayout", () => {
 
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByText("contenu")).toBeInTheDocument();
+    expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
+  });
+
+  it.each(["fr", "en"] as const)("ajoute un pied de page traduit hors accueil (%s)", async (locale) => {
+    mocks.pathname = `/${locale}/privacy`;
+    render(await SiteLayout(layoutProps(locale)));
+    const dictionary = getDictionary(locale);
+    expect(screen.getByRole("contentinfo")).toHaveTextContent(dictionary.footer.copyright);
+    expect(screen.getByRole("link", { name: dictionary.footer.privacy })).toHaveAttribute("href", `/${locale}/privacy`);
   });
 
   it("transmet l'utilisateur connecté à l'en-tête", async () => {
@@ -48,7 +59,7 @@ describe("SiteLayout", () => {
       kind: "member",
       displayName: "Alice_B",
       username: "alice_b",
-      locale: "fr",
+      locale: "fr", avatarVersion: null,
     });
     render(await SiteLayout(layoutProps("fr")));
 
@@ -65,7 +76,7 @@ describe("SiteLayout", () => {
       kind: "member",
       displayName: "Alice_B",
       username: "alice_b",
-      locale: "fr",
+      locale: "fr", avatarVersion: null,
     });
     render(await SiteLayout(layoutProps("fr")));
     expect(mocks.guard).toHaveBeenLastCalledWith("11111111-1111-1111-1111-111111111111");
@@ -83,7 +94,7 @@ describe("SiteLayout", () => {
       kind: "guest",
       displayName: "Zoé",
       username: null,
-      locale: "fr",
+      locale: "fr", avatarVersion: null,
     });
     render(await SiteLayout(layoutProps("fr")));
 

@@ -147,6 +147,7 @@ export class MemorySessionRepository implements SessionRepository {
         displayName: user.displayName,
         username: user.username,
         locale: user.locale,
+        avatarVersion: null,
         expiresAt: user.expiresAt,
       },
     };

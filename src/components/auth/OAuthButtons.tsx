@@ -24,7 +24,7 @@ const PROVIDERS: { name: OAuthProviderName; icon: ReactNode }[] = [
 ];
 
 /**
- * Connexion GitHub et Discord (AUTH-1 : en premier sur la page ; AUTH-2, AUTH-3). Un
+ * Connexion GitHub et Discord (AUTH-01, TEST-03 : en premier sur la page ; AUTH-01). Un
  * fournisseur configuré est un lien vers la route de départ `/api/auth/{provider}` ; sinon le
  * bouton reste désactivé avec la mention « bientôt » (qui fait partie du nom accessible).
  *

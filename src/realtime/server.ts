@@ -4,14 +4,15 @@
  * l'instancient avec un faux dépôt de sessions, sans base ni variables d'environnement.
  */
 
+import type { RaceRepository } from "@/race/raceRepository";
 import { createServer, type Server as HttpServer } from "node:http";
 import { Server } from "socket.io";
 import type { SessionRepository } from "@/auth/session";
 import { authenticateHandshake, isAllowedOrigin } from "./auth";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "./protocol";
-import { createRateLimiter } from "@/auth/rateLimit";
+import { createRateLimiter, getClientIp, ipRateLimitKey } from "@/auth/rateLimit";
 import { createGraceTimers, type GraceTimers } from "./graceTimers";
-import { registerRoomHandlers } from "./roomHandlers";
+import { LOBBY_ROOM, registerRoomHandlers } from "./roomHandlers";
 import { createRoomStore } from "./roomStore";
 import { createSessionExpiryWatcher, type SessionExpiryWatcher } from "./sessionExpiry";
 import { createUserSockets, MAX_SOCKETS_PER_USER, type UserSockets } from "./userSockets";
@@ -29,13 +30,18 @@ export const MAX_MESSAGE_BYTES = 8_192;
  */
 export const JOIN_FAILURE_LIMIT = { limit: 10, windowMs: 60_000 } as const;
 
+/** Intervalle minimal entre deux diffusions de l'explorateur (JOIN-02, PERF-02). */
+export const LOBBY_BROADCAST_MS = 500;
+
 export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
 export interface RealtimeServerOptions {
   sessions: SessionRepository;
+  raceRepository?: RaceRepository;
   /** Origines autorisées à ouvrir une connexion, par exemple `https://typio.aether-manager.ca`. */
   allowedOrigins: readonly string[];
   now?: () => Date;
+  generateSeed?: () => number;
   /** Délai de grâce avant le retrait d'un participant déconnecté ; `RECONNECT_GRACE_MS` par défaut. */
   graceMs?: number;
   /** Intervalle de relecture de la session de chaque socket ; `SESSION_REVALIDATE_MS` par défaut. */
@@ -51,6 +57,13 @@ export interface RealtimeServerHandle {
   sessionExpiry: SessionExpiryWatcher;
   /** Index des sockets ouverts par utilisateur. */
   userSockets: UserSockets;
+}
+
+/** Message seul : les erreurs Drizzle peuvent contenir des paramètres sensibles. */
+function describeError(error: unknown): string {
+  // Une erreur SQL enveloppée expose sa requête dans message : ne garder que la cause.
+  if (error instanceof Error && error.cause instanceof Error) return describeError(error.cause);
+  return error instanceof Error ? `${error.name}: ${error.message}` : "unknown error";
 }
 
 export function createRealtimeServer(options: RealtimeServerOptions): RealtimeServerHandle {
@@ -89,6 +102,9 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       }
       socket.data.user = identity.user;
       socket.data.roomCode = null;
+      // SALLE-04 : IP vue par Caddy (`x-forwarded-for`), jamais `handshake.address` (le proxy local).
+      const forwarded = socket.handshake.headers["x-forwarded-for"];
+      socket.data.ip = ipRateLimitKey(getClientIp({ get: () => (Array.isArray(forwarded) ? forwarded[0] : forwarded) ?? null }));
       handshakeExpiry.set(socket, identity.expiresAt);
       next();
     } catch {
@@ -96,12 +112,94 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     }
   });
 
-  const store = createRoomStore();
+  const store = createRoomStore({ now: () => now().getTime(), generateSeed: options.generateSeed });
   const timers = createGraceTimers();
   const joinFailures = createRateLimiter({ ...JOIN_FAILURE_LIMIT, now: () => now().getTime() });
 
+  const raceInputs = createRateLimiter({ limit: 12, windowMs: 1000, now: () => now().getTime(), onFull: "refuse" });
+  // Un seul intervalle par salle ; les frappes ne déclenchent pas de diffusion supplémentaire.
+  const raceIntervals = new Map<string, ReturnType<typeof setInterval>>();
+  const publishedStatus = new Map<string, string>();
+  const lastPublishedAt = new Map<string, number>();
+
+  // Explorateur (JOIN-02) : diffusion regroupée, et seulement si la liste a changé.
+  let lobbyTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastLobby: string | null = null;
+  function lobbyChanged(invalidate = false): void {
+    if (invalidate) lastLobby = null;
+    if (lobbyTimer !== null) return;
+    lobbyTimer = setTimeout(() => {
+      lobbyTimer = null;
+      const rooms = store.lobby();
+      const serialized = JSON.stringify(rooms);
+      if (serialized === lastLobby) return;
+      lastLobby = serialized;
+      io.to(LOBBY_ROOM).emit("lobby:rooms", rooms);
+    }, LOBBY_BROADCAST_MS);
+    lobbyTimer.unref?.();
+  }
+
+  function syncRace(code: string): void {
+    const snapshot = store.snapshot(code);
+    for (const recording of store.takeRecordings()) {
+      if (options.raceRepository) {
+        void Promise.resolve().then(() => options.raceRepository!.recordRace(recording.race, recording.rows))
+          .then((userIds) => {
+            const current = store.snapshot(recording.race.roomCode);
+            if (userIds.length && current?.status === "results" && current.startAt === recording.race.startedAt.getTime()) {
+              io.to(recording.race.roomCode).emit("race:records", { userIds });
+            }
+          })
+          .catch((error: unknown) => console.error("[realtime] race recording failed:", describeError(error)));
+      }
+    }
+    const state = store.get(code);
+    const previous = publishedStatus.get(code);
+    if (snapshot && state && (snapshot.status !== previous ||
+      ((state.status === "countdown" || state.status === "racing") &&
+        now().getTime() - (lastPublishedAt.get(code) ?? -Infinity) >= 100))) {
+      if (snapshot.status !== previous && previous !== undefined) {
+        io.to(code).emit("room:state", state);
+        lobbyChanged();
+      }
+      io.to(code).emit("race:state", snapshot);
+      lastPublishedAt.set(code, now().getTime());
+      publishedStatus.set(code, snapshot.status);
+      if (snapshot.status === "results" && previous !== "results") {
+        const results = store.results(code);
+        for (const participant of state.participants) {
+          const self = store.self(code, participant.userId);
+          if (self) {
+            for (const socket of userSockets.of(participant.userId)) socket.emit("race:self", self);
+          }
+        }
+        if (results) io.to(code).emit("race:results", results);
+      }
+    }
+    if (state?.status === "countdown" || state?.status === "racing") {
+      if (!raceIntervals.has(code)) {
+        const timer = setInterval(() => {
+          syncRace(code);
+        }, 100);
+        timer.unref?.();
+        raceIntervals.set(code, timer);
+      }
+    } else {
+      clearInterval(raceIntervals.get(code));
+      raceIntervals.delete(code);
+      if (!state || state.status !== "results") {
+        publishedStatus.delete(code);
+        lastPublishedAt.delete(code);
+      }
+    }
+  }
+
   // `io.close()` ferme le serveur HTTP : plus aucun minuteur ne doit survivre.
   httpServer.on("close", () => {
+    for (const timer of raceIntervals.values()) clearInterval(timer);
+    raceIntervals.clear();
+    if (lobbyTimer !== null) clearTimeout(lobbyTimer);
+    lobbyTimer = null;
     timers.close();
     sessionExpiry.close();
   });
@@ -123,6 +221,10 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       graceMs: options.graceMs,
       sockets: userSockets,
       joinFailures,
+      raceInputs,
+      syncRace,
+      lobbyList: () => store.lobby(),
+      lobbyChanged,
     });
 
     // Après les gestionnaires : une échéance déjà passée coupe le socket tout de suite, et

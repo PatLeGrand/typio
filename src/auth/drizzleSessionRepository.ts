@@ -24,6 +24,7 @@ export function createDrizzleSessionRepository(db: PostgresJsDatabase): SessionR
           displayName: users.displayName,
           username: users.username,
           locale: users.locale,
+          avatarVersion: users.avatarVersion,
           userExpiresAt: users.expiresAt,
         })
         .from(sessions)
@@ -42,6 +43,7 @@ export function createDrizzleSessionRepository(db: PostgresJsDatabase): SessionR
           displayName: row.displayName,
           username: row.username,
           locale: isLocale(row.locale) ? row.locale : defaultLocale,
+          avatarVersion: row.avatarVersion,
           expiresAt: row.userExpiresAt,
         },
       };

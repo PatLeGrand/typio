@@ -17,7 +17,7 @@ vi.mock("@/race/raceText", async (importOriginal) => {
   return { createRaceText: vi.fn(actual.createRaceText) };
 });
 
-const SETTINGS: RaceSettings = { ...DEFAULT_RACE_SETTINGS, botCount: 2, botDifficulty: "easy", timeLimitSeconds: 60 };
+const SETTINGS: RaceSettings = { ...DEFAULT_RACE_SETTINGS, bots: ["beginner", "beginner"], timeLimitSeconds: 60 };
 const TEXT = "ab cd";
 
 /** Horloge manuelle : le temps ne bouge que lorsque le test le décide. */
@@ -71,7 +71,7 @@ afterEach(() => {
 describe("RaceScreen : horloge (A-D6, AC-4)", () => {
   it("affiche 3, 2, 1 puis démarre au départ, avec le temps restant visible", () => {
     const { labels } = setup();
-    expect(screen.getByRole("status")).toHaveTextContent(labels.status.countdown);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.countdown);
     expect(screen.getByTestId("countdown")).toHaveTextContent("3");
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
     // Saisie ignorée pendant le compte à rebours.
@@ -82,13 +82,13 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
     expect(screen.getByTestId("countdown")).toHaveTextContent("1");
 
     advance(900);
-    expect(screen.getByRole("status")).toHaveTextContent(labels.status.racing);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.racing);
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
   });
 
   it("annonce le compte à rebours une fois par seconde dans une région polie, puis « partez »", () => {
     const { labels } = setup();
-    const announcement = () => screen.getByText((_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P");
+    const announcement = () => screen.getByText((_, element) => element?.getAttribute("aria-live") === "polite" && element.tagName === "P" && element.getAttribute("role") !== "status");
     expect(announcement()).toHaveTextContent("3");
     advance(1100);
     expect(announcement()).toHaveTextContent("2");
@@ -116,12 +116,12 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
     advance(5000);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.timeout);
     expect(screen.getByRole("timer")).toHaveTextContent("00:00");
-    expect(screen.getByRole("status")).toHaveTextContent(labels.status.finished);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.finished);
     expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
   });
 });
 
-describe("RaceScreen : saisie (COURSE-7, A-D6)", () => {
+describe("RaceScreen : saisie (COURSE-04, A-D6)", () => {
   it("mode libre : on continue après une faute", () => {
     const { labels } = setup({ settings: { inputMode: "free" } });
     advance(3000);
@@ -131,7 +131,7 @@ describe("RaceScreen : saisie (COURSE-7, A-D6)", () => {
     expect(input(labels).value).toBe("xb");
     expect(screen.getByText(`1 / ${TEXT.length} ${labels.typing.characters}`)).toBeInTheDocument();
     // 2 frappes, 1 juste.
-    expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.getByText("50 %")).toBeInTheDocument();
   });
 
   it("mode bloquant : le caractère faux n'entre pas", () => {
@@ -156,8 +156,8 @@ describe("RaceScreen : saisie (COURSE-7, A-D6)", () => {
     for (const value of ["a", "ab", "abc", "abcd", "abcde", "abcdex", "abcde", "abcdef", "abcdefg", "abcdefgh", "abcdefghi", "abcdefghij"]) {
       type(input(labels), value);
     }
-    expect(screen.getByRole("table")).toHaveTextContent("91%");
-    expect(screen.getByText(/ 91% /)).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent("91 %");
+    expect(screen.getByText(/ 91 % /)).toBeInTheDocument();
   });
 });
 
@@ -178,18 +178,18 @@ describe("RaceScreen : composition, touches mortes AZERTY et IME", () => {
     composeDeadKey(input(labels), "", "ê");
     expect(input(labels).value).toBe("ê");
     expect(screen.getByText(`1 / 2 ${labels.typing.characters}`)).toBeInTheDocument();
-    expect(accuracyShown(labels)).toBe("100%");
+    expect(accuracyShown(labels)).toBe("100\u00a0%");
   });
 
   it.each(["free", "blocking"] as const)("« ê » faux compte pour une seule frappe fausse (%s)", (inputMode) => {
     const { labels } = setup({ initialText: "ab", settings: { inputMode } });
     advance(3000);
     composeDeadKey(input(labels), "", "ê");
-    expect(accuracyShown(labels)).toBe("0%");
+    expect(accuracyShown(labels)).toBe("0\u00a0%");
     // La frappe fausse n'est comptée qu'une fois, la touche morte « ^ » pas du tout.
     expect(input(labels).value).toBe(inputMode === "free" ? "ê" : "");
     type(input(labels), inputMode === "free" ? "êb" : "a");
-    expect(accuracyShown(labels)).toBe("50%");
+    expect(accuracyShown(labels)).toBe("50\u00a0%");
   });
 
   it("garde un « ê » déjà tapé quand la composition suit des caractères", () => {
@@ -198,7 +198,7 @@ describe("RaceScreen : composition, touches mortes AZERTY et IME", () => {
     type(input(labels), "a");
     composeDeadKey(input(labels), "a", "ê");
     type(input(labels), "aêb");
-    expect(screen.getByRole("table")).toHaveTextContent("100%");
+    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent("100 %");
   });
 });
 
@@ -233,14 +233,14 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     }
     const youRow = table.getByRole("rowheader", { name: labels.you }).closest("tr");
     expect(youRow).not.toBeNull();
-    expect(within(youRow as HTMLElement).getByText("100%")).toBeInTheDocument();
+    expect(within(youRow as HTMLElement).getByText("100 %")).toBeInTheDocument();
     expect(within(youRow as HTMLElement).getByText(labels.results.statuses.finished)).toBeInTheDocument();
     expect(within(youRow as HTMLElement).getByText("00:00.5")).toBeInTheDocument();
     // Les bots n'ont pas fini au bout de 0,5 s : joueur premier.
     expect(within(youRow as HTMLElement).getAllByRole("cell")[0]).toHaveTextContent("1er");
   });
 
-  it("COURSE-5 : abandon classé dernier et marqué", () => {
+  it("COURSE-07 : abandon classé dernier et marqué", () => {
     const { labels } = setup();
     expect(screen.getByRole("button", { name: labels.abandon })).toBeDisabled();
     advance(3000);
@@ -248,7 +248,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.abandoned);
-    const youRow = within(screen.getByRole("table")).getByRole("rowheader", { name: labels.you }).closest("tr") as HTMLElement;
+    const youRow = within(screen.getByRole("table", { name: labels.results.tableTitle })).getByRole("rowheader", { name: labels.you }).closest("tr") as HTMLElement;
     expect(within(youRow).getByText(labels.results.statuses.abandoned)).toBeInTheDocument();
     expect(within(youRow).getAllByRole("cell")[0]).toHaveTextContent("3e");
   });
@@ -271,7 +271,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     expect(createRaceText).toHaveBeenCalledTimes(1);
     expect(createRaceText).toHaveBeenCalledWith(settings, random, "first text");
     expect(textOnScreen()).toBe("brand new text");
-    expect(screen.getByRole("status")).toHaveTextContent(labels.status.countdown);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.countdown);
     // Le focus est sur le champ de saisie, pas perdu sur <body>.
     expect(input(labels)).toHaveFocus();
 
@@ -294,21 +294,24 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
   });
 
   it.each([
-    ["fr", "2e", "sur"],
-    ["en", "2nd", "of"],
-  ] as const)("résultats en %s", (locale, ordinal, of) => {
-    const { labels } = setup({ locale, settings: { botCount: 1 } });
+    ["fr", "2e", "sur", "100\u00a0%"],
+    ["en", "2nd", "of", "100%"],
+  ] as const)("résultats en %s", (locale, ordinal, of, accuracy) => {
+    const { labels } = setup({ locale, settings: { bots: ["beginner"] } });
     advance(3000);
+    expect(accuracyShown(labels)).toBe(accuracy);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
-    expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
+    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
+    expect(screen.getByRole("region", { name: labels.results.tableTitle })).toHaveAttribute("tabindex", "0");
     expect(screen.getByRole("heading", { name: labels.results.podium })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: labels.results.replay })).toBeInTheDocument();
     expect(screen.getByText(labels.results.statuses.abandoned)).toBeInTheDocument();
-    expect(screen.getAllByText((name) => labels.botNames.includes(name)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText((name) => labels.botNames.some((bot) => name === `${bot} (${labels.bot} · ${labels.botLevels.beginner})`)).length).toBeGreaterThan(0);
   });
 });
 
-describe("RaceScreen : aucun texte (TEXTE-1)", () => {
+describe("RaceScreen : aucun texte (CONF-03)", () => {
   it("explique le problème et renvoie vers les réglages au lieu de lancer une course vide", () => {
     const { labels, settings } = setup({ initialText: null });
     expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.message);
@@ -329,18 +332,18 @@ describe("RaceScreen : aucun texte (TEXTE-1)", () => {
   });
 });
 
-describe("RaceScreen : bots (BOT-2)", () => {
-  it("affiche le joueur et botCount bots nommés d'après le dictionnaire", () => {
-    const { labels } = setup({ settings: { botCount: 3 } });
+describe("RaceScreen : bots (BOT-02, BOT-03)", () => {
+  it("affiche le joueur et les bots nommés d'après le dictionnaire", () => {
+    const { labels } = setup({ settings: { bots: ["beginner", "beginner", "beginner"] } });
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
     expect(screen.getByTestId("visualizer")).toHaveTextContent("4");
     const names = screen.getAllByRole("listitem").slice(1).map((item) => item.children[1].textContent ?? "");
     expect(new Set(names).size).toBe(3);
-    for (const name of names) expect(labels.botNames).toContain(name);
+    for (const name of names) expect(labels.botNames.map((bot) => `${bot} (${labels.bot} · ${labels.botLevels.beginner})`)).toContain(name);
   });
 
   it("se joue sans bot", () => {
-    setup({ settings: { botCount: 0 } });
+    setup({ settings: { bots: [] } });
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
 });

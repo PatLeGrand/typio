@@ -13,7 +13,7 @@ const member: CurrentUser = {
   kind: "member",
   displayName: "Alice_B",
   username: "alice_b",
-  locale: "fr",
+  locale: "fr", avatarVersion: null,
 };
 const guest: CurrentUser = { ...member, kind: "guest", displayName: "Zoé", username: null };
 
@@ -24,7 +24,7 @@ describe("SiteHeader", () => {
 
     expect(screen.getByRole("banner")).toHaveTextContent(dictionary.site.name);
     const other = locale === "fr" ? "en" : "fr";
-    expect(screen.getByRole("link", { name: dictionary.language.names[other] })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: `${other.toUpperCase()} — ${dictionary.language.names[other]}` })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: `${dictionary.theme.label}: ${dictionary.theme.system}` }),
     ).toBeInTheDocument();

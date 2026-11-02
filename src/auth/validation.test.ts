@@ -186,7 +186,7 @@ function codePoints(...values: Array<number | string>): string {
   return values.map((value) => (typeof value === "number" ? String.fromCodePoint(value) : value)).join("");
 }
 
-describe("validatePseudo: homoglyphs (AUTH-4)", () => {
+describe("validatePseudo: homoglyphs (AUTH-02, AUTH-03)", () => {
   it.each([
     ["Cyrillic а (U+0430) in place of a", codePoints(0x430, "lice")],
     ["fullwidth ａｌｉｃｅ (U+FF41…)", codePoints(0xff41, 0xff4c, 0xff49, 0xff43, 0xff45)],

@@ -2,11 +2,48 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_EXCLUDED_CHARACTERS,
   normalizeExcludedCharacters,
+  parseCreatePayload,
   parseJoinPayload,
   parseRoomConfigPatch,
 } from "./protocol";
 
+describe("parseCreatePayload", () => {
+  it("defaults to an empty config and runner role", () => {
+    expect(parseCreatePayload({})).toEqual({ config: {}, role: "runner" });
+    expect(parseCreatePayload({ config: { language: "en" } })).toEqual({
+      config: { language: "en" }, role: "runner",
+    });
+  });
+
+  it.each(["runner", "spectator"])("accepts the %s role and validates the config", (role) => {
+    expect(parseCreatePayload({ role })).toEqual({ config: {}, role });
+    expect(parseCreatePayload({ config: { excludedCharacters: "b a b" }, role })).toEqual({
+      config: { excludedCharacters: "ab" }, role,
+    });
+  });
+
+  it.each([
+    undefined, null, [], "runner",
+    { role: "host" }, { role: null },
+    { hostId: "x" },
+    { config: { language: "de" } }, { config: { hostId: "x" } }, { config: null },
+  ])("rejects an invalid create payload: %o", (payload) => {
+    expect(parseCreatePayload(payload)).toBeNull();
+  });
+});
+
 describe("parseRoomConfigPatch", () => {
+  it("validates bonuses strictly without accepting legacy or client-decided bonuses", () => {
+    for (const bonuses of [true, false]) {
+      expect(parseRoomConfigPatch({ bonuses })).toEqual({ bonuses });
+      expect(parseCreatePayload({ config: { bonuses } })).toEqual({ config: { bonuses }, role: "runner" });
+    }
+    for (const value of [{ bonuses: "true" }, { bonuses: null }, { bonuses: undefined },
+      { abilities: true }, { bonusEvents: [] }, { text: "triché" }]) {
+      expect(parseRoomConfigPatch(value)).toBeNull();
+    }
+  });
+
   it("accepts an empty or partial valid patch", () => {
     expect(parseRoomConfigPatch(undefined)).toEqual({});
     expect(parseRoomConfigPatch({ language: "en", timeLimitSeconds: null })).toEqual({
@@ -20,15 +57,31 @@ describe("parseRoomConfigPatch", () => {
       accents: false,
       excludedCharacters: "a a b",
       inputMode: "blocking",
-      botCount: 7,
-      botDifficulty: "hard",
+      bots: ["noob", "beginner", "intermediate", "expert", "impossible", "noob", "expert"],
     })).toEqual({
       accents: false,
       excludedCharacters: "ab",
       inputMode: "blocking",
-      botCount: 7,
-      botDifficulty: "hard",
+      bots: ["noob", "beginner", "intermediate", "expert", "impossible", "noob", "expert"],
     });
+  });
+
+  it("accepts the complexity and text options (CONF-05, CONF-06)", () => {
+    const patch = { complexity: "hard", punctuation: false, numbers: true, uppercase: false };
+    expect(parseRoomConfigPatch(patch)).toEqual(patch);
+    for (const complexity of ["easy", "medium", "hard"]) {
+      expect(parseRoomConfigPatch({ complexity })).toEqual({ complexity });
+    }
+  });
+
+  it.each([
+    { complexity: "expert" },
+    { complexity: undefined },
+    { punctuation: "yes" },
+    { numbers: 1 },
+    { uppercase: null },
+  ])("refuses invalid complexity or text options: %o", (patch) => {
+    expect(parseRoomConfigPatch(patch)).toBeNull();
   });
 
   it("refuses unknown keys, out-of-list values and non-objects", () => {
@@ -42,12 +95,11 @@ describe("parseRoomConfigPatch", () => {
   it.each([
     { accents: "true" },
     { inputMode: "fast" },
-    { botCount: 8 },
-    { botCount: -1 },
-    { botCount: 1.5 },
-    { botCount: "2" },
-    { botCount: Infinity },
-    { botDifficulty: "expert" },
+    { bots: Array(8).fill("noob") },
+    { bots: ["unknown"] },
+    { bots: "intermediate" },
+    { bots: [1] },
+    { bots: null },
     { excludedCharacters: "x".repeat(101) },
     { excludedCharacters: 1 },
   ])("refuses invalid new room settings: %o", (patch) => {
@@ -91,9 +143,14 @@ describe("normalizeExcludedCharacters", () => {
   });
 });
 
-describe("parseRoomConfigPatch botCount", () => {
-  it("turns -0 into 0", () => {
-    expect(Object.is(parseRoomConfigPatch({ botCount: -0 })?.botCount, 0)).toBe(true);
+describe("parseRoomConfigPatch bots", () => {
+  it.each([{ bots: Array(8).fill("noob") }, { bots: ["unknown"] }, { bots: undefined },
+    { botCount: 0 }, { botDifficulty: "normal" }, { bots: [], botCount: 0, botDifficulty: "normal" }])("rejects invalid or legacy bot settings %o", (patch) => {
+    expect(parseRoomConfigPatch(patch)).toBeNull();
+    expect(parseCreatePayload({ config: patch })).toBeNull();
+  });
+  it("accepts an empty list", () => {
+    expect(parseRoomConfigPatch({ bots: [] })).toEqual({ bots: [] });
   });
 });
 

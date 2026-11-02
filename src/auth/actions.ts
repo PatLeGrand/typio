@@ -2,7 +2,8 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
+import { z } from "zod";
+import { defaultLocale, locales, type Locale } from "@/i18n/config";
 import {
   createGuest,
   loginMember,
@@ -13,6 +14,7 @@ import {
 import { getSessionCookieName, sessionCookieOptions } from "./cookie";
 import { getAuthDeps } from "./deps";
 import { describeError } from "./errors";
+import { readForm } from "./formData";
 import { getClientIp } from "./rateLimit";
 import { destroySession, endSession, type SessionGrant } from "./session";
 import { AUTH_FIELDS, type AuthFormState } from "./types";
@@ -22,15 +24,28 @@ import { AUTH_FIELDS, type AuthFormState } from "./types";
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
 
-function parseLocale(value: FormDataEntryValue | null): Locale {
-  return isLocale(value) ? value : defaultLocale;
-}
+/** Langue de retour : `fr` ou `en`, sinon le français. */
+const localeField = z.enum(locales).catch(defaultLocale);
+const text = z.string().optional();
+/** Case à cocher : `"on"` quand cochée, absente sinon. */
+const checkbox = z.string().optional().transform((value) => value === "on");
 
-/** Les valeurs de formulaire peuvent être des fichiers : seul le texte est utilisable. */
-function readText(formData: FormData, name: string): string | undefined {
-  const value = formData.get(name);
-  return typeof value === "string" ? value : undefined;
-}
+const localeFormSchema = z.strictObject({ [AUTH_FIELDS.locale]: localeField });
+const registerFormSchema = z.strictObject({
+  [AUTH_FIELDS.locale]: localeField,
+  [AUTH_FIELDS.username]: text,
+  [AUTH_FIELDS.password]: text,
+  [AUTH_FIELDS.passwordConfirm]: text,
+  [AUTH_FIELDS.terms]: checkbox,
+  [AUTH_FIELDS.remember]: checkbox,
+});
+const loginFormSchema = z.strictObject({
+  [AUTH_FIELDS.locale]: localeField,
+  [AUTH_FIELDS.username]: text,
+  [AUTH_FIELDS.password]: text,
+  [AUTH_FIELDS.remember]: checkbox,
+});
+const guestFormSchema = z.strictObject({ [AUTH_FIELDS.locale]: localeField, [AUTH_FIELDS.pseudo]: text });
 
 /**
  * Remplace la session du navigateur : l'ancienne session (si le cookie en porte une) est
@@ -53,11 +68,9 @@ async function replaceSessionCookie(
  */
 async function runAuthAction(
   actionName: string,
-  formData: FormData,
+  locale: Locale,
   flow: (deps: AuthDeps, ip: string, locale: Locale) => Promise<AuthFlowResult>,
 ): Promise<AuthFormState> {
-  const locale = parseLocale(formData.get(AUTH_FIELDS.locale));
-
   let result: AuthFlowResult;
   try {
     const deps = getAuthDeps();
@@ -77,26 +90,28 @@ async function runAuthAction(
 }
 
 export async function register(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  return runAuthAction("register", formData, (deps, ip, locale) =>
+  const form = readForm(formData, registerFormSchema);
+  return runAuthAction("register", form.locale, (deps, ip, locale) =>
     registerMember(deps, {
       ip,
-      username: readText(formData, AUTH_FIELDS.username),
-      password: readText(formData, AUTH_FIELDS.password),
-      passwordConfirm: readText(formData, AUTH_FIELDS.passwordConfirm),
-      termsAccepted: formData.get(AUTH_FIELDS.terms) === "on",
-      remember: formData.get(AUTH_FIELDS.remember) === "on",
+      username: form.username,
+      password: form.password,
+      passwordConfirm: form.passwordConfirm,
+      termsAccepted: form.terms,
+      remember: form.remember,
       locale,
     }),
   );
 }
 
 export async function login(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  return runAuthAction("login", formData, (deps, ip, locale) =>
+  const form = readForm(formData, loginFormSchema);
+  return runAuthAction("login", form.locale, (deps, ip, locale) =>
     loginMember(deps, {
       ip,
-      username: readText(formData, AUTH_FIELDS.username),
-      password: readText(formData, AUTH_FIELDS.password),
-      remember: formData.get(AUTH_FIELDS.remember) === "on",
+      username: form.username,
+      password: form.password,
+      remember: form.remember,
       locale,
     }),
   );
@@ -106,14 +121,15 @@ export async function continueAsGuest(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  return runAuthAction("continueAsGuest", formData, (deps, ip, locale) =>
-    createGuest(deps, { ip, pseudo: readText(formData, AUTH_FIELDS.pseudo), locale }),
+  const form = readForm(formData, guestFormSchema);
+  return runAuthAction("continueAsGuest", form.locale, (deps, ip, locale) =>
+    createGuest(deps, { ip, pseudo: form.pseudo, locale }),
   );
 }
 
 /** Supprime la session en base et le cookie, puis retourne à l'accueil de la langue. */
 export async function logout(formData: FormData): Promise<void> {
-  const locale = parseLocale(formData.get(AUTH_FIELDS.locale));
+  const { locale } = readForm(formData, localeFormSchema);
 
   try {
     const cookieStore = await cookies();

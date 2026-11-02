@@ -1,7 +1,7 @@
 # Plan — salle créée et rejointe par code, en temps réel (checkpoint 1)
 
-- **Exigences :** SALLE-1, SALLE-4 (code, sans QR), SALLE-7, SALLE-10, SALLE-12, SALLE-13 et SALLE-15 (version simple), H-5, H-9, H-16
-- **Décisions déjà prises :** [ADR-001](architecture/adr-001-temps-reel.md) (service Socket.IO séparé), [machine à états](architecture/machine-a-etats.md) § 1 et § 2
+- **Exigences :** SALLE-01 (ancien SALLE-1), SALLE-02, JOIN-01 (ancien SALLE-4) (code, sans QR), SALLE-01, SALLE-05, COURSE-05 (ancien SALLE-7), CONF-12 (ancien SALLE-10), AUTH-03 (ancien SALLE-12), ancien SALLE-13 et SALLE-08 (ancien SALLE-15) (version simple), H-5, H-9, H-16
+- **Décisions déjà prises :** [ADR-001](ARCHITECTURE.md#adr-001) (service Socket.IO séparé), [machine à états](ARCHITECTURE.md#machine-a-etats) § 1 et § 2
 - **Branche de base :** `feat/realtime-room-protocol` (le protocole y est installé)
 - **But :** montrer au checkpoint qu'un membre crée une salle, qu'un autre client la rejoint par code, et que la liste des participants et la configuration changent chez tous **sans recharger**.
 
@@ -39,7 +39,7 @@ transport WebSocket passe, une connexion sans cookie reçoit `UNAUTHENTICATED`, 
 | S → C | `room:error` | `RoomErrorCode`, erreur non sollicitée | — |
 
 Un refus ne change jamais l'état et ne part qu'à l'émetteur (dans l'accusé). Les erreurs
-sont des **codes**, traduits côté client (UI-5).
+sont des **codes**, traduits côté client (I18N-01, I18N-02, I18N-03 (ancien UI-5)).
 
 ## Découpage
 
@@ -87,15 +87,15 @@ createRoomStore(): {
 
 Critères d'acceptation :
 
-- **AC-1 (SALLE-1)** Un membre crée une salle : code valide (`isRoomCode`), statut `waiting`, il est hôte et unique participant, rôle `runner`, config = `DEFAULT_ROOM_CONFIG` + patch.
-- **AC-2 (SALLE-12)** Un invité qui crée reçoit `GUEST_CANNOT_CREATE`.
-- **AC-3 (SALLE-4, SALLE-7)** Un autre utilisateur (membre ou invité) rejoint par code comme `runner` ou `spectator` ; il est ajouté en fin de liste avec `joinedAt = now`.
+- **AC-1 (SALLE-01 (ancien SALLE-1))** Un membre crée une salle : code valide (`isRoomCode`), statut `waiting`, il est hôte et unique participant, rôle `runner`, config = `DEFAULT_ROOM_CONFIG` + patch.
+- **AC-2 (AUTH-03 (ancien SALLE-12))** Un invité qui crée reçoit `GUEST_CANNOT_CREATE`.
+- **AC-3 (SALLE-02, JOIN-01 (ancien SALLE-4), SALLE-01, SALLE-05, COURSE-05 (ancien SALLE-7))** Un autre utilisateur (membre ou invité) rejoint par code comme `runner` ou `spectator` ; il est ajouté en fin de liste avec `joinedAt = now`.
 - **AC-4** Code inconnu → `ROOM_NOT_FOUND`.
 - **AC-5 (H-16)** Le 21ᵉ coureur → `ROOM_FULL` ; il peut encore entrer comme `spectator`.
 - **AC-6** Un utilisateur déjà dans une salle qui en crée ou rejoint une **autre** → `ALREADY_IN_ROOM`. Rejoindre **la même** salle est idempotent (rend l'état, utile au rechargement de page et au multi-onglet) et le repasse `connected: true`.
-- **AC-7 (SALLE-10)** L'hôte change la config : seules les clés du patch changent. Un non-hôte → `NOT_HOST`. Utilisateur absent de la salle → `NOT_IN_ROOM`.
-- **AC-8 (SALLE-15)** L'hôte part (`leave` ou `expire`) : le rôle passe au participant **connecté** le plus ancien (`joinedAt`), invités compris. Le dernier humain qui part supprime la salle et libère son code.
-- **AC-9 (SALLE-13)** `disconnect` ne retire personne et ne transfère pas le rôle d'hôte : seul `expire` le fait.
+- **AC-7 (CONF-12 (ancien SALLE-10))** L'hôte change la config : seules les clés du patch changent. Un non-hôte → `NOT_HOST`. Utilisateur absent de la salle → `NOT_IN_ROOM`.
+- **AC-8 (SALLE-08 (ancien SALLE-15))** L'hôte part (`leave` ou `expire`) : le rôle passe au participant **connecté** le plus ancien (`joinedAt`), invités compris. Le dernier humain qui part supprime la salle et libère son code.
+- **AC-9 (ancien SALLE-13)** `disconnect` ne retire personne et ne transfère pas le rôle d'hôte : seul `expire` le fait.
 - **AC-10** Le code d'une nouvelle salle n'est jamais celui d'une salle ouverte (`generateUniqueRoomCode` avec `isTaken`).
 - **AC-11** Les états rendus sont des copies : modifier un `RoomState` reçu ne change pas le registre.
 
@@ -123,7 +123,7 @@ Critères d'acceptation (tests d'intégration avec `startTestServer()` et deux �
 
 - **AC-1** Membre A crée → reçoit le code dans l'accusé **et** un `room:state`.
 - **AC-2** Invité B rejoint par ce code → A et B reçoivent tous deux un `room:state` à 2 participants.
-- **AC-3 (SALLE-10)** A change la langue → B reçoit le `room:state` mis à jour sans rien demander.
+- **AC-3 (CONF-12 (ancien SALLE-10))** A change la langue → B reçoit le `room:state` mis à jour sans rien demander.
 - **AC-4** B tente `room:updateConfig` → accusé `NOT_HOST`, aucune diffusion.
 - **AC-5** B tente `room:create` → `GUEST_CANNOT_CREATE`.
 - **AC-6** Charge utile invalide (`{ hostId: "x" }`, code `"abc"`) → `INVALID_PAYLOAD` / `INVALID_CODE`.
@@ -140,7 +140,7 @@ Critères d'acceptation (tests d'intégration avec `startTestServer()` et deux �
 
 - `src/realtime/client.ts` : client Socket.IO unique pour l'onglet (`"use client"`), `withCredentials: true`, URL = `process.env.NEXT_PUBLIC_REALTIME_URL` ou, absente, la même origine. Ajouter `NEXT_PUBLIC_REALTIME_URL=http://localhost:3001` à `.env.example` (développement : Next sur 3000, realtime sur 3001).
 - `src/realtime/useRoom.ts` : hook qui expose `state`, `error`, `create`, `join`, `updateConfig`, `leave` (promesses sur les accusés).
-- `src/app/[lang]/(site)/play/page.tsx` : deux blocs, « Créer une salle » (membres) et « Rejoindre avec un code » (champ de 6 caractères, choix coureur/spectateur). Un invité voit la création désactivée avec une phrase qui explique pourquoi (SALLE-12). Pas de session → redirection vers la connexion (voir `getCurrentUser` dans `src/auth/currentUser.ts`).
+- `src/app/[lang]/(site)/play/page.tsx` : deux blocs, « Créer une salle » (membres) et « Rejoindre avec un code » (champ de 6 caractères, choix coureur/spectateur). Un invité voit la création désactivée avec une phrase qui explique pourquoi (AUTH-03 (ancien SALLE-12)). Pas de session → redirection vers la connexion (voir `getCurrentUser` dans `src/auth/currentUser.ts`).
 - `src/app/[lang]/(site)/room/[code]/page.tsx` : salle d'attente. Le code en grand (copiable), la liste des participants (nom, coureur/spectateur, badge hôte, état déconnecté), la configuration : **éditable** (selects) pour l'hôte, **en lecture** pour les autres, mise à jour en direct. Bouton « Quitter ». Au chargement, émettre `room:join` avec le code de l'URL (idempotent, AC-6 du lot 1).
 - Activer les boutons « Créer une course » et « Rejoindre avec un code » de `src/components/home/HomeHero.tsx` et `HomeCallToAction.tsx` vers `/[lang]/play`.
 - Dictionnaires `src/i18n/dictionaries/fr.json` **et** `en.json`, ensemble : une section `room` avec libellés, valeurs de config et `room.errors.<CODE>` pour **chaque** code de `ROOM_ERROR_CODES`.
@@ -150,9 +150,9 @@ Critères d'acceptation (tests d'intégration avec `startTestServer()` et deux �
 Critères d'acceptation :
 
 - **AC-1** Avec deux navigateurs (un membre, un invité en fenêtre privée), le membre crée, l'invité entre le code : les deux voient la liste à 2 sans recharger.
-- **AC-2 (SALLE-10)** L'hôte change langue / mode / longueur / limite : l'autre écran se met à jour en moins d'une seconde.
+- **AC-2 (CONF-12 (ancien SALLE-10))** L'hôte change langue / mode / longueur / limite : l'autre écran se met à jour en moins d'une seconde.
 - **AC-3** Chaque refus affiche un message traduit, jamais un code brut.
-- **AC-4 (UI-3, UI-4, UI-5)** Pages vérifiées en clair et sombre, mobile et ordinateur, FR et EN. Aucun texte en dur. Composants de `src/components/` (`Button`, `TextField`, `Card`, `Badge`).
+- **AC-4 (DES-05, A11Y-01 (ancien UI-3), DES-06 (ancien UI-4), I18N-01, I18N-02, I18N-03 (ancien UI-5))** Pages vérifiées en clair et sombre, mobile et ordinateur, FR et EN. Aucun texte en dur. Composants de `src/components/` (`Button`, `TextField`, `Card`, `Badge`).
 - **AC-5** Accessibilité : champs étiquetés, la liste des participants annoncée (`aria-live="polite"`), navigation au clavier.
 - **AC-6** Tests Vitest des composants clés (formulaire de code : normalisation et validation ; vue hôte vs vue participant), avec un faux `useRoom`.
 
@@ -193,8 +193,8 @@ partant de `feat/realtime-room-protocol` et laisser le diff pour l'audit.
 
 ## Hors périmètre (après le checkpoint)
 
-Visibilité publique/privée (SALLE-2, 3, 5), QR (SALLE-4), retrait d'un participant
-(SALLE-9), transfert désigné (SALLE-14), bots, lancement et course (COURSE-*), limitation de
+Visibilité publique/privée (SALLE-03 (ancien SALLE-2), JOIN-02, SALLE-03 (ancien SALLE-3), SALLE-04 (ancien SALLE-5)), QR (ancien SALLE-4), retrait d'un participant
+(SALLE-07, SEC-01 (ancien SALLE-9)), transfert désigné (ancien SALLE-14), bots, lancement et course (COURSE-*), limitation de
 débit des événements, test de charge.
 
 ## Points pour l'audit de reprise

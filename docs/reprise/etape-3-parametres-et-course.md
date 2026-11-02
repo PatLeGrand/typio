@@ -2,8 +2,8 @@
 
 - **Branche :** `feat/race-entry` (tranche A), partie de `develop` (`3e133cc`)
 - **Remplace :** [étape 2](etape-2-course-solo.md), absorbée par la tranche A.
-- **Exigences :** CONFIG-1 à 7, TEXTE-1 à 3, COURSE-1 à 3, COURSE-5, COURSE-7, RES-1,
-  RES-2, BOT-2, BOT-3, SALLE-8, SALLE-12, UI-3 à 5, H-9, H-10, H-11
+- **Exigences :** CONF-03 (ancien CONFIG-1), CONF-02 (ancien CONFIG-2), CONF-06 (ancien CONFIG-3), CONF-04 (ancien CONFIG-4), CONF-07 (ancien CONFIG-5), CONF-01 (ancien CONFIG-6), CONF-08 (ancien CONFIG-7), CONF-03 (ancien TEXTE-1), CONF-02, CONF-04, CONF-06, CONF-07 (ancien TEXTE-2), COURSE-03 (ancien TEXTE-3), COURSE-03 (ancien COURSE-1), COURSE-05 (ancien COURSE-2), COURSE-09 (ancien COURSE-3), COURSE-07 (ancien COURSE-5), COURSE-04 (ancien COURSE-7), RES-01 (ancien RES-1),
+  RES-02 (ancien RES-2), BOT-02, BOT-03 (ancien BOT-2), COURSE-02 (ancien BOT-3), COURSE-02 (ancien SALLE-8), AUTH-03 (ancien SALLE-12), DES-05, A11Y-01 (ancien UI-3), DES-06 (ancien UI-4), I18N-01, I18N-02, I18N-03 (ancien UI-5), H-9, H-10, H-11
 - **Besoin (Patrick, 9 octobre) :** « Créer une course » doit ouvrir la page de
   paramètres de Gemini (`/race/settings`), qui plaît. De là, on lance une course seul
   contre des bots, ou on invite des amis dans une salle, puis l'hôte lance la course
@@ -42,7 +42,7 @@ B et C seront détaillées quand A sera fusionnée.
   `(site)`, sous `src/app/[lang]/(site)/race/settings/`, pour qu'elle ait l'en-tête, la
   langue, le thème et le profil. Le groupe de route ne change pas l'URL. L'écran de
   course `/[lang]/race` reste plein écran, sans en-tête.
-- **A-D3 — Ouverte aux invités.** Un invité peut s'entraîner seul contre des bots (BOT-3).
+- **A-D3 — Ouverte aux invités.** Un invité peut s'entraîner seul contre des bots (COURSE-02 (ancien BOT-3)).
   Pas de connexion exigée pour la course solo, comme aujourd'hui.
 - **A-D4 — Limite de temps alignée sur le protocole.** Le choix devient la liste
   `TIME_LIMITS_SECONDS` de `protocol.ts` : aucune (5 min par défaut, H-9), 1, 2, 3, 5 ou
@@ -52,7 +52,7 @@ B et C seront détaillées quand A sera fusionnée.
   - Une ancienne URL `?config=` avec une durée hors liste est refusée par
     `parseRaceSettings`, et la page de course renvoie alors aux paramètres, comme
     aujourd'hui pour une config invalide.
-- **A-D5 — Textes (TEXTE-1, TEXTE-2, H-10, H-11).** Un module pur
+- **A-D5 — Textes (CONF-03 (ancien TEXTE-1), CONF-02, CONF-04, CONF-06, CONF-07 (ancien TEXTE-2), H-10, H-11).** Un module pur
   `src/race/textGenerator.ts` remplace les phrases fixes : il **tire au hasard**
   (`random` injecté) dans une banque de phrases du domaine public par langue (au moins 30
   phrases par langue), et dans une liste de mots fréquents par langue (au moins 200 mots)
@@ -75,22 +75,22 @@ B et C seront détaillées quand A sera fusionnée.
     limite de temps.
   - L'horloge vient d'un horodatage de départ (`performance.now()`), jamais d'un cumul de
     ticks.
-- **A-D7 — Fin de course et résultats (COURSE-3, COURSE-5, RES-1, RES-2).**
+- **A-D7 — Fin de course et résultats (COURSE-09 (ancien COURSE-3), COURSE-07 (ancien COURSE-5), RES-01 (ancien RES-1), RES-02 (ancien RES-2)).**
   - La course se termine quand le texte est fini, quand la limite est atteinte, ou sur
     « Abandonner ».
   - L'écran de résultats montre le podium (toi et les bots), puis MPM, précision, temps et
     rang pour chacun ; un abandon est classé en dernier, marqué « Abandon ».
   - Actions : « Rejouer », qui relance avec les mêmes réglages et un nouveau texte, et
     « Modifier les réglages », qui ramène à la page de paramètres.
-- **A-D8 — Bots (BOT-2).** Vitesse cible par difficulté : facile 25 MPM, normale 40 MPM,
+- **A-D8 — Bots (BOT-02, BOT-03 (ancien BOT-2)).** Vitesse cible par difficulté : facile 25 MPM, normale 40 MPM,
   difficile 60 MPM. Variation de ±20 % par mot, pauses courtes au hasard et erreurs
   corrigées (le bot recule). Noms tirés d'une liste du dictionnaire FR/EN. Logique pure
   et testable dans `src/race/bots.ts`, avec horloge et hasard injectés.
-- **A-D9 — Interface (UI-3, UI-5).**
+- **A-D9 — Interface (DES-05, A11Y-01 (ancien UI-3), I18N-01, I18N-02, I18N-03 (ancien UI-5)).**
   - Aucun texte en dur, notamment les ordinaux et « Arrivée : … px ».
   - Le temps restant est visible, et pas seulement en `sr-only`.
   - La scène Pixi a des couleurs pour le thème sombre.
-  - Le copier-coller reste bloqué (COURSE-7).
+  - Le copier-coller reste bloqué (COURSE-04 (ancien COURSE-7)).
 
 ## Tranche A — lots
 
@@ -123,18 +123,18 @@ A1 et A2 partent en parallèle. A3 attend A1.
   bloqué.
 - **AC-9** test, lint (0 erreur, 0 avertissement), build et `build:realtime` passent.
 
-## Tranche B — la salle porte tous les réglages (CONFIG-1 à 8)
+## Tranche B — la salle porte tous les réglages (CONF-03 (ancien CONFIG-1), CONF-02 (ancien CONFIG-2), CONF-06 (ancien CONFIG-3), CONF-04 (ancien CONFIG-4), CONF-07 (ancien CONFIG-5), CONF-01 (ancien CONFIG-6), CONF-08 (ancien CONFIG-7), CONF-10, BOT-01 (ancien CONFIG-8))
 
 - **Branche :** `feat/room-settings`, partie de `develop` une fois la tranche A fusionnée.
-- **Exigences :** CONFIG-1 à 8, SALLE-1, SALLE-10, SALLE-12, H-3, H-16, UI-3 à 5.
-- **Hors périmètre :** lancement de la course multijoueur (tranche C), capacités (CONFIG-9).
+- **Exigences :** CONF-03 (ancien CONFIG-1), CONF-02 (ancien CONFIG-2), CONF-06 (ancien CONFIG-3), CONF-04 (ancien CONFIG-4), CONF-07 (ancien CONFIG-5), CONF-01 (ancien CONFIG-6), CONF-08 (ancien CONFIG-7), CONF-10, BOT-01 (ancien CONFIG-8), SALLE-01 (ancien SALLE-1), CONF-12 (ancien SALLE-10), AUTH-03 (ancien SALLE-12), H-3, H-16, DES-05, A11Y-01 (ancien UI-3), DES-06 (ancien UI-4), I18N-01, I18N-02, I18N-03 (ancien UI-5).
+- **Hors périmètre :** lancement de la course multijoueur (tranche C), capacités (CONF-09 (ancien CONFIG-9)).
 
 ### Décisions prises
 
 - **B-D1 — Protocole étendu (orchestrateur).** `RoomConfig` gagne `accents: boolean`,
   `excludedCharacters: string`, `inputMode: "free" | "blocking"`, `botCount: number`
   (entier de 0 à 7) et `botDifficulty: "easy" | "normal" | "hard"`. `abilities` n'entre
-  pas dans le protocole tant que CONFIG-9 n'existe pas.
+  pas dans le protocole tant que CONF-09 (ancien CONFIG-9) n'existe pas.
   - `DEFAULT_ROOM_CONFIG` : comme la course solo, sauf `botCount: 0` (on invite des amis).
   - `parseRoomConfigPatch` valide chaque nouvelle clé et refuse toute valeur hors liste.
   - `excludedCharacters` est **normalisé par le serveur** : caractères uniques, pris dans
@@ -151,7 +151,7 @@ A1 et A2 partent en parallèle. A3 attend A1.
 - **B-D4 — « Inviter des amis » depuis les paramètres.** La page `/race/settings` gagne
   un bouton secondaire « Inviter des amis » à côté de « Lancer la course ». Pour un membre,
   il crée la salle avec les réglages choisis (`room:create`), puis ouvre `/room/[code]`.
-  Pour un invité, il est désactivé et la raison est affichée (SALLE-12). Sur `/play`, le
+  Pour un invité, il est désactivé et la raison est affichée (AUTH-03 (ancien SALLE-12)). Sur `/play`, le
   bloc « Créer une salle » devient un lien vers `/race/settings` ; « Rejoindre avec un
   code » ne change pas.
 - **B-D5 — La salle d'attente reprend les composants de la page.** Les sections de
@@ -176,7 +176,7 @@ WebSocket), Gemini `review`, `ui` et `visual`.
 - **AC-B1** Un membre règle la course, clique « Inviter des amis » et arrive dans une salle
   qui porte exactement ces réglages.
 - **AC-B2** Quand l'hôte change un réglage, un autre participant le voit sans recharger,
-  pour chacun des huit réglages CONFIG-1 à 8.
+  pour chacun des huit réglages CONF-03 (ancien CONFIG-1), CONF-02 (ancien CONFIG-2), CONF-06 (ancien CONFIG-3), CONF-04 (ancien CONFIG-4), CONF-07 (ancien CONFIG-5), CONF-01 (ancien CONFIG-6), CONF-08 (ancien CONFIG-7), CONF-10, BOT-01 (ancien CONFIG-8).
 - **AC-B3** Un client modifié qui envoie une valeur hors liste, une clé inconnue,
   `botCount: 8` ou 101 caractères exclus reçoit `INVALID_PAYLOAD`, et l'état ne change pas.
 - **AC-B4** Avec 18 coureurs humains, passer à 3 bots est refusé (`ROOM_FULL`) ; avec

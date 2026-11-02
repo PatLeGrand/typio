@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   // en entier (plusieurs centaines de Mo) vers un VPS qui n'a que 1,9 Go de
   // RAM et 33 Go de disque partagés avec huit autres conteneurs.
   output: "standalone",
+  experimental: {
+    serverActions: { bodySizeLimit: "2100kb" },
+  },
 };
 
 export default nextConfig;

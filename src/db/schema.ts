@@ -1,8 +1,15 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
+  customType,
   index,
+  integer,
+  jsonb,
+  real,
+  smallint,
   pgTable,
+  pgSequence,
   primaryKey,
   text,
   timestamp,
@@ -10,10 +17,16 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+import type { RoomConfig } from "@/realtime/protocol";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+// Une version n'est jamais réutilisée, même après retrait puis nouveau téléversement.
+export const avatarVersionSequence = pgSequence("avatar_version_seq", { maxValue: 2_147_483_647 });
+
 /**
- * Comptes : membres (AUTH-1 à AUTH-3) et invités (AUTH-4, H-2) dans la même table.
+ * Comptes : membres (AUTH-01, TEST-03) et invités (AUTH-02, AUTH-03, H-2) dans la même table.
  * Un invité a une ligne pour pouvoir ouvrir une session et figurer sur un podium ;
- * `expires_at` borne sa durée de vie. Voir docs/architecture/modele-de-donnees.md.
+ * `expires_at` borne sa durée de vie. Voir docs/ARCHITECTURE.md (Modèle de données).
  *
  * Aucune extension PostgreSQL (base partagée) : `uuid` vient de `gen_random_uuid()`
  * natif, et l'unicité sans casse du pseudo passe par un index sur `lower(username)`.
@@ -25,6 +38,7 @@ export const users = pgTable(
     kind: text("kind").notNull(),
     username: text("username"),
     displayName: text("display_name").notNull(),
+    avatarVersion: integer("avatar_version"),
     passwordHash: text("password_hash"),
     keyboardLayout: text("keyboard_layout").notNull().default("qwerty"),
     locale: text("locale").notNull().default("fr"),
@@ -46,7 +60,7 @@ export const users = pgTable(
     check("users_username_length_check", sql`char_length(${table.username}) <= 20`),
     check("users_display_name_length_check", sql`char_length(${table.displayName}) <= 40`),
     // Un membre a toujours un identifiant ; son mot de passe est facultatif, car un compte
-    // créé par GitHub ou Discord (AUTH-2, AUTH-3) n'en a pas. Un invité n'a ni l'un ni l'autre.
+    // créé par GitHub ou Discord (AUTH-01) n'en a pas. Un invité n'a ni l'un ni l'autre.
     check(
       "users_kind_columns_check",
       sql`(${table.kind} = 'member' and ${table.username} is not null)
@@ -54,6 +68,13 @@ export const users = pgTable(
     ),
   ],
 );
+
+/** Seul le WebP traité est conservé (AUTH-04, SEC-02, H-38). */
+export const userAvatars = pgTable("user_avatars", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  image: bytea("image").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * Sessions maison (ADR-001) : l'identifiant est le SHA-256 hexadécimal du jeton du
@@ -77,7 +98,7 @@ export const sessions = pgTable(
 );
 
 /**
- * Comptes GitHub et Discord reliés à un membre (AUTH-2, AUTH-3). On ne garde QUE le
+ * Comptes GitHub et Discord reliés à un membre (AUTH-01). On ne garde QUE le
  * fournisseur et l'identifiant numérique stable du compte chez lui : ni login, ni e-mail,
  * ni avatar, ni jeton. La clé (provider, provider_account_id) empêche qu'un même compte
  * externe ouvre deux comptes Typio.
@@ -101,3 +122,39 @@ export const oauthAccounts = pgTable(
     check("oauth_accounts_provider_check", sql`${table.provider} in ('github', 'discord')`),
   ],
 );
+
+/** Courses terminées (RES-05) : une seule écriture en fin de course (PERF-02). */
+export const races = pgTable("races", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  roomCode: text("room_code").notNull(),
+  hostId: uuid("host_id").references(() => users.id, { onDelete: "set null" }),
+  config: jsonb("config").$type<RoomConfig>().notNull(),
+  text: text("text").notNull(),
+  participantCount: smallint("participant_count").notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  endedAt: timestamp("ended_at", { withTimezone: true }).notNull(),
+});
+
+/** Résultats des membres seulement (H-24) : ni pseudo invité, ni saisie brute, ni IP. */
+export const raceResults = pgTable("race_results", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  raceId: uuid("race_id").notNull().references(() => races.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rank: smallint("rank").notNull(),
+  status: text("status").$type<"finished" | "unfinished" | "abandoned">().notNull(),
+  wpm: real("wpm").notNull(),
+  personalBest: boolean("personal_best").notNull().default(false),
+  grossWpm: real("gross_wpm").notNull(),
+  accuracy: real("accuracy").notNull(),
+  errors: integer("errors").notNull(),
+  durationMs: integer("duration_ms").notNull(),
+  progress: real("progress").notNull(),
+  missedKeys: jsonb("missed_keys").$type<Record<string, number>>().notNull().default({}),
+  wpmSeries: jsonb("wpm_series").$type<number[]>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("race_results_user_created_at_idx").on(table.userId, table.createdAt.desc()),
+  uniqueIndex("race_results_race_user_idx").on(table.raceId, table.userId),
+  check("race_results_status_check", sql`${table.status} in ('finished', 'unfinished', 'abandoned')`),
+  check("race_results_progress_check", sql`${table.progress} >= 0 and ${table.progress} <= 1`),
+]);

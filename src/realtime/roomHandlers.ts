@@ -11,11 +11,17 @@ import type { Socket } from "socket.io";
 import type { RateLimiter } from "@/auth/rateLimit";
 import type { GraceTimers } from "./graceTimers";
 import {
+  parseCreatePayload,
+  parseRaceCommand,
+  parseRaceInput,
   parseJoinPayload,
+  parseJoinInvitePayload,
+  parseKickPayload,
   parseRoomConfigPatch,
   RECONNECT_GRACE_MS,
   type Ack,
   type ClientToServerEvents,
+  type LobbyRoom,
   type RoomState,
   type ServerToClientEvents,
   type SocketData,
@@ -42,7 +48,16 @@ export interface RoomHandlerDeps {
   sockets: UserSockets;
   /** Échecs de `room:join` par utilisateur (énumération des codes de salle). */
   joinFailures: RateLimiter;
+  raceInputs: RateLimiter;
+  syncRace: (code: string) => void;
+  /** Liste des salles publiques (JOIN-02). */
+  lobbyList: () => LobbyRoom[];
+  /** Annonce un changement possible de la liste : la diffusion aux abonnés est regroupée. */
+  lobbyChanged: (invalidate?: boolean) => void;
 }
+
+/** Room Socket.IO des abonnés à l'explorateur ; ne peut pas être un code de salle (6 caractères). */
+export const LOBBY_ROOM = "lobby";
 
 type AckFailure = Extract<Ack, { ok: false }>;
 
@@ -88,8 +103,32 @@ export function registerRoomHandlers(
     }
   };
 
+  /** Liste des liens, à l'hôte seulement et à tous ses onglets (SALLE-04, SALLE-08) ; jamais dans `room:state`. */
+  const sendInvites = (code: string, hostId: string): void => {
+    const invites = store.invites(hostId, code);
+    if (!invites) return;
+    for (const s of sockets.of(hostId)) s.emit("room:invites", invites);
+  };
+
   const broadcast = (state: RoomState): void => {
     io.to(state.code).emit("room:state", state);
+    deps.syncRace(state.code);
+    deps.lobbyChanged();
+  };
+
+  const resumeRace = (code: string): void => {
+    const snapshot = store.snapshot(code);
+    deps.syncRace(code);
+    if (!snapshot) return;
+    for (const s of userSockets()) {
+      s.emit("race:state", snapshot);
+      const self = store.self(code, user.id);
+      if (self) s.emit("race:self", self);
+      if (snapshot.status === "results") {
+        const results = store.results(code);
+        if (results) s.emit("race:results", results);
+      }
+    }
   };
 
   /**
@@ -101,8 +140,11 @@ export function registerRoomHandlers(
   const publishDeparture = (code: string, state: RoomState): void => {
     if (state.status === "closed") {
       for (const s of userSockets()) s.emit("room:state", state);
+      deps.syncRace(code);
+      deps.lobbyChanged();
     } else {
       broadcast(state);
+      sendInvites(code, state.hostId); // le départ était peut-être celui de l'hôte (SALLE-08)
     }
     detachUser(code);
   };
@@ -133,25 +175,29 @@ export function registerRoomHandlers(
   }
 
   // D2 : un socket qui se connecte reprend la place de son utilisateur, sans que le client
-  // ait à le demander (rechargement, coupure réseau, nouvel onglet : SALLE-13).
+  // ait à le demander (rechargement, coupure réseau, nouvel onglet : ancien SALLE-13).
   try {
     const code = store.roomOf(user.id);
     if (code) {
       attachUser(code);
       timers.cancel(user.id);
-      const res = store.reconnect(user.id, code);
-      if (res.ok) broadcast(res.state);
+      const res = store.reconnect(user.id, code, user.avatarVersion);
+      if (res.ok) {
+        broadcast(res.state);
+        resumeRace(code);
+        if (res.state.hostId === user.id) sendInvites(code, user.id);
+      }
     }
   } catch (e) {
     console.error("[realtime] reattach failed:", describeError(e));
   }
 
-  socket.on("room:create", (configInput, ack) => {
+  socket.on("room:create", (payloadInput, ack) => {
     respond(ack, () => {
-      const patch = parseRoomConfigPatch(configInput);
-      if (!patch) return failure("INVALID_PAYLOAD");
+      const payload = parseCreatePayload(payloadInput);
+      if (!payload) return failure("INVALID_PAYLOAD");
 
-      const res = store.create(user, patch, now().getTime());
+      const res = store.create(user, payload.config, payload.role, now().getTime());
       if (!res.ok) return failure(res.error);
 
       const { state } = res;
@@ -176,10 +222,11 @@ export function registerRoomHandlers(
 
       const res = store.join(user, payload.code, payload.role, now().getTime());
       if (!res.ok) {
-        // Seul `ROOM_NOT_FOUND` compte comme échec, avec `INVALID_CODE`. `ROOM_FULL` et
-        // `ALREADY_IN_ROOM` ne comptent pas, par choix : ils ne font pas oracle. Le premier
-        // exige déjà un code exact ; le second ne consulte pas le registre des salles.
-        if (res.error === "ROOM_NOT_FOUND") joinFailures.record(user.id);
+        // `ROOM_NOT_FOUND` compte comme échec, avec `INVALID_CODE`, ainsi qu'`INVITE_REQUIRED` qui
+        // confirme qu'un code existe (SALLE-03, SALLE-10). `ROOM_FULL` et `ALREADY_IN_ROOM` ne
+        // comptent pas, par choix : ils ne font pas oracle. Le premier exige déjà un code exact ;
+        // le second ne consulte pas le registre des salles.
+        if (res.error === "ROOM_NOT_FOUND" || res.error === "INVITE_REQUIRED") joinFailures.record(user.id);
         return failure(res.error);
       }
 
@@ -188,8 +235,136 @@ export function registerRoomHandlers(
       timers.cancel(user.id);
       return {
         reply: { ok: true, data: { code: state.code } },
-        publish: () => broadcast(state),
+        publish: () => {
+          broadcast(state);
+          resumeRace(state.code);
+        },
       };
+    });
+  });
+
+  // SALLE-04 : mêmes limites d'échecs que `room:join`; le jeton, jamais journalisé, n'est que comparé par hachage.
+  socket.on("room:joinInvite", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (joinFailures.isLimited(user.id)) return failure("INVITE_INVALID");
+
+      const payload = parseJoinInvitePayload(payloadInput);
+      if (!payload) {
+        joinFailures.record(user.id);
+        return failure("INVALID_PAYLOAD");
+      }
+
+      const res = store.joinInvite(user, payload.token, payload.role, socket.data.ip, now().getTime());
+      if (!res.ok) {
+        if (res.error === "INVITE_INVALID") joinFailures.record(user.id);
+        return failure(res.error);
+      }
+
+      const { state } = res;
+      attachUser(state.code);
+      timers.cancel(user.id);
+      return {
+        reply: { ok: true, data: { code: state.code } },
+        publish: () => {
+          broadcast(state);
+          resumeRace(state.code);
+          sendInvites(state.code, state.hostId); // le statut du lien vient de changer
+        },
+      };
+    });
+  });
+
+  // SALLE-04 : hôte seulement ; le jeton en clair ne repasse qu'ici, dans l'accusé de l'hôte.
+  socket.on("room:createInvite", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
+      const code = store.roomOf(user.id);
+      if (!code) return failure("NOT_IN_ROOM");
+
+      const res = store.createInvite(user.id, code);
+      if (!res.ok) return failure(res.error);
+      return {
+        reply: { ok: true, data: { id: res.id, token: res.token } },
+        publish: () => sendInvites(code, user.id),
+      };
+    });
+  });
+
+  // SALLE-07 : l'expulsé reçoit `room:kicked`, ses onglets quittent la room Socket.IO, la salle est mise à jour.
+  socket.on("room:kick", (payloadInput, ack) => {
+    respond(ack, () => {
+      const payload = parseKickPayload(payloadInput);
+      if (!payload) return failure("INVALID_PAYLOAD");
+      const code = store.roomOf(user.id);
+      if (!code) return failure("NOT_IN_ROOM");
+
+      const res = store.kick(user.id, code, payload.userId);
+      if (!res.ok) return failure(res.error);
+
+      timers.cancel(payload.userId);
+      const { state } = res;
+      return {
+        reply: { ok: true },
+        publish: () => {
+          for (const s of sockets.of(payload.userId)) {
+            s.emit("room:kicked");
+            void s.leave(code);
+            s.data.roomCode = null;
+          }
+          broadcast(state);
+          sendInvites(code, user.id); // le lien de l'expulsé passe à « révoqué »
+        },
+      };
+    });
+  });
+
+  // JOIN-03 : même limite d'échecs et même règle « une seule salle » que `room:join` (SALLE-06).
+  socket.on("room:quickJoin", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (joinFailures.isLimited(user.id)) return failure("INVALID_CODE");
+      if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
+      if (store.roomOf(user.id)) return failure("ALREADY_IN_ROOM");
+
+      const code = store.quickJoinCode(user.id);
+      if (code === null) return failure("NO_ROOM_AVAILABLE");
+
+      const res = store.join(user, code, "runner", now().getTime());
+      if (!res.ok) return failure(res.error);
+
+      const { state } = res;
+      attachUser(state.code);
+      timers.cancel(user.id);
+      return {
+        reply: { ok: true, data: { code: state.code } },
+        publish: () => {
+          broadcast(state);
+          resumeRace(state.code);
+        },
+      };
+    });
+  });
+
+  // JOIN-02 : seules les salles publiques sont envoyées, à l'abonnement puis à chaque changement.
+  socket.on("lobby:subscribe", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
+      void socket.join(LOBBY_ROOM);
+      return {
+        reply: { ok: true },
+        publish: () => {
+          socket.emit("lobby:rooms", deps.lobbyList());
+          // Les autres abonnés, déjà à jour, reçoivent la liste en double : acceptable, regroupé.
+          deps.lobbyChanged(true);
+        },
+      };
+    });
+  });
+
+  socket.on("lobby:unsubscribe", (payloadInput, ack) => {
+    respond(ack, () => {
+      if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
+      void socket.leave(LOBBY_ROOM);
+      return { reply: { ok: true } };
     });
   });
 
@@ -207,6 +382,56 @@ export function registerRoomHandlers(
       const { state } = res;
       return { reply: { ok: true }, publish: () => broadcast(state) };
     });
+  });
+
+  for (const event of ["race:start", "race:abandon", "room:restart", "room:close"] as const) {
+    socket.on(event, (payload, ack) => {
+      respond(ack, () => {
+        if (!parseRaceCommand(payload)) return failure("INVALID_PAYLOAD");
+        const code = store.roomOf(user.id);
+        if (!code) return failure("NOT_IN_ROOM");
+        const res = event === "race:start" ? store.start(user.id, code)
+          : event === "race:abandon" ? store.abandon(user.id, code)
+          : store.finish(user.id, code, event === "room:close");
+        if (!res.ok) return failure(res.error);
+        return {
+          reply: { ok: true },
+          publish: () => {
+            broadcast(res.state);
+            if (res.state.status === "closed") {
+              for (const p of res.state.participants) {
+                timers.cancel(p.userId);
+                for (const s of sockets.of(p.userId)) {
+                  void s.leave(code);
+                  s.data.roomCode = null;
+                }
+              }
+            }
+          },
+        };
+      });
+    });
+  }
+
+  socket.on("race:input", (payloadInput) => {
+    if (!deps.raceInputs.consume(user.id)) return;
+    const payload = parseRaceInput(payloadInput);
+    if (!payload) {
+      socket.emit("room:error", "INPUT_REJECTED");
+      return;
+    }
+    const code = store.roomOf(user.id);
+    if (!code) {
+      socket.emit("room:error", "RACE_NOT_RUNNING");
+      return;
+    }
+    const res = store.input(user.id, code, payload.ops);
+    if (!res.ok) {
+      socket.emit("room:error", res.error);
+      const self = store.self(code, user.id);
+      if (self) socket.emit("race:self", self);
+    }
+    deps.syncRace(code);
   });
 
   socket.on("room:leave", (ack) => {
@@ -231,7 +456,7 @@ export function registerRoomHandlers(
       const code = store.roomOf(user.id);
       if (!code) return;
 
-      // Un autre onglet ouvert : l'utilisateur reste connecté (SALLE-13).
+      // Un autre onglet ouvert : l'utilisateur reste connecté (ancien SALLE-13).
       if (userSockets().some((s) => s.id !== socket.id)) return;
 
       const res = store.disconnect(user.id, code);
