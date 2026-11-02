@@ -303,6 +303,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
     expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
+    expect(screen.getByRole("region", { name: labels.results.tableTitle })).toHaveAttribute("tabindex", "0");
     expect(screen.getByRole("heading", { name: labels.results.podium })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: labels.results.replay })).toBeInTheDocument();
     expect(screen.getByText(labels.results.statuses.abandoned)).toBeInTheDocument();

@@ -56,7 +56,7 @@ export function RaceResults({ locale, labels, rows, headline, playerAvatar, sett
       <WpmChart rows={displayRows} locale={locale} labels={copy} highlightId={player?.id} />
       {player && <MissedKeysHeatmap missedKeys={player.missedKeys ?? {}} locale={locale} labels={copy} />}
 
-      <div className="overflow-x-auto rounded-card border border-border bg-surface">
+      <div tabIndex={0} role="region" aria-label={copy.tableTitle} className="overflow-x-auto rounded-card border border-border bg-surface">
         <table className="w-full min-w-[34rem] text-left text-sm">
           <caption className="sr-only">{copy.tableTitle}</caption>
           <thead className="border-b border-border text-xs text-muted">

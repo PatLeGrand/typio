@@ -1,6 +1,7 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { io, type Socket } from "socket.io-client";
 import fr from "../src/i18n/dictionaries/fr.json";
+import { DEFAULT_RACE_SETTINGS, serializeRaceSettings } from "../src/race/config";
 import type { ClientToServerEvents, ServerToClientEvents } from "../src/realtime/protocol";
 import { authFiles, createCredentials } from "./auth.helpers";
 
@@ -15,12 +16,47 @@ type LoadClient = {
 
 test.use({ storageState: authFiles.memberA });
 
+async function sampleFrames(page: Page, durationMs: number) {
+  return page.evaluate((durationMs) => new Promise<number[]>((resolve) => {
+    const intervals: number[] = [];
+    let first: number | undefined;
+    let previous: number | undefined;
+    function sample(now: number) {
+      first ??= now;
+      if (previous !== undefined) intervals.push(now - previous);
+      previous = now;
+      if (now - first >= durationMs) resolve(intervals);
+      else requestAnimationFrame(sample);
+    }
+    requestAnimationFrame(sample);
+  }), durationMs);
+}
+
 test("la piste reste fluide avec 30 participants réels (PERF-03, PERF-02)", async ({ page, browser, baseURL }) => {
   test.setTimeout(180_000);
   const clients: LoadClient[] = [];
   const errors: string[] = [];
   let timer: ReturnType<typeof setInterval> | undefined;
   try {
+    // Référence à trois coureurs dans le même contexte membre A, avant la salle.
+    const solo = await page.context().newPage();
+    let fpsSolo: number;
+    try {
+      await solo.goto(`/fr/race?${serializeRaceSettings(DEFAULT_RACE_SETTINGS)}`);
+      await expect(solo.getByRole("heading", { name: fr.raceScreen.headline.racing, exact: true }))
+        .toBeVisible({ timeout: 10_000 });
+      const soloRunners = solo.getByRole("complementary").filter({
+        has: solo.getByRole("heading", { name: fr.raceScreen.leaderboard, exact: true }),
+      }).getByRole("listitem");
+      await expect(soloRunners).toHaveCount(3);
+      await expect(solo.locator("main canvas")).toBeVisible();
+      await solo.locator("main canvas").scrollIntoViewIfNeeded();
+      const frames = await sampleFrames(solo, 5_000);
+      fpsSolo = frames.length * 1000 / frames.reduce((sum, interval) => sum + interval, 0);
+    } finally {
+      await solo.close();
+    }
+
     // Même parcours et mêmes sélecteurs que room-race.spec.ts.
     await page.goto("/fr/race/settings");
     const settings = fr.raceSettings;
@@ -122,26 +158,17 @@ test("la piste reste fluide avec 30 participants réels (PERF-03, PERF-02)", asy
       const debug = gl?.getExtension("WEBGL_debug_renderer_info");
       return gl && debug ? String(gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)) : "unknown";
     });
-    const minimumFps = /SwiftShader|llvmpipe/i.test(renderer) ? 20 : 50;
-    const frames = await page.evaluate(() => new Promise<number[]>((resolve) => {
-      const intervals: number[] = [];
-      let first: number | undefined;
-      let previous: number | undefined;
-      function sample(now: number) {
-        first ??= now;
-        if (previous !== undefined) intervals.push(now - previous);
-        previous = now;
-        if (now - first >= 10_000) resolve(intervals);
-        else requestAnimationFrame(sample);
-      }
-      requestAnimationFrame(sample);
-    }));
+    const softwareRenderer = /SwiftShader|llvmpipe/i.test(renderer);
+    // Ratio local : 0,56 avant l'optimisation, 0,73 à 0,75 après.
+    const minimumFps = softwareRenderer ? 0.6 * fpsSolo : 50;
+    const frames = await sampleFrames(page, 10_000);
     const sorted = [...frames].sort((a, b) => a - b);
     const fps = frames.length * 1000 / frames.reduce((sum, interval) => sum + interval, 0);
     const middle = Math.floor(sorted.length / 2);
     const median = sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
     const p95 = sorted[Math.ceil(sorted.length * 0.95) - 1];
-    const measurement = `[PERF-03] renderer=${renderer}, seuil=${minimumFps} FPS, 30 participants, ${frames.length} frames : FPS moyen=${fps.toFixed(1)}, médiane=${median.toFixed(2)} ms, p95=${p95.toFixed(2)} ms`;
+    const ratio = fps / fpsSolo;
+    const measurement = `[PERF-03] renderer=${renderer}, FPS solo=${fpsSolo.toFixed(1)}, FPS à 30=${fps.toFixed(1)}, ratio=${ratio.toFixed(3)}, seuil=${minimumFps.toFixed(1)} FPS (${softwareRenderer ? "0,6 × FPS solo" : "GPU matériel : 50 FPS"}), ${frames.length} frames : médiane=${median.toFixed(2)} ms, p95=${p95.toFixed(2)} ms`;
     console.log(measurement);
     test.info().annotations.push({ type: "PERF-03", description: measurement });
     await expect(canvas).toBeVisible();
