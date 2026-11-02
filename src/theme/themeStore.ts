@@ -65,6 +65,9 @@ export function setThemePreference(preference: ThemePreference): void {
  * la préférence faits dans un autre onglet.
  */
 export function subscribeToTheme(onChange: () => void): () => void {
+  // Une 404 peut reconstruire le layout côté client : son script inline ne
+  // s'exécute alors pas. Resynchroniser le thème dès le montage du contrôle.
+  applyThemePreference(getThemePreference());
   const onSystemChange = () => applyThemePreference(getThemePreference());
   const onStorage = (event: StorageEvent) => {
     if (event.key !== null && event.key !== THEME_STORAGE_KEY) return;

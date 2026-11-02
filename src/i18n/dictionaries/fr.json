@@ -1,4 +1,10 @@
 {
+  "navigation": {
+    "main": "Navigation principale",
+    "footer": "Liens du pied de page",
+    "preferences": "Préférences",
+    "account": "Compte"
+  },
   "history": {
     "title": "Historique",
     "description": "Retrouve tes courses terminées, de la plus récente à la plus ancienne.",
@@ -85,7 +91,7 @@
       "few": "{rank}e",
       "other": "{rank}e"
     },
-    "trackProgress": "% du parcours",
+    "trackProgress": "du parcours",
     "typing": {
       "title": "À tes touches, prêt, pars !",
       "characters": "caractères",

@@ -24,7 +24,7 @@ describe("SiteHeader", () => {
 
     expect(screen.getByRole("banner")).toHaveTextContent(dictionary.site.name);
     const other = locale === "fr" ? "en" : "fr";
-    expect(screen.getByRole("link", { name: dictionary.language.names[other] })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: `${other.toUpperCase()} — ${dictionary.language.names[other]}` })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: `${dictionary.theme.label}: ${dictionary.theme.system}` }),
     ).toBeInTheDocument();

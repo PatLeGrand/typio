@@ -37,7 +37,7 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId,
   const percent = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 1 });
   const seconds = new Intl.NumberFormat(lang, { style: "unit", unit: "second", maximumFractionDigits: 1 });
   return (
-    <div className="overflow-x-auto rounded-card border border-border bg-surface">
+    <div tabIndex={0} role="region" aria-label={labels.tableTitle} className="overflow-x-auto rounded-card border border-border bg-surface">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">{labels.tableTitle}</caption>
         <thead><tr>

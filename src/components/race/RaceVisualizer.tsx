@@ -103,6 +103,7 @@ export function RaceVisualizer({
     const views = new Map<string, RacerView>();
     // Textures des photos chargées par cette scène : libérées au démontage.
     const photoTextures: PIXI.Texture[] = [];
+    const hueTextures = new Map<number, PIXI.Texture>();
     let avatarPalette: { colors: string[]; foreground: string } | null = null;
     let cameraX = 0;
     let cameraReady = false;
@@ -155,16 +156,22 @@ export function RaceVisualizer({
         const image = new Image();
         image.onload = () => {
           if (!isMounted || node.destroyed) return;
-          const texture = PIXI.Texture.from(image);
+          const canvas = document.createElement("canvas");
+          const size = Math.ceil(AVATAR_SIZE * (window.devicePixelRatio || 1));
+          canvas.width = canvas.height = size;
+          const context = canvas.getContext("2d");
+          if (!context) return;
+          context.beginPath();
+          context.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+          context.clip();
+          context.drawImage(image, 0, 0, size, size);
+          const texture = PIXI.Texture.from(canvas);
           photoTextures.push(texture);
           const photo = new PIXI.Sprite(texture);
           photo.anchor.set(0.5);
           photo.width = AVATAR_SIZE;
           photo.height = AVATAR_SIZE;
-          const mask = new PIXI.Graphics().circle(0, 0, radius).fill(0xffffff);
-          photo.mask = mask;
           node.addChildAt(photo, 1);
-          node.addChildAt(mask, 2);
           generated.visible = false;
         };
         image.src = racer.avatarUrl; // repli sur l'avatar généré si le chargement échoue
@@ -176,13 +183,30 @@ export function RaceVisualizer({
       const container = new PIXI.Container();
       const shadow = new PIXI.Graphics().ellipse(0, 0, 34, 8).fill({ color: 0x000000, alpha: 0.18 });
       const body = new PIXI.Container();
-      const sprite = new PIXI.Sprite(blobTexture);
-      sprite.anchor.set(0.5, 1); // pivot aux pieds : squash & stretch au sol
+      let texture = blobTexture;
       if (racer.hue) {
-        const hueFilter = new PIXI.ColorMatrixFilter();
-        hueFilter.hue(racer.hue, false);
-        sprite.filters = [hueFilter];
+        const cached = hueTextures.get(racer.hue);
+        if (cached) {
+          texture = cached;
+        } else {
+          const source = new PIXI.Sprite(blobTexture);
+          const hueFilter = new PIXI.ColorMatrixFilter();
+          hueFilter.hue(racer.hue, false);
+          hueFilter.resolution = app.renderer.resolution;
+          source.filters = [hueFilter];
+          texture = app.renderer.generateTexture({
+            target: source,
+            frame: new PIXI.Rectangle(0, 0, blobTexture.width, blobTexture.height),
+            resolution: app.renderer.resolution,
+            antialias: true,
+          });
+          hueTextures.set(racer.hue, texture);
+          source.destroy();
+          hueFilter.destroy();
+        }
       }
+      const sprite = new PIXI.Sprite(texture);
+      sprite.anchor.set(0.5, 1); // pivot aux pieds : squash & stretch au sol
       body.addChild(sprite);
 
       const label = new PIXI.Text({
@@ -265,6 +289,11 @@ export function RaceVisualizer({
         elapsed += dt;
         const list = racersRef.current;
         const length = trackLengthRef.current;
+        const groundBottom = Math.max(0, app.screen.height - 34);
+        // Garde les pieds sur la piste visible et une marge pour le Blob et son saut.
+        const groundTop = Math.min(groundBottom, Math.max(blobTexture.height + HOP_HEIGHT + AVATAR_SIZE + 8,
+          app.screen.height - PIXI.Assets.get<PIXI.Texture>("track").height));
+        const laneGap = Math.min(14, (groundBottom - groundTop) / Math.max(1, list.length - 1));
 
         // Distances aux autres coureurs, bornées à ce que l'écran peut montrer.
         const localRacer = list.find((r) => r.isLocal) ?? list[0];
@@ -306,7 +335,7 @@ export function RaceVisualizer({
           view.phase += dt * (5 + k * 7);
           const s = Math.abs(Math.sin(view.phase)); // 0 au sol, 1 à l'apogée
 
-          const groundY = app.screen.height - 34 - index * 14;
+          const groundY = groundBottom - index * laneGap;
           const hop = s * HOP_HEIGHT * k;
           const breathing = Math.sin(elapsed * 2.5 + index) * 0.02 * (1 - k);
 
@@ -351,6 +380,8 @@ export function RaceVisualizer({
       if (initialized) app.destroy(true, { children: true });
       for (const texture of photoTextures) texture.destroy(true);
       photoTextures.length = 0;
+      for (const texture of hueTextures.values()) texture.destroy(true);
+      hueTextures.clear();
     };
   }, []);
 

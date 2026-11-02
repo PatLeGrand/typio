@@ -46,7 +46,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
         <Link href={`/${locale}`} className="rounded-field">
           <Logo name={dictionary.site.name} />
         </Link>
-        <nav className="order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted lg:order-none lg:flex lg:w-auto" aria-label={dictionary.home.navigation.preview}>
+        <nav className="order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted lg:order-none lg:flex lg:w-auto" aria-label={dictionary.navigation.main}>
           <Link href={`/${locale}#why`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.why}</Link>
           <Link href={`/${locale}#preview`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
           <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>

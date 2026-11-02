@@ -4,13 +4,13 @@ import fr from "../src/i18n/dictionaries/fr.json";
 
 test("le choix FR → EN survit au rechargement et à une URL sans langue (I18N-02)", async ({ page }) => {
   await page.goto("/fr");
-  await page.getByRole("banner").getByRole("link", { name: fr.language.names.en, exact: true }).click();
+  await page.getByRole("banner").getByRole("link", { name: `EN — ${fr.language.names.en}`, exact: true }).click();
   await expect(page).toHaveURL("/en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await page.reload();
   await expect(page).toHaveURL("/en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(page.getByRole("banner").getByRole("link", { name: en.language.names.fr, exact: true })).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("link", { name: `FR — ${en.language.names.fr}`, exact: true })).toBeVisible();
   await page.goto("/");
   await expect(page).toHaveURL("/en");
 });

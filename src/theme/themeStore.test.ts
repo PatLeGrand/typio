@@ -116,6 +116,19 @@ describe("themeStore", () => {
     expect(system.listenerCount()).toBe(0);
   });
 
+  it("rétablit le thème au montage si le script du layout n'a pas été exécuté (404)", () => {
+    mockSystemTheme(true);
+    document.documentElement.classList.remove("dark");
+    const unsubscribe = subscribeToTheme(() => {});
+    expect(isDark()).toBe(true);
+    unsubscribe();
+
+    window.localStorage.setItem(THEME_STORAGE_KEY, "light");
+    const unsubscribeLight = subscribeToTheme(() => {});
+    expect(isDark()).toBe(false);
+    unsubscribeLight();
+  });
+
   it("se resynchronise quand la préférence change dans un autre onglet", () => {
     mockSystemTheme(false);
     const onChange = vi.fn();

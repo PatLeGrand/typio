@@ -68,6 +68,8 @@ export function RaceScreen({
     random,
   });
   const settingsHref = `/${locale}/race/settings?${serializeRaceSettings(settings)}`;
+  const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+  const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
 
   if (!round) return <RaceNoText labels={labels.noText} settingsHref={settingsHref} />;
 
@@ -102,7 +104,7 @@ export function RaceScreen({
   const announcedStep = Math.floor(playerProgress / ANNOUNCE_STEP) * ANNOUNCE_STEP;
   const liveAnnouncement =
     snapshot.countdownSeconds > 0 ? String(snapshot.countdownSeconds)
-    : racing ? (announcedStep === 0 ? labels.go : `${announcedStep} ${labels.trackProgress}`)
+    : racing ? (announcedStep === 0 ? labels.go : `${percent.format(announcedStep / 100)} ${labels.trackProgress}`)
     : "";
 
   return (
@@ -131,6 +133,7 @@ export function RaceScreen({
         </div>
       </header>
 
+      <main>
       <section className="relative isolate min-h-[560px] overflow-hidden">
         <RaceVisualizer
           key={round.id}
@@ -146,6 +149,18 @@ export function RaceScreen({
           </div>
         ) : null}
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 pb-24 pt-6 sm:px-8 lg:min-h-[560px] lg:flex-row lg:items-start lg:justify-between lg:px-10 lg:pt-6">
+          <div className="flex flex-col items-center gap-3 pt-2 text-center lg:order-1 lg:pt-8">
+            <p className="text-xs font-extrabold tracking-wide text-accent-text">{labels.kicker[view]}</p>
+            <h1 className="text-3xl font-extrabold sm:text-4xl">{headline}</h1>
+            <p className="rounded-full bg-surface/95 px-4 py-2 text-sm shadow-soft">
+              <strong className="text-accent-text">
+                {formatOrdinal(locale, snapshot.playerRank, labels.ordinal)} {labels.rankOf} {playerCount}
+              </strong>
+              <span className="mx-2 text-muted" aria-hidden="true">•</span>
+              {percent.format(playerProgress / 100)} {labels.trackProgress}
+            </p>
+          </div>
+
           <aside className="w-full rounded-card border-2 border-border bg-surface/95 p-5 shadow-soft lg:w-[280px] lg:shrink-0">
             <h2 className="flex items-center gap-2 text-xl font-extrabold">
               <Trophy aria-hidden="true" className="size-5 text-accent-text" />
@@ -159,38 +174,26 @@ export function RaceScreen({
                 >
                   <span className="w-3 text-xs text-muted">{index + 1}</span>
                   <span className="flex-1">{racer.name}{racer.level ? ` (${labels.bot} · ${labels.botLevels[racer.level]})` : ""}</span>
-                  <span>{Math.round(racer.progress)}%</span>
+                  <span>{percent.format(racer.progress / 100)}</span>
                 </li>
               ))}
             </ol>
           </aside>
 
-          <div className="order-first flex flex-col items-center gap-3 pt-2 text-center lg:order-none lg:pt-8">
-            <p className="text-xs font-extrabold tracking-wide text-accent-text">{labels.kicker[view]}</p>
-            <h1 className="text-3xl font-extrabold sm:text-4xl">{headline}</h1>
-            <p className="rounded-full bg-surface/95 px-4 py-2 text-sm shadow-soft">
-              <strong className="text-accent-text">
-                {formatOrdinal(locale, snapshot.playerRank, labels.ordinal)} {labels.rankOf} {playerCount}
-              </strong>
-              <span className="mx-2 text-muted" aria-hidden="true">•</span>
-              {Math.round(playerProgress)} {labels.trackProgress}
-            </p>
-          </div>
-
-          <aside className="w-full rounded-card border-2 border-border bg-surface/95 p-5 shadow-soft lg:w-[280px] lg:shrink-0">
+          <aside className="lg:order-2 w-full rounded-card border-2 border-border bg-surface/95 p-5 shadow-soft lg:w-[280px] lg:shrink-0">
             <h2 className="flex items-center gap-2 text-xl font-extrabold">
               <BarChart3 aria-hidden="true" className="size-5 text-accent-text" />
               {labels.stats.title}
             </h2>
             <dl className="mt-4 grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 text-sm">
               <dt className="text-muted">{labels.stats.timeLeft}</dt>
-              <dd className="text-2xl font-extrabold tabular-nums" role="timer">{formatClock(snapshot.timeLeftMs, "ceil")}</dd>
+              <dd className="text-2xl font-extrabold tabular-nums"><span role="timer">{formatClock(snapshot.timeLeftMs, "ceil")}</span></dd>
               <dt className="text-muted">{labels.stats.time}</dt>
               <dd className="text-2xl font-extrabold tabular-nums">{formatClock(snapshot.elapsedMs)}</dd>
               <dt className="text-muted">{labels.stats.wpm}</dt>
-              <dd className="text-2xl font-extrabold tabular-nums">{snapshot.wpm}</dd>
+              <dd className="text-2xl font-extrabold tabular-nums">{number.format(snapshot.wpm)}</dd>
               <dt className="text-muted">{labels.stats.accuracy}</dt>
-              <dd className="text-2xl font-extrabold tabular-nums">{snapshot.accuracy}%</dd>
+              <dd className="text-2xl font-extrabold tabular-nums">{percent.format(snapshot.accuracy / 100)}</dd>
             </dl>
           </aside>
         </div>
@@ -220,6 +223,7 @@ export function RaceScreen({
           onChange={typeInput}
         />
       )}
+      </main>
     </div>
   );
 }

@@ -131,7 +131,7 @@ describe("RaceScreen : saisie (COURSE-04, A-D6)", () => {
     expect(input(labels).value).toBe("xb");
     expect(screen.getByText(`1 / ${TEXT.length} ${labels.typing.characters}`)).toBeInTheDocument();
     // 2 frappes, 1 juste.
-    expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.getByText("50 %")).toBeInTheDocument();
   });
 
   it("mode bloquant : le caractère faux n'entre pas", () => {
@@ -156,8 +156,8 @@ describe("RaceScreen : saisie (COURSE-04, A-D6)", () => {
     for (const value of ["a", "ab", "abc", "abcd", "abcde", "abcdex", "abcde", "abcdef", "abcdefg", "abcdefgh", "abcdefghi", "abcdefghij"]) {
       type(input(labels), value);
     }
-    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent("91%");
-    expect(screen.getByText(/ 91% /)).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent("91 %");
+    expect(screen.getByText(/ 91 % /)).toBeInTheDocument();
   });
 });
 
@@ -178,18 +178,18 @@ describe("RaceScreen : composition, touches mortes AZERTY et IME", () => {
     composeDeadKey(input(labels), "", "ê");
     expect(input(labels).value).toBe("ê");
     expect(screen.getByText(`1 / 2 ${labels.typing.characters}`)).toBeInTheDocument();
-    expect(accuracyShown(labels)).toBe("100%");
+    expect(accuracyShown(labels)).toBe("100\u00a0%");
   });
 
   it.each(["free", "blocking"] as const)("« ê » faux compte pour une seule frappe fausse (%s)", (inputMode) => {
     const { labels } = setup({ initialText: "ab", settings: { inputMode } });
     advance(3000);
     composeDeadKey(input(labels), "", "ê");
-    expect(accuracyShown(labels)).toBe("0%");
+    expect(accuracyShown(labels)).toBe("0\u00a0%");
     // La frappe fausse n'est comptée qu'une fois, la touche morte « ^ » pas du tout.
     expect(input(labels).value).toBe(inputMode === "free" ? "ê" : "");
     type(input(labels), inputMode === "free" ? "êb" : "a");
-    expect(accuracyShown(labels)).toBe("50%");
+    expect(accuracyShown(labels)).toBe("50\u00a0%");
   });
 
   it("garde un « ê » déjà tapé quand la composition suit des caractères", () => {
@@ -198,7 +198,7 @@ describe("RaceScreen : composition, touches mortes AZERTY et IME", () => {
     type(input(labels), "a");
     composeDeadKey(input(labels), "a", "ê");
     type(input(labels), "aêb");
-    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent("100%");
+    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent("100 %");
   });
 });
 
@@ -233,7 +233,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     }
     const youRow = table.getByRole("rowheader", { name: labels.you }).closest("tr");
     expect(youRow).not.toBeNull();
-    expect(within(youRow as HTMLElement).getByText("100%")).toBeInTheDocument();
+    expect(within(youRow as HTMLElement).getByText("100 %")).toBeInTheDocument();
     expect(within(youRow as HTMLElement).getByText(labels.results.statuses.finished)).toBeInTheDocument();
     expect(within(youRow as HTMLElement).getByText("00:00.5")).toBeInTheDocument();
     // Les bots n'ont pas fini au bout de 0,5 s : joueur premier.
@@ -294,13 +294,16 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
   });
 
   it.each([
-    ["fr", "2e", "sur"],
-    ["en", "2nd", "of"],
-  ] as const)("résultats en %s", (locale, ordinal, of) => {
+    ["fr", "2e", "sur", "100\u00a0%"],
+    ["en", "2nd", "of", "100%"],
+  ] as const)("résultats en %s", (locale, ordinal, of, accuracy) => {
     const { labels } = setup({ locale, settings: { bots: ["beginner"] } });
     advance(3000);
+    expect(accuracyShown(labels)).toBe(accuracy);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
-    expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
+    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
+    expect(screen.getByRole("region", { name: labels.results.tableTitle })).toHaveAttribute("tabindex", "0");
     expect(screen.getByRole("heading", { name: labels.results.podium })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: labels.results.replay })).toBeInTheDocument();
     expect(screen.getByText(labels.results.statuses.abandoned)).toBeInTheDocument();

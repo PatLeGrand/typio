@@ -37,7 +37,7 @@ export default async function HistoryPage({ params, searchParams }: {
     <main className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-8 md:py-12">
       <h1 className="text-4xl font-bold text-foreground">{history.title}</h1>
       <p className="text-muted">{history.description}</p>
-      {items.length ? <div className="overflow-x-auto rounded-card border border-border bg-surface">
+      {items.length ? <div tabIndex={0} role="region" aria-label={history.title} className="overflow-x-auto rounded-card border border-border bg-surface">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">{history.title}</caption>
           <thead><tr>
