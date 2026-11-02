@@ -9,7 +9,7 @@ Légende des statuts : **complet** / **partiel** / **non fait**.
 L'énoncé pénalise une fausse déclaration « complet » plus qu'un « partiel » honnête.
 En cas de doute, le statut est « partiel » ou « non fait ». Un « complet » cite toujours un fichier de preuve.
 
-État au 29 octobre 2026, d'après le code de la branche `feat/room-invites-and-kick` (liens d'invitation et expulsion).
+État au 2 novembre 2026, d'après le code de la branche `feat/perf-a11y` (performance et accessibilité).
 
 Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancés par `bun run test`.
 
@@ -152,32 +152,32 @@ Seule la course solo contre des bots existe (`src/race/`, `src/components/race/`
 |---|---|---|---|---|
 | I18N-01 | partiel | `src/i18n/dictionaries/fr.json`, `en.json`, `generateMetadata` des pages | `src/i18n/dictionaries.test.ts` | Dictionnaires FR et EN aux mêmes clés (vérifié par test), messages d'erreur et métadonnées traduits. Pas d'audit exhaustif des chaînes codées en dur dans les composants. |
 | I18N-02 | partiel | `src/components/LanguageSwitcher.tsx`, `src/proxy.ts`, `src/i18n/negotiate.ts` | `src/proxy.test.ts`, `src/i18n/negotiate.test.ts`, `src/components/LanguageSwitcher.test.tsx` | Sélecteur dans l'en-tête, choix conservé en cookie `NEXT_LOCALE`, sinon langue du navigateur, sinon français. Manque : sélecteur sur la page de course `src/app/[lang]/race/page.tsx` (hors du layout `(site)`, sans `SiteHeader`). |
-| I18N-03 | partiel | `src/race/format.ts`, `src/app/[lang]/(site)/profile/ProfileForm.tsx` | `src/race/format.test.ts` | `Intl` sert aux dates du profil et aux pluriels. Pas de formatage systématique des nombres (MPM, temps) selon la langue. |
+| I18N-03 | complet | `src/race/format.ts`, `src/components/race/RaceScreen.tsx`, `RaceResults.tsx`, `RacePodium.tsx`, `room/_components/RoomRaceView.tsx` | `src/race/format.test.ts`, `src/components/race/RaceScreen.test.tsx` | Dates, pluriels et ordinaux via `Intl` ; MPM, précision et progression via `Intl.NumberFormat` selon la langue (« 98 % » en français, « 98% » en anglais), en solo, en salle, au podium, dans l'historique et le profil. Les chronos restent en mm:ss, identiques dans les deux langues. |
 
 ## Tests (TEST)
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
 | TEST-01 | complet | `vitest.config.mts`, `src/**/*.test.ts(x)` | tout `src/` | Vitest, 115 fichiers de test, lancés par la CI. Test d'intégration PostgreSQL séparé (`src/auth/repositories.integration.test.ts`). |
-| TEST-02 | complet | `playwright.config.ts`, `e2e/`, `.github/workflows/ci.yml` (job `e2e`) | `e2e/setup.spec.ts`, `e2e/auth.spec.ts`, `e2e/room-race.spec.ts`, `e2e/profile.spec.ts`, `e2e/preferences.spec.ts` | Playwright (Chromium) contre un build de production (web sur le port 3100, temps réel sur le 3101) et un PostgreSQL neuf en CI. Parcours couverts : inscription et connexion, invité, salle par code avec un membre et un invité qui courent ensemble en temps réel jusqu'aux résultats, historique, photo de profil, langue et thème mémorisés. 11 tests verts en local (deux exécutions) et en CI le 31 octobre 2026. |
+| TEST-02 | complet | `playwright.config.ts`, `e2e/`, `.github/workflows/ci.yml` (job `e2e`) | `e2e/setup.spec.ts`, `e2e/auth.spec.ts`, `e2e/room-race.spec.ts`, `e2e/profile.spec.ts`, `e2e/preferences.spec.ts` | Playwright (Chromium) contre un build de production (web sur le port 3100, temps réel sur le 3101) et un PostgreSQL neuf en CI. Parcours couverts : inscription et connexion, invité, salle par code avec un membre et un invité qui courent ensemble en temps réel jusqu'aux résultats, historique, photo de profil, langue et thème mémorisés. 11 tests verts en local (deux exécutions) et en CI le 31 octobre 2026. Depuis le 2 novembre 2026, la suite compte aussi l'audit axe (`e2e/a11y.spec.ts`), les parcours clavier (`e2e/keyboard.spec.ts`) et la charge à 30 participants (`e2e/track-load.spec.ts`) : 45 tests verts en local. |
 | TEST-03 | complet | `e2e/setup.spec.ts`, `e2e/auth.helpers.ts`, `e2e/auth.spec.ts` | `e2e/auth.spec.ts` | Les comptes de test sont créés par la page d'inscription avec des identifiants uniques par exécution ; connexion, déconnexion, reconnexion et mauvais mot de passe par identifiant et mot de passe (AUTH-01), jamais par OAuth. |
 
 ## Performance (PERF)
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
-| PERF-01 | non fait | — | — | Aucune mesure Lighthouse consignée. |
+| PERF-01 | complet | `src/app/[lang]/(site)/page.tsx`, `src/app/globals.css` | mesure manuelle Lighthouse 12 | Accueil sur un build de production, le 2 novembre 2026 : mobile simulé FR 94 / 100 / 100 / 100 et EN 93 / 100 / 100 / 100 (performance, accessibilité, bonnes pratiques, SEO) ; ordinateur 100 dans chaque catégorie, FR et EN. Mesure non automatisée en CI : à refaire avant chaque livraison. |
 | PERF-02 | complet | `src/realtime/raceInput.ts`, `src/realtime/server.ts`, `src/realtime/roomHandlers.ts` | `src/realtime/raceInput.test.ts`, `raceHandlers.test.ts` | Le client regroupe ses frappes toutes les 100 ms ; le serveur ignore au-delà de 12 messages/s par joueur et diffuse au plus toutes les 100 ms (H-21). Aucune écriture en base pendant la course. |
-| PERF-03 | non fait | `src/components/race/RaceVisualizer.tsx` | — | Piste jamais mesurée avec 30 participants. |
+| PERF-03 | complet | `src/components/race/RaceVisualizer.tsx` | `e2e/track-load.spec.ts` | Salle de 30 participants réels (capacité max) : 29 invités courent sur le vrai serveur temps réel, au plus 10 envois/s chacun, pendant que le navigateur du membre mesure ses images. 59,9 FPS (médiane 16,7 ms, p95 16,8 ms) avec GPU ; 28 à 36 FPS en WebGL logiciel (CI), contre 22 avant optimisation. Couloirs resserrés pour garder les 30 coureurs à l'écran ; teintes et photos rondes précalculées une fois au lieu d'un filtre et d'un masque par coureur à chaque image. Seuil du test : 50 FPS avec GPU, 20 en rendu logiciel. |
 
 ## Accessibilité (A11Y)
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
-| A11Y-01 | complet | `src/app/globals.css` (tokens) | `src/theme/contrast.test.ts` | Contraste WCAG calculé par test pour les couples de tokens, dans les deux thèmes. Vérifie les tokens, pas chaque page. |
-| A11Y-02 | partiel | `src/components/SiteHeader.tsx`, `src/components/race/RaceResults.tsx`, pages sous `src/app/` | — | `<header>`, `<main>`, `<table>` avec `<caption>` et `<th scope>` en place. Pas d'audit des titres ni de `<nav>`/`<footer>` sur toutes les pages. |
-| A11Y-03 | partiel | `src/components/TextField.tsx`, `SelectField.tsx`, `Checkbox.tsx` | `src/components/TextField.test.tsx` | Champs partagés avec libellé. Les images décoratives ont `alt=""` ; pas d'audit complet. |
-| A11Y-04 | partiel | `src/app/globals.css` (`:focus-visible`) | — | Indicateur de focus global. Parcours clavier complet non vérifié. |
+| A11Y-01 | complet | `src/app/globals.css` (tokens) | `src/theme/contrast.test.ts`, `e2e/a11y.spec.ts` | Audit axe (WCAG 2.1 AA) de 19 vues dans les deux thèmes : pages publiques, pages membre, salle avant et après la course (membre et invité), course solo, détail d'historique, invitation, 404. L'ancien statut « complet » reposait sur les seuls couples de tokens et manquait des défauts réels (gris `--muted` à 3,85:1 sur les fonds teintés, pastille du bouton de connexion à 4:1), corrigés le 2 novembre 2026. |
+| A11Y-02 | complet | `src/components/SiteHeader.tsx`, `SiteFooter.tsx`, `auth/AuthLayout.tsx`, `race/RaceScreen.tsx`, `race/RaceResults.tsx` | `e2e/a11y.spec.ts` | Sur chaque vue auditée, le test exige un seul `<main>`, un seul repère `banner`, un `<h1>`, des titres sans saut de niveau, un `<nav>` et un `<footer>` (sauf la course solo, H-41). Chaque `<nav>` a un nom distinct. Résultats dans un `<table>` avec `<caption>` et `<th scope>`. Aucune action portée par un élément non interactif (vérifié dans le code le 2 novembre 2026). |
+| A11Y-03 | complet | `src/components/TextField.tsx`, `SelectField.tsx`, `Checkbox.tsx`, `LanguageSwitcher.tsx` | `e2e/a11y.spec.ts`, `src/components/TextField.test.tsx` | Règles axe des textes alternatifs, libellés et noms accessibles respectées sur les 19 vues auditées, dans les deux thèmes ; le nom accessible du lien de langue commence par son texte visible (WCAG 2.5.3). Le `<canvas>` de la piste est décoratif (`aria-hidden`). |
+| A11Y-04 | complet | `src/app/globals.css` (`:focus-visible`) | `e2e/keyboard.spec.ts` | Parcours au clavier seul, avec un indicateur de focus visible vérifié sur chaque élément atteint : accueil (langue, thème, action principale), connexion, puis pour un membre la fenêtre du profil (focus rendu au bouton après `Échap`), réglages de course (flèches et espace), création d'une salle, lancement et sortie de la salle. La frappe de course se fait au clavier par nature. |
 
 ## Sécurité (SEC)
 
@@ -233,6 +233,7 @@ Les hypothèses H-1 à H-18 de l'ancien cahier gardent leur identifiant : le cod
 | H-38 | Stockage de la photo de profil | valable | AUTH-04, SEC-02, TECH-08. Le serveur accepte JPEG, PNG et WebP jusqu'à 2 Mo, type reconnu au contenu et non à l'extension ni au type MIME annoncé. Il ne garde jamais l'original : l'image est réorientée, recadrée en carré 256 × 256 px, réencodée en WebP sans métadonnées (EXIF, GPS), puis stockée en base (`user_avatars`), sans volume Docker ni service externe. Le membre peut la retirer. Servie par `/api/avatars/<id>` à une session valide seulement, avec un numéro de version dans l'URL pour le cache. Données minimales : public de 12 à 17 ans. |
 | H-39 | Avatar généré | valable | AUTH-03, COURSE-05. Invités, membres sans photo et bots ont un avatar généré : initiale du nom sur une couleur tirée de façon déterministe de l'identifiant (du nom pour un bot), aucune image stockée. |
 | H-40 | Photo changée pendant une salle | valable | COURSE-05. Le serveur temps réel lit la version de la photo à la connexion : un changement fait pendant qu'on est en salle apparaît aux autres à la reconnexion suivante. |
+| H-41 | Structure de l'écran de course solo | valable | A11Y-02. La course solo est un écran immersif : un `<header>` (logo, état, abandon) et un `<main>`, mais ni la navigation ni le pied de page du site, qui gêneraient la frappe. Les autres pages ont `<header>`, `<nav>`, `<main>` et `<footer>`. |
 
 ### Choix encore à trancher
 
