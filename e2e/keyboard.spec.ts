@@ -1,10 +1,14 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import en from "../src/i18n/dictionaries/en.json";
 import fr from "../src/i18n/dictionaries/fr.json";
-import { createCredentials, registerMember } from "./auth.helpers";
+import { authFiles, createCredentials, registerMember } from "./auth.helpers";
 
-async function tab(page: Page) {
-  await page.keyboard.press("Tab");
+async function tab(page: Page, key: "Tab" | "Shift+Tab" = "Tab") {
+  await page.keyboard.press(key);
+  await expectVisibleFocus(page);
+}
+
+async function expectVisibleFocus(page: Page) {
   const focused = page.locator(":focus");
   await expect(focused).toBeVisible();
   const indicator = await focused.evaluate((element) => {
@@ -26,13 +30,13 @@ async function tab(page: Page) {
   ).toBe(true);
 }
 
-async function tabTo(page: Page, target: Locator) {
+async function tabTo(page: Page, target: Locator, key: "Tab" | "Shift+Tab" = "Tab") {
   await expect(target).toBeVisible();
   for (let count = 0; count < 60; count++) {
-    await tab(page);
+    await tab(page, key);
     if (await target.evaluate((element) => element === document.activeElement)) return;
   }
-  await expect(target, "Élément inaccessible après 60 Tab").toBeFocused();
+  await expect(target, `Élément inaccessible après 60 ${key}`).toBeFocused();
 }
 
 test.use({ storageState: { cookies: [], origins: [] }, colorScheme: "light" });
@@ -92,4 +96,61 @@ test("connexion complète au clavier avec des identifiants générés (A11Y-04)"
   await expect(page).toHaveURL("/fr");
   await expect(page.getByRole("banner").getByRole("button", { name: account.username, exact: true }))
     .toBeVisible();
+});
+
+test.describe("parcours clavier d’un membre", () => {
+  test.use({ storageState: authFiles.memberA });
+
+  test("profil, réglages et sortie de salle au clavier (A11Y-04)", async ({ page }) => {
+    await page.goto("/fr");
+    const profile = page.getByRole("banner").locator('button[aria-haspopup="dialog"]');
+    await tabTo(page, profile);
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator(":focus"), "Le focus doit entrer dans la fenêtre du profil").toHaveCount(1);
+    await expectVisibleFocus(page);
+    await page.keyboard.press("Escape");
+    await expect(dialog).not.toBeVisible();
+    await expect(profile, "Après Escape, le focus doit revenir au bouton d’ouverture du profil (ProfileModal)")
+      .toBeFocused();
+    await expectVisibleFocus(page);
+
+    await tabTo(page, page.getByRole("main").getByRole("link", { name: fr.home.createRace, exact: true }).first());
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL("/fr/race/settings");
+    const settings = fr.raceSettings;
+    const textMode = page.getByRole("radiogroup", { name: settings.textMode.label, exact: true });
+    const sentences = textMode.getByRole("radio", { name: settings.textMode.sentences, exact: true });
+    const words = textMode.getByRole("radio", { name: settings.textMode.words, exact: true });
+    await tabTo(page, sentences);
+    await expect(sentences).toBeChecked();
+    await page.keyboard.press("ArrowRight");
+    await expect(words).toBeFocused();
+    await expect(words).toBeChecked();
+    await expect(sentences).not.toBeChecked();
+    await expectVisibleFocus(page);
+
+    const punctuation = page.getByRole("switch", { name: settings.punctuation.label, exact: true });
+    await tabTo(page, punctuation);
+    const wasChecked = await punctuation.getAttribute("aria-checked");
+    await page.keyboard.press("Space");
+    await expect(punctuation).toHaveAttribute("aria-checked", wasChecked === "true" ? "false" : "true");
+    await expect(punctuation).toBeFocused();
+    await expectVisibleFocus(page);
+    await tabTo(page, page.getByRole("button", { name: settings.invite.button, exact: true }));
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/fr\/room\/[A-Z0-9]{6}$/);
+    await expect(page.getByRole("heading", { name: fr.room.title, exact: true })).toBeVisible();
+
+    const start = page.getByRole("button", { name: fr.room.race.start, exact: true });
+    await expect(start).toBeEnabled();
+    await tabTo(page, start);
+    const leave = page.getByRole("button", { name: fr.room.leave, exact: true });
+    await tabTo(page, leave, "Shift+Tab");
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL("/fr/play");
+    await expect(page.getByRole("heading", { name: fr.room.title, exact: true })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: fr.room.play.inRoom.leave, exact: true })).not.toBeVisible();
+  });
 });
