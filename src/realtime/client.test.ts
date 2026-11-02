@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ io: vi.fn(() => ({ connect: vi.fn() })) }));
 vi.mock("socket.io-client", () => ({ io: mocks.io }));
@@ -6,7 +6,12 @@ vi.mock("socket.io-client", () => ({ io: mocks.io }));
 import { getSocket } from "./client";
 
 describe("getSocket (navigateur)", () => {
-  beforeEach(() => mocks.io.mockClear());
+  beforeEach(() => {
+    mocks.io.mockClear();
+    vi.stubEnv("NEXT_PUBLIC_REALTIME_URL", "");
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
 
   it("ne crée aucun socket à l'import", () => {
     expect(mocks.io).not.toHaveBeenCalled();
