@@ -28,6 +28,8 @@ type Props = {
 export function RaceResults({ locale, labels, rows, headline, playerAvatar, settingsHref, onReplay }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const copy = labels.results;
+  const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+  const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
   const avatarOf = (row: RaceResultRow): AvatarIdentity => (row.isPlayer ? playerAvatar : { seed: row.name });
   const displayRows = rows.map((row) => ({ ...row, avatar: avatarOf(row), name: `${row.name}${row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}` }));
   const player = rows.find((row) => row.isPlayer);
@@ -44,8 +46,8 @@ export function RaceResults({ locale, labels, rows, headline, playerAvatar, sett
         {player ? (
           <p className="text-sm text-muted">
             {formatOrdinal(locale, player.rank, labels.ordinal)} {labels.rankOf} {rows.length}
-            {" · "}{player.wpm} {copy.columns.wpm}
-            {" · "}{player.accuracy}% {copy.columns.accuracy}
+            {" · "}{number.format(player.wpm)} {copy.columns.wpm}
+            {" · "}{percent.format(player.accuracy / 100)} {copy.columns.accuracy}
           </p>
         ) : null}
       </div>
@@ -73,9 +75,9 @@ export function RaceResults({ locale, labels, rows, headline, playerAvatar, sett
               <tr key={row.id} className={`border-b border-border last:border-b-0 ${row.isPlayer ? "bg-accent-panel font-bold" : ""}`}>
                 <td className="px-4 py-3">{formatOrdinal(locale, row.rank, labels.ordinal)}</td>
                 <th scope="row" className="px-4 py-3 font-bold"><span className="inline-flex items-center gap-2"><Avatar name={row.name} {...avatarOf(row)} size={24} />{row.name}{row.level ? ` (${labels.bot} · ${labels.botLevels[row.level]})` : ""}</span></th>
-                <td className="px-4 py-3 tabular-nums">{row.wpm}</td>
+                <td className="px-4 py-3 tabular-nums">{number.format(row.wpm)}</td>
                 <td className="px-4 py-3 tabular-nums">
-                  {row.accuracy}%
+                  {percent.format(row.accuracy / 100)}
                 </td>
                 <td className="px-4 py-3 tabular-nums">{formatDuration(row.timeMs)}</td>
                 <td className="px-4 py-3">{row.bonusesReceived ?? 0}{row.bonusTypes?.length ? ` (${row.bonusTypes.map((type) => copy.bonusTypes[type]).join(", ")})` : ""}</td>

@@ -68,6 +68,8 @@ export function RaceScreen({
     random,
   });
   const settingsHref = `/${locale}/race/settings?${serializeRaceSettings(settings)}`;
+  const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+  const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
 
   if (!round) return <RaceNoText labels={labels.noText} settingsHref={settingsHref} />;
 
@@ -188,9 +190,9 @@ export function RaceScreen({
               <dt className="text-muted">{labels.stats.time}</dt>
               <dd className="text-2xl font-extrabold tabular-nums">{formatClock(snapshot.elapsedMs)}</dd>
               <dt className="text-muted">{labels.stats.wpm}</dt>
-              <dd className="text-2xl font-extrabold tabular-nums">{snapshot.wpm}</dd>
+              <dd className="text-2xl font-extrabold tabular-nums">{number.format(snapshot.wpm)}</dd>
               <dt className="text-muted">{labels.stats.accuracy}</dt>
-              <dd className="text-2xl font-extrabold tabular-nums">{snapshot.accuracy}%</dd>
+              <dd className="text-2xl font-extrabold tabular-nums">{percent.format(snapshot.accuracy / 100)}</dd>
             </dl>
           </aside>
         </div>
