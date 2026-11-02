@@ -91,7 +91,7 @@
       "few": "{rank}e",
       "other": "{rank}e"
     },
-    "trackProgress": "% du parcours",
+    "trackProgress": "du parcours",
     "typing": {
       "title": "À tes touches, prêt, pars !",
       "characters": "caractères",

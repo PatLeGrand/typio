@@ -91,7 +91,7 @@
       "few": "{rank}rd",
       "other": "{rank}th"
     },
-    "trackProgress": "% of the track",
+    "trackProgress": "of the track",
     "typing": {
       "title": "On your keys, get set, go!",
       "characters": "characters",
