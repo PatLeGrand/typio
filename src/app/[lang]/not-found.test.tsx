@@ -19,7 +19,7 @@ describe("NotFoundPage", () => {
     expect(screen.getByText(notFound.text)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: notFound.home })).toHaveAttribute("href", `/${locale}`);
     expect(screen.getByRole("banner")).toBeInTheDocument();
-    expect(screen.getByRole("navigation")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: getDictionary(locale).navigation.preferences })).toBeInTheDocument();
     expect(screen.getByRole("contentinfo")).toHaveTextContent(getDictionary(locale).footer.copyright);
     expect(screen.getByRole("link", { name: getDictionary(locale).footer.privacy })).toHaveAttribute("href", `/${locale}/privacy`);
   });

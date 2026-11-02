@@ -1,4 +1,10 @@
 {
+  "navigation": {
+    "main": "Navigation principale",
+    "footer": "Liens du pied de page",
+    "preferences": "Préférences",
+    "account": "Compte"
+  },
   "history": {
     "title": "Historique",
     "description": "Retrouve tes courses terminées, de la plus récente à la plus ancienne.",

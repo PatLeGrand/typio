@@ -161,7 +161,7 @@ export function RaceScreen({
                 >
                   <span className="w-3 text-xs text-muted">{index + 1}</span>
                   <span className="flex-1">{racer.name}{racer.level ? ` (${labels.bot} · ${labels.botLevels[racer.level]})` : ""}</span>
-                  <span>{Math.round(racer.progress)}%</span>
+                  <span>{percent.format(racer.progress / 100)}</span>
                 </li>
               ))}
             </ol>

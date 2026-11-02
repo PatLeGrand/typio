@@ -1,4 +1,10 @@
 {
+  "navigation": {
+    "main": "Main navigation",
+    "footer": "Footer links",
+    "preferences": "Preferences",
+    "account": "Account"
+  },
   "history": {
     "title": "History",
     "description": "Find your completed races, from newest to oldest.",

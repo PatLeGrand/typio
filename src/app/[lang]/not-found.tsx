@@ -24,7 +24,7 @@ export default function NotFoundPage() {
         <Link href={`/${locale}`} className="rounded-field">
           <Logo name={dictionary.site.name} tagline={dictionary.brand.tagline} />
         </Link>
-        <nav aria-label={dictionary.home.navigation.preview} className="flex flex-wrap items-center gap-2">
+        <nav aria-label={dictionary.navigation.preferences} className="flex flex-wrap items-center gap-2">
           <LanguageSwitcher locale={locale} labels={dictionary.language} />
           <ThemeToggle labels={dictionary.theme} />
         </nav>

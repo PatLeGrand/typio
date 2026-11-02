@@ -22,13 +22,13 @@ export function HomeFooter({ dictionary, locale, user }: HomeFooterProps) {
             <p className="text-sm text-muted">{brand.tagline}</p>
           </div>
           <div className="grid grid-cols-2 gap-12 text-sm sm:gap-24">
-            <nav aria-label={home.navigation.preview} className="flex flex-col gap-3 text-muted">
+            <nav aria-label={dictionary.navigation.footer} className="flex flex-col gap-3 text-muted">
               <p className="font-semibold text-foreground">{home.navigation.preview}</p>
               <Link href="#why" className="hover:text-foreground">{home.navigation.why}</Link>
               <Link href="#preview" className="hover:text-foreground">{home.navigation.preview}</Link>
               <Link href="#approach" className="hover:text-foreground">{home.navigation.approach}</Link>
             </nav>
-            <nav aria-label={dictionary.header.signIn} className="flex flex-col gap-3 text-muted">
+            <nav aria-label={dictionary.navigation.account} className="flex flex-col gap-3 text-muted">
               <p className="font-semibold text-foreground">{dictionary.header.signIn}</p>
               {user === null ? (
                 <Link href={`/${locale}/login`} className="hover:text-foreground">{home.signIn}</Link>
