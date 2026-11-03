@@ -398,15 +398,15 @@ describe("roomHandlers: reconnexion, onglets et départ (D1 à D4)", () => {
     // Les diffusions suivantes ne lui parviennent plus.
     const afterLeaveA = recordStates(socketA);
     const afterLeaveTab = recordStates(otherTab);
-    const configChanged = waitForState(socketB, (s) => s.config.length === "long");
-    expect(await updateConfig(socketB, { length: "long" })).toEqual({ ok: true });
+    const configChanged = waitForState(socketB, (s) => s.config.length === 75);
+    expect(await updateConfig(socketB, { length: 75 })).toEqual({ ok: true });
     await configChanged;
     await pause(50);
     expect(afterLeaveA).toEqual([]);
     expect(afterLeaveTab).toEqual([]);
 
     // Et il n'est plus dans aucune salle, depuis aucun onglet (D1).
-    expect(await updateConfig(otherTab, { length: "short" })).toEqual({ ok: false, error: "NOT_IN_ROOM" });
+    expect(await updateConfig(otherTab, { length: 25 })).toEqual({ ok: false, error: "NOT_IN_ROOM" });
     expect(await leave(otherTab)).toEqual({ ok: false, error: "NOT_IN_ROOM" });
     expectOk(await join(otherTab, { code, role: "spectator" }));
   });

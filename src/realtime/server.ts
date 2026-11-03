@@ -4,6 +4,7 @@
  * l'instancient avec un faux dépôt de sessions, sans base ni variables d'environnement.
  */
 
+import type { SentenceCorpus } from "@/race/textGenerator";
 import type { RaceRepository } from "@/race/raceRepository";
 import { createServer, type Server as HttpServer } from "node:http";
 import { Server } from "socket.io";
@@ -36,6 +37,8 @@ export const LOBBY_BROADCAST_MS = 500;
 export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
 export interface RealtimeServerOptions {
+  corpus?: SentenceCorpus;
+  loadCorpus?: () => Promise<SentenceCorpus>;
   sessions: SessionRepository;
   raceRepository?: RaceRepository;
   /** Origines autorisées à ouvrir une connexion, par exemple `https://typio.aether-manager.ca`. */
@@ -112,7 +115,7 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     }
   });
 
-  const store = createRoomStore({ now: () => now().getTime(), generateSeed: options.generateSeed });
+  const store = createRoomStore({ now: () => now().getTime(), generateSeed: options.generateSeed, corpus: options.corpus });
   const timers = createGraceTimers();
   const joinFailures = createRateLimiter({ ...JOIN_FAILURE_LIMIT, now: () => now().getTime() });
 
@@ -222,6 +225,7 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       sockets: userSockets,
       joinFailures,
       raceInputs,
+      loadCorpus: options.loadCorpus,
       syncRace,
       lobbyList: () => store.lobby(),
       lobbyChanged,

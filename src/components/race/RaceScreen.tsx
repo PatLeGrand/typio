@@ -37,6 +37,7 @@ type Props = {
   avatarVersion?: number | null;
   /** Texte tiré côté serveur (hydratation identique), ou `null` si les filtres n'en laissent aucun. */
   initialText: string | null;
+  initialError?: "RATE_LIMITED";
   /** Graine des noms de bots, tirée côté serveur avec le texte (hydratation identique). */
   botNameSeed: number;
   /** Horloge en ms ; injectable pour les tests (A-D6). */
@@ -55,13 +56,15 @@ export function RaceScreen({
   userId = null,
   avatarVersion = null,
   initialText,
+  initialError,
   botNameSeed,
   now = defaultNow,
   random = Math.random,
 }: Props) {
-  const { round, clock, typeInput, abandon, replay } = useRaceSession({
+  const { round, clock, typeInput, abandon, replay, loading, error } = useRaceSession({
     settings,
     initialText,
+    initialError,
     botNames: labels.botNames,
     botNameSeed,
     now,
@@ -71,7 +74,8 @@ export function RaceScreen({
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
 
-  if (!round) return <RaceNoText labels={labels.noText} settingsHref={settingsHref} />;
+  if (loading) return <p role="status">{labels.loading}</p>;
+  if (!round) return <RaceNoText labels={labels.noText} settingsHref={settingsHref} rateLimited={error === "RATE_LIMITED"} />;
 
   const snapshot = snapshotRound(round, clock, labels.you);
   const { phase, racers, results } = snapshot;
@@ -186,8 +190,10 @@ export function RaceScreen({
               {labels.stats.title}
             </h2>
             <dl className="mt-4 grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 text-sm">
-              <dt className="text-muted">{labels.stats.timeLeft}</dt>
-              <dd className="text-2xl font-extrabold tabular-nums"><span role="timer">{formatClock(snapshot.timeLeftMs, "ceil")}</span></dd>
+              {snapshot.timeLeftMs !== null && <>
+                <dt className="text-muted">{labels.stats.timeLeft}</dt>
+                <dd className="text-2xl font-extrabold tabular-nums"><span role="timer">{formatClock(snapshot.timeLeftMs, "ceil")}</span></dd>
+              </>}
               <dt className="text-muted">{labels.stats.time}</dt>
               <dd className="text-2xl font-extrabold tabular-nums">{formatClock(snapshot.elapsedMs)}</dd>
               <dt className="text-muted">{labels.stats.wpm}</dt>
@@ -212,7 +218,7 @@ export function RaceScreen({
           settingsHref={settingsHref}
           onReplay={replay}
         />
-      ) : (
+      ) : round.session.lifecycle.phase !== "results" ? (
         <RaceTypingPanel
           labels={labels.typing}
           fog={(round.fogUntil[PLAYER_ID] ?? 0) > clock}
@@ -222,7 +228,7 @@ export function RaceScreen({
           correctChars={correctChars}
           onChange={typeInput}
         />
-      )}
+      ) : null}
       </main>
     </div>
   );

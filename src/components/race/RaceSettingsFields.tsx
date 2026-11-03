@@ -9,8 +9,8 @@ import type { Dictionary } from "@/i18n/dictionaries";
 import { formatPlural } from "@/race/format";
 import type { RaceSettings } from "@/race/config";
 import { BOT_LEVEL_PROFILES } from "@/race/bots";
-import { BOT_LEVELS, MAX_BOTS, MAX_CAPACITY, MIN_CAPACITY, ROOM_VISIBILITIES, TEXT_COMPLEXITIES, TIME_LIMITS_SECONDS } from "@/realtime/protocol";
-import type { BotLevel, RoomVisibility, TimeLimitSeconds } from "@/realtime/protocol";
+import { BOT_LEVELS, MAX_BOTS, MAX_CAPACITY, MIN_CAPACITY, ROOM_VISIBILITIES, TEXT_COMPLEXITIES, TEXT_WORD_COUNTS, TIME_LIMITS_SECONDS } from "@/realtime/protocol";
+import type { BotLevel, RoomVisibility, TextLength } from "@/realtime/protocol";
 
 interface RaceSettingsFieldsProps {
   value: RaceSettings;
@@ -23,15 +23,12 @@ interface RaceSettingsFieldsProps {
   lang: string;
   /** Message d'erreur du champ des caractères exclus, déjà traduit. */
   excludedError?: string | null;
+  includedError?: string | null;
+  onIncludedBlur?: () => void;
   /** Le champ des caractères exclus perd le focus (la salle envoie alors son patch). */
   onExcludedBlur?: () => void;
   /** Niveau des titres de section : 2 sur la page de paramètres, 3 sous le titre de la salle. */
   headingLevel?: 2 | 3;
-}
-
-/** Fills the localized "{minutes} min" template from a duration in seconds. */
-function formatMinutes(template: string, seconds: TimeLimitSeconds): string {
-  return template.replace("{minutes}", String(seconds / 60));
 }
 
 /**
@@ -46,6 +43,8 @@ export function RaceSettingsFields({
   dict,
   lang,
   excludedError = null,
+  includedError = null,
+  onIncludedBlur,
   onExcludedBlur,
   headingLevel = 2,
 }: RaceSettingsFieldsProps) {
@@ -168,27 +167,33 @@ export function RaceSettingsFields({
 
           {/* Longueur */}
           <div>
-            <FieldHeading id={id("length-label")} className="text-[15px] font-semibold mb-3">{dict.length.label}</FieldHeading>
-            <div className="flex gap-3" role="radiogroup" aria-labelledby={id("length-label")}>
-              <RadioCard
-                disabled={readOnly}
-                checked={value.length === "short"}
-                onChange={() => onChange({ length: "short" })}
-                label={dict.length.short}
-              />
-              <RadioCard
-                disabled={readOnly}
-                checked={value.length === "medium"}
-                onChange={() => onChange({ length: "medium" })}
-                label={dict.length.medium}
-              />
-              <RadioCard
-                disabled={readOnly}
-                checked={value.length === "long"}
-                onChange={() => onChange({ length: "long" })}
-                label={dict.length.long}
-              />
-            </div>
+            <SelectField
+              label={dict.length.label}
+              value={String(value.length)}
+              disabled={readOnly}
+              options={TEXT_WORD_COUNTS.map((count) => ({ value: String(count), label: dict.length.words.replace("{count}", numberFormat.format(count)) }))}
+              onChange={(event) => onChange({ length: Number(event.target.value) as TextLength })}
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label htmlFor={id("included-chars")} className="block text-[15px] font-semibold mb-3">{dict.includedChars.label}</label>
+            <input
+              id={id("included-chars")}
+              type="text"
+              value={value.includedCharacters}
+              readOnly={readOnly}
+              disabled={value.textMode === "sentences"}
+              aria-invalid={Boolean(includedError)}
+              aria-describedby={id("included-chars-help")}
+              onChange={(event) => onChange({ includedCharacters: event.target.value })}
+              onBlur={onIncludedBlur}
+              className="w-full h-12 px-4 rounded-field border border-border bg-background disabled:opacity-40"
+            />
+            <p id={id("included-chars-help")} className="text-sm text-muted mt-2">
+              {value.textMode === "sentences" ? dict.includedChars.sentencesHelp : dict.includedChars.help}
+            </p>
+            {includedError && <p role="alert" className="text-sm text-danger mt-1">{includedError}</p>}
           </div>
 
           {/* Caractères exclus */}
@@ -208,7 +213,7 @@ export function RaceSettingsFields({
                 className="w-full h-12 px-4 rounded-field border border-border bg-background focus:outline-none focus:ring-2 focus:ring-accent-text focus:border-transparent text-[15px] read-only:text-muted-strong"
               />
               <span id={id("excluded-chars-count")} className="mt-1 block text-sm text-muted">
-                {formatPlural(lang, excludedCount, dict.excludedChars.count).replace("{count}", excludedCount.toString())}
+                {formatPlural(lang, excludedCount, dict.excludedChars.count).replace("{count}", numberFormat.format(excludedCount))}
               </span>
             </div>
             <p id={id("excluded-chars-help")} className="text-sm text-muted mt-2">
@@ -257,7 +262,9 @@ export function RaceSettingsFields({
                   disabled={readOnly}
                   checked={value.timeLimitSeconds === seconds}
                   onChange={() => onChange({ timeLimitSeconds: seconds })}
-                  label={formatMinutes(dict.timeLimit.minutes, seconds)}
+                  label={seconds < 60
+                    ? dict.timeLimit.seconds.replace("{seconds}", numberFormat.format(seconds))
+                    : dict.timeLimit.minutes.replace("{minutes}", numberFormat.format(seconds / 60))}
                   className="justify-center text-center"
                 />
               ))}

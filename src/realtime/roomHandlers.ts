@@ -8,6 +8,7 @@
  */
 
 import type { Socket } from "socket.io";
+import type { SentenceCorpus } from "@/race/textGenerator";
 import type { RateLimiter } from "@/auth/rateLimit";
 import type { GraceTimers } from "./graceTimers";
 import {
@@ -49,6 +50,7 @@ export interface RoomHandlerDeps {
   /** Échecs de `room:join` par utilisateur (énumération des codes de salle). */
   joinFailures: RateLimiter;
   raceInputs: RateLimiter;
+  loadCorpus?: () => Promise<SentenceCorpus>;
   syncRace: (code: string) => void;
   /** Liste des salles publiques (JOIN-02). */
   lobbyList: () => LobbyRoom[];
@@ -385,12 +387,25 @@ export function registerRoomHandlers(
   });
 
   for (const event of ["race:start", "race:abandon", "room:restart", "room:close"] as const) {
-    socket.on(event, (payload, ack) => {
+    socket.on(event, async (payload, ack) => {
+      if (typeof ack !== "function") return;
+      if (!parseRaceCommand(payload)) return ack({ ok: false, error: "INVALID_PAYLOAD" });
+      let corpus: SentenceCorpus | undefined;
+      if (event === "race:start" && deps.loadCorpus) {
+        const code = store.roomOf(user.id);
+        if (!code) return ack({ ok: false, error: "NOT_IN_ROOM" });
+        if (store.get(code)?.hostId !== user.id) return ack({ ok: false, error: "NOT_HOST" });
+        try {
+          corpus = await deps.loadCorpus();
+        } catch (error) {
+          console.error("[realtime] corpus load failed:", describeError(error));
+          return ack({ ok: false, error: "INTERNAL" });
+        }
+      }
       respond(ack, () => {
-        if (!parseRaceCommand(payload)) return failure("INVALID_PAYLOAD");
         const code = store.roomOf(user.id);
         if (!code) return failure("NOT_IN_ROOM");
-        const res = event === "race:start" ? store.start(user.id, code)
+        const res = event === "race:start" ? store.start(user.id, code, corpus)
           : event === "race:abandon" ? store.abandon(user.id, code)
           : store.finish(user.id, code, event === "room:close");
         if (!res.ok) return failure(res.error);

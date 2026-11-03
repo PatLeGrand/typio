@@ -1,6 +1,7 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { races, raceResults, users } from "@/db/schema";
+import { parseRaceSettings } from "./config";
 import { historyOffset, historyPage } from "./raceHistory";
 
 export function createDrizzleRaceHistoryRepository(db: PostgresJsDatabase) {
@@ -18,7 +19,7 @@ export function createDrizzleRaceHistoryRepository(db: PostgresJsDatabase) {
     },
     async getRaceForUser(userId: string, raceId: string) {
       const [race] = await db.select({
-        id: races.id, endedAt: races.endedAt, participantCount: races.participantCount, missedKeys: raceResults.missedKeys,
+        config: races.config, id: races.id, endedAt: races.endedAt, participantCount: races.participantCount, missedKeys: raceResults.missedKeys,
       }).from(races).innerJoin(raceResults, eq(raceResults.raceId, races.id))
         .where(and(eq(races.id, raceId), eq(raceResults.userId, userId)));
       if (!race) return null;
@@ -29,7 +30,7 @@ export function createDrizzleRaceHistoryRepository(db: PostgresJsDatabase) {
         personalBest: raceResults.personalBest, errors: raceResults.errors, timeMs: raceResults.durationMs, status: raceResults.status,
       }).from(raceResults).innerJoin(users, eq(raceResults.userId, users.id))
         .where(eq(raceResults.raceId, raceId)).orderBy(asc(raceResults.rank), asc(raceResults.id));
-      return { ...race, rows };
+      return { ...race, config: parseRaceSettings(race.config), rows };
     },
   };
 }

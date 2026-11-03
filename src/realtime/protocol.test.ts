@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_EXCLUDED_CHARACTERS,
+  TEXT_WORD_COUNTS,
+  TIME_LIMITS_SECONDS,
   normalizeExcludedCharacters,
   parseCreatePayload,
   parseJoinPayload,
@@ -33,6 +35,19 @@ describe("parseCreatePayload", () => {
 });
 
 describe("parseRoomConfigPatch", () => {
+  it("validates word counts, durations and normalized inclusions on the server", () => {
+    for (const length of TEXT_WORD_COUNTS) expect(parseRoomConfigPatch({ length })).toEqual({ length });
+    for (const timeLimitSeconds of [null, ...TIME_LIMITS_SECONDS]) {
+      expect(parseRoomConfigPatch({ timeLimitSeconds })).toEqual({ timeLimitSeconds });
+    }
+    expect(parseRoomConfigPatch({ includedCharacters: "É e\u0301 B b " })).toEqual({ includedCharacters: "bé" });
+    for (const patch of [{ length: "short" }, { length: 11 }, { length: "25" },
+      { includedCharacters: undefined }, { includedCharacters: 3 }, { includedCharacters: "x".repeat(101) }]) {
+      expect(parseRoomConfigPatch(patch)).toBeNull();
+      expect(parseCreatePayload({ config: patch })).toBeNull();
+    }
+  });
+
   it("validates bonuses strictly without accepting legacy or client-decided bonuses", () => {
     for (const bonuses of [true, false]) {
       expect(parseRoomConfigPatch({ bonuses })).toEqual({ bonuses });

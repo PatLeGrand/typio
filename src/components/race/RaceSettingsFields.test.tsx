@@ -26,14 +26,26 @@ describe("RaceSettingsFields (editable)", () => {
     [copy.textMode.words, { textMode: "words" }],
     [copy.language.en, { language: "en" }],
     [copy.accents.exclude, { accents: false }],
-    [copy.length.long, { length: "long" }],
-    [copy.length.short, { length: "short" }],
     [copy.inputMode.blocking, { inputMode: "blocking" }],
     [copy.timeLimit.minutes.replace("{minutes}", "3"), { timeLimitSeconds: 180 }],
   ])("choosing %s sends %j", (name, patch) => {
     const onChange = renderFields({ value: { timeLimitSeconds: 60 } });
     fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${name}`) }));
     expect(onChange).toHaveBeenCalledWith(patch);
+  });
+
+  it("disables inclusion for whole sentences and enables it for words", () => {
+    const { rerender } = render(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS }} onChange={vi.fn()} dict={copy} lang="fr" />);
+    expect(screen.getByRole("textbox", { name: copy.includedChars.label })).toBeDisabled();
+    expect(screen.getByText(copy.includedChars.sentencesHelp)).toBeInTheDocument();
+    rerender(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS, textMode: "words" }} onChange={vi.fn()} dict={copy} lang="fr" />);
+    expect(screen.getByRole("textbox", { name: copy.includedChars.label })).toBeEnabled();
+  });
+
+  it("sends a numeric word count from the dropdown", () => {
+    const onChange = renderFields();
+    fireEvent.change(screen.getByRole("combobox", { name: copy.length.label }), { target: { value: "100" } });
+    expect(onChange).toHaveBeenCalledWith({ length: 100 });
   });
 
   it("picking no limit sends null", () => {

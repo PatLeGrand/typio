@@ -1,4 +1,4 @@
-import { getEffectiveTimeLimitSeconds, type RaceSettings } from "./config";
+import { RACE_SAFETY_LIMIT_SECONDS, getEffectiveTimeLimitSeconds, type RaceSettings } from "./config";
 import { createRaceLifecycle, transitionRace, type RaceLifecycle, type RaceLifecycleEvent } from "./lifecycle";
 import { applyTypedInput, computeWpm, countCorrectChars, NO_KEYSTROKES, type Keystrokes } from "./metrics";
 import type { PlayerOutcome } from "./results";
@@ -32,7 +32,7 @@ function withLifecycle(session: RaceSession, event: RaceLifecycleEvent, now: num
 export function tickRaceSession(session: RaceSession, now: number): RaceSession {
   const current = withLifecycle(session, { type: "tick" }, now);
   if (session.lifecycle.phase === "results" || (current.lifecycle.phase !== "racing" && current.lifecycle.phase !== "results")) return current;
-  const count = Math.min(601, Math.floor(raceElapsedMs(current, now) / 1000) + 1);
+  const count = Math.min(RACE_SAFETY_LIMIT_SECONDS + 1, Math.floor(raceElapsedMs(current, now) / 1000) + 1);
   if (current.wpmSeries.length >= count) return current;
   const wpmSeries = [...current.wpmSeries];
   const position = countCorrectChars(current.typed, current.text);
@@ -66,8 +66,9 @@ export function raceElapsedMs(session: RaceSession, now: number): number {
 }
 
 /** Temps restant avant la limite (limite entière avant le départ, 0 à la fin). */
-export function raceTimeLeftMs(session: RaceSession, now: number): number {
+export function raceTimeLeftMs(session: RaceSession, now: number): number | null {
   const { lifecycle } = session;
+  if (lifecycle.settings.timeLimitSeconds === null) return null;
   if (lifecycle.phase === "results") {
     return Math.max(0, lifecycle.startsAt + getEffectiveTimeLimitSeconds(lifecycle.settings) * 1000 - lifecycle.finishedAt);
   }

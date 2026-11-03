@@ -30,6 +30,7 @@
     "back": "Retour aux paramètres"
   },
   "raceScreen": {
+    "loading": "Chargement du texte…",
     "bonuses": {
       "types": {
         "shorten": "−3 mots",
@@ -101,8 +102,9 @@
       "autoValidate": "Fin automatique au dernier caractère"
     },
     "noText": {
+      "rateLimited": "Trop de demandes de texte. Réessaie dans une minute.",
       "title": "Aucun texte disponible",
-      "message": "Les réglages choisis ne laissent aucun texte (langue, accents, caractères exclus). Assouplis-les pour lancer la course.",
+      "message": "Les réglages choisis ne laissent aucun texte (langue, accents, caractères exclus ou inclus). Assouplis-les pour lancer la course.",
       "back": "Modifier les réglages"
     },
     "results": {
@@ -487,9 +489,13 @@
     },
     "length": {
       "label": "Longueur du texte",
-      "short": "Court",
-      "medium": "Moyen",
-      "long": "Long"
+      "words": "{count} mots"
+    },
+    "includedChars": {
+      "label": "Caractères à inclure",
+      "help": "Chaque mot doit contenir au moins un de ces caractères (30 au plus, casse ignorée). Les exclusions restent prioritaires.",
+      "sentencesHelp": "Disponible en mode mots uniquement : les phrases du corpus sont conservées entières.",
+      "error": "Trop de caractères à inclure (max 100)."
     },
     "excludedChars": {
       "label": "Caractères exclus",
@@ -508,9 +514,10 @@
     },
     "timeLimit": {
       "label": "Limite de temps",
-      "help": "Sans limite personnalisée, la course s'arrête après 5 minutes.",
-      "none": "Aucune (5 min par défaut)",
+      "help": "Sans limite, la course se termine quand tous les coureurs ont fini ou abandonné.",
+      "none": "Aucune",
       "noneShort": "Aucune",
+      "seconds": "{seconds} s",
       "minutes": "{minutes} min"
     },
     "inputMode": {
@@ -578,6 +585,7 @@
     }
   },
   "profile": {
+    "demoReadOnly": "Compte de démonstration en lecture seule.",
     "avatar": {
       "title": "Photo de profil",
       "file": "Choisir une photo (JPEG, PNG ou WebP, 2 Mo maximum)",
@@ -589,6 +597,7 @@
         "TOO_LARGE": "La photo dépasse la limite de 2 Mo.",
         "UNSUPPORTED_TYPE": "Choisis une image JPEG, PNG ou WebP.",
         "INVALID_IMAGE": "Cette image est illisible. Choisis une image JPEG, PNG ou WebP valide.",
+        "DEMO_READ_ONLY": "Le profil du compte de démonstration ne peut pas être modifié.",
         "UNAUTHORIZED": "Connecte-toi avec un compte membre pour modifier ta photo.",
         "RATE_LIMITED": "Trop de tentatives. Réessaie plus tard.",
         "UNKNOWN": "La photo n’a pas pu être modifiée. Réessaie."
@@ -662,6 +671,7 @@
     },
     "errors": {
       "INVALID_SETTINGS": "Ces réglages ne sont pas valides. Recharge la page, puis réessaie.",
+      "DEMO_READ_ONLY": "Le profil du compte de démonstration ne peut pas être modifié.",
       "UNAUTHORIZED": "Ta session a expiré. Reconnecte-toi pour modifier ton profil."
     },
     "note": "Ces réglages te suivent dans toutes tes courses. À tes touches, prêt, pars !"
@@ -679,6 +689,7 @@
   },
   "room": {
     "race": {
+      "finishCountdown": "Premier coureur arrivé : {time} pour terminer.",
       "start": "Lancer la course",
       "restart": "Relancer",
       "close": "Fermer la salle",
@@ -804,7 +815,7 @@
       "CONFIG_LOCKED": "La configuration est verrouillée.",
       "RACE_NOT_ALLOWED": "La course ne peut pas démarrer dans cet état.",
       "NOT_ENOUGH_RUNNERS": "Il faut au moins deux coureurs, dont un humain.",
-      "NO_TEXT_AVAILABLE": "Aucun texte ne correspond à ces réglages.",
+      "NO_TEXT_AVAILABLE": "Aucun texte ne correspond à ces réglages (caractères exclus ou inclus).",
       "RACE_NOT_RUNNING": "La course n'est pas en cours.",
       "RACE_IN_PROGRESS": "Une course est déjà en cours dans cette salle.",
       "INPUT_REJECTED": "Cette saisie ne peut pas être acceptée.",

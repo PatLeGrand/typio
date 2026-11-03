@@ -28,6 +28,7 @@ export async function updateProfile(formData: FormData): Promise<ProfileUpdateRe
   try {
     const user = await getCurrentUser();
     if (!user) return { ok: false, code: "UNAUTHORIZED" };
+    if (user.isDemo) return { ok: false, code: "DEMO_READ_ONLY" };
 
     // Réservé avant toute requête en base : chaque appel valide écrit dans `users`.
     const deps = getAuthDeps();

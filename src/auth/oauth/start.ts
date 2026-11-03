@@ -48,6 +48,7 @@ export async function startOAuth(deps: OAuthStartDeps, input: OAuthStartInput): 
     return { location: loginNoticeLocation(locale, "failed"), cookies: [] };
   }
   const user = await validateSession(deps.sessions, input.sessionToken, deps.now());
+  if (user?.isDemo) return { location: `/${locale}/profile`, cookies: [] };
   if (user?.kind === "member") return { location: `/${locale}`, cookies: [] };
 
   const client = deps.getProvider(input.provider);

@@ -17,6 +17,7 @@ export function isKeyboardLayout(value: unknown): value is KeyboardLayout {
  * l'authentification (`auth.errors`), les autres vivent dans `profile.errors`.
  */
 export const PROFILE_ERROR_CODES = [
+  "DEMO_READ_ONLY",
   "INVALID_PSEUDO",
   "PSEUDO_TAKEN",
   "INVALID_SETTINGS",

@@ -162,6 +162,9 @@ injoignable autrement que par Caddy, en TLS.
 
 ## Tests et validation
 
+`bun run db:seed` initialise le corpus et les courses de démonstration (PostgreSQL via `DATABASE_URL`), sans doublon.
+Compte public : `demo` / `TypioDemo2026!` ; son profil est protégé.
+
 Installer avec `bun install --frozen-lockfile`, puis lancer :
 
 - `bun run test` : tests unitaires Vitest, une execution puis sortie.

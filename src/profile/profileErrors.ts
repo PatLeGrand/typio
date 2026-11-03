@@ -12,6 +12,7 @@ export function profileErrorMessage(code: ProfileErrorCode, dictionary: Dictiona
     case "RATE_LIMITED":
     case "UNKNOWN":
       return dictionary.auth.errors[code];
+    case "DEMO_READ_ONLY":
     case "INVALID_SETTINGS":
     case "UNAUTHORIZED":
       return dictionary.profile.errors[code];

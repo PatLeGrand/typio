@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TIME_LIMITS_SECONDS } from "@/realtime/protocol";
-import { DEFAULT_RACE_SETTINGS, deserializeRaceSettings, getEffectiveTimeLimitSeconds,
+import { DEFAULT_RACE_SETTINGS, deserializeRaceSettings, getEffectiveTimeLimitSeconds, RACE_SAFETY_LIMIT_SECONDS,
   parseRaceSettings, serializeRaceSettings } from "./config";
 
 describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01)", () => {
@@ -76,8 +76,15 @@ describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01
     expect(parseRaceSettings({ ...old, bots })).toMatchObject({ bonuses: false });
   });
 
+  it.each([["short", 25], ["medium", 50], ["long", 75]])("converts legacy length %s in links and stored configs", (length, expected) => {
+    const { includedCharacters, ...old } = DEFAULT_RACE_SETTINGS;
+    void includedCharacters;
+    expect(parseRaceSettings({ ...old, length })).toMatchObject({ length: expected, includedCharacters: "" });
+    expect(deserializeRaceSettings(JSON.stringify({ ...old, length }))).toMatchObject({ length: expected, includedCharacters: "" });
+  });
+
   it("uses the documented default limit, including when explicit limit is off", () => {
-    expect(getEffectiveTimeLimitSeconds(DEFAULT_RACE_SETTINGS)).toBe(300);
+    expect(getEffectiveTimeLimitSeconds(DEFAULT_RACE_SETTINGS)).toBe(RACE_SAFETY_LIMIT_SECONDS);
     expect(getEffectiveTimeLimitSeconds({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds: 60 })).toBe(60);
   });
 

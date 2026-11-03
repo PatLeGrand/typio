@@ -20,6 +20,7 @@ export function toRoomConfig(settings: RaceSettings): RoomConfig {
     numbers: settings.numbers,
     uppercase: settings.uppercase,
     excludedCharacters: settings.excludedCharacters,
+    includedCharacters: settings.includedCharacters,
     inputMode: settings.inputMode,
     bots: settings.bots,
     visibility: settings.visibility,

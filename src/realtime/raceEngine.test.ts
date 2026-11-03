@@ -1,14 +1,16 @@
+import { TEST_CORPUS } from "@/test/corpus";
 import { describe, expect, it } from "vitest";
 import { applyTextEdits } from "@/race/bonuses";
 import { botFinishMs, botKeystrokesAt, botProgressAt, planBot } from "@/race/bots";
 import { createSeededRandom, shuffled } from "@/race/seededRandom";
 import { generateRaceText } from "@/race/textGenerator";
 import fr from "@/i18n/dictionaries/fr.json";
+import { RACE_SAFETY_LIMIT_SECONDS } from "@/race/config";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
 import { BOT_LEVELS, DEFAULT_ROOM_CONFIG, INPUT_MODES, type RoomState } from "./protocol";
 import {
   abandonRace, applyInput, expireRunner, raceResults, raceResultRows, raceSnapshot,
-  setRunnerConnected, startRace, tickRace, type RaceState,
+  setRunnerConnected, startRace, tickRace, UNLIMITED_FINISH_GRACE_MS, type RaceState,
 } from "./raceEngine";
 
 const NOW = 1_000;
@@ -16,14 +18,14 @@ const START = NOW + COUNTDOWN_MS;
 function room(): RoomState {
   return {
     code: "ABCDEF", status: "waiting", hostId: "host",
-    config: { ...DEFAULT_ROOM_CONFIG, length: "short" },
+    config: { ...DEFAULT_ROOM_CONFIG, length: 25 },
     participants: ["host", "guest"].map((id) => ({
       userId: id, displayName: id, kind: "member", avatarVersion: null, role: "runner", connected: true, joinedAt: NOW,
     })),
   };
 }
 function started(source = room()): RaceState {
-  const result = startRace(source, "host", NOW, 42);
+  const result = startRace(source, "host", NOW, 42, TEST_CORPUS);
   if (!result.ok) throw new Error(result.error);
   return result.state;
 }
@@ -36,28 +38,43 @@ function input(race: RaceState, ops: readonly string[], now = START + 1_000, id 
   return result.state;
 }
 
+// Sans limite, attendre un coureur inactif ne doit ni finir à cinq minutes ni allouer sans borne.
+it("ends unlimited races when everyone is done or at the 30-minute safety cap", () => {
+  let race = tickRace(racing(), START + 600_000);
+  expect(race.status).toBe("racing");
+  race = abandonRace(race, "guest", START + 600_001);
+  expect(race.status).toBe("racing");
+  race = input(race, ["a", "b", "c"], START + 600_002);
+  expect(race).toMatchObject({ status: "results", endedAt: START + 600_002 });
+  const deadline = START + RACE_SAFETY_LIMIT_SECONDS * 1000;
+  const capped = tickRace(racing(), deadline + 100_000);
+  expect(capped).toMatchObject({ status: "results", endedAt: deadline });
+  expect(capped.runners[0].wpmSeries).toHaveLength(RACE_SAFETY_LIMIT_SECONDS + 1);
+  expect(raceResults(capped)?.every((row) => row.status === "unfinished")).toBe(true);
+});
+
 // Ces gardes protègent les droits de l’hôte et le minimum de coureurs (COURSE-02).
 describe("startRace", () => {
   it.each(["countdown", "racing", "results", "closed"] as const)("rejects a %s room", (status) => {
-    expect(startRace({ ...room(), status }, "host", NOW, 42)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
+    expect(startRace({ ...room(), status }, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
   });
   it("requires the host, present and connected", () => {
-    expect(startRace(room(), "guest", NOW, 42)).toEqual({ ok: false, error: "NOT_HOST" });
+    expect(startRace(room(), "guest", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NOT_HOST" });
     const source = room();
     source.participants[0].connected = false;
-    expect(startRace(source, "host", NOW, 42)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
+    expect(startRace(source, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
     source.participants.shift();
-    expect(startRace(source, "host", NOW, 42)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
+    expect(startRace(source, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
   });
   it("rejects one human and excludes spectators, even with bots but no human runner", () => {
     const source = room();
     source.participants.pop();
-    expect(startRace(source, "host", NOW, 42)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
+    expect(startRace(source, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
     const spectators = room();
     spectators.participants.forEach((p) => { p.role = "spectator"; });
-    expect(startRace(spectators, "host", NOW, 42)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
+    expect(startRace(spectators, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
     spectators.config.bots = ["intermediate", "intermediate"];
-    expect(startRace(spectators, "host", NOW, 42)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
+    expect(startRace(spectators, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NOT_ENOUGH_RUNNERS" });
   });
   it("allows a spectator host with two runners", () => {
     const source = room();
@@ -79,7 +96,7 @@ describe("startRace", () => {
     expect(race.runners.map((r) => r.kind)).toEqual(["human", "bot"]);
     expect(race.runners[1].id).toBe("bot-0");
     expect(race.runners[1].name.length).toBeGreaterThan(0);
-    expect(race.timeLimitMs).toBe(300_000);
+    expect(race.timeLimitMs).toBe(1_800_000);
     source.config.timeLimitSeconds = 60;
     expect(started(source).timeLimitMs).toBe(60_000);
   });
@@ -88,7 +105,7 @@ describe("startRace", () => {
     source.config = { ...source.config, inputMode, bots: [...BOT_LEVELS] };
     const race = started(source);
     const random = createSeededRandom(42);
-    generateRaceText(source.config, random);
+    generateRaceText(source.config, random, TEST_CORPUS);
     shuffled(fr.raceScreen.botNames, random);
     const bots = race.runners.filter((runner) => runner.kind === "bot");
     expect(bots).toHaveLength(BOT_LEVELS.length);
@@ -102,7 +119,7 @@ describe("startRace", () => {
   it("returns NO_TEXT_AVAILABLE when exclusions empty the pool", () => {
     const source = room();
     source.config.excludedCharacters = "abcdefghijklmnopqrstuvwxyz";
-    expect(startRace(source, "host", NOW, 42)).toEqual({ ok: false, error: "NO_TEXT_AVAILABLE" });
+    expect(startRace(source, "host", NOW, 42, TEST_CORPUS)).toEqual({ ok: false, error: "NO_TEXT_AVAILABLE" });
   });
 });
 
@@ -495,4 +512,44 @@ it("keeps missed keys out of public results and preserves them in persistence ro
   for (const runner of raceSnapshot(race, START + 1_000).runners) {
     expect(runner).not.toHaveProperty("missedKeys");
   }
+});
+
+it("donne 60 secondes après le premier humain arrivé, puis classe le coureur inactif", () => {
+  const race = input(racing(), ["a", "b", "c"]);
+  const deadline = START + 1000 + UNLIMITED_FINISH_GRACE_MS;
+  expect(raceSnapshot(race, START + 1000).finishDeadline).toBe(deadline);
+  expect(tickRace(race, deadline - 1).status).toBe("racing");
+  const ended = tickRace(race, deadline + 10_000);
+  expect(ended).toMatchObject({ status: "results", endedAt: deadline });
+  expect(raceResults(ended)?.find((row) => row.id === "guest")?.status).toBe("unfinished");
+});
+
+it("déclenche aussi le délai avec un bot et borne les ticks tardifs à cette échéance", () => {
+  const source = room();
+  source.config = { ...source.config, bots: ["expert", "noob"] };
+  const race = started(source);
+  const firstFinish = Math.min(...race.runners.filter((r) => r.plan).map((r) => botFinishMs(r.plan!)));
+  const deadline = START + firstFinish + UNLIMITED_FINISH_GRACE_MS;
+  expect(raceSnapshot(race, START + firstFinish).finishDeadline).toBe(deadline);
+  const ended = tickRace(race, deadline + 100_000);
+  expect(ended).toMatchObject({ status: "results", endedAt: deadline });
+  const slow = ended.runners.find((r) => r.level === "noob")!;
+  expect(slow.position).toBe(botProgressAt(slow.plan!, deadline - START));
+});
+
+it("garde la limite choisie même après une arrivée", () => {
+  const source = room();
+  source.config = { ...source.config, timeLimitSeconds: 180 };
+  const race = input(racing("abc", source), ["a", "b", "c"]);
+  expect(raceSnapshot(race, START + 1000).finishDeadline).toBeNull();
+  expect(tickRace(race, START + 61_000).status).toBe("racing");
+});
+
+it("laisse une minute entière si la première arrivée précède de peu le plafond de sécurité", () => {
+  const finishAt = START + RACE_SAFETY_LIMIT_SECONDS * 1000 - 1000;
+  const race = input(racing(), ["a", "b", "c"], finishAt);
+  const deadline = finishAt + UNLIMITED_FINISH_GRACE_MS;
+  expect(tickRace(race, START + RACE_SAFETY_LIMIT_SECONDS * 1000).status).toBe("racing");
+  expect(applyInput(race, "guest", ["a"], START + RACE_SAFETY_LIMIT_SECONDS * 1000 + 1).ok).toBe(true);
+  expect(tickRace(race, deadline)).toMatchObject({ status: "results", endedAt: deadline });
 });

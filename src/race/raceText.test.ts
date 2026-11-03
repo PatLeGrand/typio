@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_RACE_SETTINGS, type RaceSettings } from "./config";
-import { createRaceText } from "./raceText";
+import { createRaceText as create } from "./raceText";
+
+import { TEST_CORPUS } from "@/test/corpus";
+const createRaceText: typeof create = (settings, random, previous) => create(settings, random, previous, TEST_CORPUS);
 
 function counter(): () => number {
   let state = 0;
@@ -25,9 +28,9 @@ describe("createRaceText (AC-3)", () => {
     expect(createRaceText(settings, counter())).toBeNull();
   });
 
-  it("garde le texte précédent plutôt que rien quand il n'y a pas d'autre choix", () => {
-    const settings: RaceSettings = { ...DEFAULT_RACE_SETTINGS, textMode: "words", length: "short" };
+  it("rend null quand aucun texte différent n’est disponible", () => {
+    const settings: RaceSettings = { ...DEFAULT_RACE_SETTINGS, textMode: "words", length: 25 };
     const text = createRaceText(settings, () => 0);
-    expect(createRaceText(settings, () => 0, text ?? undefined)).toBe(text);
+    expect(createRaceText(settings, () => 0, text ?? undefined)).toBeNull();
   });
 });

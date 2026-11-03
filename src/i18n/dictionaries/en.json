@@ -30,6 +30,7 @@
     "back": "Back to settings"
   },
   "raceScreen": {
+    "loading": "Loading text…",
     "bonuses": {
       "types": {
         "shorten": "−3 words",
@@ -101,8 +102,9 @@
       "autoValidate": "Ends automatically at the last character"
     },
     "noText": {
+      "rateLimited": "Too many text requests. Try again in a minute.",
       "title": "No text available",
-      "message": "The chosen settings leave no text (language, accents, excluded characters). Loosen them to start the race.",
+      "message": "The chosen settings leave no text (language, accents, excluded or included characters). Loosen them to start the race.",
       "back": "Change settings"
     },
     "results": {
@@ -487,9 +489,13 @@
     },
     "length": {
       "label": "Text length",
-      "short": "Short",
-      "medium": "Medium",
-      "long": "Long"
+      "words": "{count} words"
+    },
+    "includedChars": {
+      "label": "Characters to include",
+      "help": "Each word must contain at least one of these characters (up to 30, case ignored). Exclusions take priority.",
+      "sentencesHelp": "Available in words mode only: corpus sentences are kept whole.",
+      "error": "Too many characters to include (max 100)."
     },
     "excludedChars": {
       "label": "Excluded characters",
@@ -508,9 +514,10 @@
     },
     "timeLimit": {
       "label": "Time limit",
-      "help": "Without a custom limit, the race ends after 5 minutes.",
-      "none": "None (5 min by default)",
+      "help": "Without a limit, the race ends when all racers finish or abandon.",
+      "none": "None",
       "noneShort": "None",
+      "seconds": "{seconds} s",
       "minutes": "{minutes} min"
     },
     "inputMode": {
@@ -578,6 +585,7 @@
     }
   },
   "profile": {
+    "demoReadOnly": "Read-only demonstration account.",
     "avatar": {
       "title": "Profile photo",
       "file": "Choose a photo (JPEG, PNG or WebP, up to 2 MB)",
@@ -589,6 +597,7 @@
         "TOO_LARGE": "The photo exceeds the 2 MB limit.",
         "UNSUPPORTED_TYPE": "Choose a JPEG, PNG or WebP image.",
         "INVALID_IMAGE": "This image cannot be read. Choose a valid JPEG, PNG or WebP image.",
+        "DEMO_READ_ONLY": "The demo account profile cannot be changed.",
         "UNAUTHORIZED": "Sign in with a member account to change your photo.",
         "RATE_LIMITED": "Too many attempts. Try again later.",
         "UNKNOWN": "The photo could not be changed. Try again."
@@ -662,6 +671,7 @@
     },
     "errors": {
       "INVALID_SETTINGS": "These settings are not valid. Reload the page, then try again.",
+      "DEMO_READ_ONLY": "The demo account profile cannot be changed.",
       "UNAUTHORIZED": "Your session has expired. Sign in again to edit your profile."
     },
     "note": "These settings follow you in all your races. On your keys, get set, go!"
@@ -679,6 +689,7 @@
   },
   "room": {
     "race": {
+      "finishCountdown": "First runner finished: {time} left to finish.",
       "start": "Start race",
       "restart": "Restart",
       "close": "Close room",
@@ -804,7 +815,7 @@
       "CONFIG_LOCKED": "The settings are locked.",
       "RACE_NOT_ALLOWED": "The race cannot start in this state.",
       "NOT_ENOUGH_RUNNERS": "At least two runners are required, including one human.",
-      "NO_TEXT_AVAILABLE": "No text matches these settings.",
+      "NO_TEXT_AVAILABLE": "No text matches these settings (excluded or included characters).",
       "RACE_NOT_RUNNING": "The race is not running.",
       "RACE_IN_PROGRESS": "A race is already in progress in this room.",
       "INPUT_REJECTED": "This input cannot be accepted.",

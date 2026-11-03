@@ -1,5 +1,5 @@
 import type { RaceSettings } from "./config";
-import { generateRaceText } from "./textGenerator";
+import { generateRaceText, EMPTY_CORPUS, type SentenceCorpus } from "./textGenerator";
 
 const MAX_ATTEMPTS = 8;
 
@@ -12,13 +12,12 @@ export function createRaceText(
   settings: RaceSettings,
   random: () => number,
   previous?: string,
+  corpus: SentenceCorpus = EMPTY_CORPUS,
 ): string | null {
-  let fallback: string | null = null;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
-    const result = generateRaceText(settings, random);
+    const result = generateRaceText(settings, random, corpus);
     if (!result.ok) continue;
     if (result.text !== previous) return result.text;
-    fallback = result.text;
   }
-  return fallback;
+  return null;
 }

@@ -73,6 +73,12 @@ beforeEach(() => {
 });
 
 describe("updateProfile", () => {
+  it("refuse le profil public de démonstration avant toute écriture", async () => {
+    mocks.getCurrentUser.mockResolvedValue({ ...member, isDemo: true });
+    expect(await updateProfile(form({}))).toEqual({ ok: false, code: "DEMO_READ_ONLY" });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
   it("refuse une requête sans session, sans rien écrire", async () => {
     mocks.getCurrentUser.mockResolvedValue(null);
 

@@ -36,6 +36,7 @@ export const users = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     kind: text("kind").notNull(),
+    isDemo: boolean("is_demo").notNull().default(false),
     username: text("username"),
     displayName: text("display_name").notNull(),
     avatarVersion: integer("avatar_version"),
@@ -157,4 +158,14 @@ export const raceResults = pgTable("race_results", {
   uniqueIndex("race_results_race_user_idx").on(table.raceId, table.userId),
   check("race_results_status_check", sql`${table.status} in ('finished', 'unfinished', 'abandoned')`),
   check("race_results_progress_check", sql`${table.progress} >= 0 and ${table.progress} <= 1`),
+]);
+
+export const textPassages = pgTable("text_passages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  language: text("language").$type<"fr" | "en">().notNull(),
+  content: text("content").notNull(),
+  source: text("source"),
+}, (table) => [
+  uniqueIndex("text_passages_language_content_idx").on(table.language, table.content),
+  check("text_passages_language_check", sql`${table.language} in ('fr', 'en')`),
 ]);

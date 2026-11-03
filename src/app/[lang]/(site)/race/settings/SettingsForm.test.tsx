@@ -29,7 +29,7 @@ describe("SettingsForm", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
     const timeLimit = screen.getByRole("radiogroup", { name: fr.raceSettings.timeLimit.label });
     expect(within(timeLimit).getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
-      "Aucune (5 min par défaut)", "1 min", "2 min", "3 min", "5 min", "10 min",
+      "Aucune", "30 s", "1 min", "2 min", "3 min", "5 min", "10 min",
     ]);
     expect(screen.queryByRole("spinbutton")).toBeNull();
   });
@@ -111,8 +111,7 @@ describe("SettingsForm", () => {
     fireEvent.change(excludeInput, { target: { value: "" } });
 
     // Modifie la longueur du texte
-    const longRadio = screen.getByRole("radio", { name: "Long" });
-    fireEvent.click(longRadio);
+    fireEvent.change(screen.getByRole("combobox", { name: fr.raceSettings.length.label }), { target: { value: "75" } });
 
     // Lancer
     const startButton = screen.getByRole("button", { name: "Lancer la course →" });
@@ -120,7 +119,7 @@ describe("SettingsForm", () => {
 
     const expectedConfig = serializeRaceSettings({
       ...DEFAULT_RACE_SETTINGS,
-      length: "long",
+      length: 75,
       excludedCharacters: ""
     });
 

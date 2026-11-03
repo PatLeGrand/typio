@@ -108,7 +108,7 @@ export interface RoundSnapshot {
   /** Chiffre du compte à rebours (3, 2, 1), ou 0 hors compte à rebours. */
   countdownSeconds: number;
   elapsedMs: number;
-  timeLeftMs: number;
+  timeLeftMs: number | null;
   wpm: number;
   accuracy: number;
   /** Classement courant (par avancement) ; celui des résultats une fois la course finie. */
@@ -123,13 +123,14 @@ const progressOf = (chars: number, total: number) => (total === 0 ? 0 : Math.min
 export function snapshotRound(round: Round, clock: number, playerName: string): RoundSnapshot {
   const { session, bots } = round;
   const { lifecycle, text } = session;
-  const phase = lifecycle.phase === "results" ? "results" : lifecycle.phase === "racing" ? "racing" : "countdown";
-  const elapsedMs = raceElapsedMs(session, clock);
+  const outcome = getPlayerOutcome(session);
+  const endMs = outcome?.elapsedMs;
+  const phase = lifecycle.phase === "preparing" ? "countdown" : lifecycle.phase;
+  const elapsedMs = outcome?.elapsedMs ?? raceElapsedMs(session, clock);
   const playerChars = countCorrectChars(session.typed, text);
 
-  const outcome = getPlayerOutcome(session);
   const results = outcome
-    ? buildRaceResults({ playerId: PLAYER_ID, playerName, player: outcome, playerTextLength: text.length, bots }).map((row) => ({ ...row,
+    ? buildRaceResults({ playerId: PLAYER_ID, playerName, player: outcome, playerTextLength: text.length, bots, botsElapsedMs: endMs }).map((row) => ({ ...row,
       bonusesReceived: round.bonusEvents.filter((event) => event.recipientId === row.id).length,
       bonusTypes: round.bonusEvents.filter((event) => event.recipientId === row.id).map((event) => event.type),
     }))
@@ -157,11 +158,11 @@ export function snapshotRound(round: Round, clock: number, playerName: string): 
       lifecycle.phase === "countdown" ? Math.max(1, Math.ceil((lifecycle.startsAt - clock) / 1000)) : 0,
     elapsedMs,
     timeLeftMs: raceTimeLeftMs(session, clock),
-    wpm: playerRow?.wpm ?? (elapsedMs >= MIN_LIVE_WPM_MS ? computeWpm(playerChars, elapsedMs) : 0),
+    wpm: playerRow?.wpm ?? ((outcome?.elapsedMs ?? elapsedMs) >= MIN_LIVE_WPM_MS ? computeWpm(playerChars, outcome?.elapsedMs ?? elapsedMs) : 0),
     accuracy: computeAccuracy(session.keystrokes),
     racers,
     playerRank: racers.findIndex((racer) => racer.isPlayer) + 1,
     results,
-    endReason: outcome?.reason ?? null,
+    endReason: phase === "results" ? outcome?.reason ?? null : null,
   };
 }

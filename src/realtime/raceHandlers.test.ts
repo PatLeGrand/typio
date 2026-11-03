@@ -1,5 +1,7 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { TEST_CORPUS } from "@/test/corpus";
+import { describe, expect, it, vi } from "vitest";
+import { EMPTY_CORPUS, type SentenceCorpus } from "@/race/textGenerator";
 import { createRateLimiter } from "@/auth/rateLimit";
 import { registerRoomHandlers, type RealtimeSocket } from "./roomHandlers";
 import { createRoomStore } from "./roomStore";
@@ -9,9 +11,9 @@ import type { RealtimeServer } from "./server";
 import type { Ack } from "./protocol";
 
 /** Frontières Socket.IO et minuteurs simulées ; store et moteur réels. */
-function setup() {
+function setup(loadCorpus?: () => Promise<SentenceCorpus>) {
   let time = 1000;
-  const store = createRoomStore({ now: () => time, generateSeed: () => 42, generateCode: () => "ABCDEF" });
+  const store = createRoomStore({ corpus: TEST_CORPUS, now: () => time, generateSeed: () => 42, generateCode: () => "ABCDEF" });
   const sockets = createUserSockets();
   const expirations = new Map<string, { delay: number; expire: () => void }>();
   const timers: GraceTimers = {
@@ -38,7 +40,7 @@ function setup() {
     } as unknown as RealtimeSocket;
     sockets.add(socket);
     registerRoomHandlers(io, socket, {
-      now: () => new Date(time), store, sockets, timers, raceInputs, joinFailures,
+      now: () => new Date(time), store, sockets, timers, raceInputs, joinFailures, loadCorpus,
       syncRace(code) {
         const snapshot = store.snapshot(code);
         if (snapshot) io.to(code).emit("race:state", snapshot);
@@ -56,12 +58,15 @@ function setup() {
         if (!result) throw new Error(`Accusé absent : ${event}`);
         return result;
       },
+      commandAsync(event: string): Promise<Ack> {
+        return new Promise((resolve) => handlers.get(event)?.({}, resolve));
+      },
       input(payload: unknown) { handlers.get("race:input")?.(payload); },
       disconnect() { sockets.remove(socket); handlers.get("disconnect")?.(); },
     };
   }
   const host = client("host");
-  host.command("room:create", { config: { length: "short" } });
+  host.command("room:create", { config: { length: 25 } });
   const guest = client("guest");
   guest.command("room:join", { code: "ABCDEF", role: "runner" });
   return { store, host, guest, client, broadcasts, expirations, at: (value: number) => { time = value; } };
@@ -220,7 +225,7 @@ describe("frontière client des courses (COURSE-06)", () => {
     expect(store.get("ABCDEF")?.participants.length).toBe(3);
     expect(host.command("room:updateConfig", { bots: ["intermediate"] })).toEqual({ ok: true });
     host.command("race:start");
-    at(400_000);
+    at(1_900_000);
     store.tick("ABCDEF");
     expect(host.command("room:close")).toEqual({ ok: true });
     expect(store.roomOf("guest")).toBeNull();
@@ -229,4 +234,15 @@ describe("frontière client des courses (COURSE-06)", () => {
     expect(guest.rooms.size).toBe(0);
     expect(returning.rooms.size).toBe(0);
   });
+});
+
+it("charge le corpus avant chaque départ et réessaie après un seed tardif", async () => {
+  const load = vi.fn<() => Promise<SentenceCorpus>>().mockResolvedValueOnce(EMPTY_CORPUS).mockResolvedValue(TEST_CORPUS);
+  const { host, store } = setup(load);
+  expect(load).not.toHaveBeenCalled();
+  expect(await host.commandAsync("race:start")).toEqual({ ok: false, error: "NO_TEXT_AVAILABLE" });
+  expect(store.get("ABCDEF")?.status).toBe("waiting");
+  expect(await host.commandAsync("race:start")).toEqual({ ok: true });
+  expect(store.get("ABCDEF")?.status).toBe("countdown");
+  expect(load).toHaveBeenCalledTimes(2);
 });

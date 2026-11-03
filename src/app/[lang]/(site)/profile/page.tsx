@@ -69,6 +69,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
         {currentUser.kind === "member" && <AvatarForm userId={currentUser.id} displayName={currentUser.displayName}
           version={dbUser.avatarVersion} labels={profile.avatar} />}
 
+        {currentUser.isDemo && <p role="status">{profile.demoReadOnly}</p>}
         <ProfileForm 
           user={currentUser} 
           dbUser={{
