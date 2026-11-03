@@ -489,10 +489,7 @@
     },
     "length": {
       "label": "Text length",
-      "words": "{count} words",
-      "short": "Short",
-      "medium": "Medium",
-      "long": "Long"
+      "words": "{count} words"
     },
     "includedChars": {
       "label": "Characters to include",

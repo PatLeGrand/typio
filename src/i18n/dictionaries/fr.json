@@ -489,10 +489,7 @@
     },
     "length": {
       "label": "Longueur du texte",
-      "words": "{count} mots",
-      "short": "Court",
-      "medium": "Moyen",
-      "long": "Long"
+      "words": "{count} mots"
     },
     "includedChars": {
       "label": "Caractères à inclure",
