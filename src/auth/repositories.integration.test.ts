@@ -9,7 +9,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDatabaseClient } from "@/db/client";
-import { oauthAccounts, sessions, userAvatars, users } from "@/db/schema";
+import { oauthAccounts, roomMemberships, sessions, userAvatars, users } from "@/db/schema";
 import { createDrizzleUserRepository } from "./drizzleUserRepository";
 import { createDrizzleOAuthRepository } from "./oauth/drizzleOAuthRepository";
 import { OAuthAccountTakenError } from "./oauth/oauthRepository";
@@ -77,6 +77,19 @@ describe.skipIf(!databaseUrl)("PostgreSQL repositories", () => {
         "oauth_accounts_provider_provider_account_id_pk",
       ]),
     );
+  });
+
+  it("SALLE-06: the database rejects two memberships for one user and cascades account deletion", async () => {
+    const id = await newMember(`Room${suffix}`);
+    await client.db.insert(roomMemberships).values({ userId: id, roomCode: "AAAAAA" });
+    try {
+      await client.db.insert(roomMemberships).values({ userId: id, roomCode: "BBBBBB" });
+      throw new Error("duplicate membership accepted");
+    } catch (error) {
+      expect(postgresErrorCode(error)).toBe(UNIQUE_VIOLATION);
+    }
+    await client.db.delete(users).where(eq(users.id, id));
+    expect(await client.db.select().from(roomMemberships).where(eq(roomMemberships.userId, id))).toEqual([]);
   });
 
   it("creates a member and finds it case-insensitively", async () => {

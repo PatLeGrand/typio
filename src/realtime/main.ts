@@ -7,7 +7,9 @@
 import { createDrizzleSessionRepository } from "@/auth/drizzleSessionRepository";
 import { createDatabaseClient } from "@/db/client";
 import { createDrizzleRaceRepository } from "@/race/drizzleRaceRepository";
+import { createDrizzleTextCorpusRepository } from "@/race/drizzleTextCorpusRepository";
 import { createRealtimeServer } from "./server";
+import { createDrizzleRoomMembershipRepository } from "./drizzleRoomMembershipRepository";
 
 const port = Number(process.env.REALTIME_PORT ?? 3001);
 const allowedOrigins = (process.env.APP_ORIGIN ?? "http://localhost:3000")
@@ -16,7 +18,12 @@ const allowedOrigins = (process.env.APP_ORIGIN ?? "http://localhost:3000")
   .filter(Boolean);
 
 const { db, close } = createDatabaseClient();
+const roomMembershipRepository = createDrizzleRoomMembershipRepository(db);
+// Les salles sont en mémoire : aucune appartenance ne survit au redémarrage.
+await roomMembershipRepository.clear();
 const { io, httpServer } = createRealtimeServer({
+  roomMembershipRepository,
+  loadCorpus: createDrizzleTextCorpusRepository(() => db).load,
   sessions: createDrizzleSessionRepository(db),
   raceRepository: createDrizzleRaceRepository(db),
   allowedOrigins,

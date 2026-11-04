@@ -17,8 +17,9 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze<RaceS
   punctuation: true,
   numbers: false,
   uppercase: true,
-  length: "medium",
+  length: 25,
   excludedCharacters: "",
+  includedCharacters: "",
   timeLimitSeconds: null,
   inputMode: "free",
   bots: ["intermediate", "intermediate"],
@@ -29,6 +30,12 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze<RaceS
 
 /** Les champs ajoutés après coup sont facultatifs à la lecture : d'anciens liens `/race?config=` les ignorent. */
 export const raceSettingsSchema = z.preprocess((value) => {
+  if (typeof value === "object" && value !== null && "length" in value) {
+    const lengths: Record<string, number> = { short: 25, medium: 50, long: 75 };
+    if (typeof value.length === "string" && Object.hasOwn(lengths, value.length)) {
+      value = { ...value, length: lengths[value.length] };
+    }
+  }
   if (typeof value === "object" && value !== null && "abilities" in value && typeof value.abilities === "boolean" && !("bonuses" in value)) {
     const { abilities, ...rest } = value;
     value = { ...rest, bonuses: abilities };
@@ -43,6 +50,7 @@ export const raceSettingsSchema = z.preprocess((value) => {
   return { ...rest, bots: Array.from({ length: legacy.data.botCount }, () => LEGACY_BOT_LEVEL[legacy.data.botDifficulty]) };
 }, z.strictObject({
   ...roomConfigFields,
+  includedCharacters: roomConfigFields.includedCharacters.default(""),
   visibility: roomConfigFields.visibility.default(DEFAULT_RACE_SETTINGS.visibility),
   capacity: roomConfigFields.capacity.default(DEFAULT_CAPACITY),
   complexity: roomConfigFields.complexity.default(DEFAULT_RACE_SETTINGS.complexity),
@@ -57,9 +65,11 @@ export function parseRaceSettings(value: unknown): RaceSettings | null {
   return result.success ? result.data : null;
 }
 
-/** H-9: disabling an explicit limit keeps the five-minute safety limit. */
+/** CONF-01 : borne de sécurité, même sans limite choisie, pour éviter une salle bloquée. */
+export const RACE_SAFETY_LIMIT_SECONDS = 30 * 60;
+
 export function getEffectiveTimeLimitSeconds(settings: RaceSettings): number {
-  return settings.timeLimitSeconds ?? 300;
+  return settings.timeLimitSeconds ?? RACE_SAFETY_LIMIT_SECONDS;
 }
 
 export function serializeRaceSettings(settings: RaceSettings): string {

@@ -36,6 +36,7 @@ export const users = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     kind: text("kind").notNull(),
+    isDemo: boolean("is_demo").notNull().default(false),
     username: text("username"),
     displayName: text("display_name").notNull(),
     avatarVersion: integer("avatar_version"),
@@ -123,6 +124,13 @@ export const oauthAccounts = pgTable(
   ],
 );
 
+/** SALLE-06 : une seule appartenance par personne, garantie par la clé primaire. */
+export const roomMemberships = pgTable("room_memberships", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  roomCode: text("room_code").notNull(),
+  joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Courses terminées (RES-05) : une seule écriture en fin de course (PERF-02). */
 export const races = pgTable("races", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -157,4 +165,14 @@ export const raceResults = pgTable("race_results", {
   uniqueIndex("race_results_race_user_idx").on(table.raceId, table.userId),
   check("race_results_status_check", sql`${table.status} in ('finished', 'unfinished', 'abandoned')`),
   check("race_results_progress_check", sql`${table.progress} >= 0 and ${table.progress} <= 1`),
+]);
+
+export const textPassages = pgTable("text_passages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  language: text("language").$type<"fr" | "en">().notNull(),
+  content: text("content").notNull(),
+  source: text("source"),
+}, (table) => [
+  uniqueIndex("text_passages_language_content_idx").on(table.language, table.content),
+  check("text_passages_language_check", sql`${table.language} in ('fr', 'en')`),
 ]);

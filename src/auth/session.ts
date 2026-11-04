@@ -102,6 +102,7 @@ export async function validateSession(
 
   return {
     id: user.id,
+    ...(user.isDemo === undefined ? {} : { isDemo: user.isDemo }),
     kind: user.kind,
     displayName: user.displayName,
     username: user.username,

@@ -7,6 +7,8 @@
     "dev:realtime": "HOSTNAME=127.0.0.1 bun --watch src/realtime/main.ts",
     "build": "next build",
     "build:realtime": "bun build src/realtime/main.ts --target=bun --define process.env.NODE_ENV='\"production\"' --outfile=dist/realtime.js",
+    "build:seed": "bun build scripts/seed.ts --target=bun --external @node-rs/argon2 --outfile=dist/seed.js",
+    "db:seed": "bun scripts/seed.ts",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",

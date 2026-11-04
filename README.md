@@ -154,13 +154,16 @@ injoignable autrement que par Caddy, en TLS.
 
 ## Ce qui reste à décider
 
-- **Modèle de données.** PostgreSQL et les migrations sont prêts, mais les
-  tables des comptes, scores et courses seront définies avec les fonctionnalités.
-- **Authentification.** Comptes élèves, ou codes de classe sans compte.
+Le modèle de données (`src/db/schema.ts`) et l'authentification (membres et invités)
+sont en place ; l'état des exigences est suivi dans [docs/EXIGENCES.md](docs/EXIGENCES.md).
+
 - **Content-Security-Policy.** Absente pour l'instant : Next injecte ses
   propres scripts, et une politique stricte demande de leur poser un nonce.
 
 ## Tests et validation
+
+`bun run db:seed` initialise le corpus et les courses de démonstration (PostgreSQL via `DATABASE_URL`), sans doublon.
+Compte public : `demo` / `TypioDemo2026!` ; son profil est protégé.
 
 Installer avec `bun install --frozen-lockfile`, puis lancer :
 

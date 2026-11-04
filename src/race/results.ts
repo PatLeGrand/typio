@@ -63,6 +63,7 @@ export function buildRaceResults(input: {
   player: PlayerOutcome;
   playerTextLength: number;
   bots: readonly BotEntry[];
+  botsElapsedMs?: number;
 }): RaceResultRow[] {
   const { player, bots } = input;
   const endMs = player.elapsedMs;
@@ -87,9 +88,10 @@ export function buildRaceResults(input: {
 
   for (const bot of bots) {
     const finishMs = botFinishMs(bot.plan);
-    const finished = finishMs <= endMs;
-    const correctChars = finished ? bot.plan.textLength : botProgressAt(bot.plan, endMs);
-    const timeMs = finished ? finishMs : endMs;
+    const botsEndMs = input.botsElapsedMs ?? endMs;
+    const finished = finishMs <= botsEndMs;
+    const correctChars = finished ? bot.plan.textLength : botProgressAt(bot.plan, botsEndMs);
+    const timeMs = finished ? finishMs : botsEndMs;
     rows.push({
       id: bot.id,
       name: bot.name,

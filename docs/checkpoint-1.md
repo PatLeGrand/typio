@@ -1,7 +1,8 @@
 # Checkpoint 1 — périmètre et répartition
 
-Référence : [énoncé, section 7](enonce.md#7-checkpoint-1-15-). État au 27 octobre 2026 ;
-le relevé historique du 5 octobre est conservé ci-dessous.
+Référence : [énoncé, section 7](enonce.md#7-checkpoint-1-15-). État au 4 novembre 2026 ;
+le relevé historique du 5 octobre est conservé ci-dessous. Bilan global de la matrice :
+86 exigences complètes sur 90, 4 partielles, aucune non faite.
 
 ## Les cinq livrables (§ 7.1)
 
@@ -9,7 +10,7 @@ le relevé historique du 5 octobre est conservé ci-dessous.
 |---|---|---|
 | `docs/DEMARCHE-CREATIVE.md` complet (DES-01 à DES-03) | **partiel** : [squelette créé](DEMARCHE-CREATIVE.md), logo dans `src/components/Logo.tsx`, direction artistique dans `docs/design/`, tokens dans `src/app/globals.css` | Patrick : noms envisagés, originalité, croquis, logo, moodboard, palette et typographies à documenter avec images. Le nom et le logo remis sont définitifs. |
 | `docs/ARCHITECTURE.md`, version initiale | **complet** pour le document initial : [modèle de données, machine à états, ADR temps réel et approche bots](ARCHITECTURE.md) (COURSE-01, TECH-04, TECH-06) | orchestrateur ; la cible documentée reste à implémenter, notamment les bots multijoueurs. |
-| Application déployée en HTTPS | **partiel** au regard des exigences finales : dernière production vérifiée le 9 octobre, `sha-994ac37`, https://typio.aether-manager.ca ; preuves : `infra/docker-compose.yml`, `infra/caddy/typio.caddyfile`, `src/auth/`, `src/db/schema.ts`, `drizzle/`, `src/realtime/`, `src/components/LanguageSwitcher.tsx`, `ThemeToggle.tsx`, `Logo.tsx`, `src/app/globals.css` | orchestrateur (infra), `implementer` et `security-reviewer` : revérifier production, auth (AUTH-01), migrations (TECH-04), création/jonction et liste en direct (SALLE-01, SALLE-02, JOIN-01), langue/thème (I18N-02, DES-05), logo/palette/typographies. Écarts finaux dans `EXIGENCES.md` : seed, créateur spectateur, code sur l'accueil. |
+| Application déployée en HTTPS | **partiel** au regard des exigences finales : dernière production vérifiée le 9 octobre, `sha-994ac37`, https://typio.aether-manager.ca ; preuves : `infra/docker-compose.yml`, `infra/caddy/typio.caddyfile`, `src/auth/`, `src/db/schema.ts`, `drizzle/`, `src/realtime/`, `src/components/LanguageSwitcher.tsx`, `ThemeToggle.tsx`, `Logo.tsx`, `src/app/globals.css` | orchestrateur (infra), `implementer` et `security-reviewer` : revérifier production, auth (AUTH-01), migrations (TECH-04), création/jonction et liste en direct (SALLE-01, SALLE-02, JOIN-01), langue/thème (I18N-02, DES-05), logo/palette/typographies. Seed, créateur spectateur et code sur l'accueil sont faits sur `develop` (TECH-04, SALLE-01, JOIN-01) mais pas encore en production : redéployer, puis revérifier. |
 | Intégration continue et tests unitaires (TECH-09) | **complet** : `.github/workflows/ci.yml`, `vitest.config.mts`, `src/**/*.test.ts(x)` ; sur chaque push : `tsc --noEmit`, tests, lint, builds, migrations et intégration PostgreSQL | — |
 | `docs/EXIGENCES.md`, version initiale | **complet** : [matrice créée](EXIGENCES.md), exigences, statuts et preuves listés | Maintenir les statuts honnêtes à chaque fusion dans `develop`. |
 
@@ -21,8 +22,8 @@ le relevé historique du 5 octobre est conservé ci-dessous.
 | Démarche créative et direction artistique (nom, logo, moodboard, palette, typographies) | 20 | **partiel** : `DEMARCHE-CREATIVE.md` à compléter par Patrick (DES-01 à DES-03). |
 | Architecture : modèle de données, machine à états, ADR temps réel | 20 | **complet** pour la version initiale : `ARCHITECTURE.md`, approche bots incluse. |
 | Déploiement fonctionnel en production : HTTPS, authentification, base de données | 20 | Déploiement vérifié le 9 octobre (`sha-994ac37`) ; à revérifier avant remise, écarts finaux TECH-04 dans `EXIGENCES.md`. |
-| Salle créée et rejointe par code, mise à jour en temps réel | 10 | Fonctionnel selon le relevé historique : `src/realtime/`, `reprise/etape-1-salle-temps-reel.md` ; SALLE-01 et JOIN-01 restent **partiels** selon `EXIGENCES.md`. |
-| Intégration continue, langue et thème, qualité initiale du code, matrice des exigences | 10 | CI complète (TECH-09) ; I18N-02 et DES-05 **complets** ; matrice `EXIGENCES.md` créée, conformité technique restante documentée. |
+| Salle créée et rejointe par code, mise à jour en temps réel | 10 | Fonctionnel selon le relevé historique : `src/realtime/`, `reprise/etape-1-salle-temps-reel.md` ; SALLE-01, SALLE-02 et JOIN-01 sont **complets** selon `EXIGENCES.md` (SALLE-06, SALLE-08 et SALLE-10 aussi). |
+| Intégration continue, langue et thème, qualité initiale du code, matrice des exigences | 10 | CI complète (TECH-09) ; I18N-02 et DES-05 **complets** ; matrice `EXIGENCES.md` tenue à jour ; conformité technique (TECH-02, TECH-07, TECH-10) **complète**. |
 | **Total** | **100** | Aucun score obtenu n'est présumé. |
 
 ## Ordre proposé
@@ -41,7 +42,7 @@ le relevé historique du 5 octobre est conservé ci-dessous.
 ## À faire plus tard
 
 - **Réviser H-13 dans le Word** (Patrick) : hébergement sur le VPS, avec un renvoi vers l'ADR-001.
-- **Confirmer avec le client** qu'un invité peut hériter du rôle d'hôte (voir la machine à états, § 2).
+- ~~Confirmer avec le client qu'un invité peut hériter du rôle d'hôte~~ : confirmé le 4 novembre 2026 (H-46 dans `EXIGENCES.md`).
 
 ## État au 5 octobre 2026
 

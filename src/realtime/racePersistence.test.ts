@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { TEST_CORPUS } from "@/test/corpus";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RaceRepository } from "@/race/raceRepository";
 import type { Ack } from "./protocol";
@@ -39,15 +40,13 @@ function client(id: string, kind: "member" | "guest") {
   transport.connection!(socket);
   return {
     received,
-    command(event: string, payload: unknown = {}): Ack<{ code: string }> {
-      let result: Ack<{ code: string }> | undefined;
-      const ack = (value: typeof result) => { result = value; };
-      for (const handler of handlers.get(event) ?? []) {
-        if (event === "room:leave") handler(ack);
-        else handler(payload, ack);
-      }
-      if (!result) throw new Error(`Accusé absent : ${event}`);
-      return result;
+    command(event: string, payload: unknown = {}): Promise<Ack<{ code: string }>> {
+      return new Promise((resolve) => {
+        for (const handler of handlers.get(event) ?? []) {
+          if (event === "room:leave") handler(resolve);
+          else handler(payload, resolve);
+        }
+      });
     },
     input(ops: string[]) {
       for (const handler of handlers.get("race:input") ?? []) handler({ ops });
@@ -65,16 +64,17 @@ describe("persistance RES-05", () => {
     let time = 1_000;
     const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => ["member"]);
     const server = createRealtimeServer({
+      corpus: TEST_CORPUS,
       sessions: createFakeSessions().repository, allowedOrigins: [],
       now: () => new Date(time), generateSeed: () => 42, raceRepository: { recordRace },
     });
     try {
       const host = client("member", "member");
       const other = client("other", "member");
-      const created = host.command("room:create", { config: { length: "short" }, role: "runner" });
+      const created = (await host.command("room:create", { config: { length: 25 }, role: "runner" }));
       if (!created.ok) throw new Error(created.error);
-      expect(other.command("room:join", { code: created.data.code, role: "runner" }).ok).toBe(true);
-      expect(host.command("race:start").ok).toBe(true);
+      expect((await other.command("room:join", { code: created.data.code, role: "runner" })).ok).toBe(true);
+      expect((await host.command("race:start")).ok).toBe(true);
       const snapshot = transport.broadcasts.find((b) => b.event === "race:state")!.payload as ReturnType<typeof raceSnapshot>;
       time = snapshot.startAt + 1_000;
       host.input([snapshot.text[0] === "x" ? "y" : "x", "\b"]);
@@ -105,13 +105,13 @@ describe("persistance RES-05", () => {
       ]);
       expect(transport.broadcasts.findIndex((b) => b.event === "race:records"))
         .toBeGreaterThan(transport.broadcasts.findIndex((b) => b.event === "race:results"));
-      expect(host.command("room:restart").ok).toBe(true);
+      expect((await host.command("room:restart")).ok).toBe(true);
       time += 1_000;
-      expect(host.command("race:start").ok).toBe(true);
+      expect((await host.command("race:start")).ok).toBe(true);
       time += 5_000;
-      expect(host.command("race:abandon").ok).toBe(true);
+      expect((await host.command("race:abandon")).ok).toBe(true);
       expect(recordRace).toHaveBeenCalledTimes(1);
-      expect(other.command("race:abandon").ok).toBe(true);
+      expect((await other.command("race:abandon")).ok).toBe(true);
       await Promise.resolve();
       expect(recordRace).toHaveBeenCalledTimes(2);
       expect(recordRace.mock.calls[1][0].startedAt).not.toEqual(recordRace.mock.calls[0][0].startedAt);
@@ -130,17 +130,18 @@ describe("persistance RES-05", () => {
     let time = 1_000;
     const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => []);
     const server = createRealtimeServer({
+      corpus: TEST_CORPUS,
       sessions: createFakeSessions().repository, allowedOrigins: [], graceMs: 10,
       now: () => new Date(time), generateSeed: () => 42, raceRepository: { recordRace },
     });
     try {
       const host = client("member", "member");
-      const created = host.command("room:create", { config: { length: "short", bots: ["intermediate"] },
-        role: mode === "guest" ? "spectator" : "runner" });
+      const created = (await host.command("room:create", { config: { length: 25, bots: ["intermediate"] },
+        role: mode === "guest" ? "spectator" : "runner" }));
       if (!created.ok) throw new Error(created.error);
       const guest = mode === "guest" ? client("guest", "guest") : null;
-      if (guest) expect(guest.command("room:join", { code: created.data.code, role: "runner" }).ok).toBe(true);
-      expect(host.command("race:start").ok).toBe(true);
+      if (guest) expect((await guest.command("room:join", { code: created.data.code, role: "runner" })).ok).toBe(true);
+      expect((await host.command("race:start")).ok).toBe(true);
       if (mode === "leave" || mode === "expire") {
         const snapshot = transport.broadcasts.find((b) => b.event === "race:state")!.payload as ReturnType<typeof raceSnapshot>;
         time = snapshot.startAt + 1_000;
@@ -151,8 +152,8 @@ describe("persistance RES-05", () => {
       }
       expect(recordRace).not.toHaveBeenCalled();
       if (mode === "expire") host.disconnect();
-      else expect(host.command("room:leave").ok).toBe(true);
-      if (guest) expect(guest.command("room:leave").ok).toBe(true);
+      else expect((await host.command("room:leave")).ok).toBe(true);
+      if (guest) expect((await guest.command("room:leave")).ok).toBe(true);
       await vi.advanceTimersByTimeAsync(1_000);
       expect(recordRace).toHaveBeenCalledTimes(mode === "guest" ? 0 : 1);
       if (mode !== "guest") {
@@ -178,19 +179,20 @@ describe("persistance RES-05", () => {
     });
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const server = createRealtimeServer({
+      corpus: TEST_CORPUS,
       sessions: createFakeSessions().repository, allowedOrigins: [],
       now: () => new Date(time), generateSeed: () => 42, raceRepository: { recordRace },
     });
     try {
       const host = client("member", "member");
       const visitor = client("guest", "guest");
-      const created = host.command("room:create", { config: { bots: ["intermediate"] }, role: "runner" });
+      const created = (await host.command("room:create", { config: { bots: ["intermediate"] }, role: "runner" }));
       if (!created.ok) throw new Error(created.error);
       const code = created.data.code;
-      expect(visitor.command("room:join", { code, role: "runner" })).toMatchObject({ ok: true });
-      expect(host.command("race:start")).toEqual({ ok: true });
+      expect((await visitor.command("room:join", { code, role: "runner" }))).toMatchObject({ ok: true });
+      expect((await host.command("race:start"))).toEqual({ ok: true });
       expect(recordRace).not.toHaveBeenCalled();
-      time += 700_000;
+      time += 1_900_000;
       await vi.advanceTimersByTimeAsync(100);
       expect(transport.broadcasts.filter((b) => b.event === "race:results")).toEqual([
         { event: "race:results", payload: expect.arrayContaining([expect.objectContaining({ kind: "bot" })]) },

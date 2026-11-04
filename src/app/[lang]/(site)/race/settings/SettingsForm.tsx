@@ -8,7 +8,6 @@ import { Settings2 } from "lucide-react";
 import { DEFAULT_RACE_SETTINGS, serializeRaceSettings } from "@/race/config";
 import type { RaceSettings } from "@/race/config";
 import { MAX_EXCLUDED_INPUT_LENGTH } from "@/realtime/protocol";
-import type { TimeLimitSeconds } from "@/realtime/protocol";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { InviteFriendsButton } from "./InviteFriendsButton";
@@ -29,29 +28,33 @@ interface SettingsFormProps {
   invite?: InviteAccess;
 }
 
-/** Fills the localized "{minutes} min" template from a duration in seconds. */
-function formatMinutes(template: string, seconds: TimeLimitSeconds): string {
-  return template.replace("{minutes}", String(seconds / 60));
-}
-
 export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "anonymous" } }: SettingsFormProps) {
   const router = useRouter();
 
   const [settings, setSettings] = useState<RaceSettings>({ ...(initialSettings ?? DEFAULT_RACE_SETTINGS) });
+  const numberFormat = new Intl.NumberFormat(lang);
+  const [includedError, setIncludedError] = useState<string | null>(null);
   const [excludedError, setExcludedError] = useState<string | null>(null);
 
   const handleChange = (patch: Partial<RaceSettings>) => {
     setSettings((current) => ({ ...current, ...patch }));
+    if (patch.includedCharacters !== undefined) setIncludedError(null);
     if (patch.excludedCharacters !== undefined && excludedError) setExcludedError(null);
   };
 
   const handleReset = () => {
     setSettings({ ...DEFAULT_RACE_SETTINGS });
+    setIncludedError(null);
     setExcludedError(null);
   };
 
   /** Même contrôle pour « Lancer la course » et « Inviter des amis ». */
   const validate = (): boolean => {
+    if (settings.includedCharacters.length > MAX_EXCLUDED_INPUT_LENGTH) {
+      setIncludedError(dict.includedChars.error);
+      return false;
+    }
+    setIncludedError(null);
     if (settings.excludedCharacters.length > MAX_EXCLUDED_INPUT_LENGTH) {
       setExcludedError(dict.excludedChars.error);
       return false;
@@ -94,6 +97,7 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
               dict={dict}
               lang={lang}
               excludedError={excludedError}
+              includedError={includedError}
             />
 
             <p className="text-center text-sm text-muted mt-4">
@@ -158,7 +162,7 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
                   ))}
                   <li className="flex justify-between border-b border-border pb-3">
                     <span className="text-muted">{dict.length.label}</span>
-                    <span className="font-semibold">{settings.length === "short" ? dict.length.short : settings.length === "medium" ? dict.length.medium : dict.length.long}</span>
+                    <span className="font-semibold">{dict.length.words.replace("{count}", numberFormat.format(settings.length))}</span>
                   </li>
                   <li className="flex justify-between border-b border-border pb-3">
                     <span className="text-muted">{dict.excludedChars.label}</span>
@@ -166,7 +170,7 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
                   </li>
                   <li className="flex justify-between border-b border-border pb-3">
                     <span className="text-muted">{dict.timeLimit.label}</span>
-                    <span className="font-semibold">{settings.timeLimitSeconds === null ? dict.timeLimit.noneShort : formatMinutes(dict.timeLimit.minutes, settings.timeLimitSeconds)}</span>
+                    <span className="font-semibold">{settings.timeLimitSeconds === null ? dict.timeLimit.noneShort : settings.timeLimitSeconds < 60 ? dict.timeLimit.seconds.replace("{seconds}", numberFormat.format(settings.timeLimitSeconds)) : dict.timeLimit.minutes.replace("{minutes}", numberFormat.format(settings.timeLimitSeconds / 60))}</span>
                   </li>
                   <li className="flex justify-between border-b border-border pb-3">
                     <span className="text-muted">{dict.inputMode.label}</span>

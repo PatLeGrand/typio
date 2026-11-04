@@ -414,3 +414,17 @@ describe("handleOAuthCallback: no implicit linking", () => {
     expect(sessions.sessions.has(hashToken(aliceToken))).toBe(false);
   });
 });
+
+it.each(["github", "discord"] as const)("refuse le retour OAuth pour une session de démo (%s)", async (provider) => {
+  const test = setup({ provider });
+  vi.spyOn(test.deps.auth.sessions, "findWithUser").mockResolvedValue({
+    session: { expiresAt: new Date("2030-01-01") },
+    user: { id: "demo", kind: "member", isDemo: true, displayName: "Demo", username: "demo", locale: "fr", avatarVersion: null, expiresAt: null },
+  });
+  const result = await handleOAuthCallback(test.deps, input({ provider, cookies: { state: STATE, locale: "fr", session: generateToken(), verifier: VERIFIER } }));
+  expect(result.location).toBe("/fr/profile");
+  expectTemporaryCookiesCleared(result.cookies, provider);
+  expect(test.fetchProfile).not.toHaveBeenCalled();
+  expect(test.oauthAccounts.accounts).toHaveLength(0);
+  expect(result.cookies.some((cookie) => cookie.name === getSessionCookieName())).toBe(false);
+});

@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { TEST_CORPUS } from "@/test/corpus";
 import { afterEach, describe, expect, it } from "vitest";
 import { hashToken } from "@/auth/token";
 import { MAX_INVITES_PER_ROOM, type Ack, type InviteInfo, type RoomState } from "./protocol";
@@ -16,6 +17,7 @@ function setup(visibility: "private" | "code" | "public" = "private", now?: () =
   let drawn = 0;
   let codes = 0;
   const store = createRoomStore({
+    corpus: TEST_CORPUS,
     now,
     generateCode: () => ["ABCDEF", "BCDEFG"][codes++] ?? "CDEFGH",
     generateInviteToken: () => String(drawn++).padStart(43, "A"),

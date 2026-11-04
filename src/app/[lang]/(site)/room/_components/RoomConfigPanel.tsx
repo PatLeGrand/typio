@@ -8,7 +8,7 @@ import type { Dictionary } from "@/i18n/dictionaries";
 import type { RaceSettings } from "@/race/config";
 import { MAX_EXCLUDED_INPUT_LENGTH, type RoomConfig, type RoomConfigPatch } from "@/realtime/protocol";
 
-/** Pause de frappe après laquelle le champ des caractères exclus envoie son patch (B-D5). */
+/** Pause de frappe après laquelle le champ des caractères inclus ou exclus envoie son patch (B-D5). */
 export const EXCLUDED_SEND_DELAY_MS = 500;
 
 type RoomConfigPanelProps = {
@@ -26,11 +26,13 @@ type RoomConfigPanelProps = {
 /**
  * Configuration de la salle (CONF-01 à CONF-08, CONF-10, BOT-01) : les mêmes sections que la page de paramètres, modifiables
  * pour l'hôte, en lecture seule pour les autres. L'état affiché est celui de la salle : un patch refusé
- * ne change rien. Seul le champ des caractères exclus garde un brouillon, envoyé à la sortie du champ
+ * ne change rien. Seul le champ des caractères inclus ou exclus garde un brouillon, envoyé à la sortie du champ
  * ou après une pause de frappe.
  */
 export function RoomConfigPanel({ config, editable, runnerCount, lang, labels, settingsLabels, onChange }: RoomConfigPanelProps) {
-  // Brouillon du champ des caractères exclus ; `null` : on affiche la valeur (normalisée) de la salle.
+  // Brouillon du champ des caractères inclus ou exclus ; `null` : on affiche la valeur (normalisée) de la salle.
+  const [draftField, setDraftField] = useState<"excludedCharacters" | "includedCharacters">("excludedCharacters");
+  const latestField = useRef<"excludedCharacters" | "includedCharacters">("excludedCharacters");
   const [draft, setDraft] = useState<string | null>(null);
   const [excludedError, setExcludedError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,12 +71,12 @@ export function RoomConfigPanel({ config, editable, runnerCount, lang, labels, s
     timer.current = null;
     if (!unsent.current) return;
     if (latestDraft.current.length > MAX_EXCLUDED_INPUT_LENGTH) {
-      setExcludedError(settingsLabels.excludedChars.error);
+      setExcludedError(latestField.current === "includedCharacters" ? settingsLabels.includedChars.error : settingsLabels.excludedChars.error);
       return;
     }
     unsent.current = false;
     sending.current = true;
-    void onChangeRef.current({ excludedCharacters: latestDraft.current }).then(() => {
+    void onChangeRef.current({ [latestField.current]: latestDraft.current }).then(() => {
       sending.current = false;
       // Fin de la saisie et rien de plus récent à envoyer : retour à la valeur de la salle.
       if (!typing.current && !unsent.current) setDraft(null);
@@ -88,11 +90,16 @@ export function RoomConfigPanel({ config, editable, runnerCount, lang, labels, s
   }
 
   function handleChange(patch: Partial<RaceSettings>): void {
-    if (patch.excludedCharacters !== undefined) {
+    const field = patch.includedCharacters !== undefined ? "includedCharacters" : "excludedCharacters";
+    const characters = patch[field];
+    if (characters !== undefined) {
+      if (unsent.current && latestField.current !== field) sendDraft();
+      latestField.current = field;
+      setDraftField(field);
       typing.current = true;
       unsent.current = true;
-      latestDraft.current = patch.excludedCharacters;
-      setDraft(patch.excludedCharacters);
+      latestDraft.current = characters;
+      setDraft(characters);
       setExcludedError(null);
       if (timer.current !== null) clearTimeout(timer.current);
       timer.current = setTimeout(sendDraft, EXCLUDED_SEND_DELAY_MS);
@@ -102,7 +109,7 @@ export function RoomConfigPanel({ config, editable, runnerCount, lang, labels, s
   }
 
   const value = toRaceSettings(config);
-  const shown: RaceSettings = draft === null ? value : { ...value, excludedCharacters: draft };
+  const shown: RaceSettings = draft === null ? value : { ...value, [draftField]: draft };
 
   return (
     <Card className="flex flex-col gap-4 border border-border p-6">
@@ -114,7 +121,9 @@ export function RoomConfigPanel({ config, editable, runnerCount, lang, labels, s
         readOnly={!editable}
         dict={settingsLabels}
         lang={lang}
-        excludedError={excludedError}
+        excludedError={draftField === "excludedCharacters" ? excludedError : null}
+        includedError={draftField === "includedCharacters" ? excludedError : null}
+        onIncludedBlur={editable ? handleExcludedBlur : undefined}
         onExcludedBlur={editable ? handleExcludedBlur : undefined}
         headingLevel={3}
       />

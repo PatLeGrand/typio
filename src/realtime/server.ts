@@ -4,6 +4,7 @@
  * l'instancient avec un faux dépôt de sessions, sans base ni variables d'environnement.
  */
 
+import type { SentenceCorpus } from "@/race/textGenerator";
 import type { RaceRepository } from "@/race/raceRepository";
 import { createServer, type Server as HttpServer } from "node:http";
 import { Server } from "socket.io";
@@ -14,6 +15,8 @@ import { createRateLimiter, getClientIp, ipRateLimitKey } from "@/auth/rateLimit
 import { createGraceTimers, type GraceTimers } from "./graceTimers";
 import { LOBBY_ROOM, registerRoomHandlers } from "./roomHandlers";
 import { createRoomStore } from "./roomStore";
+import { createPersistentRoomStore } from "./persistentRoomStore";
+import { createMemoryRoomMembershipRepository, type RoomMembershipRepository } from "./roomMembershipRepository";
 import { createSessionExpiryWatcher, type SessionExpiryWatcher } from "./sessionExpiry";
 import { createUserSockets, MAX_SOCKETS_PER_USER, type UserSockets } from "./userSockets";
 
@@ -25,7 +28,7 @@ import { createUserSockets, MAX_SOCKETS_PER_USER, type UserSockets } from "./use
 export const MAX_MESSAGE_BYTES = 8_192;
 
 /**
- * Échecs de `room:join` tolérés par utilisateur et par minute (codes inconnus ou mal formés) :
+ * Échecs de `room:join` tolérés par IP et par utilisateur par minute (codes inconnus ou mal formés) :
  * borne l'énumération des codes de salle (H-5).
  */
 export const JOIN_FAILURE_LIMIT = { limit: 10, windowMs: 60_000 } as const;
@@ -36,8 +39,11 @@ export const LOBBY_BROADCAST_MS = 500;
 export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
 export interface RealtimeServerOptions {
+  corpus?: SentenceCorpus;
+  loadCorpus?: () => Promise<SentenceCorpus>;
   sessions: SessionRepository;
   raceRepository?: RaceRepository;
+  roomMembershipRepository?: RoomMembershipRepository;
   /** Origines autorisées à ouvrir une connexion, par exemple `https://typio.aether-manager.ca`. */
   allowedOrigins: readonly string[];
   now?: () => Date;
@@ -112,7 +118,10 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
     }
   });
 
-  const store = createRoomStore({ now: () => now().getTime(), generateSeed: options.generateSeed });
+  const store = createPersistentRoomStore(
+    createRoomStore({ now: () => now().getTime(), generateSeed: options.generateSeed, corpus: options.corpus }),
+    options.roomMembershipRepository ?? createMemoryRoomMembershipRepository(),
+  );
   const timers = createGraceTimers();
   const joinFailures = createRateLimiter({ ...JOIN_FAILURE_LIMIT, now: () => now().getTime() });
 
@@ -222,6 +231,7 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       sockets: userSockets,
       joinFailures,
       raceInputs,
+      loadCorpus: options.loadCorpus,
       syncRace,
       lobbyList: () => store.lobby(),
       lobbyChanged,

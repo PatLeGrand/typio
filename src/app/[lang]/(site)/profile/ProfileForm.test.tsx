@@ -210,3 +210,12 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
     expect(screen.getByText(dictionary.header.guest)).toBeInTheDocument();
   });
 });
+
+it("désactive l’enregistrement et les liaisons pour le compte de démo", () => {
+  const dictionary = renderForm("fr", { ...member, isDemo: true });
+  fireEvent.change(nameField(dictionary), { target: { value: "Autre nom" } });
+  expect(saveButton(dictionary)).toBeDisabled();
+  expect(screen.getByRole("button", { name: dictionary.profile.security.link })).toBeDisabled();
+  fireEvent.submit(nameField(dictionary).closest("form")!);
+  expect(mocks.updateProfile).not.toHaveBeenCalled();
+});

@@ -124,6 +124,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Apply database migrations
         run: bun run db:migrate
+      - name: Seed demo data
+        run: bun run db:seed
       - name: Install Chromium
         run: bunx playwright install --with-deps chromium
       - name: End-to-end tests

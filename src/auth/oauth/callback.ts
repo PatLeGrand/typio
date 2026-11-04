@@ -3,7 +3,7 @@ import { getSessionCookieName, sessionCookieOptions } from "../cookie";
 import { describeError } from "../errors";
 import { ipRateLimitKey } from "../rateLimit";
 import type { Semaphore } from "../semaphore";
-import { destroySession } from "../session";
+import { destroySession, validateSession } from "../session";
 import { expiredOAuthCookie, oauthCookieNames, type OAuthCookie, type OAuthRedirect } from "./cookies";
 import { loginNoticeLocation, parseOAuthLocale } from "./locale";
 import type { OAuthNotice, OAuthProfile, OAuthProviderClient, OAuthProviderName } from "./providers";
@@ -57,6 +57,9 @@ export async function handleOAuthCallback(
   if (!statesMatch(input.cookies.state, input.query.state)) return back("failed");
   if (input.query.error !== null) return back(input.query.error === "access_denied" ? "cancelled" : "failed");
   if (input.query.code === null || input.query.code === "") return back("failed");
+
+  const user = await validateSession(deps.auth.sessions, input.cookies.session, deps.auth.now());
+  if (user?.isDemo) return { location: `/${locale}/profile`, cookies };
 
   const client = deps.getProvider(input.provider);
   if (!client) return back("unavailable");

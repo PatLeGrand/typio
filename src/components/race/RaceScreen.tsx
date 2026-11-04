@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { usePhysicalKeyboard } from "./usePhysicalKeyboard";
 import Link from "next/link";
 import { BarChart3, Flag, Trophy } from "lucide-react";
 import { avatarUrl, type AvatarIdentity } from "@/components/avatar";
@@ -29,6 +31,7 @@ type Props = {
   locale: Locale;
   labels: Dictionary["raceScreen"];
   siteName: string;
+  roomLabels: Dictionary["room"]["race"];
   settings: RaceSettings;
   /** Nom affiché dans l'en-tête, ou `null` pour un visiteur. */
   userName: string | null;
@@ -37,6 +40,7 @@ type Props = {
   avatarVersion?: number | null;
   /** Texte tiré côté serveur (hydratation identique), ou `null` si les filtres n'en laissent aucun. */
   initialText: string | null;
+  initialError?: "RATE_LIMITED";
   /** Graine des noms de bots, tirée côté serveur avec le texte (hydratation identique). */
   botNameSeed: number;
   /** Horloge en ms ; injectable pour les tests (A-D6). */
@@ -50,28 +54,34 @@ export function RaceScreen({
   locale,
   labels,
   siteName,
+  roomLabels,
   settings,
   userName,
   userId = null,
   avatarVersion = null,
   initialText,
+  initialError,
   botNameSeed,
   now = defaultNow,
   random = Math.random,
 }: Props) {
-  const { round, clock, typeInput, abandon, replay } = useRaceSession({
+  const { round, clock, typeInput, abandon, replay, loading, error } = useRaceSession({
     settings,
     initialText,
+    initialError,
     botNames: labels.botNames,
     botNameSeed,
     now,
     random,
   });
+  const [confirmAbandon, setConfirmAbandon] = useState(false);
+  const physicalKeyboard = usePhysicalKeyboard();
   const settingsHref = `/${locale}/race/settings?${serializeRaceSettings(settings)}`;
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
 
-  if (!round) return <RaceNoText labels={labels.noText} settingsHref={settingsHref} />;
+  if (loading) return <p role="status">{labels.loading}</p>;
+  if (!round) return <RaceNoText labels={labels.noText} settingsHref={settingsHref} rateLimited={error === "RATE_LIMITED"} />;
 
   const snapshot = snapshotRound(round, clock, labels.you);
   const { phase, racers, results } = snapshot;
@@ -121,14 +131,18 @@ export function RaceScreen({
             <span className="font-extrabold">{labels.roomName}</span>
             <span className="text-muted">{playerCount} {playerCount > 1 ? labels.playerOther : labels.playerOne}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {userName ? (
               <span className="rounded-full border border-border bg-surface px-4 py-2 text-sm font-bold">{userName}</span>
             ) : null}
-            <Button variant="secondary" disabled={!racing} onClick={abandon} className="min-h-11 py-2">
+            {confirmAbandon && racing ? <div role="group" aria-label={roomLabels.confirmAbandon} className="flex flex-wrap items-center gap-3">
+              <p>{roomLabels.confirmAbandon}</p>
+              <Button onClick={() => { abandon(); setConfirmAbandon(false); }}>{roomLabels.confirm}</Button>
+              <Button variant="secondary" onClick={() => setConfirmAbandon(false)}>{roomLabels.cancel}</Button>
+            </div> : <Button variant="secondary" disabled={!racing} onClick={() => setConfirmAbandon(true)} className="min-h-11 py-2">
               <Flag aria-hidden="true" className="size-4" />
               {labels.abandon}
-            </Button>
+            </Button>}
           </div>
         </div>
       </header>
@@ -186,8 +200,10 @@ export function RaceScreen({
               {labels.stats.title}
             </h2>
             <dl className="mt-4 grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 text-sm">
-              <dt className="text-muted">{labels.stats.timeLeft}</dt>
-              <dd className="text-2xl font-extrabold tabular-nums"><span role="timer">{formatClock(snapshot.timeLeftMs, "ceil")}</span></dd>
+              {snapshot.timeLeftMs !== null && <>
+                <dt className="text-muted">{labels.stats.timeLeft}</dt>
+                <dd className="text-2xl font-extrabold tabular-nums"><span role="timer">{formatClock(snapshot.timeLeftMs, "ceil")}</span></dd>
+              </>}
               <dt className="text-muted">{labels.stats.time}</dt>
               <dd className="text-2xl font-extrabold tabular-nums">{formatClock(snapshot.elapsedMs)}</dd>
               <dt className="text-muted">{labels.stats.wpm}</dt>
@@ -210,10 +226,10 @@ export function RaceScreen({
           headline={headline}
           playerAvatar={playerAvatar}
           settingsHref={settingsHref}
-          onReplay={replay}
+          onReplay={() => { setConfirmAbandon(false); void replay(); }}
         />
-      ) : (
-        <RaceTypingPanel
+      ) : round.session.lifecycle.phase !== "results" ? (
+        physicalKeyboard ? <RaceTypingPanel
           labels={labels.typing}
           fog={(round.fogUntil[PLAYER_ID] ?? 0) > clock}
           bonusMessage={playerBonusMessage(round.bonusEvents, PLAYER_ID, clock, labels.bonuses, racers)}
@@ -221,8 +237,8 @@ export function RaceScreen({
           typed={round.session.typed}
           correctChars={correctChars}
           onChange={typeInput}
-        />
-      )}
+        /> : <p className="p-4">{roomLabels.keyboard}</p>
+      ) : null}
       </main>
     </div>
   );

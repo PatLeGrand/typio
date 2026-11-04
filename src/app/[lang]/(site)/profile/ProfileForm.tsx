@@ -89,7 +89,7 @@ export function ProfileForm({
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setNameTouched(true);
-    if (!hasChanges || !nameIsValid || isPending) return;
+    if (user.isDemo || !hasChanges || !nameIsValid || isPending) return;
 
     // Construit depuis l'état, pas depuis le formulaire : le sélecteur de thème (des boutons radio) s'y trouve aussi.
     const formData = new FormData();
@@ -278,7 +278,7 @@ export function ProfileForm({
                     <div className="flex items-center gap-3">
                       <GithubIcon className="w-6 h-6 text-foreground" />
                       <div className="flex flex-col">
-                        <p className="font-semibold text-sm text-foreground">GitHub</p>
+                        <p className="font-semibold text-sm text-foreground">{dictionary.oauth.github}</p>
                         <div className="flex items-center gap-1.5 text-xs text-muted">
                           <div
                             aria-hidden="true"
@@ -297,7 +297,7 @@ export function ProfileForm({
                     <div className="flex items-center gap-3">
                       <DiscordIcon className="w-6 h-6" />
                       <div className="flex flex-col">
-                        <p className="font-semibold text-sm text-foreground">Discord</p>
+                        <p className="font-semibold text-sm text-foreground">{dictionary.oauth.discord}</p>
                         <div className="flex items-center gap-1.5 text-xs text-muted">
                           <div
                             aria-hidden="true"
@@ -385,7 +385,7 @@ export function ProfileForm({
               type="submit"
               form={PROFILE_FORM_ID}
               className="flex-1 sm:flex-none shrink-0"
-              disabled={!hasChanges || !nameIsValid || isPending}
+              disabled={user.isDemo || !hasChanges || !nameIsValid || isPending}
             >
               <Save aria-hidden="true" className="w-4 h-4 shrink-0" />
               {profile.actions.save}

@@ -94,6 +94,20 @@ describe("RoomConfigPanel, host", () => {
     expect(excludedField()).toHaveValue("xy");
   });
 
+  it("sends included characters after typing and restores the server's normalized value", async () => {
+    const config: RoomConfig = { ...DEFAULT_ROOM_CONFIG, textMode: "words" };
+    const { onChange, rerender } = setup({ config });
+    const field = screen.getByRole("textbox", { name: raceSettings.includedChars.label });
+    fireEvent.change(field, { target: { value: "B a B" } });
+    act(() => void vi.advanceTimersByTime(EXCLUDED_SEND_DELAY_MS));
+    await act(async () => undefined);
+    expect(onChange).toHaveBeenCalledWith({ includedCharacters: "B a B" });
+    rerender({ ...config, includedCharacters: "ab" });
+    expect(field).toHaveValue("B a B");
+    fireEvent.blur(field);
+    expect(field).toHaveValue("ab");
+  });
+
   it("while typing, the room state does not overwrite the field", () => {
     const { rerender } = setup();
     fireEvent.change(excludedField(), { target: { value: "ab" } });

@@ -1,5 +1,6 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { generateToken } from "../token";
 import { createSession } from "../session";
 import { createTestDeps } from "../testSupport";
 import { loginNoticeLocation, parseOAuthLocale } from "./locale";
@@ -198,4 +199,14 @@ describe("locale helpers", () => {
   it("loginNoticeLocation builds the login URL with the notice", () => {
     expect(loginNoticeLocation("en", "failed")).toBe("/en/login?oauth=failed");
   });
+});
+
+it.each(["github", "discord"] as const)("refuse le départ OAuth du compte de démo (%s)", async (provider) => {
+  const test = setup({ github: github(), discord: discord() });
+  vi.spyOn(test.startDeps.sessions, "findWithUser").mockResolvedValue({
+    session: { expiresAt: new Date("2030-01-01") },
+    user: { id: "demo", kind: "member", isDemo: true, displayName: "Demo", username: "demo", locale: "fr", avatarVersion: null, expiresAt: null },
+  });
+  expect(await startOAuth(test.startDeps, { provider, rawLocale: "fr", ip: "1.1.1.1", sessionToken: generateToken() }))
+    .toEqual({ location: "/fr/profile", cookies: [] });
 });

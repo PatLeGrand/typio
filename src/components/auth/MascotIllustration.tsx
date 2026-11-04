@@ -60,10 +60,12 @@ export function MascotIllustration({ labels }: MascotIllustrationProps) {
         }}
       />
       <div className={`${keyClasses} bg-key-yellow`} style={{ ...placed(50, 70, 58, 58, -8), fontSize: fontSize(24) }}>
-        A
+        {/* eslint-disable-next-line react/jsx-no-literals -- Lettre de touche décorative, indépendante de la langue. */}
+        {"A"}
       </div>
       <div className={`${keyClasses} bg-key-mint`} style={{ ...placed(553, 185, 60, 60, 12), fontSize: fontSize(24) }}>
-        Z
+        {/* eslint-disable-next-line react/jsx-no-literals -- Lettre de touche décorative, indépendante de la langue. */}
+        {"Z"}
       </div>
       <div
         className="absolute flex items-center justify-center gap-[3%] rounded-full bg-surface font-bold text-foreground shadow-soft"

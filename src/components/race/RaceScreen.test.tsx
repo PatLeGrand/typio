@@ -4,17 +4,21 @@ import { RaceScreen } from "./RaceScreen";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { DEFAULT_RACE_SETTINGS, serializeRaceSettings, type RaceSettings } from "@/race/config";
-import { createRaceText } from "@/race/raceText";
+import { nextRaceText } from "@/app/[lang]/race/actions";
 
 // La scène Pixi n'a pas de sens dans jsdom : un faux visualiseur expose juste les coureurs.
 vi.mock("@/components/race/RaceVisualizer", () => ({
   RaceVisualizer: ({ racers }: { racers: { id: string }[] }) => <div data-testid="visualizer">{racers.length}</div>,
 }));
 
-// Le vrai générateur, mais espionné : on vérifie que « Rejouer » demande bien un nouveau tirage.
-vi.mock("@/race/raceText", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/race/raceText")>();
-  return { createRaceText: vi.fn(actual.createRaceText) };
+// La server action est la frontière réseau ; le corpus reste côté serveur.
+vi.mock("@/app/[lang]/race/actions", async () => {
+  const { createRaceText } = await import("@/race/raceText");
+  const { TEST_CORPUS } = await import("@/test/corpus");
+  return { nextRaceText: vi.fn(async ({ settings, previous }: { settings: RaceSettings; previous?: string }) => {
+    const text = createRaceText(settings, Math.random, previous, TEST_CORPUS);
+    return text === null ? { ok: false as const, error: "NO_TEXT_AVAILABLE" as const } : { ok: true as const, text };
+  }) };
 });
 
 const SETTINGS: RaceSettings = { ...DEFAULT_RACE_SETTINGS, bots: ["beginner", "beginner"], timeLimitSeconds: 60 };
@@ -32,7 +36,7 @@ function advance(ms: number) {
   });
 }
 
-function setup(overrides: { settings?: Partial<RaceSettings>; locale?: Locale; initialText?: string | null; random?: () => number } = {}) {
+function setup(overrides: { settings?: Partial<RaceSettings>; locale?: Locale; initialText?: string | null; initialError?: "RATE_LIMITED"; random?: () => number } = {}) {
   const locale = overrides.locale ?? "fr";
   const labels = getDictionary(locale).raceScreen;
   const settings = { ...SETTINGS, ...overrides.settings };
@@ -40,10 +44,12 @@ function setup(overrides: { settings?: Partial<RaceSettings>; locale?: Locale; i
     <RaceScreen
       locale={locale}
       labels={labels}
+      roomLabels={getDictionary(locale).room.race}
       siteName="Typio"
       settings={settings}
       userName="Aurel"
       initialText={overrides.initialText === undefined ? TEXT : overrides.initialText}
+      initialError={overrides.initialError}
       botNameSeed={7}
       now={now}
       random={overrides.random ?? (() => 0.5)}
@@ -62,10 +68,16 @@ const textOnScreen = () => document.getElementById("race-text")?.textContent;
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.stubGlobal("matchMedia", vi.fn(() => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })));
   clock = 10_000;
 });
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe("RaceScreen : horloge (A-D6, AC-4)", () => {
@@ -84,6 +96,19 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
     advance(900);
     expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.racing);
     expect(screen.getByRole("timer")).toHaveTextContent("01:00");
+  });
+
+  it("sans limite, masque le temps restant et affiche les résultats dès l'arrivée du joueur", () => {
+    const { labels } = setup({ settings: { timeLimitSeconds: null, bots: ["noob"] } });
+    expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+    expect(screen.queryByText(labels.stats.timeLeft)).not.toBeInTheDocument();
+    advance(3000);
+    advance(1000);
+    type(input(labels), TEXT);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.finished);
+    expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
+    advance(60_000);
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.finished);
   });
 
   it("annonce le compte à rebours une fois par seconde dans une région polie, puis « partez »", () => {
@@ -245,7 +270,14 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     expect(screen.getByRole("button", { name: labels.abandon })).toBeDisabled();
     advance(3000);
     advance(2000);
+    const roomLabels = getDictionary("fr").room.race;
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    expect(screen.getByRole("group", { name: roomLabels.confirmAbandon })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.racing);
+    fireEvent.click(screen.getByRole("button", { name: roomLabels.cancel }));
+    expect(screen.queryByRole("group", { name: roomLabels.confirmAbandon })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: roomLabels.confirm }));
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.abandoned);
     const youRow = within(screen.getByRole("table", { name: labels.results.tableTitle })).getByRole("rowheader", { name: labels.you }).closest("tr") as HTMLElement;
@@ -253,7 +285,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     expect(within(youRow).getAllByRole("cell")[0]).toHaveTextContent("3e");
   });
 
-  it("Rejouer lance une nouvelle manche avec les mêmes réglages et un nouveau texte (AC-6)", () => {
+  it("Rejouer lance une nouvelle manche avec les mêmes réglages et un nouveau texte (AC-6)", async () => {
     let seed = 0;
     const random = () => {
       seed = (seed + 0.318) % 1;
@@ -262,14 +294,15 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     const { labels, settings } = setup({ initialText: "first text", random });
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
     expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
 
-    vi.mocked(createRaceText).mockClear();
-    vi.mocked(createRaceText).mockReturnValueOnce("brand new text");
-    fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
+    vi.mocked(nextRaceText).mockClear();
+    vi.mocked(nextRaceText).mockResolvedValueOnce({ ok: true, text: "brand new text" });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
     // Nouveau tirage, mêmes réglages, en évitant le texte précédent ; son résultat est celui affiché.
-    expect(createRaceText).toHaveBeenCalledTimes(1);
-    expect(createRaceText).toHaveBeenCalledWith(settings, random, "first text");
+    expect(nextRaceText).toHaveBeenCalledTimes(1);
+    expect(nextRaceText).toHaveBeenCalledWith({ settings, previous: "first text" });
     expect(textOnScreen()).toBe("brand new text");
     expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.countdown);
     // Le focus est sur le champ de saisie, pas perdu sur <body>.
@@ -278,7 +311,8 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     // Avec le vrai générateur, le deuxième tirage donne un texte différent du précédent.
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
-    fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
     expect(textOnScreen()).not.toBe("brand new text");
     expect(textOnScreen()?.length).toBeGreaterThan(50);
   });
@@ -287,6 +321,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     const { labels, settings } = setup();
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
     expect(screen.getByRole("link", { name: labels.results.editSettings })).toHaveAttribute(
       "href",
       `/fr/race/settings?${serializeRaceSettings(settings)}`,
@@ -301,6 +336,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     advance(3000);
     expect(accuracyShown(labels)).toBe(accuracy);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary(locale).room.race.confirm }));
     expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
     expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
     expect(screen.getByRole("region", { name: labels.results.tableTitle })).toHaveAttribute("tabindex", "0");
@@ -323,11 +359,25 @@ describe("RaceScreen : aucun texte (CONF-03)", () => {
     expect(screen.queryByTestId("visualizer")).not.toBeInTheDocument();
   });
 
-  it("affiche le message si le texte d'une nouvelle manche est introuvable", () => {
+  it("annonce le chargement puis affiche une erreur si la requête échoue", async () => {
+    let rejectRequest: (error: Error) => void = () => {};
+    vi.mocked(nextRaceText).mockImplementationOnce(() => new Promise((_, reject) => { rejectRequest = reject; }));
+    const { labels } = setup();
+    advance(3000);
+    fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
+    fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
+    expect(screen.getByRole("status")).toHaveTextContent(labels.loading);
+    await act(async () => { rejectRequest(new Error("network unavailable")); });
+    expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.message);
+  });
+
+  it("affiche le message si le texte d'une nouvelle manche est introuvable", async () => {
     const { labels } = setup({ settings: { excludedCharacters: "a e i o u y" } });
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
-    fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
     expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.message);
   });
 });
@@ -346,4 +396,28 @@ describe("RaceScreen : bots (BOT-02, BOT-03)", () => {
     setup({ settings: { bots: [] } });
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });
+});
+
+it.each(["fr", "en"] as const)("distingue la limitation de débit initiale d’un corpus vide (%s)", (locale) => {
+  const { labels } = setup({ locale, initialText: null, initialError: "RATE_LIMITED" });
+  expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.rateLimited);
+});
+
+it("affiche l’erreur de débit renvoyée lors d’une nouvelle manche", async () => {
+  vi.mocked(nextRaceText).mockResolvedValueOnce({ ok: false, error: "RATE_LIMITED" });
+  const { labels } = setup();
+  advance(3000);
+  fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+  fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
+  expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.rateLimited);
+});
+
+it.each(["fr", "en"] as const)("DES-06 : remplace la saisie sans clavier physique (%s)", (locale) => {
+  vi.mocked(window.matchMedia).mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() } as unknown as MediaQueryList);
+  const { labels } = setup({ locale });
+  advance(3000);
+  expect(window.matchMedia).toHaveBeenCalledWith("(min-width: 768px) and (pointer: fine)");
+  expect(screen.getByText(getDictionary(locale).room.race.keyboard)).toBeInTheDocument();
+  expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
 });

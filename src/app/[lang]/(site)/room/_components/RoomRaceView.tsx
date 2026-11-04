@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePhysicalKeyboard } from "@/components/race/usePhysicalKeyboard";
 import { Avatar } from "@/components/Avatar";
 import { avatarUrl, runnerAvatar } from "@/components/avatar";
 import { Button } from "@/components/Button";
@@ -12,6 +13,7 @@ import { RaceResultsTable } from "@/components/race/RaceResultsTable";
 import { RaceTypingPanel } from "@/components/race/RaceTypingPanel";
 import { RaceVisualizer } from "@/components/race/RaceVisualizer";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { formatClock } from "@/race/format";
 import { applyTextEdits } from "@/race/bonuses";
 import { applyTypedInput, countCorrectChars } from "@/race/metrics";
 import { createRaceInputBuffer, raceInputOps } from "@/realtime/raceInput";
@@ -27,15 +29,6 @@ type Props = {
   raceLabels: Dictionary["raceScreen"];
   session: Pick<UseRoom, "race" | "results" | "self" | "raceReceivedAt" | "connection" | "sendInput" | "abandonRace" | "restartRace" | "closeRoom">;
 };
-
-const KEYBOARD_QUERY = "(min-width: 768px) and (pointer: fine)";
-function subscribeKeyboard(listener: () => void) {
-  const query = window.matchMedia(KEYBOARD_QUERY);
-  query.addEventListener("change", listener);
-  return () => query.removeEventListener("change", listener);
-}
-const keyboardSnapshot = () => window.matchMedia(KEYBOARD_QUERY).matches;
-const serverKeyboardSnapshot = () => false;
 
 /** Saisie optimiste ; piste et classement restent entièrement pilotés par le serveur. */
 export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }: Props) {
@@ -58,7 +51,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   const [confirmAbandon, setConfirmAbandon] = useState(false);
   const [pending, setPending] = useState(false);
   const [now, setNow] = useState<number | null>(null);
-  const physicalKeyboard = useSyncExternalStore(subscribeKeyboard, keyboardSnapshot, serverKeyboardSnapshot);
+  const physicalKeyboard = usePhysicalKeyboard();
   const buffer = useMemo(() => createRaceInputBuffer(sendInput), [sendInput]);
 
   // Une reprise remplace la prédiction et élimine les frappes de l'ancienne connexion.
@@ -133,6 +126,9 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
         <p aria-live="assertive" aria-atomic="true" className="text-center text-6xl font-bold">{number.format(countdown)}</p>
       </> : <h2 className="text-2xl font-bold">{raceLabels.headline.racing}</h2>}
       {room.status === "countdown" ? <p className="break-words rounded-card border border-border bg-surface p-4 font-mono">{text}</p> : null}
+      {room.status === "racing" && race.finishDeadline != null && <p role="timer">
+        {labels.finishCountdown.replace("{time}", formatClock(Math.max(0, race.finishDeadline - serverTime), "ceil"))}
+      </p>}
       <RaceVisualizer racers={race.runners.map((r, index) => ({ id: r.id, name: r.kind === "bot" ? `${r.name} (${labels.bot}${r.level ? ` · ${raceLabels.botLevels[r.level]}` : ""})` : r.name, progress: r.progress * 100, isLocal: r.id === userId, seed: runnerAvatar(r).seed, avatarName: r.name, avatarUrl: avatarUrl(r.kind === "human" ? r.id : undefined, r.avatarVersion), hue: index * 47, bonusLabel: racerBonusLabel(race.bonusEvents, r.id, serverTime, raceLabels.bonuses) }))} />
       <ol className="flex flex-col gap-2">
         {race.runners.map((r) => <li key={r.id} className={`rounded-card border border-border p-3 ${r.id === userId ? "bg-accent-panel font-bold" : "bg-surface"}`}>
