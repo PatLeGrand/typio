@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePhysicalKeyboard } from "@/components/race/usePhysicalKeyboard";
 import { Avatar } from "@/components/Avatar";
 import { avatarUrl, runnerAvatar } from "@/components/avatar";
 import { Button } from "@/components/Button";
@@ -29,15 +30,6 @@ type Props = {
   session: Pick<UseRoom, "race" | "results" | "self" | "raceReceivedAt" | "connection" | "sendInput" | "abandonRace" | "restartRace" | "closeRoom">;
 };
 
-const KEYBOARD_QUERY = "(min-width: 768px) and (pointer: fine)";
-function subscribeKeyboard(listener: () => void) {
-  const query = window.matchMedia(KEYBOARD_QUERY);
-  query.addEventListener("change", listener);
-  return () => query.removeEventListener("change", listener);
-}
-const keyboardSnapshot = () => window.matchMedia(KEYBOARD_QUERY).matches;
-const serverKeyboardSnapshot = () => false;
-
 /** Saisie optimiste ; piste et classement restent entièrement pilotés par le serveur. */
 export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }: Props) {
   const { race, results, self, raceReceivedAt, connection, sendInput, abandonRace, restartRace, closeRoom } = session;
@@ -59,7 +51,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   const [confirmAbandon, setConfirmAbandon] = useState(false);
   const [pending, setPending] = useState(false);
   const [now, setNow] = useState<number | null>(null);
-  const physicalKeyboard = useSyncExternalStore(subscribeKeyboard, keyboardSnapshot, serverKeyboardSnapshot);
+  const physicalKeyboard = usePhysicalKeyboard();
   const buffer = useMemo(() => createRaceInputBuffer(sendInput), [sendInput]);
 
   // Une reprise remplace la prédiction et élimine les frappes de l'ancienne connexion.
