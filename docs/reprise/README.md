@@ -4,12 +4,12 @@ Source : statuts **partiel / non fait** de [EXIGENCES.md](../EXIGENCES.md).
 Les fiches et l'audit historiques ci-dessous restent des repères ; l'[énoncé final](../enonce.md) fait foi.
 Les lots couvrent aussi les exigences déjà complètes à préserver dans leur périmètre.
 
-État au 4 novembre 2026 : 85 exigences complètes sur 90, 5 partielles (détail dans `EXIGENCES.md`).
+État au 4 novembre 2026 : 86 exigences complètes sur 90, 4 partielles (détail dans `EXIGENCES.md`).
 Reste par lot :
 
 - lot 2 : démarche créative DES-01 à DES-03 (Patrick) ;
 - lot 3 : terminé (SALLE-06, SALLE-08 et SALLE-10 complets) ;
-- lot 9 : DES-04 (audit « généré par défaut »), I18N-01 (audit des chaînes codées en dur) ;
+- lot 9 : DES-04 (audit « généré par défaut ») ; I18N-01 fait ;
 - lot 10 : README et documents finaux (§ 8), production à redéployer et revérifier (dernière vérification : 9 octobre).
 
 - [x] **1. Conformité technique** — TECH-02, TECH-07, TECH-09, TECH-10 ; seed et persistance TECH-04 : TypeScript intégral, schémas serveur, CI et environnement documenté.

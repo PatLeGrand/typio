@@ -9,8 +9,8 @@ Légende des statuts : **complet** / **partiel** / **non fait**.
 L'énoncé pénalise une fausse déclaration « complet » plus qu'un « partiel » honnête.
 En cas de doute, le statut est « partiel » ou « non fait ». Un « complet » cite toujours un fichier de preuve.
 
-État au 4 novembre 2026, d'après le code de `develop` après les écarts TECH-02, AUTH-02, COURSE-07, DES-06, I18N-02 (#79) et SALLE-06, SALLE-08, SALLE-10.
-Bilan : 90 exigences de l'énoncé, 85 **complètes**, 5 **partielles** (DES-01 à DES-04, I18N-01), aucune **non faite**.
+État au 4 novembre 2026, d'après le code de `develop` après les écarts TECH-02, AUTH-02, COURSE-07, DES-06, I18N-02 (#79), SALLE-06, SALLE-08, SALLE-10 (#81) et I18N-01.
+Bilan : 90 exigences de l'énoncé, 86 **complètes**, 4 **partielles** (DES-01 à DES-04), aucune **non faite**.
 
 Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancés par `bun run test`.
 
@@ -151,7 +151,7 @@ Seule la course solo contre des bots existe (`src/race/`, `src/components/race/`
 
 | ID | Statut | Fichiers principaux | Tests associés | Notes et choix |
 |---|---|---|---|---|
-| I18N-01 | partiel | `src/i18n/dictionaries/fr.json`, `en.json`, `generateMetadata` des pages | `src/i18n/dictionaries.test.ts` | Dictionnaires FR et EN aux mêmes clés (vérifié par test), messages d'erreur et métadonnées traduits. Pas d'audit exhaustif des chaînes codées en dur dans les composants. |
+| I18N-01 | complet | `src/i18n/dictionaries/fr.json`, `en.json`, `generateMetadata` des pages, `eslint.config.ts` (`react/jsx-no-literals`) | `src/i18n/dictionaries.test.ts` | Dictionnaires FR et EN aux mêmes clés (vérifié par test), messages d'erreur et métadonnées traduits. Aucun texte codé en dur dans le JSX : la règle `react/jsx-no-literals` (en erreur, hors tests) refuse tout littéral sauf ponctuation et symboles ; deux exceptions commentées (lettres décoratives « A » et « Z » de la mascotte). Les attributs visibles (`aria-label`, `placeholder`, `title`, `alt`, `label`) ont été audités à la main, la règle ne les couvrant pas. |
 | I18N-02 | complet | `src/components/LanguageSwitcher.tsx`, `src/proxy.ts`, `src/i18n/negotiate.ts`, `src/app/[lang]/race/page.tsx` | `src/proxy.test.ts`, `src/i18n/negotiate.test.ts`, `src/components/LanguageSwitcher.test.tsx`, `src/app/[lang]/race/page.test.tsx` | Sélecteur dans l'en-tête et sur la page de course solo (hors du layout `(site)`), choix conservé en cookie `NEXT_LOCALE`, sinon langue du navigateur, sinon français. |
 | I18N-03 | complet | `src/race/format.ts`, `src/components/race/RaceScreen.tsx`, `RaceResults.tsx`, `RacePodium.tsx`, `room/_components/RoomRaceView.tsx` | `src/race/format.test.ts`, `src/components/race/RaceScreen.test.tsx` | Dates, pluriels et ordinaux via `Intl` ; MPM, précision et progression via `Intl.NumberFormat` selon la langue (« 98 % » en français, « 98% » en anglais), en solo, en salle, au podium, dans l'historique et le profil. Les chronos restent en mm:ss, identiques dans les deux langues. |
 

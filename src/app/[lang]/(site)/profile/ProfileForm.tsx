@@ -278,7 +278,7 @@ export function ProfileForm({
                     <div className="flex items-center gap-3">
                       <GithubIcon className="w-6 h-6 text-foreground" />
                       <div className="flex flex-col">
-                        <p className="font-semibold text-sm text-foreground">GitHub</p>
+                        <p className="font-semibold text-sm text-foreground">{dictionary.oauth.github}</p>
                         <div className="flex items-center gap-1.5 text-xs text-muted">
                           <div
                             aria-hidden="true"
@@ -297,7 +297,7 @@ export function ProfileForm({
                     <div className="flex items-center gap-3">
                       <DiscordIcon className="w-6 h-6" />
                       <div className="flex flex-col">
-                        <p className="font-semibold text-sm text-foreground">Discord</p>
+                        <p className="font-semibold text-sm text-foreground">{dictionary.oauth.discord}</p>
                         <div className="flex items-center gap-1.5 text-xs text-muted">
                           <div
                             aria-hidden="true"
