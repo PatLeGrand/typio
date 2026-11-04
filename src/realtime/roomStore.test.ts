@@ -228,10 +228,10 @@ describe("roomStore", () => {
       expect(leaveRes.state.hostId).toBe(guest.id);
     }
 
-    // Tous partent
-    store.leave(guest.id, code);
-    const lastRes = store.leave(member2.id, code);
-    expect(lastRes.ok).toBe(true);
+    // Le dernier humain connecté part : le déconnecté ne devient pas hôte.
+    const lastRes = store.leave(guest.id, code);
+    expect(lastRes.ok && lastRes.state.status).toBe("closed");
+    expect(store.roomOf(member2.id)).toBeNull();
     expect(store.get(code)).toBeNull(); // La salle est supprimée
   });
 

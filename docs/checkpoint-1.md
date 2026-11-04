@@ -2,7 +2,7 @@
 
 Référence : [énoncé, section 7](enonce.md#7-checkpoint-1-15-). État au 4 novembre 2026 ;
 le relevé historique du 5 octobre est conservé ci-dessous. Bilan global de la matrice :
-82 exigences complètes sur 90, 8 partielles, aucune non faite.
+85 exigences complètes sur 90, 5 partielles, aucune non faite.
 
 ## Les cinq livrables (§ 7.1)
 
@@ -22,7 +22,7 @@ le relevé historique du 5 octobre est conservé ci-dessous. Bilan global de la 
 | Démarche créative et direction artistique (nom, logo, moodboard, palette, typographies) | 20 | **partiel** : `DEMARCHE-CREATIVE.md` à compléter par Patrick (DES-01 à DES-03). |
 | Architecture : modèle de données, machine à états, ADR temps réel | 20 | **complet** pour la version initiale : `ARCHITECTURE.md`, approche bots incluse. |
 | Déploiement fonctionnel en production : HTTPS, authentification, base de données | 20 | Déploiement vérifié le 9 octobre (`sha-994ac37`) ; à revérifier avant remise, écarts finaux TECH-04 dans `EXIGENCES.md`. |
-| Salle créée et rejointe par code, mise à jour en temps réel | 10 | Fonctionnel selon le relevé historique : `src/realtime/`, `reprise/etape-1-salle-temps-reel.md` ; SALLE-01, SALLE-02 et JOIN-01 sont **complets** selon `EXIGENCES.md` (restent partiels : SALLE-06, SALLE-08, SALLE-10). |
+| Salle créée et rejointe par code, mise à jour en temps réel | 10 | Fonctionnel selon le relevé historique : `src/realtime/`, `reprise/etape-1-salle-temps-reel.md` ; SALLE-01, SALLE-02 et JOIN-01 sont **complets** selon `EXIGENCES.md` (SALLE-06, SALLE-08 et SALLE-10 aussi). |
 | Intégration continue, langue et thème, qualité initiale du code, matrice des exigences | 10 | CI complète (TECH-09) ; I18N-02 et DES-05 **complets** ; matrice `EXIGENCES.md` tenue à jour ; conformité technique (TECH-02, TECH-07, TECH-10) **complète**. |
 | **Total** | **100** | Aucun score obtenu n'est présumé. |
 
@@ -42,7 +42,7 @@ le relevé historique du 5 octobre est conservé ci-dessous. Bilan global de la 
 ## À faire plus tard
 
 - **Réviser H-13 dans le Word** (Patrick) : hébergement sur le VPS, avec un renvoi vers l'ADR-001.
-- **Confirmer avec le client** qu'un invité peut hériter du rôle d'hôte (voir la machine à états, § 2).
+- ~~Confirmer avec le client qu'un invité peut hériter du rôle d'hôte~~ : confirmé le 4 novembre 2026 (H-46 dans `EXIGENCES.md`).
 
 ## État au 5 octobre 2026
 

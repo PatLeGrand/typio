@@ -9,8 +9,8 @@ Légende des statuts : **complet** / **partiel** / **non fait**.
 L'énoncé pénalise une fausse déclaration « complet » plus qu'un « partiel » honnête.
 En cas de doute, le statut est « partiel » ou « non fait ». Un « complet » cite toujours un fichier de preuve.
 
-État au 4 novembre 2026, d'après le code de `develop` après la PR #79 (écarts TECH-02, AUTH-02, COURSE-07, DES-06, I18N-02).
-Bilan : 90 exigences de l'énoncé, 82 **complètes**, 8 **partielles** (DES-01 à DES-04, SALLE-06, SALLE-08, SALLE-10, I18N-01), aucune **non faite**.
+État au 4 novembre 2026, d'après le code de `develop` après les écarts TECH-02, AUTH-02, COURSE-07, DES-06, I18N-02 (#79) et SALLE-06, SALLE-08, SALLE-10.
+Bilan : 90 exigences de l'énoncé, 85 **complètes**, 5 **partielles** (DES-01 à DES-04, I18N-01), aucune **non faite**.
 
 Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancés par `bun run test`.
 
@@ -60,11 +60,11 @@ Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancé
 | SALLE-03 | complet | `src/realtime/protocol.ts` (`ROOM_VISIBILITIES`), `src/realtime/roomStore.ts` (`join`, `joinInvite`), `src/realtime/lobby.ts`, `src/components/race/RaceSettingsFields.tsx` | `src/realtime/roomStore.test.ts`, `src/realtime/lobby.test.ts`, `src/realtime/lobbyHandlers.test.ts`, `src/realtime/roomInvites.test.ts` | Visibilité publique, sur code (défaut, H-29) ou privée, réglée par l'hôte et validée par le serveur. Publique : listée et rejoignable directement. Sur code : non listée, code ou lien. Privée : non listée, code seul refusé (`INVITE_REQUIRED`), entrée par lien d'invitation (SALLE-04). Vérifié dans l'application le 29 octobre 2026. |
 | SALLE-04 | complet | `src/realtime/roomStore.ts` (`createInvite`, `joinInvite`, `invites`), `src/realtime/roomHandlers.ts` (`room:createInvite`, `room:joinInvite`, `room:invites`), `src/realtime/server.ts` (IP du socket), `src/app/[lang]/(site)/room/_components/InvitePanel.tsx`, `src/app/[lang]/(site)/invite/[token]/` | `src/realtime/roomInvites.test.ts`, `src/realtime/roomConnection.test.ts` | Un lien par invité, généré par l'hôte, avec statut (non utilisé, utilisé par, révoqué) visible de l'hôte seul. Jeton de 256 bits ; seul son SHA-256 est gardé, en mémoire, dans la salle. Usage unique : la première utilisation lie le lien à la personne et à son IP (H-31), qui peut le réutiliser pour revenir. Refus uniforme `INVITE_INVALID`, compté dans la limite d'échecs. Lien révoqué à l'expulsion, tous invalides à la fermeture. 50 liens au plus par salle. Page d'invitation sans paramètre de redirection et en `no-referrer`. Vérifié dans l'application le 29 octobre 2026 (autre IP refusée, salle privée rejointe, FR/EN, clair/sombre, 360 px). |
 | SALLE-05 | complet | `src/realtime/protocol.ts` (`capacity`, `MIN_CAPACITY`, `MAX_CAPACITY`), `src/realtime/roomStore.ts` | `src/realtime/roomStore.test.ts` | Capacité de 2 à 30 (défaut 20) réglée par l'hôte ; elle compte coureurs humains et bots, pas les spectateurs (H-28). Capacité inférieure aux coureurs présents ou bots en trop : `ROOM_FULL`. Vérifié dans l'application le 29 octobre 2026. |
-| SALLE-06 | partiel | `src/realtime/roomStore.ts` (`roomByUser`), `src/app/[lang]/(site)/play/InRoomNotice.tsx` | `src/realtime/roomStore.test.ts` | Une personne n'est que dans une salle, garanti par le serveur ; un deuxième onglet ne crée pas de doublon ; l'interface propose de quitter la salle actuelle. Écart : l'index est en mémoire, pas une contrainte en base de données. |
+| SALLE-06 | complet | `src/db/schema.ts` (`room_memberships`, clé primaire `user_id`), `drizzle/0008_ancient_silhouette.sql`, `src/realtime/persistentRoomStore.ts`, `src/realtime/drizzleRoomMembershipRepository.ts`, `src/app/[lang]/(site)/play/InRoomNotice.tsx` | `src/realtime/persistentRoomStore.test.ts`, `src/realtime/roomStore.test.ts`, `src/auth/repositories.integration.test.ts` | Une personne n'est que dans une salle : la clé primaire `user_id` de `room_memberships` est la contrainte en base, réservée avant toute entrée (création, code, invitation, partie rapide) et libérée au départ, à l'expulsion, à l'expiration de la grâce et à la fermeture. Table vidée au démarrage du serveur temps réel ; une ligne orpheline (échec PostgreSQL) est réparée à la tentative suivante. Un deuxième onglet ne crée pas de doublon ; l'interface propose de quitter la salle actuelle. |
 | SALLE-07 | complet | `src/realtime/roomStore.ts` (`kick`, `banned`), `src/realtime/roomHandlers.ts` (`room:kick`, `room:kicked`), `src/app/[lang]/(site)/room/_components/ParticipantList.tsx` | `src/realtime/roomInvites.test.ts`, `src/realtime/roomConnection.test.ts` | L'hôte expulse un participant ou un spectateur (confirmation en deux temps), y compris pendant une course (retrait comme un abandon). L'expulsé est renvoyé sur `/play` avec un message ; son lien est révoqué et son compte est banni de la salle (`KICKED` par code, lien ou partie rapide, H-32). Vérifié dans l'application le 29 octobre 2026. |
-| SALLE-08 | partiel | `src/realtime/roomStore.ts` (`removeParticipant`) | `src/realtime/roomStore.test.ts` | Le plus ancien participant connecté devient hôte ; salle fermée quand plus personne. Écarts : s'il ne reste que des déconnectés, le plus ancien d'entre eux hérite du rôle au lieu de fermer la salle ; un invité peut hériter (choix à confirmer, voir « à trancher »). |
+| SALLE-08 | complet | `src/realtime/roomStore.ts` (`removeParticipant`), `src/realtime/roomHandlers.ts` (`publishDeparture`) | `src/realtime/roomStore.test.ts`, `src/realtime/roomHandlers.test.ts` | Quand l'hôte part (ou que sa grâce de reconnexion expire), le plus ancien humain connecté, participant ou spectateur, devient hôte ; un invité peut hériter (H-46), un bot jamais. S'il ne reste aucun humain connecté, la salle est fermée. |
 | SALLE-09 | complet | `src/realtime/roomStore.ts` (`join`) | `src/realtime/raceHandlers.test.ts` | Rejoindre est refusé en décompte et en course (`RACE_IN_PROGRESS`), permis en attente et aux résultats (H-23). |
-| SALLE-10 | partiel | `src/realtime/roomHandlers.ts`, `src/realtime/server.ts` (`JOIN_FAILURE_LIMIT`) | `src/realtime/roomHandlers.test.ts` | Limite de 10 échecs par minute sur `room:join`. Écart : comptée par utilisateur (session), pas par adresse IP. |
+| SALLE-10 | complet | `src/realtime/roomHandlers.ts` (`limitedJoin`), `src/realtime/server.ts` (`JOIN_FAILURE_LIMIT`, IP issue de `x-forwarded-for` posé par Caddy) | `src/realtime/roomHandlers.test.ts` | Au plus 10 échecs par minute sur `room:join` et `room:joinInvite`, comptés par adresse IP et par utilisateur (l'un ou l'autre bloque) ; tentatives en vol réservées pour que des requêtes parallèles ne dépassent pas le plafond. Sans IP connue, la clé utilisateur seule s'applique. |
 
 ## Rejoindre une course (JOIN)
 
@@ -239,14 +239,11 @@ Les hypothèses H-1 à H-18 de l'ancien cahier gardent leur identifiant : le cod
 | H-43 | Longueur en mots | valable | CONF-04. Choix 10, 25, 50, 75, 100 mots. Mode phrases : on garde des phrases entières, le total reste à ±30 % de la cible. |
 | H-44 | Compte de démonstration public | valable | TECH-04, § 8. Identifiants dans le README. Comptes `is_demo` en lecture seule côté serveur : pseudo, avatar, mot de passe, préférences et liaison OAuth refusés (public de 12 à 17 ans). Ses courses restent enregistrées. |
 | H-45 | Caractères à inclure | valable | CONF-07. Mode aléatoire : mot gardé s'il contient au moins un caractère inclus (casse ignorée). Mode cohérent : option désactivée. Tranche le point « à trancher » de CONF-07 avec H-11. |
+| H-46 | Un invité peut hériter du rôle d'hôte | valable | SALLE-08 : « personne humaine connectée » inclut les invités. Confirmé par Patrick le 4 novembre 2026. Les bots n'en héritent jamais. |
 
 ### Choix encore à trancher
 
-L'énoncé demande de documenter ces choix. Aucun n'est arrêté : l'état actuel est indiqué.
-
-| ID de l'énoncé | Question | Statut | État actuel et proposition |
-|---|---|---|---|
-| SALLE-08 | Un invité peut-il hériter du rôle d'hôte | à trancher | « Personne humaine connectée » est ambigu. Le projet a choisi oui (voir `docs/ARCHITECTURE.md`) ; à confirmer. |
+Aucun choix en attente au 4 novembre 2026 (SALLE-08 tranché : H-46).
 
 ## Correspondance avec l'ancien cahier des charges
 

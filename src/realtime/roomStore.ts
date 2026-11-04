@@ -123,6 +123,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
 
   /** Supprime la salle : tous ses liens d'invitation deviennent invalides (SALLE-04). */
   function dropRoom(room: StoredRoom): void {
+    for (const p of room.participants) roomByUser.delete(p.userId);
     for (const hash of room.invites.keys()) inviteRooms.delete(hash);
     rooms.delete(room.code);
   }
@@ -205,7 +206,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     room.participants.splice(index, 1);
     roomByUser.delete(userId);
 
-    if (room.participants.length === 0) {
+    if (room.participants.length === 0 || (room.hostId === userId && !room.participants.some((p) => p.connected))) {
       if (room.race && room.race.status !== "results") {
         const endedAt = now();
         saveRace(room, { ...room.race, status: "results", endedAt,
@@ -218,15 +219,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
     }
 
     if (room.hostId === userId) {
-      const connected = room.participants.filter((p) => p.connected);
-      let nextHost;
-      if (connected.length > 0) {
-        connected.sort((a, b) => a.joinedAt - b.joinedAt);
-        nextHost = connected[0];
-      } else {
-        const all = [...room.participants].sort((a, b) => a.joinedAt - b.joinedAt);
-        nextHost = all[0];
-      }
+      const nextHost = room.participants.filter((p) => p.connected).sort((a, b) => a.joinedAt - b.joinedAt)[0];
       room.hostId = nextHost.userId;
     }
 
@@ -234,11 +227,14 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
   }
 
   return {
+    allocateCode: () => generateUniqueRoomCode((c) => rooms.has(c), generateCode),
+    inviteCode: (token: string) => inviteRooms.get(hashToken(token)) ?? null,
     create(
       user: UserContext,
       configPatch: RoomConfigPatch,
       role: ParticipantRole,
-      now: number
+      now: number,
+      reservedCode?: string
     ): RoomResult {
       if (user.kind === "guest") {
         return { ok: false, error: "GUEST_CANNOT_CREATE" };
@@ -246,7 +242,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
 
       if (roomOf(user.id)) return { ok: false, error: "ALREADY_IN_ROOM" };
 
-      const code = generateUniqueRoomCode((c) => rooms.has(c), generateCode);
+      const code = reservedCode ?? generateUniqueRoomCode((c) => rooms.has(c), generateCode);
       const state: RoomState = {
         code,
         status: "waiting",

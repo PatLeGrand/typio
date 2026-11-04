@@ -27,7 +27,8 @@ import {
   type ServerToClientEvents,
   type SocketData,
 } from "./protocol";
-import type { createRoomStore } from "./roomStore";
+import type { createPersistentRoomStore } from "./persistentRoomStore";
+import type { RoomResult } from "./roomStore";
 import type { RealtimeServer } from "./server";
 import type { UserSockets } from "./userSockets";
 
@@ -40,14 +41,14 @@ export type RealtimeSocket = Socket<
 
 export interface RoomHandlerDeps {
   now: () => Date;
-  store: ReturnType<typeof createRoomStore>;
+  store: ReturnType<typeof createPersistentRoomStore>;
   /** Minuteurs de grâce du serveur (D4). */
   timers: GraceTimers;
   /** Délai avant le retrait d'un participant déconnecté ; `RECONNECT_GRACE_MS` par défaut. */
   graceMs?: number;
   /** Index des sockets ouverts par utilisateur. */
   sockets: UserSockets;
-  /** Échecs de `room:join` par utilisateur (énumération des codes de salle). */
+  /** Échecs de `room:join` par IP et utilisateur (énumération des codes de salle). */
   joinFailures: RateLimiter;
   raceInputs: RateLimiter;
   loadCorpus?: () => Promise<SentenceCorpus>;
@@ -87,6 +88,30 @@ export function registerRoomHandlers(
   const { store, now, timers, sockets, joinFailures } = deps;
   const graceMs = deps.graceMs ?? RECONNECT_GRACE_MS;
   const user = socket.data.user;
+  const joinFailureKeys = [`user:${user.id}`];
+  if (socket.data.ip && socket.data.ip !== "unknown") joinFailureKeys.push(`ip:${socket.data.ip}`);
+  const joinLimited = () => joinFailureKeys.some((key) => joinFailures.isLimited(key));
+  const recordJoinFailure = () => { for (const key of joinFailureKeys) joinFailures.record(key); };
+  // Réserver aussi les tentatives en vol : des messages parallèles ne doivent pas
+  // dépasser le plafond pendant l'attente de PostgreSQL.
+  async function limitedJoin(run: () => Promise<RoomResult>, limitedError: "INVALID_CODE" | "INVITE_INVALID"): Promise<RoomResult> {
+    const reserved: string[] = [];
+    for (const key of joinFailureKeys) {
+      if (!joinFailures.consume(key)) {
+        for (const previous of reserved) joinFailures.release(previous);
+        return { ok: false, error: limitedError };
+      }
+      reserved.push(key);
+    }
+    let keep = false;
+    try {
+      const result = await run();
+      keep = !result.ok && ["ROOM_NOT_FOUND", "INVITE_REQUIRED", "INVITE_INVALID"].includes(result.error);
+      return result;
+    } finally {
+      if (!keep) for (const key of reserved) joinFailures.release(key);
+    }
+  }
 
   /** Tous les sockets ouverts de l'utilisateur (un par onglet). */
   const userSockets = (): RealtimeSocket[] => sockets.of(user.id);
@@ -141,9 +166,14 @@ export function registerRoomHandlers(
    */
   const publishDeparture = (code: string, state: RoomState): void => {
     if (state.status === "closed") {
-      for (const s of userSockets()) s.emit("room:state", state);
-      deps.syncRace(code);
-      deps.lobbyChanged();
+      broadcast(state);
+      for (const participant of state.participants) {
+        timers.cancel(participant.userId);
+        for (const s of sockets.of(participant.userId)) {
+          void s.leave(code);
+          s.data.roomCode = null;
+        }
+      }
     } else {
       broadcast(state);
       sendInvites(code, state.hostId); // le départ était peut-être celui de l'hôte (SALLE-08)
@@ -155,14 +185,14 @@ export function registerRoomHandlers(
    * Ignore l'événement si le client n'a pas fourni d'accusé. Toute exception du gestionnaire
    * devient `INTERNAL`, journalisée sans cookie ni jeton.
    */
-  function respond<TSuccess extends { ok: true }>(
+  async function respond<TSuccess extends { ok: true }>(
     ack: (res: TSuccess | AckFailure) => void,
-    run: () => Outcome<TSuccess>,
-  ): void {
+    run: () => Outcome<TSuccess> | Promise<Outcome<TSuccess>>,
+  ): Promise<void> {
     if (typeof ack !== "function") return;
     let outcome: Outcome<TSuccess>;
     try {
-      outcome = run();
+      outcome = await run();
     } catch (e) {
       console.error("[realtime] handler failed:", describeError(e));
       ack({ ok: false, error: "INTERNAL" });
@@ -171,6 +201,8 @@ export function registerRoomHandlers(
     ack(outcome.reply);
     try {
       outcome.publish?.();
+      // Le dernier onglet peut avoir disparu pendant la réservation en base.
+      if (socket.disconnected && userSockets().length === 0) disconnectUser();
     } catch (e) {
       console.error("[realtime] broadcast failed:", describeError(e));
     }
@@ -195,11 +227,11 @@ export function registerRoomHandlers(
   }
 
   socket.on("room:create", (payloadInput, ack) => {
-    respond(ack, () => {
+    respond(ack, async () => {
       const payload = parseCreatePayload(payloadInput);
       if (!payload) return failure("INVALID_PAYLOAD");
 
-      const res = store.create(user, payload.config, payload.role, now().getTime());
+      const res = await store.create(user, payload.config, payload.role, now().getTime());
       if (!res.ok) return failure(res.error);
 
       const { state } = res;
@@ -212,23 +244,22 @@ export function registerRoomHandlers(
   });
 
   socket.on("room:join", (payloadInput, ack) => {
-    respond(ack, () => {
+    respond(ack, async () => {
       // Énumération des codes (H-5) : au-delà de la limite d'échecs, on répond `INVALID_CODE`
       // sans consulter le registre. Le protocole n'a pas de code « trop de tentatives » et
       // `INVALID_CODE` ne révèle rien sur les salles existantes.
-      if (joinFailures.isLimited(user.id)) return failure("INVALID_CODE");
+      if (joinLimited()) return failure("INVALID_CODE");
 
       const payload = parseJoinPayload(payloadInput);
-      if (payload === "INVALID_CODE") joinFailures.record(user.id);
+      if (payload === "INVALID_CODE") recordJoinFailure();
       if (payload === "INVALID_PAYLOAD" || payload === "INVALID_CODE") return failure(payload);
 
-      const res = store.join(user, payload.code, payload.role, now().getTime());
+      const res = await limitedJoin(() => store.join(user, payload.code, payload.role, now().getTime()), "INVALID_CODE");
       if (!res.ok) {
         // `ROOM_NOT_FOUND` compte comme échec, avec `INVALID_CODE`, ainsi qu'`INVITE_REQUIRED` qui
         // confirme qu'un code existe (SALLE-03, SALLE-10). `ROOM_FULL` et `ALREADY_IN_ROOM` ne
         // comptent pas, par choix : ils ne font pas oracle. Le premier exige déjà un code exact ;
         // le second ne consulte pas le registre des salles.
-        if (res.error === "ROOM_NOT_FOUND" || res.error === "INVITE_REQUIRED") joinFailures.record(user.id);
         return failure(res.error);
       }
 
@@ -247,18 +278,17 @@ export function registerRoomHandlers(
 
   // SALLE-04 : mêmes limites d'échecs que `room:join`; le jeton, jamais journalisé, n'est que comparé par hachage.
   socket.on("room:joinInvite", (payloadInput, ack) => {
-    respond(ack, () => {
-      if (joinFailures.isLimited(user.id)) return failure("INVITE_INVALID");
+    respond(ack, async () => {
+      if (joinLimited()) return failure("INVITE_INVALID");
 
       const payload = parseJoinInvitePayload(payloadInput);
       if (!payload) {
-        joinFailures.record(user.id);
+        recordJoinFailure();
         return failure("INVALID_PAYLOAD");
       }
 
-      const res = store.joinInvite(user, payload.token, payload.role, socket.data.ip, now().getTime());
+      const res = await limitedJoin(() => store.joinInvite(user, payload.token, payload.role, socket.data.ip, now().getTime()), "INVITE_INVALID");
       if (!res.ok) {
-        if (res.error === "INVITE_INVALID") joinFailures.record(user.id);
         return failure(res.error);
       }
 
@@ -294,13 +324,13 @@ export function registerRoomHandlers(
 
   // SALLE-07 : l'expulsé reçoit `room:kicked`, ses onglets quittent la room Socket.IO, la salle est mise à jour.
   socket.on("room:kick", (payloadInput, ack) => {
-    respond(ack, () => {
+    respond(ack, async () => {
       const payload = parseKickPayload(payloadInput);
       if (!payload) return failure("INVALID_PAYLOAD");
       const code = store.roomOf(user.id);
       if (!code) return failure("NOT_IN_ROOM");
 
-      const res = store.kick(user.id, code, payload.userId);
+      const res = await store.kick(user.id, code, payload.userId);
       if (!res.ok) return failure(res.error);
 
       timers.cancel(payload.userId);
@@ -322,15 +352,15 @@ export function registerRoomHandlers(
 
   // JOIN-03 : même limite d'échecs et même règle « une seule salle » que `room:join` (SALLE-06).
   socket.on("room:quickJoin", (payloadInput, ack) => {
-    respond(ack, () => {
-      if (joinFailures.isLimited(user.id)) return failure("INVALID_CODE");
+    respond(ack, async () => {
+      if (joinLimited()) return failure("INVALID_CODE");
       if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
       if (store.roomOf(user.id)) return failure("ALREADY_IN_ROOM");
 
       const code = store.quickJoinCode(user.id);
       if (code === null) return failure("NO_ROOM_AVAILABLE");
 
-      const res = store.join(user, code, "runner", now().getTime());
+      const res = await store.join(user, code, "runner", now().getTime());
       if (!res.ok) return failure(res.error);
 
       const { state } = res;
@@ -402,12 +432,12 @@ export function registerRoomHandlers(
           return ack({ ok: false, error: "INTERNAL" });
         }
       }
-      respond(ack, () => {
+      respond(ack, async () => {
         const code = store.roomOf(user.id);
         if (!code) return failure("NOT_IN_ROOM");
         const res = event === "race:start" ? store.start(user.id, code, corpus)
           : event === "race:abandon" ? store.abandon(user.id, code)
-          : store.finish(user.id, code, event === "room:close");
+          : await store.finish(user.id, code, event === "room:close");
         if (!res.ok) return failure(res.error);
         return {
           reply: { ok: true },
@@ -450,11 +480,11 @@ export function registerRoomHandlers(
   });
 
   socket.on("room:leave", (ack) => {
-    respond(ack, () => {
+    respond(ack, async () => {
       const code = store.roomOf(user.id);
       if (!code) return failure("NOT_IN_ROOM");
 
-      const res = store.leave(user.id, code);
+      const res = await store.leave(user.id, code);
       if (!res.ok) return failure(res.error);
 
       timers.cancel(user.id);
@@ -466,7 +496,7 @@ export function registerRoomHandlers(
     });
   });
 
-  socket.on("disconnect", () => {
+  function disconnectUser(): void {
     try {
       const code = store.roomOf(user.id);
       if (!code) return;
@@ -478,9 +508,9 @@ export function registerRoomHandlers(
       if (!res.ok) return;
       broadcast(res.state);
 
-      timers.arm(user.id, graceMs, () => {
+      timers.arm(user.id, graceMs, async () => {
         try {
-          const expired = store.expire(user.id, code);
+          const expired = await store.expire(user.id, code);
           if (expired.ok) publishDeparture(code, expired.state);
         } catch (e) {
           console.error("[realtime] expiry failed:", describeError(e));
@@ -489,5 +519,6 @@ export function registerRoomHandlers(
     } catch (e) {
       console.error("[realtime] disconnect failed:", describeError(e));
     }
-  });
+  }
+  socket.on("disconnect", disconnectUser);
 }

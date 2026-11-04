@@ -24,8 +24,8 @@ afterEach(async () => {
 });
 
 /** Ouvre un socket pour ce jeton et attend sa connexion. */
-async function open(server: TestServer, token: string): Promise<TestClient> {
-  const socket = server.client(token);
+async function open(server: TestServer, token: string, ip?: string): Promise<TestClient> {
+  const socket = server.client(token, undefined, ip);
   const result = await waitForConnection(socket);
   if (!result.connected) throw new Error(`socket refused: ${result.error}`);
   return socket;
@@ -491,6 +491,39 @@ describe("roomHandlers: reconnexion, onglets et départ (D1 à D4)", () => {
 });
 
 describe("roomHandlers: abus (énumération, connexions, taille, session)", () => {
+  it("SALLE-10: shares ten failures per IP across accounts, isolates IPs and resets after one minute", async () => {
+    let time = Date.now();
+    const server = await startTestServer({ now: () => new Date(time) });
+    servers.push(server);
+    const { code } = await roomWithTwo(server);
+    const first = await open(server, server.sessions.signIn("guest").token, "192.0.2.1");
+    const second = await open(server, server.sessions.signIn("guest").token, "192.0.2.1");
+    const other = await open(server, server.sessions.signIn("guest").token, "192.0.2.2");
+    const attempts = await Promise.all(Array.from({ length: 10 }, (_, i) => join(i % 2 ? first : second, { code: "ZZZZZZ", role: "runner" })));
+    expect(attempts.every((result) => !result.ok && result.error === "ROOM_NOT_FOUND")).toBe(true);
+    expect(await join(second, { code, role: "spectator" })).toEqual({ ok: false, error: "INVALID_CODE" });
+    expectOk(await join(other, { code, role: "spectator" }));
+    time += 60_001;
+    expectOk(await join(first, { code, role: "spectator" }));
+  });
+
+  it.each(["leave", "expire"] as const)("SALLE-08: %s closes without a connected successor and cancels remaining grace timers", async (departure) => {
+    const server = await start(300);
+    const { socketA, socketB, code, userB } = await roomWithTwo(server);
+    const disconnected = waitForState(socketA, (state) => state.participants.some((p) => p.userId === userB.userId && !p.connected));
+    socketB.disconnect();
+    await disconnected;
+    expect(server.timers.size).toBe(1);
+    if (departure === "leave") expect(await leave(socketA)).toEqual({ ok: true });
+    else {
+      socketA.disconnect();
+      await pause(400);
+    }
+    expect(server.timers.size).toBe(0);
+    const returning = await open(server, server.sessions.signIn("member").token);
+    expect(await join(returning, { code, role: "runner" })).toEqual({ ok: false, error: "ROOM_NOT_FOUND" });
+  });
+
   it("limite les échecs de room:join par utilisateur, puis répond INVALID_CODE sans consulter le registre", async () => {
     const server = await start();
     const { code } = await roomWithTwo(server);

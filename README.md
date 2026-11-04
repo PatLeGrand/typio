@@ -157,8 +157,6 @@ injoignable autrement que par Caddy, en TLS.
 Le modèle de données (`src/db/schema.ts`) et l'authentification (membres et invités)
 sont en place ; l'état des exigences est suivi dans [docs/EXIGENCES.md](docs/EXIGENCES.md).
 
-- **Invité hôte (SALLE-08).** Un invité peut-il hériter du rôle d'hôte ? Le projet dit
-  oui pour l'instant ; à confirmer.
 - **Content-Security-Policy.** Absente pour l'instant : Next injecte ses
   propres scripts, et une politique stricte demande de leur poser un nonce.
 
