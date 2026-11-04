@@ -2,7 +2,7 @@
 
 Référence : [énoncé, section 7](enonce.md#7-checkpoint-1-15-). État au 4 novembre 2026 ;
 le relevé historique du 5 octobre est conservé ci-dessous. Bilan global de la matrice :
-85 exigences complètes sur 90, 5 partielles, aucune non faite.
+86 exigences complètes sur 90, 4 partielles, aucune non faite.
 
 ## Les cinq livrables (§ 7.1)
 

@@ -6,6 +6,19 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   { rules: { "@typescript-eslint/no-explicit-any": "error" } },
+  {
+    files: ["src/**/*.tsx"],
+    ignores: ["**/*.test.tsx", "src/test/**"],
+    rules: {
+      // Les props techniques (className, href, id…) sont des littéraux ;
+      // les props visibles sont auditées séparément (I18N-01).
+      "react/jsx-no-literals": ["error", {
+        noStrings: true,
+        ignoreProps: true,
+        allowedStrings: ["/", "·", "—", "%", "×", "→", "↗", "•", "(", ")"],
+      }],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
