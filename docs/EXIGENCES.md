@@ -9,7 +9,8 @@ Légende des statuts : **complet** / **partiel** / **non fait**.
 L'énoncé pénalise une fausse déclaration « complet » plus qu'un « partiel » honnête.
 En cas de doute, le statut est « partiel » ou « non fait ». Un « complet » cite toujours un fichier de preuve.
 
-État au 2 novembre 2026, d'après le code de la branche `feat/perf-a11y` (performance et accessibilité).
+État au 4 novembre 2026, d'après le code de `develop` après la PR #79 (écarts TECH-02, AUTH-02, COURSE-07, DES-06, I18N-02).
+Bilan : 90 exigences de l'énoncé, 82 **complètes**, 8 **partielles** (DES-01 à DES-04, SALLE-06, SALLE-08, SALLE-10, I18N-01), aucune **non faite**.
 
 Les fichiers cités sont relatifs à la racine du dépôt. Les tests sont lancés par `bun run test`.
 

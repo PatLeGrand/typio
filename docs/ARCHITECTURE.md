@@ -649,7 +649,9 @@ partagée entre ses onglets, en fenêtre glissante ; l’excédent est ignoré (
 Une saisie invalide ou une cadence de frappes impossible reçoit `INPUT_REJECTED` ;
 hors course, `RACE_NOT_RUNNING`. La reprise conserve la saisie pendant **30 s**
 (COURSE-08), puis le coureur déconnecté abandonne et quitte la salle.
-Aucune écriture en base par frappe ; la persistance des courses reste à réaliser.
+Aucune écriture en base par frappe : la course est enregistrée une seule fois, à la fin
+(`races`, `race_results`, via `src/race/drizzleRaceRepository.ts` branché dans
+`src/realtime/main.ts`, RES-05).
 
 <a id="adr-002"></a>
 
@@ -690,6 +692,13 @@ l'identification visible et la soumission aux bonus de l'énoncé final restent
 `src/race/seededRandom.ts` fournit déjà `createSeededRandom` ; `createRound` l'utilise
 pour mélanger les noms, mais reçoit séparément le hasard des plans.
 Une graine unique pour toute la simulation multijoueur reste à intégrer.
+
+> **État au 4 novembre 2026.** Ce contexte date de la décision. Depuis, la décision
+> est implémentée : `src/realtime/raceEngine.ts` simule les bots côté serveur avec
+> `planBot` et `replanBot`, cinq niveaux (BOT-01), le mode d'erreur est respecté
+> (BOT-03), les bots sont identifiés et soumis aux bonus (BOT-04) et une graine par
+> course en salle pilote texte, noms et plans (BOT-05). En solo, la graine n'est pas
+> encore fixée. Détail et preuves : `EXIGENCES.md`.
 
 ## Décision proposée
 
