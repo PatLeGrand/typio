@@ -118,6 +118,20 @@ vraiment avant de rendre la main. Pour revenir à une version précise :
 sudo TAG=sha-a1b2c3d ./deployer.sh
 ```
 
+**Les fichiers d'`infra/` ne voyagent pas avec l'image.** `deployer.sh`,
+`docker-compose.yml` et le Caddyfile vivent dans `/srv/typio/infra/` sur le VPS,
+qui n'est pas un clone à jour du dépôt. Quand une PR modifie `infra/`, recopier
+le fichier **avant** de déployer, sinon le VPS rejoue l'ancienne procédure (le
+4 novembre 2026, un `deployer.sh` resté au 9 octobre a sauté le seed et laissé
+le corpus de textes vide) :
+
+```bash
+scp infra/deployer.sh ubuntu@socle.aether-manager.ca:/tmp/deployer.sh && ssh ubuntu@socle.aether-manager.ca "sudo install -m 755 -o root -g root /tmp/deployer.sh /srv/typio/infra/deployer.sh"
+```
+
+Pour `docker-compose.yml`, même chose avec `-m 644`. Les secrets restent dans
+`/srv/typio/infra/.env`, jamais dans le dépôt.
+
 ### Le déploiement n'est pas automatique, et c'est voulu
 
 Actions pourrait se connecter en SSH au VPS après chaque build. Il faudrait
