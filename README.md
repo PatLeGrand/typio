@@ -154,9 +154,11 @@ injoignable autrement que par Caddy, en TLS.
 
 ## Ce qui reste à décider
 
-- **Modèle de données.** PostgreSQL et les migrations sont prêts, mais les
-  tables des comptes, scores et courses seront définies avec les fonctionnalités.
-- **Authentification.** Comptes élèves, ou codes de classe sans compte.
+Le modèle de données (`src/db/schema.ts`) et l'authentification (membres et invités)
+sont en place ; l'état des exigences est suivi dans [docs/EXIGENCES.md](docs/EXIGENCES.md).
+
+- **Invité hôte (SALLE-08).** Un invité peut-il hériter du rôle d'hôte ? Le projet dit
+  oui pour l'instant ; à confirmer.
 - **Content-Security-Policy.** Absente pour l'instant : Next injecte ses
   propres scripts, et une politique stricte demande de leur poser un nonce.
 
