@@ -323,7 +323,7 @@
     "errors": {
       "INVALID_USERNAME": "Le pseudo doit faire de 3 à 20 caractères : lettres sans accent, chiffres et _.",
       "INVALID_PASSWORD": "Le mot de passe doit faire de 8 à 128 caractères, avec au moins une lettre et un chiffre.",
-      "INVALID_PSEUDO": "Choisis un pseudo de 2 à 20 caractères : lettres, chiffres, espaces, _ et -.",
+      "INVALID_PSEUDO": "Choisis un pseudo de 3 à 20 caractères : lettres, chiffres, espaces, _ et -.",
       "USERNAME_TAKEN": "Ce pseudo est déjà pris. Essaie-en un autre !",
       "INVALID_CREDENTIALS": "Identifiant ou mot de passe incorrect.",
       "RATE_LIMITED": "Trop d'essais en peu de temps. Patiente un peu, puis réessaie.",
@@ -391,7 +391,7 @@
     "intro": "Choisis un pseudo et lance-toi, sans créer de compte.",
     "pseudoLabel": "Pseudo",
     "pseudoPlaceholder": "Ex. : PoulpeRapide",
-    "pseudoHint": "2 à 20 caractères : lettres, chiffres, espaces, _ et -.",
+    "pseudoHint": "3 à 20 caractères : lettres, chiffres, espaces, _ et -.",
     "submit": "Jouer en invité",
     "limits": "Les données d'un invité sont supprimées à sa déconnexion, ou après 24 h au plus tard, et un invité ne peut pas créer de course.",
     "haveAccount": "Tu as déjà un compte ?",
@@ -641,7 +641,7 @@
       "member": "Membre",
       "noUsername": "Aucun (invité)",
       "username": "Nom d'utilisateur",
-      "displayNameHelp": "Entre 2 et 20 caractères.",
+      "displayNameHelp": "Entre 3 et 20 caractères.",
       "title": "Identité"
     },
     "description": "Ton nom sur la piste, tes réglages aux touches. Fais de Typio ton terrain de jeu.",

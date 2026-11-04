@@ -323,7 +323,7 @@
     "errors": {
       "INVALID_USERNAME": "Your username must be 3 to 20 characters: letters without accents, digits and _.",
       "INVALID_PASSWORD": "Your password must be 8 to 128 characters long, with at least one letter and one digit.",
-      "INVALID_PSEUDO": "Pick a nickname of 2 to 20 characters: letters, digits, spaces, _ and -.",
+      "INVALID_PSEUDO": "Pick a nickname of 3 to 20 characters: letters, digits, spaces, _ and -.",
       "USERNAME_TAKEN": "That username is already taken. Try another one!",
       "INVALID_CREDENTIALS": "Wrong username or password.",
       "RATE_LIMITED": "Too many tries in a short time. Wait a little, then try again.",
@@ -391,7 +391,7 @@
     "intro": "Pick a nickname and jump in, no account needed.",
     "pseudoLabel": "Nickname",
     "pseudoPlaceholder": "E.g. SpeedyOctopus",
-    "pseudoHint": "2 to 20 characters: letters, digits, spaces, _ and -.",
+    "pseudoHint": "3 to 20 characters: letters, digits, spaces, _ and -.",
     "submit": "Play as a guest",
     "limits": "A guest's data is deleted when they sign out, or after 24 hours at most, and a guest can't create a race.",
     "haveAccount": "Already have an account?",
@@ -641,7 +641,7 @@
       "member": "Member",
       "noUsername": "None (guest)",
       "username": "Username",
-      "displayNameHelp": "Between 2 and 20 characters.",
+      "displayNameHelp": "Between 3 and 20 characters.",
       "title": "Identity"
     },
     "description": "Your name on the track, your keyboard settings. Make Typio your playground.",

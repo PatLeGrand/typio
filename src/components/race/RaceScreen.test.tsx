@@ -44,6 +44,7 @@ function setup(overrides: { settings?: Partial<RaceSettings>; locale?: Locale; i
     <RaceScreen
       locale={locale}
       labels={labels}
+      roomLabels={getDictionary(locale).room.race}
       siteName="Typio"
       settings={settings}
       userName="Aurel"
@@ -67,10 +68,16 @@ const textOnScreen = () => document.getElementById("race-text")?.textContent;
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.stubGlobal("matchMedia", vi.fn(() => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })));
   clock = 10_000;
 });
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe("RaceScreen : horloge (A-D6, AC-4)", () => {
@@ -263,7 +270,14 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     expect(screen.getByRole("button", { name: labels.abandon })).toBeDisabled();
     advance(3000);
     advance(2000);
+    const roomLabels = getDictionary("fr").room.race;
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    expect(screen.getByRole("group", { name: roomLabels.confirmAbandon })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.racing);
+    fireEvent.click(screen.getByRole("button", { name: roomLabels.cancel }));
+    expect(screen.queryByRole("group", { name: roomLabels.confirmAbandon })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: roomLabels.confirm }));
 
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.abandoned);
     const youRow = within(screen.getByRole("table", { name: labels.results.tableTitle })).getByRole("rowheader", { name: labels.you }).closest("tr") as HTMLElement;
@@ -280,6 +294,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     const { labels, settings } = setup({ initialText: "first text", random });
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
     expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
 
     vi.mocked(nextRaceText).mockClear();
@@ -296,6 +311,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     // Avec le vrai générateur, le deuxième tirage donne un texte différent du précédent.
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
     expect(textOnScreen()).not.toBe("brand new text");
     expect(textOnScreen()?.length).toBeGreaterThan(50);
@@ -305,6 +321,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     const { labels, settings } = setup();
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
     expect(screen.getByRole("link", { name: labels.results.editSettings })).toHaveAttribute(
       "href",
       `/fr/race/settings?${serializeRaceSettings(settings)}`,
@@ -319,6 +336,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     advance(3000);
     expect(accuracyShown(labels)).toBe(accuracy);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary(locale).room.race.confirm }));
     expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
     expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
     expect(screen.getByRole("region", { name: labels.results.tableTitle })).toHaveAttribute("tabindex", "0");
@@ -347,6 +365,7 @@ describe("RaceScreen : aucun texte (CONF-03)", () => {
     const { labels } = setup();
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
     fireEvent.click(screen.getByRole("button", { name: labels.results.replay }));
     expect(screen.getByRole("status")).toHaveTextContent(labels.loading);
     await act(async () => { rejectRequest(new Error("network unavailable")); });
@@ -357,6 +376,7 @@ describe("RaceScreen : aucun texte (CONF-03)", () => {
     const { labels } = setup({ settings: { excludedCharacters: "a e i o u y" } });
     advance(3000);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+    fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
     expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.message);
   });
@@ -388,6 +408,16 @@ it("affiche l’erreur de débit renvoyée lors d’une nouvelle manche", async 
   const { labels } = setup();
   advance(3000);
   fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+  fireEvent.click(screen.getByRole("button", { name: getDictionary("fr").room.race.confirm }));
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: labels.results.replay })); });
   expect(screen.getByRole("alert")).toHaveTextContent(labels.noText.rateLimited);
+});
+
+it.each(["fr", "en"] as const)("DES-06 : remplace la saisie sans clavier physique (%s)", (locale) => {
+  vi.mocked(window.matchMedia).mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() } as unknown as MediaQueryList);
+  const { labels } = setup({ locale });
+  advance(3000);
+  expect(window.matchMedia).toHaveBeenCalledWith("(min-width: 768px) and (pointer: fine)");
+  expect(screen.getByText(getDictionary(locale).room.race.keyboard)).toBeInTheDocument();
+  expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
 });

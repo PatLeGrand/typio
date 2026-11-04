@@ -134,12 +134,13 @@ describe("validatePseudo", () => {
     expect(validatePseudo(decomposed)).toEqual({ ok: true, value: "Zoé" });
   });
 
-  it("accepts the 2 and 20 character bounds", () => {
-    expect(validatePseudo("ab").ok).toBe(true);
+  it("accepts the 3 and 20 character bounds", () => {
+    expect(validatePseudo("abc").ok).toBe(true);
     expect(validatePseudo("a".repeat(20)).ok).toBe(true);
   });
 
-  it("rejects 1 and 21 characters", () => {
+  it("rejects fewer than 3 and more than 20 characters", () => {
+    expect(validatePseudo("  ab  ")).toEqual({ ok: false, code: "INVALID_PSEUDO" });
     expect(validatePseudo("a")).toEqual({ ok: false, code: "INVALID_PSEUDO" });
     expect(validatePseudo("a".repeat(21))).toEqual({ ok: false, code: "INVALID_PSEUDO" });
   });
@@ -171,8 +172,8 @@ describe("validatePseudo", () => {
   it("requires at least one visible letter or digit", () => {
     expect(validatePseudo("__")).toEqual({ ok: false, code: "INVALID_PSEUDO" });
     expect(validatePseudo("- -")).toEqual({ ok: false, code: "INVALID_PSEUDO" });
-    expect(validatePseudo("_a")).toEqual({ ok: true, value: "_a" });
-    expect(validatePseudo("-7")).toEqual({ ok: true, value: "-7" });
+    expect(validatePseudo("_ab")).toEqual({ ok: true, value: "_ab" });
+    expect(validatePseudo("-77")).toEqual({ ok: true, value: "-77" });
   });
 
   it("rejects a blank pseudo and non-string values", () => {
