@@ -124,6 +124,13 @@ export const oauthAccounts = pgTable(
   ],
 );
 
+/** SALLE-06 : une seule appartenance par personne, garantie par la clé primaire. */
+export const roomMemberships = pgTable("room_memberships", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  roomCode: text("room_code").notNull(),
+  joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Courses terminées (RES-05) : une seule écriture en fin de course (PERF-02). */
 export const races = pgTable("races", {
   id: uuid("id").primaryKey().defaultRandom(),
