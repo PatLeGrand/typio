@@ -28,7 +28,7 @@ export function HomeHero({ home, locale }: HomeHeroProps) {
             <HomeJoinCodeForm labels={home.joinByCode} locale={locale} />
           </div>
         </div>
-        <HomeRaceShowcase labels={home.raceShowcase} />
+        <HomeRaceShowcase labels={home.raceShowcase} locale={locale} />
       </div>
     </section>
   );

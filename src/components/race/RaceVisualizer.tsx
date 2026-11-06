@@ -24,8 +24,8 @@ export interface Racer {
 interface RaceVisualizerProps {
   racers: Racer[];
   trackLength?: number;
-  /** Fige aussi les mouvements ambiants pour les vitrines accessibles. */
-  reducedMotion?: boolean;
+  paused?: boolean;
+  maxFPS?: number;
   /** Classes du conteneur ; par défaut une boîte de 350 px avec bordure (bac à sable). */
   className?: string;
 }
@@ -75,12 +75,17 @@ type LayerAlias = keyof (typeof SCENE_COLORS)["light"]["layers"];
 export function RaceVisualizer({
   racers,
   trackLength = 5000,
-  reducedMotion = false,
+  paused = false,
+  maxFPS = 0,
   className = "relative h-[350px] w-full overflow-hidden rounded-xl border border-border shadow-inner",
 }: RaceVisualizerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const reducedMotionRef = useRef(reducedMotion);
-  useEffect(() => { reducedMotionRef.current = reducedMotion; }, [reducedMotion]);
+  const playbackRef = useRef({ paused, maxFPS });
+  const syncPlaybackRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    playbackRef.current = { paused, maxFPS };
+    syncPlaybackRef.current?.();
+  }, [paused, maxFPS]);
   const dark = useIsDarkTheme();
   const darkRef = useRef(dark);
   // Appliquée par la scène une fois prête ; rappelée à chaque changement de thème.
@@ -88,10 +93,16 @@ export function RaceVisualizer({
 
   // Toujours la dernière valeur, lisible depuis le ticker sans le recréer.
   const racersRef = useRef(racers);
-  useEffect(() => { racersRef.current = racers; }, [racers]);
+  useEffect(() => {
+    racersRef.current = racers;
+    syncPlaybackRef.current?.();
+  }, [racers]);
   
   const trackLengthRef = useRef(trackLength);
-  useEffect(() => { trackLengthRef.current = trackLength; }, [trackLength]);
+  useEffect(() => {
+    trackLengthRef.current = trackLength;
+    syncPlaybackRef.current?.();
+  }, [trackLength]);
 
   useEffect(() => {
     darkRef.current = dark;
@@ -119,6 +130,7 @@ export function RaceVisualizer({
       const colors = SCENE_COLORS[isDark ? "dark" : "light"];
       app.renderer.background.color = colors.background;
       for (const { alias, sprite } of layers) sprite.tint = colors.layers[alias];
+      if (!app.ticker.started) app.render();
     };
 
     const layoutLayers = () => {
@@ -178,6 +190,7 @@ export function RaceVisualizer({
           photo.height = AVATAR_SIZE;
           node.addChildAt(photo, 1);
           generated.visible = false;
+          if (!app.ticker.started) app.render();
         };
         image.src = racer.avatarUrl; // repli sur l'avatar généré si le chargement échoue
       }
@@ -245,6 +258,7 @@ export function RaceVisualizer({
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
         antialias: true,
+        autoStart: false,
       });
       initialized = true;
       if (!isMounted) {
@@ -287,12 +301,8 @@ export function RaceVisualizer({
       app.stage.addChild(world);
 
       const blobTexture = PIXI.Assets.get<PIXI.Texture>("blob");
-      app.renderer.on("resize", layoutLayers);
-
-      app.ticker.add((ticker) => {
-        const dt = Math.min(ticker.deltaMS / 1000, 0.05); // borne les gros sauts (onglet en veille)
-        const still = reducedMotionRef.current;
-        elapsed += still ? 0 : dt;
+      const updateScene = (dt: number) => {
+        elapsed += dt;
         const list = racersRef.current;
         const length = trackLengthRef.current;
         const groundBottom = Math.max(0, app.screen.height - 34);
@@ -325,7 +335,7 @@ export function RaceVisualizer({
           // 1. Position : le Blob rejoint sa cible, mais sa vitesse est plafonnée à
           // MAX_SPEED et varie progressivement (pas de démarrage ni d'arrêt brutal).
           // Un joueur très en avance ne « file » donc pas hors de l'écran.
-          if (still || target < view.x - 50) {
+          if (target < view.x - 50) {
             view.x = target;
             view.vx = view.intensity = 0;
             if (racer === localRacer) cameraReady = false;
@@ -349,7 +359,7 @@ export function RaceVisualizer({
 
           const groundY = groundBottom - index * laneGap;
           const hop = s * HOP_HEIGHT * k;
-          const breathing = still ? 0 : Math.sin(elapsed * 2.5 + index) * 0.02 * (1 - k);
+          const breathing = Math.sin(elapsed * 2.5 + index) * 0.02 * (1 - k);
 
           // Squash au sol, stretch en l'air, volume conservé.
           const scaleY = 1 - 0.14 * k * (1 - s) + 0.08 * k * s + breathing;
@@ -371,7 +381,7 @@ export function RaceVisualizer({
         const local = list.find((r) => r.isLocal) ?? list[0];
         const localView = local ? views.get(local.id) : undefined;
         if (localView) {
-          if (!cameraReady || still) {
+          if (!cameraReady) {
             cameraX = localView.x;
             cameraReady = true;
           }
@@ -380,7 +390,30 @@ export function RaceVisualizer({
 
         for (const { sprite, speed } of layers) sprite.tilePosition.x = -cameraX * speed;
         world.x = -cameraX + app.screen.width * CAMERA_ANCHOR;
+      };
+      const drawScene = () => {
+        updateScene(1 / 60);
+        app.render();
+      };
+      app.renderer.on("resize", () => {
+        layoutLayers();
+        if (!app.ticker.started) drawScene();
       });
+      app.ticker.add((ticker) => {
+        // Borne les gros sauts (onglet en veille).
+        updateScene(Math.min(ticker.deltaMS / 1000, 0.05));
+      });
+      syncPlaybackRef.current = () => {
+        app.ticker.maxFPS = playbackRef.current.maxFPS;
+        if (playbackRef.current.paused) {
+          drawScene();
+          app.ticker.stop();
+        } else {
+          app.ticker.start();
+        }
+      };
+      drawScene();
+      syncPlaybackRef.current();
     };
 
     void init();
@@ -388,6 +421,7 @@ export function RaceVisualizer({
     return () => {
       isMounted = false;
       applyThemeRef.current = null;
+      syncPlaybackRef.current = null;
       views.clear();
       if (initialized) app.destroy(true, { children: true });
       for (const texture of photoTextures) texture.destroy(true);
