@@ -30,7 +30,13 @@ const member: CurrentUser = {
 
 beforeEach(() => {
   mocks.getCurrentUserForDisplay.mockResolvedValue(null);
+  mocks.visualizer.mockClear();
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  vi.stubGlobal("IntersectionObserver", class {
+    constructor(private callback: IntersectionObserverCallback) {}
+    observe() { this.callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver); }
+    disconnect() {}
+  });
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -110,34 +116,37 @@ describe("Home", () => {
     expect(screen.getByRole("link", { name: footer.privacy })).toHaveAttribute("href", "/fr/privacy");
   });
 
-  it("fige les progressions en mouvement réduit", async () => {
-    render(await Home(props("fr")));
-    await screen.findByTestId("visualizer");
+  it.each(["fr", "en"] as const)("garde les images localisées sans visualiseur en mouvement réduit (%s)", async (lang) => {
+    const { container } = render(await Home(props(lang)));
     vi.useFakeTimers();
-    const before = mocks.visualizer.mock.lastCall?.[0];
-    expect(before).toMatchObject({ reducedMotion: true, trackLength: 1500, racers: [
-      { progress: 30 }, { progress: 38 }, { progress: 46 }, { progress: 52 },
-    ] });
     act(() => { vi.advanceTimersByTime(5000); });
-    expect(mocks.visualizer.mock.lastCall?.[0]).toEqual(before);
+    const images = container.querySelectorAll("figure img");
+    expect(images).toHaveLength(2);
+    for (const [index, theme] of ["light", "dark"].entries()) {
+      expect(images[index].getAttribute("src")).toContain(encodeURIComponent(`/home/race-showcase-${lang}-${theme}.webp`));
+    }
+    expect(screen.queryByTestId("visualizer")).toBeNull();
+    expect(mocks.visualizer).not.toHaveBeenCalled();
   });
 
   it("anime une course serrée avec dépassements et conserve le visualiseur à la manche suivante", async () => {
-    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
-    let enterView: () => void = () => {};
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("min-width"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    let enterView: (visible?: boolean) => void = () => {};
     vi.stubGlobal("IntersectionObserver", class {
       constructor(callback: IntersectionObserverCallback) {
-        enterView = () => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+        enterView = (visible = true) => callback([{ isIntersecting: visible } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
       }
       observe() {}
       disconnect() {}
     });
     render(await Home(props("fr")));
+    act(() => { enterView(); });
     const initialVisualizer = await screen.findByTestId("visualizer");
     const progress = () => (mocks.visualizer.mock.lastCall?.[0] as { racers: { progress: number }[] }).racers.map((racer) => racer.progress);
     expect(progress()).toEqual([0, 0, 0, 0]);
     expect(mocks.visualizer.mock.lastCall?.[0]).toMatchObject({ trackLength: 1500 });
     vi.useFakeTimers();
+    act(() => { enterView(false); });
     act(() => { enterView(); });
     let elapsed = 0;
     const leaders = new Set<number>();

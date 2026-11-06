@@ -36,6 +36,7 @@ function props(lang: string) {
 beforeEach(() => {
   mocks.token = generateToken();
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  vi.stubGlobal("IntersectionObserver", class { observe() {} disconnect() {} });
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
