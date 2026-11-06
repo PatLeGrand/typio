@@ -24,6 +24,8 @@ export interface Racer {
 interface RaceVisualizerProps {
   racers: Racer[];
   trackLength?: number;
+  /** Fige aussi les mouvements ambiants pour les vitrines accessibles. */
+  reducedMotion?: boolean;
   /** Classes du conteneur ; par défaut une boîte de 350 px avec bordure (bac à sable). */
   className?: string;
 }
@@ -73,9 +75,12 @@ type LayerAlias = keyof (typeof SCENE_COLORS)["light"]["layers"];
 export function RaceVisualizer({
   racers,
   trackLength = 5000,
+  reducedMotion = false,
   className = "relative h-[350px] w-full overflow-hidden rounded-xl border border-border shadow-inner",
 }: RaceVisualizerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const reducedMotionRef = useRef(reducedMotion);
+  useEffect(() => { reducedMotionRef.current = reducedMotion; }, [reducedMotion]);
   const dark = useIsDarkTheme();
   const darkRef = useRef(dark);
   // Appliquée par la scène une fois prête ; rappelée à chaque changement de thème.
@@ -286,7 +291,8 @@ export function RaceVisualizer({
 
       app.ticker.add((ticker) => {
         const dt = Math.min(ticker.deltaMS / 1000, 0.05); // borne les gros sauts (onglet en veille)
-        elapsed += dt;
+        const still = reducedMotionRef.current;
+        elapsed += still ? 0 : dt;
         const list = racersRef.current;
         const length = trackLengthRef.current;
         const groundBottom = Math.max(0, app.screen.height - 34);
@@ -298,7 +304,8 @@ export function RaceVisualizer({
         // Distances aux autres coureurs, bornées à ce que l'écran peut montrer.
         const localRacer = list.find((r) => r.isLocal) ?? list[0];
         const localRaw = localRacer ? (localRacer.progress / 100) * length : 0;
-        const localX = (localRacer && views.get(localRacer.id)?.x) ?? localRaw;
+        const previousLocalX = (localRacer && views.get(localRacer.id)?.x) ?? localRaw;
+        const localX = localRaw < previousLocalX - 50 ? localRaw : previousLocalX;
         const maxAhead = Math.max(0, app.screen.width * (1 - CAMERA_ANCHOR) - EDGE_MARGIN);
         const maxBehind = Math.max(0, app.screen.width * CAMERA_ANCHOR - EDGE_MARGIN / 2);
 
@@ -318,6 +325,11 @@ export function RaceVisualizer({
           // 1. Position : le Blob rejoint sa cible, mais sa vitesse est plafonnée à
           // MAX_SPEED et varie progressivement (pas de démarrage ni d'arrêt brutal).
           // Un joueur très en avance ne « file » donc pas hors de l'écran.
+          if (still || target < view.x - 50) {
+            view.x = target;
+            view.vx = view.intensity = 0;
+            if (racer === localRacer) cameraReady = false;
+          }
           const gap = target - view.x;
           const desiredVx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, gap * FOLLOW_RATE));
           view.vx += (desiredVx - view.vx) * (1 - Math.exp(-ACCELERATION * dt));
@@ -337,7 +349,7 @@ export function RaceVisualizer({
 
           const groundY = groundBottom - index * laneGap;
           const hop = s * HOP_HEIGHT * k;
-          const breathing = Math.sin(elapsed * 2.5 + index) * 0.02 * (1 - k);
+          const breathing = still ? 0 : Math.sin(elapsed * 2.5 + index) * 0.02 * (1 - k);
 
           // Squash au sol, stretch en l'air, volume conservé.
           const scaleY = 1 - 0.14 * k * (1 - s) + 0.08 * k * s + breathing;
@@ -359,7 +371,7 @@ export function RaceVisualizer({
         const local = list.find((r) => r.isLocal) ?? list[0];
         const localView = local ? views.get(local.id) : undefined;
         if (localView) {
-          if (!cameraReady) {
+          if (!cameraReady || still) {
             cameraX = localView.x;
             cameraReady = true;
           }
