@@ -1,12 +1,24 @@
 # Typio
 
-Plateforme de courses de frappe au clavier pour les élèves du secondaire.
+## Présentation
+
+Typio est un jeu de course de dactylographie multijoueur pour les 12–17 ans.
+Les joueurs rejoignent des salles, affrontent d'autres joueurs ou des bots,
+consultent leurs résultats et retrouvent leurs courses dans l'historique.
 
 En production : **https://typio.aether-manager.ca**
 
-> État actuel : le squelette. L'application sert la page d'accueil par défaut
-> de Next.js — la chaîne de déploiement est en place et vérifiée, le jeu reste
-> à écrire.
+## Compte de démonstration
+
+Compte public : identifiant **`demo`**, mot de passe **`TypioDemo2026!`**.
+Son profil est protégé.
+
+## Captures d'écran
+
+![Accueil en thème clair, présentation du jeu et accès à une course](docs/images/accueil-light.png)
+![Accueil en thème sombre, présentation du jeu et accès à une course](docs/images/accueil-dark.png)
+![Course en thème clair, piste, classement et statistiques des joueurs](docs/images/course-light.png)
+![Accueil sur mobile, contenu disposé sur une colonne](docs/images/accueil-mobile.png)
 
 ## La pile
 
