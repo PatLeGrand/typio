@@ -657,82 +657,128 @@ Aucune écriture en base par frappe : la course est enregistrée une seule fois,
 
 # ADR-002 — Gestion des bots
 
-- **Statut :** proposé
-- **Exigences :** BOT-01 à BOT-05, COURSE-06, PERF-02, TECH-07
+- **Statut :** accepté. Simulation serveur et graine de course intégrées le
+  28 octobre 2026 (`94e7a76`) ; cinq niveaux et modes d'erreur le 30 octobre
+  (`1d4b262`), puis bonus et replanification le même jour (`052ed6b`).
+- **Exigences :** BOT-01 à BOT-05, CONF-10, COURSE-06, PERF-02, TECH-07 ;
+  hypothèses H-35 (profils) et H-36 (bonus) de [EXIGENCES.md](EXIGENCES.md).
 
-## Contexte et état actuel
+## Contexte
 
-`src/race/bots.ts` est un module pur. `planBot` précalcule une courbe temps →
-caractères corrects, et `botProgressAt` l'interroge sans horloge interne.
-Le hasard est injecté comme fonction `random`, ce qui permet les tests déterministes.
+Le premier moteur simulait trois niveaux de bots dans le navigateur, en solo.
+Les courses en salle demandent une progression et un classement décidés par le
+serveur. L'énoncé final demande cinq niveaux, des variations de vitesse, des
+fautes selon le mode de saisie, des bonus et un moteur testable par graine.
 
-| Niveau actuel | Vitesse cible |
-|---|---|
-| `easy` | 25 MPM |
-| `normal` | 40 MPM |
-| `hard` | 60 MPM |
+## Options étudiées
 
-La durée par mot varie de ±20 %. Une pause survient avec une probabilité de 5 %
-par mot, pendant 200 à 800 ms. Une faute corrigée survient avec une probabilité de
-3 % **par mot**, identique pour les trois niveaux : ce n'est pas un taux d'erreur
-par caractère. Sa correction ajoute deux frappes et 150 à 400 ms de réaction.
-Le départ est retardé de 150 à 450 ms. Le temps de frappe est ajusté pour compenser
-en moyenne les pauses et corrections et rester proche de la vitesse cible.
+- **Simulation dans le navigateur :** réutilise directement le moteur solo,
+  mais laisse chaque client calculer les bots et leur classement.
+- **Simulation dans le serveur temps réel :** donne à la salle un état commun
+  et un classement autoritaire. Le serveur prend en charge les plans et leurs
+  modifications. Le même moteur pur reste utilisable en solo et dans les tests.
 
-Les bots ne produisent pas de vraies commandes de saisie : leurs fautes forment
-des pauses dans une progression qui ne recule pas. `planBot` ne reçoit pas le
-mode d'erreur. Il ne peut donc pas en appliquer les règles. Les fautes sont
-comptées pour la précision par `botKeystrokesAt`.
+## Décision
 
-Aujourd'hui, `src/race/round.ts` crée ces plans pour la course **solo**, animée
-côté navigateur par `src/components/race/useRaceSession.ts`. Les identifiants
-`bot-*` et `isPlayer: false` distinguent les bots dans les données ;
-l'identification visible et la soumission aux bonus de l'énoncé final restent
-à compléter. Les bots ne sont pas encore simulés dans `src/realtime/`.
-`src/race/seededRandom.ts` fournit déjà `createSeededRandom` ; `createRound` l'utilise
-pour mélanger les noms, mais reçoit séparément le hasard des plans.
-Une graine unique pour toute la simulation multijoueur reste à intégrer.
+### Moteur pur et profils
 
-> **État au 4 novembre 2026.** Ce contexte date de la décision. Depuis, la décision
-> est implémentée : `src/realtime/raceEngine.ts` simule les bots côté serveur avec
-> `planBot` et `replanBot`, cinq niveaux (BOT-01), le mode d'erreur est respecté
-> (BOT-03), les bots sont identifiés et soumis aux bonus (BOT-04) et une graine par
-> course en salle pilote texte, noms et plans (BOT-05). En solo, la graine n'est pas
-> encore fixée. Détail et preuves : `EXIGENCES.md`.
+Conserver `src/race/bots.ts` comme module pur. `planBot` précalcule une courbe
+croissante temps → caractères corrects. `botProgressAt` lit cette courbe sans
+horloge interne ; le temps écoulé et le hasard sont fournis par l'appelant.
+`botFinishMs` donne l'instant d'arrivée. Une MPM correspond à cinq caractères
+par minute, comme pour les humains.
 
-## Décision proposée
+Les valeurs de `BOT_LEVEL_PROFILES` sont les suivantes (BOT-01, H-35) :
 
-Simuler les bots dans le **serveur temps réel autoritaire** (COURSE-06), avec la
-même horloge de course et les mêmes règles que les humains. Le client affiche
-les instantanés reçus. Réutiliser les fonctions pures existantes là où leurs
-règles conviennent ; adapter le moteur pour BOT-01 à BOT-05.
+| Niveau | Identifiant | MPM cible tirée par bot | Probabilité de faute par caractère à valider |
+|---|---|---|---|
+| Noob | `noob` | 10–20 | 12 % |
+| Débutant | `beginner` | 20–35 | 8 % |
+| Intermédiaire | `intermediate` | 35–60 | 5 % |
+| Expert | `expert` | 70–100 | 2 % |
+| Impossible | `impossible` | 140–170 | 0,5 % |
 
-| Niveau prévu (BOT-01) | Vitesse | Erreurs approximatives |
-|---|---|---|
-| Noob | 10–20 MPM | 12 % |
-| Débutant | 20–35 MPM | 8 % |
-| Intermédiaire | 35–60 MPM | 5 % |
-| Expert | 70–100 MPM | 2 % |
-| Impossible | 140+ MPM | 0,5 % |
+Ces probabilités ne sont pas le rapport exact erreurs/frappes : les corrections
+ajoutent des frappes. Le moteur compense en moyenne les délais de départ, pauses
+et corrections pour rester proche de la MPM cible. La vitesse mesurée dépend
+encore du texte et des tirages ; les plages ne sont pas des bornes garanties.
+Les anciens réglages `easy`, `normal`, `hard` sont convertis en `beginner`,
+`intermediate`, `expert` (`src/race/config.ts`).
 
-- Faire varier la vitesse pendant la course et garder des pauses (BOT-02).
-- Simuler les erreurs, leur temps de correction et le mode d'erreur choisi
-  (BOT-03). Définir l'unité de mesure des taux pour pouvoir les tester.
-- Identifier clairement les bots et leur appliquer les bonus et effets avec
-  les mêmes règles que les humains (BOT-04).
-- Utiliser un générateur pseudo-aléatoire à graine pour toute la simulation
-  (BOT-05). À texte, configuration, graine et instants identiques, obtenir les
-  mêmes frappes, erreurs et résultats, sans dépendre de l'horloge réelle.
-- Valider la configuration reçue par schéma (TECH-07) ; intégrer les bots aux
-  diffusions bornées de progression (PERF-02).
+La durée de frappe varie de ±20 % par mot. Chaque mot a 5 % de chances de
+provoquer une pause de 200 à 800 ms. Le départ est retardé de 150 à 450 ms.
+`wordDifficulty` majore la durée de 4 % par caractère au-delà de six, puis de
+10 % pour chacun des critères présents : majuscule, chiffre, ponctuation ou
+accent reconnu par ses expressions régulières. Le facteur est plafonné à ×1,5
+(BOT-02).
 
-## Conséquences et travail restant
+`planBot` reçoit le mode de saisie (BOT-03). En mode bloquant, une faute ne
+valide aucun caractère et ajoute une frappe fausse et 150 à 400 ms de réaction
+avant la bonne frappe. En mode libre, le bot tape encore 0 à 2 caractères,
+attend ce délai, efface la faute et les caractères suivants, puis retape.
+`botKeystrokesAt` compte les frappes fausses et toutes les frappes justes, même
+ensuite effacées ; les retours arrière prennent du temps sans entrer dans la
+précision. La progression validée ne recule pas.
 
-Le serveur pourra rejouer un scénario de test et décider du classement sans
-faire confiance au navigateur. Il devra supporter le coût de toutes les
-simulations et gérer leur arrêt, les bonus et la fin de course.
+### Exécution, graine et bonus
 
-Restent **prévus** : les cinq niveaux dans la configuration et l'interface,
-le moteur respectant le mode d'erreur, les bonus, l'exécution serveur, la graine
-de course et les tests des vitesses, erreurs et relectures déterministes.
-Cet ADR n'affirme pas que BOT-01 à BOT-05 sont déjà satisfaites.
+En salle, `src/realtime/raceEngine.ts` crée les plans dans `startRace`, les fait
+avancer dans `tickRace` et calcule les résultats. Les clients affichent les
+instantanés du serveur ([flux temps réel](#flux-temps-reel)). La configuration
+est validée par les schémas de `src/realtime/protocol.ts` (TECH-07). Les bots
+partagent les diffusions bornées de la salle, sans écriture en base par frappe
+(PERF-02).
+
+`createSeededRandom`, dans `src/race/seededRandom.ts`, utilise mulberry32. En
+salle, une graine par course pilote successivement le texte, les noms et les
+plans. Les tirages des bonus dérivent de cette graine et du point de contrôle.
+À configuration, corpus, graine, entrées et instants d'appel identiques, la
+simulation se rejoue sans horloge réelle dans le moteur (BOT-05).
+
+Les bots sont identifiés par `kind: "bot"` en salle et par leurs identifiants
+`bot-*`. L'interface affiche « Bot » et le niveau dans la salle, sur la piste et
+dans les résultats (`src/app/[lang]/(site)/room/_components/ParticipantList.tsx`,
+`RoomRaceView.tsx`, `src/components/race/RaceResultsTable.tsx`).
+
+Humains et bots passent par `resolveCheckpoint` dans `src/race/bonuses.ts`
+(BOT-04). Un bot peut recevoir un raccourcissement ou subir un allongement de
+texte ou un brouillard. `replanBot` conserve la progression et les frappes
+passées, puis recalcule le texte restant. Le brouillard multiplie la durée des
+frappes par 1,6 pendant son effet de quatre secondes (H-36).
+
+En solo, `src/race/round.ts` utilise les mêmes plans et règles de bonus.
+`src/components/race/useRaceSession.ts` anime la manche dans le navigateur
+avec un rafraîchissement de 100 ms et un temps fourni par l'appelant.
+
+## Conséquences
+
+- La salle partage une seule simulation et un classement calculé par le serveur.
+- Les fonctions pures et le hasard injecté permettent des tests déterministes,
+  sans attendre une vraie course. Le moteur est partagé entre solo et salle.
+- Le serveur conserve les plans et paie leur calcul initial, leur lecture à
+  chaque tick et leur replanification lors des effets. Les courbes et listes de
+  frappes occupent de la mémoire proportionnelle au texte et aux fautes.
+- Le rejeu complet demande aussi les entrées et leurs instants, le corpus et la
+  configuration ; la graine seule ne décrit pas les interactions de la course.
+
+Preuves : `src/race/bots.test.ts` vérifie les cinq profils sur 50 graines dans
+les deux modes, la difficulté des mots, les pauses, les fautes, le déterminisme
+et la conservation du passé lors d'une replanification. `src/race/seededRandom.test.ts`
+vérifie le générateur et le mélange. `src/realtime/raceEngine.test.ts` couvre
+les plans par niveau et mode, la progression serveur, les résultats et les
+trois effets sur les bots. `src/race/round.test.ts` couvre leur intégration en
+solo et les bonus.
+
+## Limites connues
+
+- **Graine solo :** `createRound` utilise `nameSeed` pour les noms et les tirages
+  des bonus, mais reçoit séparément le hasard des plans. `useRaceSession`
+  transmet ce hasard, qui vaut `Math.random` par défaut dans
+  `src/components/race/RaceScreen.tsx`. Une graine de noms ne suffit donc pas
+  à rejouer les bots solo. BOT-05 est déterministe en salle et en tests avec un
+  générateur injecté ; la MPM cible solo ne dépend pas de la graine de manche
+  comme le décrit H-35.
+- **Simulation agrégée :** les bots ne passent pas par les commandes de saisie
+  humaines. Le moteur représente les fautes et corrections par des délais et
+  compteurs, sans chaîne de saisie erronée. Les deux modes sont simulés dans le
+  plan ; la progression affichée reste celle des caractères validés.
