@@ -24,6 +24,8 @@ export interface Racer {
 interface RaceVisualizerProps {
   racers: Racer[];
   trackLength?: number;
+  paused?: boolean;
+  maxFPS?: number;
   /** Classes du conteneur ; par défaut une boîte de 350 px avec bordure (bac à sable). */
   className?: string;
 }
@@ -73,9 +75,17 @@ type LayerAlias = keyof (typeof SCENE_COLORS)["light"]["layers"];
 export function RaceVisualizer({
   racers,
   trackLength = 5000,
+  paused = false,
+  maxFPS = 0,
   className = "relative h-[350px] w-full overflow-hidden rounded-xl border border-border shadow-inner",
 }: RaceVisualizerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const playbackRef = useRef({ paused, maxFPS });
+  const syncPlaybackRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    playbackRef.current = { paused, maxFPS };
+    syncPlaybackRef.current?.();
+  }, [paused, maxFPS]);
   const dark = useIsDarkTheme();
   const darkRef = useRef(dark);
   // Appliquée par la scène une fois prête ; rappelée à chaque changement de thème.
@@ -83,10 +93,16 @@ export function RaceVisualizer({
 
   // Toujours la dernière valeur, lisible depuis le ticker sans le recréer.
   const racersRef = useRef(racers);
-  useEffect(() => { racersRef.current = racers; }, [racers]);
+  useEffect(() => {
+    racersRef.current = racers;
+    syncPlaybackRef.current?.();
+  }, [racers]);
   
   const trackLengthRef = useRef(trackLength);
-  useEffect(() => { trackLengthRef.current = trackLength; }, [trackLength]);
+  useEffect(() => {
+    trackLengthRef.current = trackLength;
+    syncPlaybackRef.current?.();
+  }, [trackLength]);
 
   useEffect(() => {
     darkRef.current = dark;
@@ -114,6 +130,7 @@ export function RaceVisualizer({
       const colors = SCENE_COLORS[isDark ? "dark" : "light"];
       app.renderer.background.color = colors.background;
       for (const { alias, sprite } of layers) sprite.tint = colors.layers[alias];
+      if (!app.ticker.started) app.render();
     };
 
     const layoutLayers = () => {
@@ -173,6 +190,7 @@ export function RaceVisualizer({
           photo.height = AVATAR_SIZE;
           node.addChildAt(photo, 1);
           generated.visible = false;
+          if (!app.ticker.started) app.render();
         };
         image.src = racer.avatarUrl; // repli sur l'avatar généré si le chargement échoue
       }
@@ -240,6 +258,7 @@ export function RaceVisualizer({
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
         antialias: true,
+        autoStart: false,
       });
       initialized = true;
       if (!isMounted) {
@@ -282,10 +301,7 @@ export function RaceVisualizer({
       app.stage.addChild(world);
 
       const blobTexture = PIXI.Assets.get<PIXI.Texture>("blob");
-      app.renderer.on("resize", layoutLayers);
-
-      app.ticker.add((ticker) => {
-        const dt = Math.min(ticker.deltaMS / 1000, 0.05); // borne les gros sauts (onglet en veille)
+      const updateScene = (dt: number) => {
         elapsed += dt;
         const list = racersRef.current;
         const length = trackLengthRef.current;
@@ -298,7 +314,8 @@ export function RaceVisualizer({
         // Distances aux autres coureurs, bornées à ce que l'écran peut montrer.
         const localRacer = list.find((r) => r.isLocal) ?? list[0];
         const localRaw = localRacer ? (localRacer.progress / 100) * length : 0;
-        const localX = (localRacer && views.get(localRacer.id)?.x) ?? localRaw;
+        const previousLocalX = (localRacer && views.get(localRacer.id)?.x) ?? localRaw;
+        const localX = localRaw < previousLocalX - 50 ? localRaw : previousLocalX;
         const maxAhead = Math.max(0, app.screen.width * (1 - CAMERA_ANCHOR) - EDGE_MARGIN);
         const maxBehind = Math.max(0, app.screen.width * CAMERA_ANCHOR - EDGE_MARGIN / 2);
 
@@ -318,6 +335,11 @@ export function RaceVisualizer({
           // 1. Position : le Blob rejoint sa cible, mais sa vitesse est plafonnée à
           // MAX_SPEED et varie progressivement (pas de démarrage ni d'arrêt brutal).
           // Un joueur très en avance ne « file » donc pas hors de l'écran.
+          if (target < view.x - 50) {
+            view.x = target;
+            view.vx = view.intensity = 0;
+            if (racer === localRacer) cameraReady = false;
+          }
           const gap = target - view.x;
           const desiredVx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, gap * FOLLOW_RATE));
           view.vx += (desiredVx - view.vx) * (1 - Math.exp(-ACCELERATION * dt));
@@ -368,7 +390,30 @@ export function RaceVisualizer({
 
         for (const { sprite, speed } of layers) sprite.tilePosition.x = -cameraX * speed;
         world.x = -cameraX + app.screen.width * CAMERA_ANCHOR;
+      };
+      const drawScene = () => {
+        updateScene(1 / 60);
+        app.render();
+      };
+      app.renderer.on("resize", () => {
+        layoutLayers();
+        if (!app.ticker.started) drawScene();
       });
+      app.ticker.add((ticker) => {
+        // Borne les gros sauts (onglet en veille).
+        updateScene(Math.min(ticker.deltaMS / 1000, 0.05));
+      });
+      syncPlaybackRef.current = () => {
+        app.ticker.maxFPS = playbackRef.current.maxFPS;
+        if (playbackRef.current.paused) {
+          drawScene();
+          app.ticker.stop();
+        } else {
+          app.ticker.start();
+        }
+      };
+      drawScene();
+      syncPlaybackRef.current();
     };
 
     void init();
@@ -376,6 +421,7 @@ export function RaceVisualizer({
     return () => {
       isMounted = false;
       applyThemeRef.current = null;
+      syncPlaybackRef.current = null;
       views.clear();
       if (initialized) app.destroy(true, { children: true });
       for (const texture of photoTextures) texture.destroy(true);

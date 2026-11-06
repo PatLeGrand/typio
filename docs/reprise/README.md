@@ -10,7 +10,7 @@ Reste par lot :
 - lot 2 : démarche créative DES-01 à DES-03 (Patrick) ;
 - lot 3 : terminé (SALLE-06, SALLE-08 et SALLE-10 complets) ;
 - lot 9 : DES-04 (audit « généré par défaut ») ; I18N-01 fait ;
-- lot 10 : README et documents finaux (§ 8), production à redéployer et revérifier (dernière vérification : 9 octobre).
+- lot 10 : README et documents finaux (§ 8), production redéployée le 4 novembre 2026 (`sha-738c127`), parcours connectés à rejouer.
 
 - [x] **1. Conformité technique** — TECH-02, TECH-07, TECH-09, TECH-10 ; seed et persistance TECH-04 : TypeScript intégral, schémas serveur, CI et environnement documenté.
 - [ ] **2. Livrables du checkpoint 1** — DES-01 à DES-03 à compléter par Patrick ; vérifier `DEMARCHE-CREATIVE.md`, `EXIGENCES.md` et `ARCHITECTURE.md` (§ 7.1, COURSE-01, TECH-04, TECH-06).

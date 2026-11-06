@@ -1,12 +1,24 @@
 # Typio
 
-Plateforme de courses de frappe au clavier pour les élèves du secondaire.
+## Présentation
+
+Typio est un jeu de course de dactylographie multijoueur pour les 12–17 ans.
+Les joueurs rejoignent des salles, affrontent d'autres joueurs ou des bots,
+consultent leurs résultats et retrouvent leurs courses dans l'historique.
 
 En production : **https://typio.aether-manager.ca**
 
-> État actuel : le squelette. L'application sert la page d'accueil par défaut
-> de Next.js — la chaîne de déploiement est en place et vérifiée, le jeu reste
-> à écrire.
+## Compte de démonstration
+
+Compte public : identifiant **`demo`**, mot de passe **`TypioDemo2026!`**.
+Son profil est protégé.
+
+## Captures d'écran
+
+![Accueil en thème clair, présentation du jeu et accès à une course](docs/images/accueil-light.png)
+![Accueil en thème sombre, présentation du jeu et accès à une course](docs/images/accueil-dark.png)
+![Course en thème clair, piste, classement et statistiques des joueurs](docs/images/course-light.png)
+![Accueil sur mobile, contenu disposé sur une colonne](docs/images/accueil-mobile.png)
 
 ## La pile
 
@@ -117,6 +129,20 @@ vraiment avant de rendre la main. Pour revenir à une version précise :
 ```bash
 sudo TAG=sha-a1b2c3d ./deployer.sh
 ```
+
+**Les fichiers d'`infra/` ne voyagent pas avec l'image.** `deployer.sh`,
+`docker-compose.yml` et le Caddyfile vivent dans `/srv/typio/infra/` sur le VPS,
+qui n'est pas un clone à jour du dépôt. Quand une PR modifie `infra/`, recopier
+le fichier **avant** de déployer, sinon le VPS rejoue l'ancienne procédure (le
+4 novembre 2026, un `deployer.sh` resté au 9 octobre a sauté le seed et laissé
+le corpus de textes vide) :
+
+```bash
+scp infra/deployer.sh ubuntu@socle.aether-manager.ca:/tmp/deployer.sh && ssh ubuntu@socle.aether-manager.ca "sudo install -m 755 -o root -g root /tmp/deployer.sh /srv/typio/infra/deployer.sh"
+```
+
+Pour `docker-compose.yml`, même chose avec `-m 644`. Les secrets restent dans
+`/srv/typio/infra/.env`, jamais dans le dépôt.
 
 ### Le déploiement n'est pas automatique, et c'est voulu
 

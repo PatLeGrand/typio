@@ -48,7 +48,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
         </Link>
         <nav className="order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted lg:order-none lg:flex lg:w-auto" aria-label={dictionary.navigation.main}>
           <Link href={`/${locale}#why`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.why}</Link>
-          <Link href={`/${locale}#preview`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
+          <Link href={`/${locale}#video`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
           <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>
         </nav>
         <div className="flex flex-wrap items-center justify-end gap-2">

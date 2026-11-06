@@ -1,13 +1,17 @@
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
 
-const mocks = vi.hoisted(() => ({ getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>() }));
+const mocks = vi.hoisted(() => ({ visualizer: vi.fn(), getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>() }));
 vi.mock("@/auth/currentUser", () => ({ getCurrentUserForDisplay: mocks.getCurrentUserForDisplay }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   useRouter: () => ({ push: vi.fn() }),
+}));
+
+vi.mock("@/components/race/RaceVisualizer", () => ({
+  RaceVisualizer: (props: unknown) => { mocks.visualizer(props); return <div data-testid="visualizer" />; },
 }));
 
 import Home from "./page";
@@ -26,6 +30,17 @@ const member: CurrentUser = {
 
 beforeEach(() => {
   mocks.getCurrentUserForDisplay.mockResolvedValue(null);
+  mocks.visualizer.mockClear();
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  vi.stubGlobal("IntersectionObserver", class {
+    constructor(private callback: IntersectionObserverCallback) {}
+    observe() { this.callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver); }
+    disconnect() {}
+  });
+});
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe("Home", () => {
@@ -97,8 +112,63 @@ describe("Home", () => {
     const { home, footer } = getDictionary("fr");
     render(await Home(props("fr")));
 
-    expect(screen.getByRole("link", { name: `${home.preview.videoLink} ↗` })).toHaveAttribute("href", "#video");
+    expect(screen.getByRole("link", { name: home.navigation.preview })).toHaveAttribute("href", "#video");
     expect(screen.getByRole("link", { name: footer.privacy })).toHaveAttribute("href", "/fr/privacy");
+  });
+
+  it.each(["fr", "en"] as const)("garde les images localisées sans visualiseur en mouvement réduit (%s)", async (lang) => {
+    const { container } = render(await Home(props(lang)));
+    vi.useFakeTimers();
+    act(() => { vi.advanceTimersByTime(5000); });
+    const images = container.querySelectorAll("figure img");
+    expect(images).toHaveLength(2);
+    for (const [index, theme] of ["light", "dark"].entries()) {
+      expect(images[index].getAttribute("src")).toContain(encodeURIComponent(`/home/race-showcase-${lang}-${theme}.webp`));
+    }
+    expect(screen.queryByTestId("visualizer")).toBeNull();
+    expect(mocks.visualizer).not.toHaveBeenCalled();
+  });
+
+  it("anime une course serrée avec dépassements et conserve le visualiseur à la manche suivante", async () => {
+    vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("min-width"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+    let enterView: (visible?: boolean) => void = () => {};
+    vi.stubGlobal("IntersectionObserver", class {
+      constructor(callback: IntersectionObserverCallback) {
+        enterView = (visible = true) => callback([{ isIntersecting: visible } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+      }
+      observe() {}
+      disconnect() {}
+    });
+    render(await Home(props("fr")));
+    act(() => { enterView(); });
+    const initialVisualizer = await screen.findByTestId("visualizer");
+    const progress = () => (mocks.visualizer.mock.lastCall?.[0] as { racers: { progress: number }[] }).racers.map((racer) => racer.progress);
+    expect(progress()).toEqual([0, 0, 0, 0]);
+    expect(mocks.visualizer.mock.lastCall?.[0]).toMatchObject({ trackLength: 1500 });
+    vi.useFakeTimers();
+    act(() => { enterView(false); });
+    act(() => { enterView(); });
+    let elapsed = 0;
+    const leaders = new Set<number>();
+    while (Math.max(...progress()) < 100 && elapsed < 20000) {
+      const previous = progress();
+      act(() => { vi.advanceTimersByTime(200); });
+      elapsed += 200;
+      const current = progress();
+      leaders.add(current.indexOf(Math.max(...current)));
+      current.forEach((value, index) => {
+        expect(value).toBeGreaterThanOrEqual(previous[index]);
+        expect((value - previous[index]) * 1500 / 100 / 0.2).toBeLessThan(150);
+      });
+    }
+    expect(elapsed).toBeGreaterThanOrEqual(15000);
+    expect(elapsed).toBeLessThanOrEqual(20000);
+    expect(Math.max(...progress())).toBe(100);
+    expect(progress()[0]).toBeLessThan(100);
+    expect(leaders.size).toBeGreaterThan(1);
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(progress()).toEqual([0, 0, 0, 0]);
+    expect(screen.getByTestId("visualizer")).toBe(initialVisualizer);
   });
 
   it("répond par une 404 pour une locale inconnue", async () => {
