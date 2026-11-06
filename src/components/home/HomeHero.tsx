@@ -1,7 +1,7 @@
 import { ButtonLink } from "@/components/ButtonLink";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
-import { HomeMediaPlaceholder } from "./HomeMediaPlaceholder";
+import { HomeRaceShowcase } from "./HomeRaceShowcase";
 import { HomeJoinCodeForm } from "./HomeJoinCodeForm";
 
 type HomeHeroProps = {
@@ -28,14 +28,7 @@ export function HomeHero({ home, locale }: HomeHeroProps) {
             <HomeJoinCodeForm labels={home.joinByCode} locale={locale} />
           </div>
         </div>
-        <HomeMediaPlaceholder
-          kind="image"
-          label={home.media.imageLabel}
-          title={home.media.heroTitle}
-          description={home.media.heroDescription}
-          note={home.media.replaceable}
-          className="w-full"
-        />
+        <HomeRaceShowcase labels={home.raceShowcase} />
       </div>
     </section>
   );

@@ -18,6 +18,7 @@ vi.mock("@/auth/deps", () => ({
 }));
 vi.mock("@/auth/actions", () => ({ logout: vi.fn(), login: vi.fn(), register: vi.fn(), continueAsGuest: vi.fn() }));
 vi.mock("@/auth/schedulePurge", () => ({ schedulePurge: vi.fn() }));
+vi.mock("@/components/race/RaceVisualizer", () => ({ RaceVisualizer: () => <div data-testid="visualizer" /> }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   usePathname: () => "/fr",
@@ -34,11 +35,13 @@ function props(lang: string) {
 
 beforeEach(() => {
   mocks.token = generateToken();
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("base de données injoignable, cookie de session présent", () => {

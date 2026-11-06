@@ -25,7 +25,7 @@ export function HomeFooter({ dictionary, locale, user }: HomeFooterProps) {
             <nav aria-label={dictionary.navigation.footer} className="flex flex-col gap-3 text-muted">
               <p className="font-semibold text-foreground">{home.navigation.preview}</p>
               <Link href="#why" className="hover:text-foreground">{home.navigation.why}</Link>
-              <Link href="#preview" className="hover:text-foreground">{home.navigation.preview}</Link>
+              <Link href="#video" className="hover:text-foreground">{home.navigation.preview}</Link>
               <Link href="#approach" className="hover:text-foreground">{home.navigation.approach}</Link>
             </nav>
             <nav aria-label={dictionary.navigation.account} className="flex flex-col gap-3 text-muted">
