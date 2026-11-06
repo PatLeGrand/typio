@@ -254,9 +254,9 @@ Sinon, `RaceScreen.tsx` et `RoomRaceView.tsx` remplacent la zone de frappe par :
 « Pour participer, utilisez un ordinateur avec un clavier physique. »
 La piste reste affichée.
 
-![Course à 390 px sur écran tactile : classement et statistiques empilés, zone de frappe remplacée par le message « clavier physique »](images/course-mobile.png)
+![Course à 360 px sur écran tactile : piste visible, classement et statistiques empilés dessous, zone de frappe remplacée par le message « clavier physique »](images/course-mobile.png)
 
-Capture pleine page prise en production à 390 px avec un écran tactile émulé :
+Capture pleine page à 360 px avec un écran tactile émulé :
 le message de clavier physique apparaît sous la piste, à la place de la zone
 de frappe.
 

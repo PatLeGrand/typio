@@ -149,19 +149,6 @@ export function RaceScreen({
 
       <main>
       <section className="relative isolate min-h-[560px] overflow-hidden">
-        <RaceVisualizer
-          key={round.id}
-          racers={lane}
-          trackLength={TRACK_LENGTH}
-          className="absolute inset-0 -z-10"
-        />
-        {snapshot.countdownSeconds > 0 ? (
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-            <span data-testid="countdown" className="text-[9rem] font-black leading-none text-accent-text drop-shadow-[0_6px_0_var(--surface)] sm:text-[13rem]">
-              {snapshot.countdownSeconds}
-            </span>
-          </div>
-        ) : null}
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 pb-24 pt-6 sm:px-8 lg:min-h-[560px] lg:flex-row lg:items-start lg:justify-between lg:px-10 lg:pt-6">
           <div className="flex flex-col items-center gap-3 pt-2 text-center lg:order-1 lg:pt-8">
             <p className="text-xs font-extrabold tracking-wide text-accent-text">{labels.kicker[view]}</p>
@@ -173,6 +160,22 @@ export function RaceScreen({
               <span className="mx-2 text-muted" aria-hidden="true">•</span>
               {percent.format(playerProgress / 100)} {labels.trackProgress}
             </p>
+          </div>
+
+          <div className="relative h-[260px] w-full shrink-0 sm:h-[320px] lg:contents">
+            <RaceVisualizer
+              key={round.id}
+              racers={lane}
+              trackLength={TRACK_LENGTH}
+              className="absolute inset-0 lg:-z-10"
+            />
+            {snapshot.countdownSeconds > 0 ? (
+              <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                <span data-testid="countdown" className="text-[9rem] font-black leading-none text-accent-text drop-shadow-[0_6px_0_var(--surface)] sm:text-[13rem]">
+                  {snapshot.countdownSeconds}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           <aside className="w-full rounded-card border-2 border-border bg-surface/95 p-5 shadow-soft lg:w-[280px] lg:shrink-0">
