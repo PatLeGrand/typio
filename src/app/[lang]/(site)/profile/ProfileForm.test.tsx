@@ -15,6 +15,7 @@ vi.mock("./actions", () => ({ updateProfile: mocks.updateProfile }));
 vi.mock("@/auth/actions", () => ({ logout: mocks.logout }));
 
 import { ProfileForm } from "./ProfileForm";
+import { plain } from "@/test/text";
 
 const member: CurrentUser = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -135,7 +136,7 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
     fireEvent.change(nameField(dictionary), { target: { value: "x".repeat(21) } });
     fireEvent.blur(nameField(dictionary));
 
-    expect(screen.getByText(dictionary.auth.errors.INVALID_PSEUDO)).toBeInTheDocument();
+    expect(screen.getByText(plain(dictionary.auth.errors.INVALID_PSEUDO))).toBeInTheDocument();
     expect(nameField(dictionary)).toHaveAttribute("aria-invalid", "true");
     expect(saveButton(dictionary)).toBeDisabled();
     await act(async () => {
@@ -203,7 +204,7 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
   it("un invité n'a ni comptes reliés ni sécurité, et son identifiant est « aucun »", () => {
     const dictionary = renderForm(locale, guest);
 
-    expect(screen.queryByText(dictionary.profile.security.linkedAccounts)).toBeNull();
+    expect(screen.queryByText(plain(dictionary.profile.security.linkedAccounts))).toBeNull();
     expect(screen.getByRole("textbox", { name: dictionary.profile.identity.username })).toHaveValue(
       dictionary.profile.identity.noUsername,
     );

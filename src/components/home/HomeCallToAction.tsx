@@ -16,7 +16,7 @@ export function HomeCallToAction({ home, locale, user }: HomeCallToActionProps) 
     <section className="bg-surface px-4 pb-16 sm:px-8 sm:pb-[88px]" aria-labelledby="cta-title">
       <div className="mx-auto flex w-full max-w-[1264px] flex-col items-center gap-6 rounded-[28px] bg-island-sand px-6 py-14 text-center sm:px-16 sm:py-16">
         <div className="flex max-w-[700px] flex-col gap-4">
-          <h2 id="cta-title" className="text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
+          <h2 id="cta-title" className="text-balance text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
             {home.cta.title}
           </h2>
           <p className="text-base leading-[1.65] text-muted sm:text-lg">{home.cta.description}</p>

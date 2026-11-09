@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({ login: vi.fn<(state: AuthFormState, data: Form
 vi.mock("@/auth/actions", () => ({ login: mocks.login }));
 
 import { LoginForm } from "./LoginForm";
+import { plain } from "@/test/text";
 
 function renderForm(locale: "fr" | "en" = "fr") {
   const dictionary = getDictionary(locale);
@@ -106,7 +107,7 @@ describe("LoginForm", () => {
 
       await submit();
 
-      expect(screen.getByRole("alert")).toHaveTextContent(auth.errors[code]);
+      expect(screen.getByRole("alert")).toHaveTextContent(plain(auth.errors[code]));
     });
   });
 
@@ -135,6 +136,7 @@ describe("LoginForm", () => {
     expect(input).toBeInvalid();
     expect(input).toHaveAccessibleDescription(auth.errors.INVALID_USERNAME);
     expect(input).toHaveFocus();
-    expect(screen.queryByRole("alert")).toBeNull();
+    // Seule alerte : celle du champ (role="alert" de TextField), pas de doublon au niveau du formulaire.
+    expect(screen.getByRole("alert")).toHaveAttribute("id", "login-username-error");
   });
 });

@@ -5,6 +5,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { DEFAULT_RACE_SETTINGS, serializeRaceSettings, type RaceSettings } from "@/race/config";
 import { nextRaceText } from "@/app/[lang]/race/actions";
+import { plain } from "@/test/text";
 
 // La scène Pixi n'a pas de sens dans jsdom : un faux visualiseur expose juste les coureurs.
 vi.mock("@/components/race/RaceVisualizer", () => ({
@@ -63,7 +64,7 @@ const input = (labels: ReturnType<typeof getDictionary>["raceScreen"]) =>
 const type = (field: HTMLInputElement, value: string) => fireEvent.change(field, { target: { value } });
 /** Précision affichée dans le panneau de statistiques (et non celle d'un tableau ou d'un classement). */
 const accuracyShown = (labels: ReturnType<typeof getDictionary>["raceScreen"]) =>
-  screen.getByText(labels.stats.accuracy).nextElementSibling?.textContent;
+  screen.getByText(plain(labels.stats.accuracy)).nextElementSibling?.textContent;
 const textOnScreen = () => document.getElementById("race-text")?.textContent;
 
 beforeEach(() => {
@@ -101,7 +102,7 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
   it("sans limite, masque le temps restant et affiche les résultats dès l'arrivée du joueur", () => {
     const { labels } = setup({ settings: { timeLimitSeconds: null, bots: ["noob"] } });
     expect(screen.queryByRole("timer")).not.toBeInTheDocument();
-    expect(screen.queryByText(labels.stats.timeLeft)).not.toBeInTheDocument();
+    expect(screen.queryByText(plain(labels.stats.timeLeft))).not.toBeInTheDocument();
     advance(3000);
     advance(1000);
     type(input(labels), TEXT);
@@ -120,7 +121,7 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
     advance(1000);
     expect(announcement()).toHaveTextContent("1");
     advance(900);
-    expect(announcement()).toHaveTextContent(labels.go);
+    expect(announcement()).toHaveTextContent(plain(labels.go));
   });
 
   it("les premières frappes ne sont pas perdues : la saisie compte dès l'instant du départ, sans attendre le tick", () => {
@@ -137,9 +138,9 @@ describe("RaceScreen : horloge (A-D6, AC-4)", () => {
     expect(screen.getByRole("timer")).toHaveTextContent("00:40");
     advance(39_000);
     expect(screen.getByRole("timer")).toHaveTextContent("00:01");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.racing);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(plain(labels.headline.racing));
     advance(5000);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.timeout);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(plain(labels.headline.timeout));
     expect(screen.getByRole("timer")).toHaveTextContent("00:00");
     expect(screen.getAllByRole("status")[0]).toHaveTextContent(labels.status.finished);
     expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
@@ -249,7 +250,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     advance(500);
     for (const value of ["a", "ab", "ab ", "ab c", "ab cd"]) type(input(labels), value);
 
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.completed);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(plain(labels.headline.completed));
     expect(screen.getByRole("heading", { name: labels.results.podium })).toBeInTheDocument();
     const table = within(screen.getByRole("table", { name: labels.results.tableTitle }));
     expect(table.getAllByRole("row")).toHaveLength(1 + 3);
@@ -273,7 +274,7 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     const roomLabels = getDictionary("fr").room.race;
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     expect(screen.getByRole("group", { name: roomLabels.confirmAbandon })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(labels.headline.racing);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(plain(labels.headline.racing));
     fireEvent.click(screen.getByRole("button", { name: roomLabels.cancel }));
     expect(screen.queryByRole("group", { name: roomLabels.confirmAbandon })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
@@ -337,8 +338,8 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     expect(accuracyShown(labels)).toBe(accuracy);
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     fireEvent.click(screen.getByRole("button", { name: getDictionary(locale).room.race.confirm }));
-    expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
-    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent(accuracy.replaceAll("\u00a0", " "));
+    expect(screen.getByText(new RegExp(`^${ordinal} ${of} 2 · `))).toHaveTextContent(plain(accuracy));
+    expect(screen.getByRole("table", { name: labels.results.tableTitle })).toHaveTextContent(plain(accuracy));
     expect(screen.getByRole("region", { name: labels.results.tableTitle })).toHaveAttribute("tabindex", "0");
     expect(screen.getByRole("heading", { name: labels.results.podium })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: labels.results.replay })).toBeInTheDocument();

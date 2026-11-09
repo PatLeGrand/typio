@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/TextField";
@@ -16,6 +16,7 @@ type HomeJoinCodeFormProps = {
 
 export function HomeJoinCodeForm({ labels, locale }: HomeJoinCodeFormProps) {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [code, setCode] = useState("");
   const [invalid, setInvalid] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -24,6 +25,7 @@ export function HomeJoinCodeForm({ labels, locale }: HomeJoinCodeFormProps) {
     event.preventDefault();
     if (!isRoomCode(code)) {
       setInvalid(true);
+      inputRef.current?.focus();
       return;
     }
     startTransition(() => router.push(roomPath(locale, code)));
@@ -33,6 +35,7 @@ export function HomeJoinCodeForm({ labels, locale }: HomeJoinCodeFormProps) {
     <form onSubmit={handleSubmit} noValidate className="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-start">
       <div className="min-w-0 flex-1">
         <TextField
+          ref={inputRef}
           label={labels.label}
           name="code"
           value={code}

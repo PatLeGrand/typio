@@ -19,7 +19,7 @@
     "previous": "Précédent",
     "next": "Suivant",
     "page": "Page {page}",
-    "participants": "Participants : {count}",
+    "participants": "Participants : {count}",
     "membersOnly": "Seuls les résultats des membres sont enregistrés. Les invités et les bots ne figurent pas dans ce tableau.",
     "back": "Retour à l’historique"
   },
@@ -37,9 +37,9 @@
         "lengthen": "+3 mots",
         "fog": "Brouillard"
       },
-      "shorten": "Bonus ! 3 mots retirés de ton texte",
+      "shorten": "Bonus ! 3 mots retirés de ton texte",
       "lengthen": "{name} t’a ajouté 3 mots",
-      "fog": "Brouillard !",
+      "fog": "Brouillard !",
       "sentLengthen": "Ton bonus a ajouté 3 mots à {name}",
       "sentFog": "Ton bonus a plongé {name} dans le brouillard"
     },
@@ -49,7 +49,7 @@
     "playerOne": "joueur",
     "playerOther": "joueurs",
     "abandon": "Abandonner",
-    "go": "Partez !",
+    "go": "Partez !",
     "status": {
       "countdown": "DÉPART",
       "racing": "EN COURSE",
@@ -68,10 +68,10 @@
     ],
     "stats": {
       "title": "Statistiques",
-      "timeLeft": "Temps restant :",
-      "time": "Temps :",
-      "wpm": "MPM :",
-      "accuracy": "Précision :"
+      "timeLeft": "Temps restant :",
+      "time": "Temps :",
+      "wpm": "MPM :",
+      "accuracy": "Précision :"
     },
     "kicker": {
       "countdown": "LA COURSE VA COMMENCER",
@@ -79,10 +79,10 @@
       "finished": "COURSE TERMINÉE"
     },
     "headline": {
-      "countdown": "Prépare-toi !",
-      "racing": "Garde le rythme !",
-      "completed": "Bravo, tu as fini !",
-      "timeout": "Temps écoulé !",
+      "countdown": "Prépare-toi !",
+      "racing": "Garde le rythme !",
+      "completed": "Bravo, tu as fini !",
+      "timeout": "Temps écoulé !",
       "abandoned": "Course abandonnée"
     },
     "rankOf": "sur",
@@ -94,7 +94,7 @@
     },
     "trackProgress": "du parcours",
     "typing": {
-      "title": "À tes touches, prêt, pars !",
+      "title": "À tes touches, prêt, pars !",
       "characters": "caractères",
       "inputLabel": "Tape le texte ici",
       "hint": "Chaque caractère correct fait avancer ton Blob.",
@@ -109,23 +109,23 @@
     },
     "results": {
       "personalBest": "Record personnel",
-      "newPersonalBest": "Nouveau record personnel !",
+      "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
       "missedKeys": {
         "title": "Touches manquées",
         "space": "Espace",
         "keyLabel": {
-          "one": "{key} : {count} faute",
-          "other": "{key} : {count} fautes"
+          "one": "{key} : {count} faute",
+          "other": "{key} : {count} fautes"
         },
         "azerty": "Clavier AZERTY français",
         "qwerty": "Clavier QWERTY américain",
         "legend": "Fautes par rapport à la touche la plus manquée",
         "levels": [
           "Aucune faute",
-          "1–33 %",
-          "34–66 %",
-          "67–100 %"
+          "1–33 %",
+          "34–66 %",
+          "67–100 %"
         ],
         "top": "Touches les plus manquées",
         "other": "Autres caractères",
@@ -168,7 +168,7 @@
     "tagline": "Petit à petit, plus vite au clavier."
   },
   "meta": {
-    "title": "Typio : courses de dactylographie",
+    "title": "Typio : courses de dactylographie",
     "description": "Typio, des courses de dactylographie multijoueur pour les 12-17 ans."
   },
   "language": {
@@ -188,14 +188,16 @@
     "createRace": "Créer une course",
     "joinByCode": {
       "label": "Code de la salle",
-      "placeholder": "Ex. : ABC234",
+      "placeholder": "Ex. : ABC234",
       "button": "Rejoindre",
-      "invalidCode": "Code de salle invalide : saisis les 6 caractères du code."
+      "invalidCode": "Code de salle invalide : saisis les 6 caractères du code."
     },
     "signIn": "Se connecter",
     "playAsGuest": "Jouer en invité",
     "signUp": "Créer un compte",
     "navigation": {
+      "footerExplore": "Découvrir",
+      "footerAccount": "Compte",
       "why": "Pourquoi Typio",
       "preview": "Aperçu",
       "approach": "Démarche"
@@ -206,7 +208,9 @@
       "description": "Typio, une plateforme pour apprendre à taper au clavier et prendre de bonnes habitudes, à son rythme."
     },
     "raceShowcase": {
-      "caption": "Une course de démonstration : toi et trois bots avancez sur la piste au rythme de la frappe.",
+      "pause": "Mettre la course en pause",
+      "resume": "Reprendre la course",
+      "caption": "Une course de démonstration : toi et trois bots avancez sur la piste au rythme de la frappe.",
       "racers": [
         "Toi",
         "Bot Azur",
@@ -215,13 +219,16 @@
       ]
     },
     "media": {
+      "videoPlay": "Lire la vidéo",
+      "videoPause": "Mettre la vidéo en pause",
+      "videoDetails": "Présentation animée de Typio : la mascotte poulpe, une course entre amis, puis les statistiques de vitesse et de précision.",
       "videoLabel": "Vidéo Typio",
       "videoDescription": "Ton navigateur ne peut pas lire la vidéo de présentation de Typio."
     },
     "why": {
-      "eyebrow": "Pourquoi Typio ?",
+      "eyebrow": "Pourquoi Typio ?",
       "title": "Le clavier fait partie du quotidien. L’apprendre aussi.",
-      "description": "Écrire un texte, préparer un devoir, partager une idée… Typio part d’une envie simple : aider les élèves à se familiariser avec la frappe."
+      "description": "Écrire un texte, préparer un devoir, partager une idée… Typio part d’une envie simple : aider les élèves à se familiariser avec la frappe."
     },
     "video": {
       "eyebrow": "En vidéo",
@@ -249,13 +256,13 @@
     "about": {
       "eyebrow": "Derrière Typio",
       "title": "Un projet autour d’un geste quotidien.",
-      "description": "Typio est un projet d’apprentissage de la dactylographie destiné aux élèves. Cette page présente son intention, ses aperçus et sa démarche : rendre la pratique du clavier plus familière.",
+      "description": "Typio est un projet d’apprentissage de la dactylographie destiné aux élèves. Cette page présente son intention, ses aperçus et sa démarche : rendre la pratique du clavier plus familière.",
       "signature": "Petit à petit, plus vite au clavier."
     },
     "cta": {
       "title": "À ton tour de prendre le clavier.",
       "description": "Le premier pas commence avec quelques touches.",
-      "existingAccount": "Déjà un compte ?"
+      "existingAccount": "Déjà un compte ?"
     }
   },
   "header": {
@@ -274,15 +281,15 @@
     "titleLine2": "du clavier.",
     "description": "Des défis rigolos, des progrès bien réels.",
     "tipTitle": "Pas besoin de 8 bras.",
-    "tipText": "10 minutes par jour et tes doigts font le reste !",
+    "tipText": "10 minutes par jour et tes doigts font le reste !",
     "benefits": {
       "ownPace": "À ton rythme",
       "noPressure": "Sans pression",
-      "playful": "100 % ludique"
+      "playful": "100 % ludique"
     }
   },
   "illustration": {
-    "praise": "Bien joué !",
+    "praise": "Bien joué !",
     "spaceKey": "espace"
   },
   "island": {
@@ -290,7 +297,7 @@
     "zoneText": "10 minutes par jour, c'est tout ce qu'il faut.",
     "progressTitle": "Progrès en vue",
     "progressText": "Des exercices courts, des récompenses sympas.",
-    "perDay": "10 min/jour",
+    "perDay": "10 min/jour",
     "rewards": "Récompenses"
   },
   "oauth": {
@@ -308,10 +315,10 @@
     "passwordLabel": "Mot de passe",
     "passwordPlaceholder": "Ton mot de passe",
     "errors": {
-      "INVALID_USERNAME": "Le pseudo doit faire de 3 à 20 caractères : lettres sans accent, chiffres et _.",
+      "INVALID_USERNAME": "Le pseudo doit faire de 3 à 20 caractères : lettres sans accent, chiffres et _.",
       "INVALID_PASSWORD": "Le mot de passe doit faire de 8 à 128 caractères, avec au moins une lettre et un chiffre.",
-      "INVALID_PSEUDO": "Choisis un pseudo de 3 à 20 caractères : lettres, chiffres, espaces, _ et -.",
-      "USERNAME_TAKEN": "Ce pseudo est déjà pris. Essaie-en un autre !",
+      "INVALID_PSEUDO": "Choisis un pseudo de 3 à 20 caractères : lettres, chiffres, espaces, _ et -.",
+      "USERNAME_TAKEN": "Ce pseudo est déjà pris. Essaie-en un autre !",
       "INVALID_CREDENTIALS": "Identifiant ou mot de passe incorrect.",
       "RATE_LIMITED": "Trop d'essais en peu de temps. Patiente un peu, puis réessaie.",
       "PASSWORD_MISMATCH": "Les deux mots de passe ne sont pas identiques.",
@@ -325,7 +332,7 @@
       "title": "Connexion · Typio",
       "description": "Connecte-toi à Typio pour retrouver tes défis et ton score."
     },
-    "title": "Content de te revoir !",
+    "title": "Content de te revoir !",
     "intro": "Connecte-toi pour retrouver tes défis et faire grimper ton score. À ton rythme.",
     "divider": "ou avec ton identifiant",
     "securityNote": "Se connecter avec un identifiant est moins sécurisé qu'avec un compte GitHub ou Discord.",
@@ -335,10 +342,10 @@
     "submit": "Se connecter",
     "guestDivider": "ou",
     "guestButton": "Jouer en tant qu'invité",
-    "guestNote": "Sans compte, tes résultats sont effacés après 24 h.",
-    "noAccount": "Pas encore de compte ?",
+    "guestNote": "Sans compte, tes résultats sont effacés après 24 h.",
+    "noAccount": "Pas encore de compte ?",
     "signUpLink": "Rejoins l'aventure",
-    "sharedComputerNote": "Sur un ordinateur partagé, ne coche pas « Rester connecté » et déconnecte-toi à la fin.",
+    "sharedComputerNote": "Sur un ordinateur partagé, ne coche pas « Rester connecté » et déconnecte-toi à la fin.",
     "oauthErrors": {
       "cancelled": "Connexion annulée. Tu peux réessayer quand tu veux.",
       "failed": "La connexion avec ce service a échoué. Réessaie dans un instant.",
@@ -350,12 +357,12 @@
       "title": "Inscription · Typio",
       "description": "Crée ton compte Typio et fais tes premiers progrès au clavier."
     },
-    "title": "Rejoins l'aventure !",
+    "title": "Rejoins l'aventure !",
     "intro": "Crée ton compte et fais tes premiers progrès.",
     "divider": "ou avec un pseudo",
     "pseudoLabel": "Pseudo",
-    "pseudoPlaceholder": "Ex. : PoulpeRapide",
-    "pseudoHint": "3 à 20 caractères : lettres, chiffres et _. C'est aussi ton identifiant pour te connecter.",
+    "pseudoPlaceholder": "Ex. : PoulpeRapide",
+    "pseudoHint": "3 à 20 caractères : lettres, chiffres et _. C'est aussi ton identifiant pour te connecter.",
     "passwordLabel": "Mot de passe",
     "confirmLabel": "Confirmation",
     "passwordPlaceholder": "8+ caractères",
@@ -365,7 +372,7 @@
     "privacyLink": "politique de confidentialité",
     "termsAfter": ".",
     "submit": "Créer mon compte",
-    "haveAccount": "Déjà un compte ?",
+    "haveAccount": "Déjà un compte ?",
     "signInLink": "Connecte-toi",
     "newTab": "(nouvel onglet)"
   },
@@ -377,11 +384,11 @@
     "title": "Joue en invité",
     "intro": "Choisis un pseudo et lance-toi, sans créer de compte.",
     "pseudoLabel": "Pseudo",
-    "pseudoPlaceholder": "Ex. : PoulpeRapide",
-    "pseudoHint": "3 à 20 caractères : lettres, chiffres, espaces, _ et -.",
+    "pseudoPlaceholder": "Ex. : PoulpeRapide",
+    "pseudoHint": "3 à 20 caractères : lettres, chiffres, espaces, _ et -.",
     "submit": "Jouer en invité",
-    "limits": "Les données d'un invité sont supprimées à sa déconnexion, ou après 24 h au plus tard, et un invité ne peut pas créer de course.",
-    "haveAccount": "Tu as déjà un compte ?",
+    "limits": "Les données d'un invité sont supprimées à sa déconnexion, ou après 24 h au plus tard, et un invité ne peut pas créer de course.",
+    "haveAccount": "Tu as déjà un compte ?",
     "signInLink": "Connecte-toi"
   },
   "privacy": {
@@ -394,24 +401,24 @@
     "storedTitle": "Ce que Typio enregistre",
     "stored": {
       "identity": "Ton pseudo (ton identifiant de connexion), ton nom affiché et la date de création de ton compte.",
-      "password": "Ton mot de passe, uniquement sous forme hachée avec argon2id. Il n'est jamais stocké en clair : personne ne peut le relire.",
-      "oauth": "Si tu te connectes avec GitHub ou Discord : seulement l'identifiant numérique de ton compte chez eux, pour te reconnaître la prochaine fois. Ton nom d'utilisateur sur ce service sert une seule fois, à créer ton pseudo (ton nom affiché est le même), et n'est pas conservé à part. Ton nom, ton adresse e-mail, ta photo et tes autres informations ne sont pas conservés, ni les jetons d'accès : ils ne servent qu'une fois, pendant la connexion, puis sont jetés.",
+      "password": "Ton mot de passe, uniquement sous forme hachée avec argon2id. Il n'est jamais stocké en clair : personne ne peut le relire.",
+      "oauth": "Si tu te connectes avec GitHub ou Discord : seulement l'identifiant numérique de ton compte chez eux, pour te reconnaître la prochaine fois. Ton nom d'utilisateur sur ce service sert une seule fois, à créer ton pseudo (ton nom affiché est le même), et n'est pas conservé à part. Ton nom, ton adresse e-mail, ta photo et tes autres informations ne sont pas conservés, ni les jetons d'accès : ils ne servent qu'une fois, pendant la connexion, puis sont jetés.",
       "preferences": "Ta langue et la disposition de ton clavier.",
-      "session": "Ta session sur le serveur : l'empreinte du jeton de ta session et sa date d'expiration. Le jeton lui-même n'est pas stocké.",
+      "session": "Ta session sur le serveur : l'empreinte du jeton de ta session et sa date d'expiration. Le jeton lui-même n'est pas stocké.",
       "results": "Tes résultats de course, quand les courses seront disponibles."
     },
     "cookiesTitle": "Cookies et stockage",
     "cookies": {
-      "session": "Un cookie de session te garde connecté. Il contient seulement un jeton aléatoire : ton statut et tes informations restent sur le serveur.",
-      "duration": "Avec « Rester connecté », ce cookie dure 30 jours. Sans cette case, et avec GitHub ou Discord, c'est un cookie de session, et la session expire au plus tard après 24 h, même si ton navigateur la restaure.",
+      "session": "Un cookie de session te garde connecté. Il contient seulement un jeton aléatoire : ton statut et tes informations restent sur le serveur.",
+      "duration": "Avec « Rester connecté », ce cookie dure 30 jours. Sans cette case, et avec GitHub ou Discord, c'est un cookie de session, et la session expire au plus tard après 24 h, même si ton navigateur la restaure.",
       "oauth": "Quand tu te connectes avec GitHub ou Discord, des cookies temporaires (un état de sécurité, un vérificateur et ta langue) sont posés pour 10 minutes, puis effacés dès ton retour sur Typio.",
       "preferences": "Ta langue est mémorisée dans un cookie pendant un an, et ton thème (clair ou sombre) dans le stockage de ton navigateur."
     },
     "guestsTitle": "Les invités",
-    "guests": "Un invité est supprimé, avec toutes ses données, quand il se déconnecte, et au plus tard lors du nettoyage automatique qui suit l'expiration de 24 h.",
+    "guests": "Un invité est supprimé, avec toutes ses données, quand il se déconnecte, et au plus tard lors du nettoyage automatique qui suit l'expiration de 24 h.",
     "securityTitle": "Sécurité",
     "security": {
-      "ip": "Ton adresse IP sert au plus 1 h à bloquer les attaques. Elle reste seulement en mémoire, jusqu'à son effacement automatique, et n'est jamais enregistrée en base."
+      "ip": "Ton adresse IP sert au plus 1 h à bloquer les attaques. Elle reste seulement en mémoire, jusqu'à son effacement automatique, et n'est jamais enregistrée en base."
     },
     "neverTitle": "Ce que Typio ne fait pas",
     "never": {
@@ -433,7 +440,7 @@
   },
   "raceSettings": {
     "title": "Paramètres de course",
-    "subtitle": "Un parcours à ton rythme. Choisis tes règles, puis à tes touches !",
+    "subtitle": "Un parcours à ton rythme. Choisis tes règles, puis à tes touches !",
     "reset": "Réinitialiser",
     "textSection": {
       "title": "Le texte à taper",
@@ -455,9 +462,9 @@
       "medium": "Moyenne",
       "hard": "Difficile",
       "descriptions": {
-        "easy": "Mode mots : 5 lettres au plus. Phrases simples.",
+        "easy": "Mode mots : 5 lettres au plus. Phrases simples.",
         "medium": "Mots courants, phrases de complexité intermédiaire.",
-        "hard": "Mode mots : 6 lettres ou plus, mots rares possibles. Phrases longues ou ponctuation variée."
+        "hard": "Mode mots : 6 lettres ou plus, mots rares possibles. Phrases longues ou ponctuation variée."
       }
     },
     "punctuation": {
@@ -481,7 +488,7 @@
     "includedChars": {
       "label": "Caractères à inclure",
       "help": "Chaque mot doit contenir au moins un de ces caractères (30 au plus, casse ignorée). Les exclusions restent prioritaires.",
-      "sentencesHelp": "Disponible en mode mots uniquement : les phrases du corpus sont conservées entières.",
+      "sentencesHelp": "Disponible en mode mots uniquement : les phrases du corpus sont conservées entières.",
       "error": "Trop de caractères à inclure (max 100)."
     },
     "excludedChars": {
@@ -497,7 +504,7 @@
     },
     "rulesSection": {
       "title": "Les règles du jeu",
-      "subtitle": "Un peu de pression... ou juste le plaisir de taper."
+      "subtitle": "Un peu de pression… ou juste le plaisir de taper."
     },
     "timeLimit": {
       "label": "Limite de temps",
@@ -529,7 +536,7 @@
       "add": "Ajouter un bot",
       "remove": "Retirer le bot {number}",
       "level": "Niveau du bot {number}",
-      "help": "{level} : {min}–{max} MPM",
+      "help": "{level} : {min}–{max} MPM",
       "levels": {
         "noob": "Noob",
         "beginner": "Débutant",
@@ -542,9 +549,9 @@
     "summary": {
       "title": "Ta course, en bref",
       "participants": "Toi + {bots} bots · {total} participants",
-      "tip": "La vitesse, c'est bien. La précision fait avancer ton Blob !",
+      "tip": "La vitesse, c'est bien. La précision fait avancer ton Blob !",
       "start": "Lancer la course",
-      "ready": "Tout est prêt. À tes touches, prêt, pars !"
+      "ready": "Tout est prêt. À tes touches, prêt, pars !"
     },
     "invite": {
       "button": "Inviter des amis",
@@ -561,27 +568,27 @@
     },
     "visibility": {
       "label": "Visibilité",
-      "public": "Publique : listée, ouverte à tous",
-      "code": "Sur code : avec le code seulement",
-      "private": "Privée : sur invitation seulement",
-      "help": "Seule une salle publique apparaît dans la liste des salles et dans « Faire une course »."
+      "public": "Publique : listée, ouverte à tous",
+      "code": "Sur code : avec le code seulement",
+      "private": "Privée : sur invitation seulement",
+      "help": "Seule une salle publique apparaît dans la liste des salles et dans « Faire une course »."
     },
     "capacity": {
       "label": "Capacité",
-      "help": "Coureurs et bots ; les spectateurs ne comptent pas."
+      "help": "Coureurs et bots ; les spectateurs ne comptent pas."
     }
   },
   "profile": {
     "demoReadOnly": "Compte de démonstration en lecture seule.",
     "avatar": {
       "title": "Photo de profil",
-      "file": "Choisir une photo (JPEG, PNG ou WebP, 2 Mo maximum)",
+      "file": "Choisir une photo (JPEG, PNG ou WebP, 2 Mo maximum)",
       "preview": "Photo de profil actuelle",
       "upload": "Téléverser",
       "remove": "Retirer la photo",
       "saved": "Ta photo de profil est à jour.",
       "errors": {
-        "TOO_LARGE": "La photo dépasse la limite de 2 Mo.",
+        "TOO_LARGE": "La photo dépasse la limite de 2 Mo.",
         "UNSUPPORTED_TYPE": "Choisis une image JPEG, PNG ou WebP.",
         "INVALID_IMAGE": "Cette image est illisible. Choisis une image JPEG, PNG ou WebP valide.",
         "DEMO_READ_ONLY": "Le profil du compte de démonstration ne peut pas être modifié.",
@@ -614,7 +621,7 @@
       "setPassword": "Définir un mot de passe",
       "description": "Ton compte, bien à l'abri.",
       "changePassword": "Changer le mot de passe",
-      "noPassword": "Si ton compte a été créé via GitHub ou Discord, le mot de passe est facultatif. À la place :",
+      "noPassword": "Si ton compte a été créé via GitHub ou Discord, le mot de passe est facultatif. À la place :",
       "linkedAccountsDesc": "Tes autres portes d'entrée dans Typio.",
       "hasPassword": "Un mot de passe est défini pour ce compte.",
       "privacy": "Seul l’identifiant du compte est conservé, sans e-mail ni avatar.",
@@ -661,7 +668,7 @@
       "DEMO_READ_ONLY": "Le profil du compte de démonstration ne peut pas être modifié.",
       "UNAUTHORIZED": "Ta session a expiré. Reconnecte-toi pour modifier ton profil."
     },
-    "note": "Ces réglages te suivent dans toutes tes courses. À tes touches, prêt, pars !"
+    "note": "Ces réglages te suivent dans toutes tes courses. À tes touches, prêt, pars !"
   },
   "profileDropdown": {
     "guestWarning": "Tu es actuellement invité(e). Tes données (dont les statistiques) ne sont pas enregistrées et seront perdues à la fin de la session.",
@@ -669,14 +676,14 @@
     "register": "Créer un compte",
     "stats": {
       "title": "Statistiques",
-      "comingSoon": "Les statistiques arrivent bientôt !"
+      "comingSoon": "Les statistiques arrivent bientôt !"
     },
     "viewFullProfile": "Voir le profil complet",
     "close": "Fermer"
   },
   "room": {
     "race": {
-      "finishCountdown": "Premier coureur arrivé : {time} pour terminer.",
+      "finishCountdown": "Premier coureur arrivé : {time} pour terminer.",
       "start": "Lancer la course",
       "restart": "Relancer",
       "close": "Fermer la salle",
@@ -687,7 +694,7 @@
       "stay": "Vous pouvez rester pour la prochaine course ou quitter la salle.",
       "keyboard": "Pour participer, utilisez un ordinateur avec un clavier physique.",
       "reconnecting": "Reconnexion en cours. La saisie reprendra avec votre progression enregistrée.",
-      "confirmAbandon": "Abandonner cette course ?",
+      "confirmAbandon": "Abandonner cette course ?",
       "confirm": "Oui, abandonner",
       "cancel": "Continuer la course"
     },
@@ -700,13 +707,13 @@
     "leave": "Quitter",
     "connection": {
       "offline": "Connexion perdue, nouvelle tentative…",
-      "tooManyConnections": "Trop d'onglets ouverts : ferme-en un, puis recharge la page."
+      "tooManyConnections": "Trop d'onglets ouverts : ferme-en un, puis recharge la page."
     },
     "code": {
       "label": "Code de la salle",
       "copy": "Copier le code",
       "copied": "Copié",
-      "copyFallback": "Code sélectionné : copie-le avec Ctrl+C."
+      "copyFallback": "Code sélectionné : copie-le avec Ctrl+C."
     },
     "participants": {
       "title": "Participants",
@@ -718,7 +725,7 @@
       "spectator": "Spectateur",
       "disconnected": "Déconnecté",
       "kick": "Expulser",
-      "kickConfirm": "Expulser {name} ? Cette personne ne pourra plus revenir.",
+      "kickConfirm": "Expulser {name} ? Cette personne ne pourra plus revenir.",
       "kickYes": "Oui, expulser",
       "kickCancel": "Annuler"
     },
@@ -745,7 +752,7 @@
         "title": "Rejoindre avec un code",
         "description": "Saisis le code à 6 caractères donné par l'hôte.",
         "codeLabel": "Code de la salle",
-        "codePlaceholder": "Ex. : ABC234",
+        "codePlaceholder": "Ex. : ABC234",
         "roleLabel": "Rejoindre en tant que",
         "runner": "Coureur",
         "spectator": "Spectateur",
@@ -772,7 +779,7 @@
         "filterLanguage": "Langue du texte",
         "allLanguages": "Toutes les langues",
         "runners": "{count}/{max} coureurs",
-        "host": "Hôte : {name}",
+        "host": "Hôte : {name}",
         "join": "Rejoindre",
         "full": "Pleine",
         "unavailable": "Indisponible",
@@ -791,7 +798,7 @@
     "errors": {
       "UNAUTHENTICATED": "Tu dois être connecté pour faire ça.",
       "INVALID_PAYLOAD": "Les données envoyées sont invalides.",
-      "INVALID_CODE": "Code de salle invalide : il doit faire 6 caractères.",
+      "INVALID_CODE": "Code de salle invalide : il doit faire 6 caractères.",
       "GUEST_CANNOT_CREATE": "Les invités ne peuvent pas créer de salle.",
       "ROOM_NOT_FOUND": "Aucune salle ne correspond à ce code.",
       "ROOM_FULL": "Cette salle est déjà pleine.",
@@ -809,7 +816,7 @@
       "INTERNAL": "Une erreur est survenue, réessaie dans un instant.",
       "OFFLINE": "Tu n'es pas connecté au serveur de jeu. Réessaie dans un instant.",
       "TIMEOUT": "Le serveur de jeu ne répond pas. Réessaie dans un instant.",
-      "INVITE_REQUIRED": "Cette salle est privée : il faut un lien d'invitation pour y entrer.",
+      "INVITE_REQUIRED": "Cette salle est privée : il faut un lien d'invitation pour y entrer.",
       "NO_ROOM_AVAILABLE": "Aucune salle n'est disponible pour le moment.",
       "INVITE_INVALID": "Ce lien d'invitation n'est pas valide ou n'est plus utilisable.",
       "INVITE_LIMIT": "Tu as atteint le nombre maximal de liens d'invitation pour cette salle.",
@@ -825,10 +832,10 @@
       "unused": "Non utilisé",
       "used": "Utilisé par {name}",
       "revoked": "Révoqué",
-      "newLink": "Nouveau lien, à copier maintenant : il ne sera plus affiché ensuite.",
+      "newLink": "Nouveau lien, à copier maintenant : il ne sera plus affiché ensuite.",
       "copy": "Copier",
       "copied": "Lien copié",
-      "copyFailed": "Copie impossible : sélectionne le lien et copie-le avec Ctrl+C."
+      "copyFailed": "Copie impossible : sélectionne le lien et copie-le avec Ctrl+C."
     },
     "invite": {
       "metaTitle": "Invitation",

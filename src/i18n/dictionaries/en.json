@@ -196,6 +196,8 @@
     "playAsGuest": "Play as a guest",
     "signUp": "Create an account",
     "navigation": {
+      "footerExplore": "Explore",
+      "footerAccount": "Account",
       "why": "Why Typio",
       "preview": "Preview",
       "approach": "Approach"
@@ -206,6 +208,8 @@
       "description": "Typio is a place to learn keyboard skills and build good habits at your own pace."
     },
     "raceShowcase": {
+      "pause": "Pause the race",
+      "resume": "Resume the race",
       "caption": "A demo race: you and three bots move along the track at your typing pace.",
       "racers": [
         "You",
@@ -215,6 +219,9 @@
       ]
     },
     "media": {
+      "videoPlay": "Play the video",
+      "videoPause": "Pause the video",
+      "videoDetails": "Animated introduction to Typio: the octopus mascot, a race between friends, then speed and accuracy statistics.",
       "videoLabel": "Typio video",
       "videoDescription": "Your browser cannot play the Typio presentation video."
     },

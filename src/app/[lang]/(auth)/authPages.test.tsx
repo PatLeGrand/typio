@@ -19,6 +19,7 @@ vi.mock("next/navigation", async (importOriginal) => ({
 import GuestPage, { generateMetadata as guestMetadata } from "./guest/page";
 import LoginPage, { generateMetadata as loginMetadata } from "./login/page";
 import RegisterPage, { generateMetadata as registerMetadata } from "./register/page";
+import { plain } from "@/test/text";
 
 const REDIRECTED = "NEXT_REDIRECT_TEST";
 
@@ -251,12 +252,12 @@ describe("page guest", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: guest.title })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: guest.pseudoLabel })).toBeInTheDocument();
-    expect(screen.getByText(guest.limits)).toBeInTheDocument();
+    expect(screen.getByText(plain(guest.limits))).toBeInTheDocument();
     expect(screen.getByRole("link", { name: guest.signInLink })).toHaveAttribute("href", `/${lang}/login`);
   });
 
   it("la phrase d'information mentionne 24 h", async () => {
-    expect(getDictionary("fr").guest.limits).toMatch(/24 h/);
+    expect(getDictionary("fr").guest.limits).toMatch(/24\u00a0h/);
     expect(getDictionary("en").guest.limits).toMatch(/24 hours/);
   });
 

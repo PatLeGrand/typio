@@ -17,7 +17,7 @@ export function HomeHero({ home, locale }: HomeHeroProps) {
           <h1
             id="home-title"
             aria-label={`${home.hero.titleLine1} ${home.hero.titleLine2}`}
-            className="text-[42px] font-medium leading-[1.08] tracking-[-0.035em] text-foreground sm:text-6xl lg:text-[64px]"
+            className="text-balance text-[42px] font-medium leading-[1.08] tracking-[-0.035em] text-foreground sm:text-6xl lg:text-[64px]"
           >
             <span className="block">{home.hero.titleLine1}</span>
             <span className="block">{home.hero.titleLine2}</span>

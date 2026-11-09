@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import PrivacyPage, { generateMetadata } from "./page";
+import { plain } from "@/test/text";
 
 function props(lang: string) {
   return { params: Promise.resolve({ lang }), searchParams: Promise.resolve({}) };
@@ -29,7 +30,7 @@ describe("PrivacyPage", () => {
       ...Object.values(privacy.security),
       ...Object.values(privacy.never),
     ]) {
-      expect(screen.getByText(text)).toBeInTheDocument();
+      expect(screen.getByText(plain(text))).toBeInTheDocument();
     }
   });
 
@@ -66,10 +67,10 @@ describe("PrivacyPage", () => {
     expect(privacy.cookies.session).toMatch(/seulement un jeton aléatoire/);
     expect(privacy.cookies.session).toMatch(/restent sur le serveur/);
     expect(privacy.cookies.duration).toMatch(/30 jours/);
-    expect(privacy.cookies.duration).toMatch(/au plus tard après 24 h, même si ton navigateur la restaure/);
+    expect(privacy.cookies.duration).toMatch(/au plus tard après 24\u00a0h, même si ton navigateur la restaure/);
     expect(privacy.guests).toMatch(/quand il se déconnecte/);
-    expect(privacy.guests).toMatch(/nettoyage automatique qui suit l'expiration de 24 h/);
-    expect(privacy.security.ip).toMatch(/au plus 1 h/);
+    expect(privacy.guests).toMatch(/nettoyage automatique qui suit l'expiration de 24\u00a0h/);
+    expect(privacy.security.ip).toMatch(/au plus 1\u00a0h/);
     expect(privacy.security.ip).toMatch(/jamais enregistrée en base/);
     expect(privacy.never.email).toMatch(/e-mail/);
     expect(privacy.never.tracking).toMatch(/publicité/);
