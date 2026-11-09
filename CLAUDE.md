@@ -42,8 +42,8 @@ avec ses anciens identifiants ; utilise la table de correspondance de `EXIGENCES
 
 # UI provisoire
 
-La direction artistique se fait dans Figma. Un skill `ui` la remplacera, puis une refonte
-suivra. D'ici là :
+La direction artistique se fait dans Figma. Pour la refonte, le skill `ui` (`.claude/skills/ui/`)
+s'applique et prime sur cette section. Pour une simple retouche hors refonte :
 
 - UI **basique et neutre** : palette Tailwind par défaut (gris + une couleur d'accent), police système, aucune illustration ni animation décorative. Pas d'effort de style, effort de structure et d'accessibilité.
 - **Thème clair et sombre obligatoire** (DES-05) : suit la préférence système par défaut, bascule manuelle mémorisée, aucun flash au chargement. Chaque composant est vérifié dans les deux thèmes.

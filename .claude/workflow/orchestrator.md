@@ -23,6 +23,7 @@ Principe : maximiser le travail correctement accompli par unité de quota. Un ap
 | Sol (medium) | `delegate.mjs sol` | patch ciblé, peu de fichiers, problème bien défini |
 | Sonnet (medium) | sous-agent `sonnet-dev` | gros volume, plusieurs fichiers fortement liés, cohérence globale, problème ou consignes délicats, reprise d'un échec difficile |
 | Gemini 3.8 Flash | `delegate.mjs gemini` | review indépendante de la feature terminée : bugs, régressions, edge cases, tests manquants, sécurité. Ne modifie rien. |
+| Opus (high) | sous-agent `ui-adversary` | critique adverse d'une UI terminée, sur rendu réel (DES-*, A11Y-*, I18N-*). Ne modifie rien. |
 
 `node .claude/scripts/delegate.mjs <luna|sol|gemini> <brief.md|-> [--skills a,b] [--diff [base]] [--paths a,b] [--effort niveau] [--dry-run]`
 Renvoie uniquement le compte rendu final de l'agent. Pour Gemini, `--diff` joint le `git diff` sans passer par ton contexte. Tâche longue (> 8 min) : lancer en arrière-plan.
@@ -37,6 +38,7 @@ Renvoie uniquement le compte rendu final de l'agent. Pour Gemini, `--diff` joint
 - **Tests unitaires seulement quand c'est nécessaire.** Les développeurs n'écrivent pas de test par défaut. Le brief en demande un (skill `unit-testing`) seulement pour une logique où une erreur passerait inaperçue : calcul, règle métier, validation ou permission côté serveur, machine à états, bug corrigé susceptible de revenir. Jamais pour l'UI, les textes ou la couverture.
 - **QA pour les grosses features uniquement (LARGE)**, une fois la feature terminée sur sa branche, jamais lot par lot : suite complète et builds (commandes de la config projet), puis chaque critère d'acceptation joué dans l'application réelle. TINY, SMALL et MEDIUM s'arrêtent à la vérification déterministe.
 - **Une seule review, sur la feature complète.** Quand une feature MEDIUM ou LARGE est terminée : `delegate.mjs gemini brief.md --diff <branche d'intégration>`, avec `--skills security-review` si elle touche une zone sensible. Pas de review intermédiaire ni de seconde review sans raison. Chaque constat est vérifié avant d'être corrigé. Gemini indisponible : tu relis toi-même le diff complet avec le skill `code-review`.
+- **Travail visuel.** Le brief d'un développeur inclut le skill `ui`. Une feature UI MEDIUM ou LARGE terminée passe une fois par `ui-adversary` avant la review du diff, serveur de développement lancé. Chaque constat est vérifié avant d'être corrigé.
 
 ## Sol ↔ Sonnet
 Deux développeurs de même niveau. Choisir d'abord par difficulté, volume, nombre de fichiers et risque ; un petit patch très délicat peut aller à Sonnet. Quand la tâche est à la frontière et que les deux conviennent, prendre le fournisseur qui a le plus de marge : `delegate.mjs quota` (Codex, Gemini) et l'outil `get_usage` s'il est disponible (Claude). Ne pas consulter les quotas pour une TINY. Viser un équilibre sur la durée, pas 50/50 par tâche.
