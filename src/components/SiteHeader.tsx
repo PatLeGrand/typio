@@ -41,12 +41,12 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
       <div className={`mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-3 min-h-24 px-4 py-4 transition-[padding,min-height,border-radius,box-shadow,background-color] duration-300 motion-reduce:transition-none ${
         isScrolled
           ? "md:min-h-16 md:rounded-[32px] md:border md:border-border bg-surface md:shadow-sm md:py-2 md:px-8"
-          : "md:px-8 lg:px-[88px]"
+          : "md:px-8 xl:px-[88px]"
       }`}>
         <Link href={`/${locale}`} className="rounded-field">
           <Logo name={dictionary.site.name} />
         </Link>
-        <nav className="order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted lg:order-none lg:flex lg:w-auto" aria-label={dictionary.navigation.main}>
+        <nav className={`order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted ${user ? "xl:flex xl:order-none xl:w-auto" : "lg:flex lg:order-none lg:w-auto"}`} aria-label={dictionary.navigation.main}>
           <Link href={`/${locale}#why`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.why}</Link>
           <Link href={`/${locale}#video`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
           <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>
@@ -61,7 +61,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
               <ProfileModal user={user} dictionary={dictionary} locale={locale}>
                 <span className="text-sm font-semibold text-foreground flex min-w-0 items-center gap-2">
                   <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={28} />
-                  <span className="max-w-24 truncate md:max-w-40">{user.displayName}</span>
+                  <span className={user.kind === "guest" ? "max-w-24 truncate" : "max-w-24 truncate md:max-w-40"}>{user.displayName}</span>
                   {user.kind === "guest" ? (
                     <span className="text-xs font-normal text-muted ml-0.5">({dictionary.header.guest})</span>
                   ) : null}
