@@ -6,6 +6,8 @@ type ButtonLinkProps = Omit<ComponentProps<typeof Link>, "className"> & {
   variant?: ButtonVariant;
   /** Occupe toute la largeur du conteneur. */
   fullWidth?: boolean;
+  /** Réduit les marges des liens courts de l’en-tête sous 768 px. */
+  compactOnMobile?: boolean;
 };
 
 /**
@@ -13,6 +15,6 @@ type ButtonLinkProps = Omit<ComponentProps<typeof Link>, "className"> & {
  * autre page : un `<button>` ne sait pas naviguer, et un lien dans un bouton est invalide.
  * Les icônes passent en enfants, comme pour `Button` (`<UserRound aria-hidden="true" />`).
  */
-export function ButtonLink({ variant = "primary", fullWidth = false, ...props }: ButtonLinkProps) {
-  return <Link className={buttonClasses(variant, fullWidth, "")} {...props} />;
+export function ButtonLink({ variant = "primary", fullWidth = false, compactOnMobile = false, ...props }: ButtonLinkProps) {
+  return <Link className={buttonClasses(variant, fullWidth, "", compactOnMobile)} {...props} />;
 }

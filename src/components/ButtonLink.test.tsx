@@ -55,3 +55,12 @@ describe("ButtonLink", () => {
     expect(screen.getByRole("link", { name: "Jouer en invité" })).toBeInTheDocument();
   });
 });
+
+it("réduit seulement les liens compacts sur mobile sans couper le libellé", () => {
+  const { rerender } = render(<ButtonLink href="/fr/login" compactOnMobile>Se connecter</ButtonLink>);
+  expect(screen.getByRole("link")).toHaveClass("whitespace-nowrap", "px-4", "md:px-6");
+  expect(screen.getByRole("link")).not.toHaveClass("px-6");
+  rerender(<ButtonLink href="/fr/login">Se connecter</ButtonLink>);
+  expect(screen.getByRole("link")).toHaveClass("px-6");
+  expect(screen.getByRole("link")).not.toHaveClass("px-4");
+});

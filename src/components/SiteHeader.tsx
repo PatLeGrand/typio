@@ -37,11 +37,11 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
   }, []);
 
   return (
-    <header className={`sticky top-0 z-50 w-full transition-all duration-300 ${isScrolled ? "pt-2 px-2 sm:pt-4 sm:px-4" : "bg-surface border-b border-border"}`}>
-      <div className={`mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-3 transition-all duration-300 ${
-        isScrolled 
-          ? "min-h-16 rounded-[32px] border border-border bg-surface/85 backdrop-blur-md shadow-sm px-4 py-2 sm:px-8" 
-          : "min-h-24 px-4 py-4 sm:px-8 lg:px-[88px]"
+    <header className={`md:sticky top-0 z-50 w-full border-b border-border bg-surface transition-[padding] duration-300 motion-reduce:transition-none ${isScrolled ? "md:border-b-0 md:bg-transparent md:pt-4 md:px-4" : ""}`}>
+      <div className={`mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-3 min-h-24 px-4 py-4 transition-[padding,min-height,border-radius,box-shadow,background-color] duration-300 motion-reduce:transition-none ${
+        isScrolled
+          ? "md:min-h-16 md:rounded-[32px] md:border md:border-border bg-surface md:shadow-sm md:py-2 md:px-8"
+          : "md:px-8 lg:px-[88px]"
       }`}>
         <Link href={`/${locale}`} className="rounded-field">
           <Logo name={dictionary.site.name} />
@@ -51,15 +51,17 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
           <Link href={`/${locale}#video`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
           <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>
         </nav>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <LanguageSwitcher locale={locale} labels={dictionary.language} compact />
-          <ThemeToggle labels={dictionary.theme} compact />
+        <div className="contents md:flex md:min-w-0 md:flex-wrap md:items-center md:justify-end md:gap-2">
+          <div className="ml-auto flex items-center gap-2 md:ml-0">
+            <LanguageSwitcher locale={locale} labels={dictionary.language} compact />
+            <ThemeToggle labels={dictionary.theme} compact />
+          </div>
           {user ? (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-end gap-2 md:w-auto">
               <ProfileModal user={user} dictionary={dictionary} locale={locale}>
-                <span className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground flex min-w-0 items-center gap-2">
                   <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={28} />
-                  {user.displayName}
+                  <span className="max-w-24 truncate md:max-w-40">{user.displayName}</span>
                   {user.kind === "guest" ? (
                     <span className="text-xs font-normal text-muted ml-0.5">({dictionary.header.guest})</span>
                   ) : null}
@@ -79,12 +81,12 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
               </form>
             </div>
           ) : (
-            <>
-              <ButtonLink href={`/${locale}/login`} variant="ghost">
+            <div className="flex w-full items-center justify-end gap-2 md:w-auto">
+              <ButtonLink href={`/${locale}/login`} variant="ghost" compactOnMobile>
                 {dictionary.header.signIn}
               </ButtonLink>
-              <ButtonLink href={`/${locale}/register`}>{dictionary.header.signUp}</ButtonLink>
-            </>
+              <ButtonLink href={`/${locale}/register`} compactOnMobile>{dictionary.header.signUp}</ButtonLink>
+            </div>
           )}
         </div>
       </div>

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
 import { ProfileModal } from "./ProfileModal";
+import { plain } from "@/test/text";
 
 const member: CurrentUser = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -34,7 +35,7 @@ describe.each(["fr", "en"] as const)("ProfileModal (%s)", (locale) => {
     );
 
     expect(screen.getAllByText(member.displayName)).toHaveLength(1);
-    expect(screen.queryByText(dictionary.profileDropdown.viewFullProfile)).toBeNull();
+    expect(screen.queryByText(plain(dictionary.profileDropdown.viewFullProfile))).toBeNull();
   });
 
   it("membre : titre des statistiques, annonce « bientôt » et lien vers le profil complet", () => {
@@ -42,7 +43,7 @@ describe.each(["fr", "en"] as const)("ProfileModal (%s)", (locale) => {
 
     expect(screen.getByRole("dialog", { name: member.displayName })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: dict.stats.title })).toBeInTheDocument();
-    expect(screen.getByText(dict.stats.comingSoon)).toBeInTheDocument();
+    expect(screen.getByText(plain(dict.stats.comingSoon))).toBeInTheDocument();
     expect(screen.getByRole("link", { name: dict.viewFullProfile })).toHaveAttribute("href", `/${locale}/profile`);
     expect(screen.getByRole("link", { name: getDictionary(locale).history.title })).toHaveAttribute("href", `/${locale}/history`);
     expect(screen.getByRole("button", { name: dict.close })).toBeInTheDocument();
@@ -63,7 +64,7 @@ describe.each(["fr", "en"] as const)("ProfileModal (%s)", (locale) => {
     expect(screen.getByRole("link", { name: dict.login })).toHaveAttribute("href", `/${locale}/login`);
     expect(screen.getByRole("link", { name: dict.register })).toHaveAttribute("href", `/${locale}/register`);
     expect(screen.queryByRole("link", { name: dict.viewFullProfile })).toBeNull();
-    expect(screen.queryByText(dict.stats.title)).toBeNull();
+    expect(screen.queryByText(plain(dict.stats.title))).toBeNull();
     expect(screen.queryByRole("link", { name: getDictionary(locale).history.title })).toBeNull();
   });
 
@@ -76,7 +77,7 @@ describe.each(["fr", "en"] as const)("ProfileModal (%s)", (locale) => {
       dialog.dispatchEvent(new Event("close"));
     });
 
-    expect(screen.queryByText(dict.viewFullProfile)).toBeNull();
+    expect(screen.queryByText(plain(dict.viewFullProfile))).toBeNull();
   });
 
   it("se ferme avec le bouton de fermeture", () => {
@@ -84,6 +85,6 @@ describe.each(["fr", "en"] as const)("ProfileModal (%s)", (locale) => {
 
     fireEvent.click(screen.getByRole("button", { name: dict.close }));
 
-    expect(screen.queryByText(dict.viewFullProfile)).toBeNull();
+    expect(screen.queryByText(plain(dict.viewFullProfile))).toBeNull();
   });
 });

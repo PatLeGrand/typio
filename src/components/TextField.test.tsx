@@ -30,6 +30,7 @@ describe("TextField", () => {
     expect(input).toBeInvalid();
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input).toHaveAccessibleDescription("Pseudo trop court");
+    expect(screen.getByRole("alert")).toHaveTextContent("Pseudo trop court");
     expect(input).toHaveClass("border-danger");
   });
 

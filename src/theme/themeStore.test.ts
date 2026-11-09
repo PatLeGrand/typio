@@ -40,6 +40,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   document.documentElement.classList.remove("dark");
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
 });
 
 describe("themeStore", () => {
@@ -151,4 +152,14 @@ describe("themeStore", () => {
     expect(isDark()).toBe(false);
     unsubscribe();
   });
+});
+
+it.each(["light", "dark"] as const)("crée puis réutilise theme-color en %s", (theme) => {
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
+  applyThemePreference(theme);
+  const meta = document.head.querySelector('meta[name="theme-color"]');
+  expect(meta).toHaveAttribute("content", theme === "dark" ? "#15121d" : "#fffcf7");
+  applyThemePreference(theme);
+  expect(document.querySelectorAll('meta[name="theme-color"]')).toHaveLength(1);
+  expect(document.head.querySelector('meta[name="theme-color"]')).toBe(meta);
 });

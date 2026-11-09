@@ -10,7 +10,7 @@ export function HomeVideoSection({ home }: HomeVideoSectionProps) {
       <div className="mx-auto flex w-full max-w-[1120px] flex-col items-center gap-10">
         <div className="flex max-w-[740px] flex-col items-center gap-4 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{home.video.eyebrow}</p>
-          <h2 id="video-title" className="text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
+          <h2 id="video-title" className="text-balance text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
             {home.video.title}
           </h2>
           <p className="text-base leading-[1.65] text-muted sm:text-lg">{home.video.description}</p>
@@ -20,6 +20,9 @@ export function HomeVideoSection({ home }: HomeVideoSectionProps) {
             <InteractiveVideo 
               ariaLabel={home.media.videoLabel}
               fallbackText={home.media.videoDescription}
+              playLabel={home.media.videoPlay}
+              pauseLabel={home.media.videoPause}
+              details={home.media.videoDetails}
               src="/videos/typio-intro.mp4"
             />
           </div>

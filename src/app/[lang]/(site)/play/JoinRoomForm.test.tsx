@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import { JoinRoomForm } from "./JoinRoomForm";
+import { plain } from "@/test/text";
 
 function renderForm(locale: "fr" | "en", options: { disabled?: boolean } = {}) {
   const { room } = getDictionary(locale);
@@ -37,13 +38,13 @@ describe.each(["fr", "en"] as const)("formulaire « rejoindre avec un code » (%
     fireEvent.change(field, { target: { value: "ABC" } });
     fireEvent.click(screen.getByRole("button", { name: labels.button }));
     expect(field).toBeInvalid();
-    expect(screen.getByText(errors.INVALID_CODE)).toBeVisible();
+    expect(screen.getByText(plain(errors.INVALID_CODE))).toBeVisible();
 
     // 0, O, 1, I et L n'existent pas dans l'alphabet des codes (H-5).
     fireEvent.change(field, { target: { value: "ABC0O1" } });
-    expect(screen.queryByText(errors.INVALID_CODE)).not.toBeInTheDocument();
+    expect(screen.queryByText(plain(errors.INVALID_CODE))).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: labels.button }));
-    expect(screen.getByText(errors.INVALID_CODE)).toBeVisible();
+    expect(screen.getByText(plain(errors.INVALID_CODE))).toBeVisible();
     expect(onJoin).not.toHaveBeenCalled();
   });
 

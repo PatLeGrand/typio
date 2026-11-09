@@ -4,6 +4,7 @@ import en from "@/i18n/dictionaries/en.json";
 import fr from "@/i18n/dictionaries/fr.json";
 import { DEFAULT_RACE_SETTINGS, type RaceSettings } from "@/race/config";
 import { RaceSettingsFields } from "./RaceSettingsFields";
+import { plain } from "@/test/text";
 
 const copy = fr.raceSettings;
 
@@ -37,7 +38,7 @@ describe("RaceSettingsFields (editable)", () => {
   it("disables inclusion for whole sentences and enables it for words", () => {
     const { rerender } = render(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS }} onChange={vi.fn()} dict={copy} lang="fr" />);
     expect(screen.getByRole("textbox", { name: copy.includedChars.label })).toBeDisabled();
-    expect(screen.getByText(copy.includedChars.sentencesHelp)).toBeInTheDocument();
+    expect(screen.getByText(plain(copy.includedChars.sentencesHelp))).toBeInTheDocument();
     rerender(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS, textMode: "words" }} onChange={vi.fn()} dict={copy} lang="fr" />);
     expect(screen.getByRole("textbox", { name: copy.includedChars.label })).toBeEnabled();
   });

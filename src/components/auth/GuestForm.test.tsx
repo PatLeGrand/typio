@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/auth/actions", () => ({ continueAsGuest: mocks.continueAsGuest }));
 
 import { GuestForm } from "./GuestForm";
+import { plain } from "@/test/text";
 
 function renderForm(locale: "fr" | "en" = "fr") {
   const dictionary = getDictionary(locale);
@@ -84,7 +85,7 @@ describe("GuestForm", () => {
 
         await submit();
 
-        expect(screen.getByRole("alert")).toHaveTextContent(auth.errors[code]);
+        expect(screen.getByRole("alert")).toHaveTextContent(plain(auth.errors[code]));
       },
     );
   });
