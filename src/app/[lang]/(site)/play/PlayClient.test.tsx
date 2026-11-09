@@ -14,6 +14,7 @@ vi.mock("@/realtime/useRoom", () => ({ useRoom: mocks.useRoom }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push, replace: mocks.replace }) }));
 
 import { PlayClient } from "./PlayClient";
+import { plain } from "@/test/text";
 
 function renderPlay(locale: "fr" | "en", options: { isGuest?: boolean } = {}) {
   const { room: labels } = getDictionary(locale);
@@ -33,7 +34,7 @@ describe.each(["fr", "en"] as const)("page de jeu, membre hors salle (%s)", (loc
     const labels = renderPlay(locale);
     expect(screen.getByRole("link", { name: labels.play.create.button })).toBeVisible();
     expect(screen.getByRole("button", { name: labels.play.join.button })).toBeEnabled();
-    expect(screen.queryByText(labels.play.inRoom.return)).not.toBeInTheDocument();
+    expect(screen.queryByText(plain(labels.play.inRoom.return))).not.toBeInTheDocument();
   });
 
   it("« Créer une salle » est un lien vers les paramètres de course (B-D4)", () => {
@@ -63,7 +64,7 @@ describe.each(["fr", "en"] as const)("page de jeu, membre hors salle (%s)", (loc
     fireEvent.click(screen.getByRole("button", { name: labels.play.join.button }));
 
     expect(mocks.push).not.toHaveBeenCalled();
-    expect(screen.getByText(labels.errors.INVALID_CODE)).toBeVisible();
+    expect(screen.getByText(plain(labels.errors.INVALID_CODE))).toBeVisible();
   });
 });
 

@@ -10,7 +10,7 @@ export function HomeApproachSection({ home }: HomeApproachSectionProps) {
       <div className="mx-auto flex w-full max-w-[1264px] flex-col gap-12 sm:gap-14">
         <div className="flex max-w-[750px] flex-col gap-5">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{home.approach.eyebrow}</p>
-          <h2 id="approach-title" className="text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
+          <h2 id="approach-title" className="text-balance text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
             {home.approach.title}
           </h2>
         </div>

@@ -14,6 +14,7 @@ vi.mock("@/realtime/useRoom", () => ({ useRoom: mocks.useRoom }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mocks.replace, push: vi.fn() }) }));
 
 import { RoomClient } from "./RoomClient";
+import { plain } from "@/test/text";
 
 let current: UseRoom;
 
@@ -54,7 +55,7 @@ describe("titre de la salle", () => {
   it.each(["fr", "en"] as const)("suit le statut de la salle (%s)", (locale) => {
     current = makeUseRoom({ room: hostRoom });
     const view = renderRoom({ locale });
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(view.labels.title);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(plain(view.labels.title));
 
     for (const status of ["countdown", "racing", "results"] as const) {
       setRoom(makeUseRoom({ room: { ...hostRoom, status } }), () => view.rerender(view.ui()));
@@ -71,7 +72,7 @@ describe("vue de l'hôte (CONF-12)", () => {
     const timeLimit = screen.getByRole("radiogroup", { name: settingsLabels.timeLimit.label });
     for (const radio of within(timeLimit).getAllByRole("radio")) expect(radio).toBeEnabled();
     expect(screen.getByRole("textbox", { name: settingsLabels.excludedChars.label })).not.toHaveAttribute("readonly");
-    expect(screen.queryByText(labels.config.hostOnly)).not.toBeInTheDocument();
+    expect(screen.queryByText(plain(labels.config.hostOnly))).not.toBeInTheDocument();
   });
 
   it("envoie le patch du protocole quand l'hôte change une valeur", () => {
@@ -186,7 +187,7 @@ describe("rejoindre au chargement (D6)", () => {
     current = makeUseRoom({ join });
     const { labels } = renderRoom({ code: "ABC" });
     expect(join).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent(labels.errors.INVALID_CODE);
+    expect(screen.getByRole("alert")).toHaveTextContent(plain(labels.errors.INVALID_CODE));
   });
 
   it("ne rejoint plus jamais après avoir quitté : pas de participant fantôme", async () => {
@@ -224,7 +225,7 @@ describe("quitter (D7, SALLE-08)", () => {
     setRoom(makeUseRoom({ room: null, error: "ROOM_CLOSED" }), () => view.rerender(view.ui()));
 
     expect(screen.getByRole("alert")).toHaveTextContent(view.labels.errors.ROOM_CLOSED);
-    expect(screen.queryByText(view.labels.errors.NOT_IN_ROOM)).not.toBeInTheDocument();
+    expect(screen.queryByText(plain(view.labels.errors.NOT_IN_ROOM))).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: view.labels.back })).toHaveAttribute("href", `/${locale}/play`);
     expect(mocks.replace).not.toHaveBeenCalled();
   });
@@ -275,7 +276,7 @@ describe("refus du serveur : message traduit, jamais le code brut", () => {
     current = makeUseRoom({ join });
     const { labels } = renderRoom({ locale });
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(labels.errors[code]);
+    expect(await screen.findByRole("alert")).toHaveTextContent(plain(labels.errors[code]));
     expect(screen.queryByText(code)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: labels.back })).toHaveAttribute("href", `/${locale}/play`);
   });
@@ -391,7 +392,7 @@ describe("départ dont l'accusé se perd", () => {
 
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/fr/play"));
     expect(mocks.replace).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(view.labels.errors.NOT_IN_ROOM)).not.toBeInTheDocument();
+    expect(screen.queryByText(plain(view.labels.errors.NOT_IN_ROOM))).not.toBeInTheDocument();
   });
 });
 
@@ -399,7 +400,7 @@ describe("connexion", () => {
   it("trop d'onglets ouverts : bandeau traduit", () => {
     current = makeUseRoom({ connection: "tooManyConnections" });
     const { labels } = renderRoom({ locale: "en" });
-    expect(screen.getByRole("status")).toHaveTextContent(labels.connection.tooManyConnections);
+    expect(screen.getByRole("status")).toHaveTextContent(plain(labels.connection.tooManyConnections));
   });
 
   it("affiche le bandeau « Connexion perdue » quand le socket est hors ligne", () => {
@@ -411,7 +412,7 @@ describe("connexion", () => {
   it("pas de bandeau quand tout va bien", () => {
     current = makeUseRoom({ room: hostRoom });
     const { labels } = renderRoom();
-    expect(screen.queryByText(labels.connection.offline)).not.toBeInTheDocument();
+    expect(screen.queryByText(plain(labels.connection.offline))).not.toBeInTheDocument();
   });
 
   it("session refusée par le service temps réel : redirige vers la connexion", () => {
@@ -446,8 +447,8 @@ describe("code de la salle (SALLE-02, JOIN-01)", () => {
       fireEvent.click(screen.getByRole("button", { name: labels.code.copy }));
     });
 
-    expect(screen.getByText(labels.code.copyFallback)).toBeVisible();
-    expect(screen.queryByText(labels.code.copied)).not.toBeInTheDocument();
+    expect(screen.getByText(plain(labels.code.copyFallback))).toBeVisible();
+    expect(screen.queryByText(plain(labels.code.copied))).not.toBeInTheDocument();
     expect(window.getSelection()?.toString()).toBe("ABC234");
   });
 });

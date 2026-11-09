@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
 import { SiteHeader } from "./SiteHeader";
+import { plain } from "@/test/text";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/fr" }));
 // Le formulaire de déconnexion branche l'action serveur ; seul son câblage est vérifié ici.
@@ -56,7 +57,7 @@ describe("SiteHeader", () => {
 
       expect(screen.getByRole("button", { name: "Alice_B" })).toHaveAttribute("aria-haspopup", "dialog");
       expect(screen.getAllByText("Alice_B")).toHaveLength(1);
-      expect(screen.queryByText(`(${dictionary.header.guest})`)).toBeNull();
+      expect(screen.queryByText(plain(`(${dictionary.header.guest})`))).toBeNull();
       expect(screen.getByRole("button", { name: dictionary.header.signOut })).toHaveAttribute("type", "submit");
       expect(screen.queryByRole("link", { name: dictionary.header.signIn })).toBeNull();
     });

@@ -10,7 +10,7 @@ export function HomeAboutSection({ home }: HomeAboutSectionProps) {
       <div className="mx-auto grid w-full max-w-[1264px] gap-10 lg:grid-cols-[480px_1fr] lg:gap-28">
         <div className="flex flex-col gap-5">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{home.about.eyebrow}</p>
-          <h2 id="about-title" className="text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
+          <h2 id="about-title" className="text-balance text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
             {home.about.title}
           </h2>
         </div>

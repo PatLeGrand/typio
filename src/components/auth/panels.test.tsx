@@ -4,6 +4,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { MascotIllustration } from "./MascotIllustration";
 import { ProgressIsland } from "./ProgressIsland";
 import { PromisePanel } from "./PromisePanel";
+import { plain } from "@/test/text";
 
 describe("MascotIllustration", () => {
   it.each(["fr", "en"] as const)("est décorative : tout est aria-hidden, image à alt vide, textes traduits (%s)", (locale) => {
@@ -14,7 +15,7 @@ describe("MascotIllustration", () => {
     const image = container.querySelector("img");
     expect(image).toHaveAttribute("alt", "");
     expect(image?.getAttribute("src")).toContain("mascotte-poulpe");
-    expect(container).toHaveTextContent(illustration.praise);
+    expect(container).toHaveTextContent(plain(illustration.praise));
     expect(container).toHaveTextContent(illustration.spaceKey);
     expect(screen.queryByRole("img")).toBeNull();
   });
@@ -37,7 +38,7 @@ describe("ProgressIsland", () => {
     const { container } = render(<ProgressIsland labels={island} />);
 
     for (const text of [island.zoneTitle, island.zoneText, island.progressTitle, island.progressText, island.perDay, island.rewards]) {
-      expect(screen.getByText(text)).toBeVisible();
+      expect(screen.getByText(plain(text))).toBeVisible();
     }
     expect(container.querySelector("img")).toBeNull();
   });
@@ -73,8 +74,8 @@ describe("PromisePanel", () => {
     expect(screen.getByText(promise.titleLine2)).toHaveClass("text-accent-text");
     expect(screen.getByText(promise.description)).toBeInTheDocument();
     expect(screen.getByText(promise.tipTitle)).toBeInTheDocument();
-    expect(screen.getByText(promise.tipText)).toBeInTheDocument();
-    for (const benefit of Object.values(promise.benefits)) expect(screen.getByText(benefit)).toBeInTheDocument();
+    expect(screen.getByText(plain(promise.tipText))).toBeInTheDocument();
+    for (const benefit of Object.values(promise.benefits)) expect(screen.getByText(plain(benefit))).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
   });
 

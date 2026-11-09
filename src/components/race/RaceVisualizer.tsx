@@ -39,6 +39,7 @@ interface RacerView {
   x: number; // position affichée (lissée), en px de piste
   vx: number; // vitesse affichée, en px/s
   phase: number; // phase du cycle de saut
+  labelHalfWidth: number; // encombrement à gauche du nom et de son avatar
   intensity: number; // 0 (à l'arrêt) → 1 (pleine vitesse), lissée
 }
 
@@ -56,6 +57,7 @@ const ACCELERATION = 4; // douceur des démarrages/arrêts (plus haut = plus ner
 const CAMERA_RATE = 5; // la caméra est plus lente que le Blob → effet d'élan
 const HOP_HEIGHT = 20; // hauteur max du saut en px
 const CAMERA_ANCHOR = 0.22; // position du joueur local à l'écran (fraction de largeur)
+const LABEL_STAGGER = 10; // décalage vertical des étiquettes, en px
 const AVATAR_SIZE = 22; // diamètre de l'avatar à côté du nom, en px
 
 /** Vrai quand les décors sont déjà déclarés auprès de `PIXI.Assets` (partagé par toutes les scènes). */
@@ -197,7 +199,7 @@ export function RaceVisualizer({
       return node;
     };
 
-    const createView = (racer: Racer, blobTexture: PIXI.Texture, startX: number, world: PIXI.Container): RacerView => {
+    const createView = (racer: Racer, blobTexture: PIXI.Texture, startX: number, world: PIXI.Container, labelIndex: number): RacerView => {
       const container = new PIXI.Container();
       const shadow = new PIXI.Graphics().ellipse(0, 0, 34, 8).fill({ color: 0x000000, alpha: 0.18 });
       const body = new PIXI.Container();
@@ -232,7 +234,7 @@ export function RaceVisualizer({
         style: { fontFamily: "sans-serif", fontSize: 13, fontWeight: "700", fill: 0xffffff, stroke: { color: 0x293c49, width: 4 } },
       });
       label.anchor.set(0.5, 1);
-      label.y = -blobTexture.height - 4;
+      label.y = -blobTexture.height - 4 - Math.min(labelIndex, 3) * LABEL_STAGGER;
       body.addChild(label);
 
       const avatar = createAvatar(racer);
@@ -248,7 +250,7 @@ export function RaceVisualizer({
       bonus.y = -blobTexture.height - 28;
       container.addChild(shadow, body, bonus);
       world.addChild(container);
-      return { container, body, shadow, bonus, x: startX, vx: 0, phase: 0, intensity: 0 };
+      return { container, body, shadow, bonus, labelHalfWidth: label.width / 2 + AVATAR_SIZE + 6, x: startX, vx: 0, phase: 0, intensity: 0 };
     };
 
     const init = async () => {
@@ -306,8 +308,8 @@ export function RaceVisualizer({
         const list = racersRef.current;
         const length = trackLengthRef.current;
         const groundBottom = Math.max(0, app.screen.height - 34);
-        // Garde les pieds sur la piste visible et une marge pour le Blob et son saut.
-        const groundTop = Math.min(groundBottom, Math.max(blobTexture.height + HOP_HEIGHT + AVATAR_SIZE + 8,
+        // Garde une marge pour les étiquettes étagées, le saut, le stretch et le balancement.
+        const groundTop = Math.min(groundBottom, Math.max((blobTexture.height + AVATAR_SIZE + 8 + Math.min(Math.max(0, list.length - 1), 3) * LABEL_STAGGER) * 1.08 + HOP_HEIGHT + AVATAR_SIZE,
           app.screen.height - PIXI.Assets.get<PIXI.Texture>("track").height));
         const laneGap = Math.min(14, (groundBottom - groundTop) / Math.max(1, list.length - 1));
 
@@ -316,19 +318,27 @@ export function RaceVisualizer({
         const localRaw = localRacer ? (localRacer.progress / 100) * length : 0;
         const previousLocalX = (localRacer && views.get(localRacer.id)?.x) ?? localRaw;
         const localX = localRaw < previousLocalX - 50 ? localRaw : previousLocalX;
+        const newViews = new Set<string>();
+        list.forEach((racer, index) => {
+          if (!views.has(racer.id)) {
+            views.set(racer.id, createView(racer, blobTexture, localX, world, index));
+            newViews.add(racer.id);
+          }
+        });
+        // Le nom et l’avatar débordent du corps ; réserver aussi le retard de caméra.
+        const labelHalfWidth = Math.max(0, ...list.map((racer) => views.get(racer.id)!.labelHalfWidth));
+        const leftMargin = Math.min(app.screen.width * CAMERA_ANCHOR * 0.8,
+          Math.max(EDGE_MARGIN, labelHalfWidth + MAX_SPEED / CAMERA_RATE));
         const maxAhead = Math.max(0, app.screen.width * (1 - CAMERA_ANCHOR) - EDGE_MARGIN);
-        const maxBehind = Math.max(0, app.screen.width * CAMERA_ANCHOR - EDGE_MARGIN / 2);
+        const maxBehind = Math.max(0, app.screen.width * CAMERA_ANCHOR - leftMargin);
 
         list.forEach((racer, index) => {
           const raw = (racer.progress / 100) * length;
           const target = racer === localRacer
             ? raw
             : localX + Math.max(-maxBehind, Math.min(maxAhead, raw - localRaw));
-          let view = views.get(racer.id);
-          if (!view) {
-            view = createView(racer, blobTexture, target, world);
-            views.set(racer.id, view);
-          }
+          const view = views.get(racer.id)!;
+          if (newViews.has(racer.id)) view.x = target;
 
           view.bonus.text = racer.bonusLabel ?? "";
 

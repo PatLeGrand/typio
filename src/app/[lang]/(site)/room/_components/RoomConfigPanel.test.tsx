@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import { DEFAULT_ROOM_CONFIG, type RoomConfig, type RoomConfigPatch } from "@/realtime/protocol";
 import { EXCLUDED_SEND_DELAY_MS, RoomConfigPanel } from "./RoomConfigPanel";
+import { plain } from "@/test/text";
 
 const { room: roomLabels, raceSettings } = getDictionary("fr");
 
@@ -53,7 +54,7 @@ describe("RoomConfigPanel, host", () => {
 
   it("does not show the host-only note", () => {
     setup();
-    expect(screen.queryByText(roomLabels.config.hostOnly)).not.toBeInTheDocument();
+    expect(screen.queryByText(plain(roomLabels.config.hostOnly))).not.toBeInTheDocument();
   });
 
   it("excluded characters: a single send, 500 ms after the last keystroke", () => {

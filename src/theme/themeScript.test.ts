@@ -15,6 +15,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   window.localStorage.clear();
   document.documentElement.classList.remove("dark");
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
 });
 
 describe("themeInitScript", () => {
@@ -66,4 +67,15 @@ describe("themeInitScript", () => {
     expect(() => runScript()).not.toThrow();
     expect(document.documentElement).not.toHaveClass("dark");
   });
+});
+
+it.each(["light", "dark"] as const)("crée puis réutilise theme-color en %s", (theme) => {
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
+  window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  runScript();
+  const meta = document.head.querySelector('meta[name="theme-color"]');
+  expect(meta).toHaveAttribute("content", theme === "dark" ? "#15121d" : "#fffcf7");
+  runScript();
+  expect(document.querySelectorAll('meta[name="theme-color"]')).toHaveLength(1);
+  expect(document.head.querySelector('meta[name="theme-color"]')).toBe(meta);
 });

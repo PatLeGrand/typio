@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+::selection {
+  background: var(--heat-2);
+  color: var(--foreground);
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*

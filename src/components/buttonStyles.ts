@@ -16,6 +16,6 @@ const variantClasses: Record<ButtonVariant, string> = {
  * Classes partagées par `Button` (élément `<button>`) et `ButtonLink` (lien de navigation
  * qui a l'apparence d'un bouton) : une seule source pour que les deux restent identiques.
  */
-export function buttonClasses(variant: ButtonVariant, fullWidth: boolean, className: string): string {
-  return `inline-flex items-center justify-center gap-2 rounded-field px-6 transition-colors disabled:cursor-not-allowed ${variantClasses[variant]} ${fullWidth ? "w-full" : ""} ${className}`;
+export function buttonClasses(variant: ButtonVariant, fullWidth: boolean, className: string, compactOnMobile = false): string {
+  return `inline-flex items-center justify-center gap-2 rounded-field ${compactOnMobile ? "whitespace-nowrap px-4 md:px-6" : "px-6"} transition-colors disabled:cursor-not-allowed ${variantClasses[variant]} ${fullWidth ? "w-full" : ""} ${className}`;
 }

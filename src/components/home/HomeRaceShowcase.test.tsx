@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -79,6 +79,7 @@ it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps the image 
   expect(screen.queryByTestId("scene")).toBeNull();
   expect(importVisualizer).not.toHaveBeenCalled();
   expect(vi.getTimerCount()).toBe(0);
+  expect(screen.queryByRole("button")).not.toBeInTheDocument();
 });
 
 it.each(["fr", "en"] as const)("renders the %s light and dark images on the server and initially", (locale) => {
@@ -95,7 +96,8 @@ it.each(["fr", "en"] as const)("renders the %s light and dark images on the serv
     expect(image).toHaveAttribute("height", "518");
     expect(image).toHaveClass("object-cover", theme === "light" ? "dark:hidden" : "dark:block");
     expect(image).toHaveClass(theme === "light" ? "block" : "hidden");
-    expect(image).not.toHaveAttribute("fetchpriority", "high");
+    expect(image).toHaveAttribute("fetchpriority", "high");
+    expect(image).toHaveAttribute("loading", "lazy");
   }
   expect(screen.queryByTestId("scene")).toBeNull();
   expect(importVisualizer).not.toHaveBeenCalled();
@@ -117,4 +119,21 @@ it("cancels pending idle work when the showcase leaves the viewport", () => {
   visible(false);
   expect(window.cancelIdleCallback).toHaveBeenCalledWith(1);
   expect(screen.queryByTestId("scene")).toBeNull();
+});
+
+it("keeps the user's pause when the showcase re-enters the viewport", () => {
+  render(<HomeRaceShowcase labels={labels} locale="fr" />);
+  visible(true);
+  act(() => idle({} as IdleDeadline));
+  const control = screen.getByRole("button", { name: labels.pause });
+  expect(control).toHaveClass("size-11", "absolute", "bottom-3", "right-3");
+  expect(control.closest('[aria-hidden="true"]')).toBeNull();
+  expect(control).toHaveTextContent("");
+  fireEvent.click(control);
+  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "true");
+  visible(false);
+  visible(true);
+  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "true");
+  fireEvent.click(screen.getByRole("button", { name: labels.resume }));
+  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "false");
 });

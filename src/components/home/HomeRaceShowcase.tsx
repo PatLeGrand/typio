@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaPlaybackButton } from "./MediaPlaybackButton";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -29,7 +30,8 @@ export function HomeRaceShowcase({ labels, locale }: { labels: Dictionary["home"
   const still = reducedMotion || !physicalKeyboard;
   const [activity, setActivity] = useState({ inView: false, hidden: true });
   const [ready, setReady] = useState(false);
-  const paused = !activity.inView || activity.hidden;
+  const [userPaused, setUserPaused] = useState(false);
+  const paused = userPaused || !activity.inView || activity.hidden;
   const [frame, setFrame] = useState({ progress: [0, 0, 0, 0], pauseTicks: 0, tick: 0 });
 
   useEffect(() => {
@@ -91,35 +93,44 @@ export function HomeRaceShowcase({ labels, locale }: { labels: Dictionary["home"
 
   return (
     <figure ref={figureRef} className="w-full min-w-0">
-      <div aria-hidden="true" className="relative h-[260px] w-full overflow-hidden rounded-[28px] border border-border bg-island-mint sm:h-[380px]">
-        <Image
-          src={`/home/race-showcase-${locale}-light.webp`}
-          alt=""
-          width={756}
-          height={518}
-          sizes="(min-width: 1328px) 1264px, calc(100vw - 32px)"
-          className="block h-full w-full object-cover dark:hidden"
-        />
-        <Image
-          src={`/home/race-showcase-${locale}-dark.webp`}
-          alt=""
-          width={756}
-          height={518}
-          sizes="(min-width: 1328px) 1264px, calc(100vw - 32px)"
-          className="hidden h-full w-full object-cover dark:block"
-        />
-        {ready && !still && <RaceVisualizer
-          trackLength={1500}
-          racers={labels.racers.map((name, index) => ({
-            id: `demo-${index}`,
-            name,
-            progress: frame.progress[index],
-            isLocal: index === 0,
-            hue: index * 47,
-          }))}
-          paused={paused}
-          maxFPS={30}
-          className="absolute inset-0 h-full w-full"
+      <div className="relative">
+        <div aria-hidden="true" className="relative h-[260px] w-full overflow-hidden rounded-[28px] border border-border bg-island-mint sm:h-[380px]">
+          <Image
+            src={`/home/race-showcase-${locale}-light.webp`}
+            alt=""
+            fetchPriority="high"
+            width={756}
+            height={518}
+            sizes="(min-width: 1328px) 1264px, calc(100vw - 32px)"
+            className="block h-full w-full object-cover dark:hidden"
+          />
+          <Image
+            src={`/home/race-showcase-${locale}-dark.webp`}
+            alt=""
+            fetchPriority="high"
+            width={756}
+            height={518}
+            sizes="(min-width: 1328px) 1264px, calc(100vw - 32px)"
+            className="hidden h-full w-full object-cover dark:block"
+          />
+          {ready && !still && <RaceVisualizer
+            trackLength={1500}
+            racers={labels.racers.map((name, index) => ({
+              id: `demo-${index}`,
+              name,
+              progress: frame.progress[index],
+              isLocal: index === 0,
+              hue: index * 47,
+            }))}
+            paused={paused}
+            maxFPS={30}
+            className="absolute inset-0 h-full w-full"
+          />}
+        </div>
+        {!still && <MediaPlaybackButton
+          playing={!userPaused}
+          label={userPaused ? labels.resume : labels.pause}
+          onClick={() => setUserPaused((value) => !value)}
         />}
       </div>
       <figcaption className="mt-3 text-center text-sm text-muted">{labels.caption}</figcaption>

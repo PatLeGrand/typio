@@ -2,6 +2,7 @@ import {
   DARK_COLOR_SCHEME_QUERY,
   DEFAULT_THEME_PREFERENCE,
   THEME_STORAGE_KEY,
+  THEME_COLORS,
   isThemePreference,
   resolveEffectiveTheme,
   type ThemePreference,
@@ -49,6 +50,13 @@ export function applyThemePreference(preference: ThemePreference): void {
   const systemPrefersDark = getSystemMedia()?.matches ?? false;
   const theme = resolveEffectiveTheme(preference, systemPrefersDark);
   document.documentElement.classList.toggle("dark", theme === "dark");
+  let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.appendChild(meta);
+  }
+  meta.content = THEME_COLORS[theme];
 }
 
 /** Mémorise le choix, l'applique et prévient les abonnés. */

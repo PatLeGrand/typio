@@ -9,6 +9,8 @@ export const DEFAULT_THEME_PREFERENCE: ThemePreference = "system";
 /** Clé `localStorage` de la préférence de thème. */
 export const THEME_STORAGE_KEY = "typio-theme";
 
+export const THEME_COLORS = { light: "#fffcf7", dark: "#15121d" } as const;
+
 export const DARK_COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
 export function isThemePreference(value: unknown): value is ThemePreference {

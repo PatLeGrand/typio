@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("./avatarActions", () => mocks);
 
 import { AvatarForm } from "./AvatarForm";
+import { plain } from "@/test/text";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -21,7 +22,7 @@ describe.each(["fr", "en"] as const)("AvatarForm (%s)", (locale) => {
   const labels = getDictionary(locale).profile.avatar;
   const setup = () => {
     render(<AvatarForm userId="member" displayName="Alice" version={null} labels={labels} />);
-    return screen.getByLabelText(labels.file);
+    return screen.getByLabelText(plain(labels.file));
   };
 
   it("affiche l'URL versionnée après téléversement et l'initiale après retrait", async () => {
@@ -37,7 +38,7 @@ describe.each(["fr", "en"] as const)("AvatarForm (%s)", (locale) => {
   it("annonce le dépassement de taille sans appeler le serveur", () => {
     const input = setup();
     fireEvent.change(input, { target: { files: [new File([new Uint8Array(MAX_AVATAR_BYTES + 1)], "large.png")] } });
-    expect(screen.getByText(labels.errors.TOO_LARGE)).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByText(plain(labels.errors.TOO_LARGE))).toHaveAttribute("aria-live", "polite");
     expect(screen.getByRole("button", { name: labels.upload })).toBeDisabled();
     expect(mocks.uploadAvatar).not.toHaveBeenCalled();
   });
@@ -47,6 +48,6 @@ describe.each(["fr", "en"] as const)("AvatarForm (%s)", (locale) => {
     mocks.uploadAvatar.mockResolvedValue({ ok: false, code: "UNSUPPORTED_TYPE" });
     fireEvent.change(input, { target: { files: [new File(["gif"], "photo.gif")] } });
     await act(async () => { fireEvent.submit(input.closest("form")!); });
-    expect(screen.getByText(labels.errors.UNSUPPORTED_TYPE)).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByText(plain(labels.errors.UNSUPPORTED_TYPE))).toHaveAttribute("aria-live", "polite");
   });
 });

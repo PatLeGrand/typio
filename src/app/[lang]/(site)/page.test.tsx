@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -31,6 +31,8 @@ const member: CurrentUser = {
 beforeEach(() => {
   mocks.getCurrentUserForDisplay.mockResolvedValue(null);
   mocks.visualizer.mockClear();
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   vi.stubGlobal("IntersectionObserver", class {
     constructor(private callback: IntersectionObserverCallback) {}
@@ -55,7 +57,7 @@ describe("Home", () => {
     expect(screen.getByText(home.why.title)).toBeVisible();
     expect(screen.getByText(home.video.title)).toBeVisible();
     const video = screen.getByLabelText(home.media.videoLabel);
-    expect(video).toHaveAttribute("autoplay");
+    expect(video).not.toHaveAttribute("autoplay");
     expect(video).toHaveAttribute("loop");
     expect(video.querySelector("source")).toHaveAttribute("src", "/videos/typio-intro.mp4");
     expect(screen.getByText(home.approach.title)).toBeVisible();
@@ -174,4 +176,14 @@ describe("Home", () => {
   it("répond par une 404 pour une locale inconnue", async () => {
     await expect(Home(props("de"))).rejects.toMatchObject({ digest: expect.stringContaining("404") });
   });
+});
+
+it("focuses the room code field after an invalid submission", async () => {
+  const labels = getDictionary("fr").home.joinByCode;
+  render(await Home(props("fr")));
+  fireEvent.click(screen.getByRole("button", { name: labels.button }));
+  const input = screen.getByRole("textbox", { name: labels.label });
+  expect(input).toHaveFocus();
+  expect(input).toBeInvalid();
+  expect(input).toHaveAccessibleDescription(labels.invalidCode);
 });

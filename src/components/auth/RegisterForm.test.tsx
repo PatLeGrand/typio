@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/auth/actions", () => ({ register: mocks.register }));
 
 import { RegisterForm } from "./RegisterForm";
+import { plain } from "@/test/text";
 
 function renderForm(locale: "fr" | "en" = "fr") {
   const dictionary = getDictionary(locale);
@@ -191,7 +192,7 @@ describe("RegisterForm", () => {
 
       await submit();
 
-      expect(screen.getByRole("alert")).toHaveTextContent(auth.errors[code]);
+      expect(screen.getByRole("alert")).toHaveTextContent(plain(auth.errors[code]));
     });
   });
 
@@ -202,7 +203,7 @@ describe("RegisterForm", () => {
 
       await submit();
 
-      expect(screen.getByRole("alert")).toHaveTextContent(auth.errors[code]);
+      expect(screen.getByRole("alert")).toHaveTextContent(plain(auth.errors[code]));
       document.body.replaceChildren();
     }
   });
