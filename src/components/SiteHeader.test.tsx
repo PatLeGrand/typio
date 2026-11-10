@@ -48,6 +48,26 @@ describe("SiteHeader", () => {
       expect(screen.getByRole("link", { name: dictionary.header.signUp })).toHaveAttribute("href", `/${locale}/register`);
       expect(screen.queryByRole("button", { name: dictionary.header.signOut })).toBeNull();
     });
+
+    it("aligne les liens sur 44 px et réserve l'icône Entrée aux écrans sm et plus", () => {
+      const dictionary = getDictionary(locale);
+      render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
+
+      expect(screen.getByRole("link", { name: dictionary.header.signIn })).toHaveClass("min-h-11", "text-accent-text");
+      const signUp = screen.getByRole("link", { name: dictionary.header.signUp });
+      expect(signUp).toHaveClass("min-h-11", "bg-key-yellow", "text-key-ink", "whitespace-nowrap");
+      expect(signUp.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+      expect(signUp.querySelector("svg")).toHaveClass("hidden", "size-4", "sm:block");
+    });
+  });
+
+  it.each(["fr", "en"] as const)("souligne les trois liens centraux au survol et au clavier (%s)", (locale) => {
+    const dictionary = getDictionary(locale);
+    render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
+
+    for (const name of [dictionary.home.navigation.why, dictionary.home.navigation.preview, dictionary.home.navigation.approach]) {
+      expect(screen.getByRole("link", { name })).toHaveClass("hover:underline", "focus-visible:underline", "decoration-dashed", "decoration-2", "underline-offset-8");
+    }
   });
 
   describe.each(["fr", "en"] as const)("connecté (%s)", (locale) => {

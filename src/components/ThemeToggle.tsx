@@ -32,7 +32,7 @@ export function ThemeToggle({ labels, compact = false }: ThemeToggleProps) {
         aria-label={`${labels.label}: ${labels[preference]}`}
         title={`${labels.label}: ${labels[preference]}`}
         onClick={() => setThemePreference(nextPreference)}
-        className="inline-flex size-11 items-center justify-center rounded-field border border-border bg-surface text-foreground transition-colors hover:bg-accent-soft"
+        className="inline-flex size-11 items-center justify-center rounded-field text-muted transition-colors hover:bg-accent-soft hover:text-foreground"
       >
         <Icon aria-hidden="true" className="size-[18px]" />
       </button>

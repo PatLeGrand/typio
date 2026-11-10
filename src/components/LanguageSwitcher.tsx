@@ -37,7 +37,7 @@ export function LanguageSwitcher({ locale, labels, compact = false }: LanguageSw
       hrefLang={target}
       lang={target}
       aria-label={compact ? `${target.toUpperCase()} — ${labels.names[target]}` : undefined}
-      className="inline-flex min-h-11 items-center rounded-field border border-border bg-surface px-4 text-sm font-semibold text-foreground transition-colors hover:bg-accent-soft"
+      className={`inline-flex min-h-11 items-center rounded-field text-sm font-semibold transition-colors hover:bg-accent-soft ${compact ? "px-3 text-muted hover:text-foreground" : "border border-border bg-surface px-4 text-foreground"}`}
     >
       {compact ? <Globe2 aria-hidden="true" className="mr-2 size-[18px]" /> : null}
       {compact ? target.toUpperCase() : labels.names[target]}

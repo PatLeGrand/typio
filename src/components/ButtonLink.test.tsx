@@ -44,6 +44,15 @@ describe("ButtonLink", () => {
     expect(screen.getByRole("link", { name: "Go" })).toHaveClass("bg-accent", "min-h-14");
   });
 
+  it("variante key : conserve le relief sur un lien", () => {
+    render(<ButtonLink href="/fr/register" variant="key">Créer un compte</ButtonLink>);
+    expect(screen.getByRole("link", { name: "Créer un compte" })).toHaveClass(
+      "bg-key-yellow", "text-key-ink", "min-h-11",
+      "not-disabled:shadow-[0_4px_0_color-mix(in_oklab,var(--key-yellow),var(--key-ink)_35%)]",
+      "not-disabled:active:translate-y-[3px]",
+    );
+  });
+
   it("garde le nom accessible du texte quand une icône décorative précède le libellé", () => {
     render(
       <ButtonLink href="/fr/guest" variant="secondary">

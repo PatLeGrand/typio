@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, CornerDownLeft } from "lucide-react";
 import { logout } from "@/auth/actions";
 import { AUTH_FIELDS, type CurrentUser } from "@/auth/types";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -62,19 +62,19 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
           <Logo name={dictionary.site.name} />
         </Link>
         <nav className={`order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted ${user ? "xl:flex xl:order-none xl:w-auto" : "lg:flex lg:order-none lg:w-auto"}`} aria-label={dictionary.navigation.main}>
-          <Link href={`/${locale}#why`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.why}</Link>
-          <Link href={`/${locale}#video`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
-          <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>
+          <Link href={`/${locale}#why`} className="rounded-field hover:text-foreground hover:underline focus-visible:underline decoration-dashed decoration-2 underline-offset-8">{dictionary.home.navigation.why}</Link>
+          <Link href={`/${locale}#video`} className="rounded-field hover:text-foreground hover:underline focus-visible:underline decoration-dashed decoration-2 underline-offset-8">{dictionary.home.navigation.preview}</Link>
+          <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground hover:underline focus-visible:underline decoration-dashed decoration-2 underline-offset-8">{dictionary.home.navigation.approach}</Link>
         </nav>
         <div className="contents md:flex md:min-w-0 md:flex-wrap md:items-center md:justify-end md:gap-2">
-          <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <div className="ml-auto flex items-center gap-1 md:ml-0">
             <LanguageSwitcher locale={locale} labels={dictionary.language} compact />
             <ThemeToggle labels={dictionary.theme} compact />
           </div>
           {user ? (
             <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-end gap-2 md:w-auto">
               <ProfileModal user={user} dictionary={dictionary} locale={locale}>
-                <span className="text-sm font-semibold text-foreground flex min-w-0 items-center gap-2">
+                <span className="text-sm font-semibold text-foreground flex min-h-11 min-w-0 items-center gap-2">
                   <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={28} />
                   <span className={user.kind === "guest" ? "max-w-24 truncate" : "max-w-24 truncate md:max-w-40"}>{user.displayName}</span>
                   {user.kind === "guest" ? (
@@ -100,7 +100,10 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
               <ButtonLink href={`/${locale}/login`} variant="ghost" compactOnMobile>
                 {dictionary.header.signIn}
               </ButtonLink>
-              <ButtonLink href={`/${locale}/register`} compactOnMobile>{dictionary.header.signUp}</ButtonLink>
+              <ButtonLink href={`/${locale}/register`} variant="key" compactOnMobile>
+                {dictionary.header.signUp}
+                <CornerDownLeft aria-hidden="true" className="hidden size-4 sm:block" />
+              </ButtonLink>
             </div>
           )}
         </div>

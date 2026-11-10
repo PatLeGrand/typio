@@ -56,15 +56,21 @@ describe("Button", () => {
     expect(button).not.toHaveClass("bg-accent", "border");
   });
 
+  it("variante key : touche jaune compacte", () => {
+    render(<Button variant="key">Entrée</Button>);
+    expect(screen.getByRole("button", { name: "Entrée" })).toHaveClass("bg-key-yellow", "text-key-ink", "min-h-11", "py-2", "text-sm", "font-bold");
+  });
+
   it("hauteurs minimales (jamais fixes) pour ne pas couper un libellé long", () => {
     render(
       <>
         <Button>Primaire</Button>
         <Button variant="secondary">Secondaire</Button>
         <Button variant="ghost">Discret</Button>
+        <Button variant="key">Entrée</Button>
       </>,
     );
-    for (const name of ["Primaire", "Secondaire", "Discret"]) {
+    for (const name of ["Primaire", "Secondaire", "Discret", "Entrée"]) {
       const classes = screen.getByRole("button", { name }).className.split(" ");
       expect(classes.some((c) => c.startsWith("min-h-"))).toBe(true);
       expect(classes.some((c) => /^h-\d/.test(c))).toBe(false);
