@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -34,6 +34,10 @@ beforeEach(() => {
   vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  vi.stubGlobal("ResizeObserver", class {
+    observe() {}
+    disconnect() {}
+  });
   vi.stubGlobal("IntersectionObserver", class {
     constructor(private callback: IntersectionObserverCallback) {}
     observe() { this.callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver); }
@@ -61,11 +65,26 @@ describe("Home", () => {
     expect(video).toHaveAttribute("loop");
     expect(video.querySelector("source")).toHaveAttribute("src", "/videos/typio-intro.mp4");
     expect(screen.getByText(home.approach.title)).toBeVisible();
+    for (const step of home.approach.steps) {
+      expect(screen.getByRole("heading", { level: 3, name: step.title })).toBeVisible();
+      expect(screen.getByText(step.description.replaceAll("\u00a0", " "))).toBeVisible();
+    }
+    for (const id of ["why", "video", "approach"]) {
+      expect(document.getElementById(id)).toHaveAttribute("aria-labelledby", `${id}-title`);
+    }
+    expect(screen.getByRole("heading", { level: 2, name: home.about.title })).toBeVisible();
+    expect(within(screen.getByRole("region", { name: home.about.title })).getByText(home.about.signature)).toBeVisible();
+    expect(screen.getByRole("heading", { level: 2, name: home.cta.title })).toBeVisible();
     for (const link of screen.getAllByRole("link", { name: home.createRace })) {
       expect(link).toHaveAttribute("href", `/${lang}/race/settings`);
     }
     expect(screen.getByRole("textbox", { name: home.joinByCode.label })).toBeVisible();
     expect(screen.getByRole("button", { name: home.joinByCode.button })).toBeEnabled();
+    const trial = screen.getByRole("textbox", { name: home.playableRace.inputLabel });
+    expect(trial).toBeVisible();
+    expect(trial).not.toHaveFocus();
+    const createRace = screen.getAllByRole("link", { name: home.createRace })[0];
+    expect(trial.compareDocumentPosition(createRace) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it.each(["fr", "en"] as const)("un visiteur peut créer un compte ou se connecter (%s)", async (lang) => {

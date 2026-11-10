@@ -206,14 +206,32 @@
       "approach": "Approach"
     },
     "hero": {
-      "titleLine1": "Little by little,",
-      "titleLine2": "more at ease on the keyboard.",
-      "description": "Typio is a place to learn keyboard skills and build good habits at your own pace."
+      "titleLine1": "Your friends type fast.",
+      "titleLine2": "Type faster.",
+      "description": "One race, a few sentences, everyone on the same track. Try it now: just start typing."
+    },
+    "playableRace": {
+      "prompt": "Your turn: start typing.",
+      "racing": "Go go go!",
+      "inputLabel": "Copy the sentence to race",
+      "hint": "Use Backspace to correct. Escape to leave.",
+      "wpm": "WPM",
+      "accuracy": "Accuracy",
+      "place": "Place",
+      "replay": "Play again",
+      "challenge": "Challenge my friends",
+      "progress": "Racer progress",
+      "result": "Race finished: {wpm} WPM, {accuracy} accuracy, place {place} out of 4.",
+      "texts": [
+        "The octopus puts on running shoes and joins a few friends for a race on the beach.",
+        "Your fingers fly across the keyboard while your friends race towards the finish.",
+        "One last turn under the palm trees and the whole crew is ready for another race."
+      ]
     },
     "raceShowcase": {
       "pause": "Pause the race",
       "resume": "Resume the race",
-      "caption": "A demo race: you and three bots move along the track at your typing pace.",
+      "caption": "A trial race against three bots, with no account or saved score.",
       "racers": [
         "You",
         "Bot Azure",
@@ -229,42 +247,38 @@
       "videoDescription": "Your browser cannot play the Typio presentation video."
     },
     "why": {
-      "eyebrow": "Why Typio?",
-      "title": "The keyboard is part of everyday life. Learning it should be too.",
-      "description": "Writing a text, preparing homework, sharing an idea… Typio starts with a simple goal: helping students become comfortable with typing."
+      "title": "A keyboard, your friends, one finish line.",
+      "description": "Homework, messages, projects: it all goes through the keyboard. Might as well get better by overtaking your friends."
     },
     "video": {
-      "eyebrow": "In video",
-      "title": "A closer look at Typio.",
-      "description": "A place to show the project, its interface and its purpose."
+      "title": "A real race, up close.",
+      "description": "From the countdown to the results, see how a race plays out."
     },
     "approach": {
-      "eyebrow": "The approach",
-      "title": "Simple habits. Time to learn.",
+      "title": "Three steps to the finish.",
       "steps": [
         {
-          "title": "Find your bearings",
-          "description": "Observe the keyboard and find a comfortable position before getting started."
+          "title": "Create your room",
+          "description": "Set up the race, then share the code with your friends."
         },
         {
-          "title": "Practise calmly",
-          "description": "Type with care without trying to speed up at all costs."
+          "title": "Start the countdown",
+          "description": "Everyone takes off at once, on the same text."
         },
         {
-          "title": "Return at your pace",
-          "description": "Start again to become familiar with the keys, little by little."
+          "title": "Take the lead",
+          "description": "Aim for accuracy as well as speed: only correct characters move you forward."
         }
       ]
     },
     "about": {
-      "eyebrow": "Behind Typio",
-      "title": "A project built around an everyday skill.",
-      "description": "Typio is a keyboard-learning project for students. This page presents its purpose, previews and approach: making keyboard practice feel more familiar.",
+      "title": "Built to help you improve while having fun.",
+      "description": "Typio is a project made for students: the more you play, the more natural the keyboard feels.",
       "signature": "Little by little, faster at the keyboard."
     },
     "cta": {
-      "title": "Your turn to take the keyboard.",
-      "description": "The first step begins with a few keys.",
+      "title": "Your spot on the track is waiting.",
+      "description": "Create a room, send the code, and may the fastest typist win.",
       "existingAccount": "Already have an account?"
     }
   },
