@@ -17,7 +17,7 @@ export async function generateMetadata({ params, searchParams }: {
   const locale = requireLocale((await params).lang);
   if (deserializeRaceSettings((await searchParams).config)) return {};
   const { raceEntry, site } = getDictionary(locale);
-  return { title: `${raceEntry.title} | ${site.name}` };
+  return { title: `${raceEntry.invalidTitle} | ${site.name}` };
 }
 
 /** Seed for the bot names, drawn on the server with the text so hydration matches. */
@@ -48,7 +48,7 @@ export default async function RacePage({ params, searchParams }: {
     return (
       <StatusPageFrame locale={locale} dictionary={dictionary}>
         <main className="mx-auto flex w-full flex-1 max-w-3xl flex-col gap-6 px-4 py-12 text-foreground">
-          <h1 className="text-3xl font-bold">{copy.title}</h1>
+          <h1 className="text-3xl font-bold">{copy.invalidTitle}</h1>
           <p role="alert">{copy.invalid}</p>
           <ButtonLink href={`/${locale}/race/settings`}>{copy.back}</ButtonLink>
         </main>

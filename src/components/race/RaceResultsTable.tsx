@@ -41,7 +41,7 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId,
       <table className="w-full min-w-[40rem] table-fixed text-left text-sm">
         <caption className="sr-only">{labels.tableTitle}</caption>
         <colgroup>
-          {["7.5%", "20.5%", "8%", "10%", "11%", "9%", "10%", "11%", "13%"].map((width, index) => <col key={index} style={{ width }} />)}
+          {["6%", "28%", "8%", "8%", "10%", "8%", "9%", "10%", "13%"].map((width, index) => <col key={index} style={{ width }} />)}
         </colgroup>
         <thead><tr>
           {[columns.rank, columns.name, columns.wpm, extraLabels.grossWpm, columns.accuracy, extraLabels.errors, columns.time, columns.bonuses, columns.status].map((label) => <th key={label} scope="col" className="px-2 py-2">{label}</th>)}

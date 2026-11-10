@@ -51,6 +51,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   const typingRef = useRef<HTMLInputElement>(null);
   const finishRef = useRef<HTMLHeadingElement>(null);
   const [confirmAbandon, setConfirmAbandon] = useState(false);
+  const [focusAbandon, setFocusAbandon] = useState(false);
   const [pending, setPending] = useState(false);
   const [now, setNow] = useState<number | null>(null);
   const physicalKeyboard = usePhysicalKeyboard();
@@ -151,8 +152,8 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
         {confirmAbandon ? <div role="group" aria-label={labels.confirmAbandon} className="flex flex-wrap items-center gap-3">
           <p>{labels.confirmAbandon}</p>
           <Button disabled={pending || connection !== "connected"} onClick={() => { buffer.clear(); void command(abandonRace).then(() => setConfirmAbandon(false)); }}>{labels.confirm}</Button>
-          <Button autoFocus variant="secondary" onClick={() => { setConfirmAbandon(false); typingRef.current?.focus(); }}>{labels.cancel}</Button>
-        </div> : <Button variant="secondary" onClick={() => setConfirmAbandon(true)}>{raceLabels.abandon}</Button>}
+          <Button autoFocus variant="secondary" onClick={() => { setFocusAbandon(!typingRef.current); setConfirmAbandon(false); typingRef.current?.focus(); }}>{labels.cancel}</Button>
+        </div> : <Button autoFocus={focusAbandon} variant="secondary" onClick={() => { setFocusAbandon(false); setConfirmAbandon(true); }}>{raceLabels.abandon}</Button>}
       </> : null}
     </section>
   );

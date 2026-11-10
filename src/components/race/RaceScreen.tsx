@@ -76,6 +76,7 @@ export function RaceScreen({
   });
   const typingRef = useRef<HTMLInputElement>(null);
   const [confirmAbandon, setConfirmAbandon] = useState(false);
+  const [focusAbandon, setFocusAbandon] = useState(false);
   const physicalKeyboard = usePhysicalKeyboard();
   const settingsHref = `/${locale}/race/settings?${serializeRaceSettings(settings)}`;
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
@@ -139,8 +140,8 @@ export function RaceScreen({
             {confirmAbandon && racing ? <div role="group" aria-label={roomLabels.confirmAbandon} className="flex flex-wrap items-center gap-3">
               <p>{roomLabels.confirmAbandon}</p>
               <Button onClick={() => { abandon(); setConfirmAbandon(false); }}>{roomLabels.confirm}</Button>
-              <Button autoFocus variant="secondary" onClick={() => { setConfirmAbandon(false); typingRef.current?.focus(); }}>{roomLabels.cancel}</Button>
-            </div> : <Button variant="secondary" disabled={!racing} onClick={() => setConfirmAbandon(true)} className="min-h-11 py-2">
+              <Button autoFocus variant="secondary" onClick={() => { setFocusAbandon(!typingRef.current); setConfirmAbandon(false); typingRef.current?.focus(); }}>{roomLabels.cancel}</Button>
+            </div> : <Button autoFocus={focusAbandon} variant="secondary" disabled={!racing} onClick={() => { setFocusAbandon(false); setConfirmAbandon(true); }} className="min-h-11 py-2">
               <Flag aria-hidden="true" className="size-4" />
               {labels.abandon}
             </Button>}

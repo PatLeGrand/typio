@@ -69,7 +69,7 @@
       "Lia"
     ],
     "stats": {
-      "title": "Game Stats",
+      "title": "Game stats",
       "timeLeft": "Time left:",
       "time": "Time:",
       "wpm": "WPM:",
@@ -411,7 +411,8 @@
       "preferences": "Your language and your keyboard layout.",
       "session": "Your session on the server: a fingerprint of your session token and its expiry date. The token itself is not stored.",
       "avatar": "If you upload a profile photo, Typio stores it. You can remove it from your profile.",
-      "results": "Your race results."
+      "results": "Your race results.",
+      "room": "A temporary link between your account and your room, with its code and the date you joined, to keep you from being in two rooms at once. It is deleted when you leave the room, when you are removed from it or when the game server restarts."
     },
     "cookiesTitle": "Cookies and storage",
     "cookies": {

@@ -60,7 +60,7 @@ export function WpmChart({ rows, locale, labels, highlightId }: Props) {
         <table className="mt-2 w-full table-fixed text-left [overflow-wrap:anywhere]">
           <caption className="sr-only">{copy.accessibleSummary}</caption>
           <thead><tr>
-            <th scope="col" className="p-2">{labels.columns.name}</th>
+            <th scope="col" className="w-1/2 p-2">{labels.columns.name}</th>
             <th scope="col" className="p-2">{copy.finalWpm}</th>
             <th scope="col" className="p-2">{copy.peakWpm}</th>
           </tr></thead>

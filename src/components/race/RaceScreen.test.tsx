@@ -423,4 +423,8 @@ it.each(["fr", "en"] as const)("DES-06 : remplace la saisie sans clavier physiqu
   expect(window.matchMedia).toHaveBeenCalledWith("(min-width: 768px) and (pointer: fine)");
   expect(screen.getByText(getDictionary(locale).room.race.keyboard)).toBeInTheDocument();
   expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
+  const roomLabels = getDictionary(locale).room.race;
+  fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+  fireEvent.click(screen.getByRole("button", { name: roomLabels.cancel }));
+  expect(screen.getByRole("button", { name: labels.abandon })).toHaveFocus();
 });

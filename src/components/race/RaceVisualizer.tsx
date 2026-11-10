@@ -407,9 +407,7 @@ export function RaceVisualizer({
           cameraX += (localView.x - cameraX) * (1 - Math.exp(-CAMERA_RATE * dt));
         }
 
-        if (!reducedMotion) {
-          for (const { sprite, speed } of layers) sprite.tilePosition.x = -cameraX * speed;
-        }
+        for (const { sprite, speed } of layers) sprite.tilePosition.x = -cameraX * speed;
         world.x = -cameraX + app.screen.width * CAMERA_ANCHOR;
       };
       const drawScene = () => {

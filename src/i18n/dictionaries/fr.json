@@ -411,7 +411,8 @@
       "preferences": "Ta langue et la disposition de ton clavier.",
       "session": "Ta session sur le serveur : l'empreinte du jeton de ta session et sa date d'expiration. Le jeton lui-même n'est pas stocké.",
       "avatar": "Si tu ajoutes une photo de profil, Typio l’enregistre. Tu peux la retirer depuis ton profil.",
-      "results": "Tes résultats de course."
+      "results": "Tes résultats de course.",
+      "room": "Un lien temporaire entre ton compte et ta salle, avec son code et ta date d’entrée, pour éviter que tu sois dans deux salles à la fois. Il est effacé quand tu quittes la salle, quand tu en es retiré ou quand le serveur de jeu redémarre."
     },
     "cookiesTitle": "Cookies et stockage",
     "cookies": {
@@ -639,7 +640,7 @@
     "identity": {
       "displayName": "Nom affiché",
       "usernameHelp": "Lecture seule · ton identifiant reste le même.",
-      "guestSince": "Invité depuis",
+      "guestSince": "Invité depuis le",
       "memberSince": "Membre depuis le",
       "member": "Membre",
       "noUsername": "Aucun (invité)",
