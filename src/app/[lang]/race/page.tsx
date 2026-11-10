@@ -1,6 +1,7 @@
 import { getCurrentUserForDisplay } from "@/auth/currentUser";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { StatusPageFrame } from "@/components/StatusPageFrame";
 import { ButtonLink } from "@/components/ButtonLink";
 import { RaceScreen } from "@/components/race/RaceScreen";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -34,14 +35,13 @@ export default async function RacePage({ params, searchParams }: {
 
   if (!settings) {
     return (
-      <>
-        {preferences}
-        <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-6 px-4 py-12 text-foreground">
+      <StatusPageFrame locale={locale} dictionary={dictionary}>
+        <main className="mx-auto flex w-full flex-1 max-w-3xl flex-col gap-6 px-4 py-12 text-foreground">
           <h1 className="text-3xl font-bold">{copy.title}</h1>
           <p role="alert">{copy.invalid}</p>
           <ButtonLink href={`/${locale}/race/settings`}>{copy.back}</ButtonLink>
         </main>
-      </>
+      </StatusPageFrame>
     );
   }
 

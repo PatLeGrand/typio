@@ -430,7 +430,8 @@
   "errorPage": {
     "title": "Oops, something went wrong",
     "text": "An error occurred. Try again in a moment.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "home": "Back to home"
   },
   "notFound": {
     "eyebrow": "Error 404",

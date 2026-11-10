@@ -1,13 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MascotIllustration } from "@/components/auth/MascotIllustration";
+import { StatusPageFrame } from "@/components/StatusPageFrame";
 import { ButtonLink } from "@/components/ButtonLink";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { Logo } from "@/components/Logo";
-import { SiteFooter } from "@/components/SiteFooter";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { defaultLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getPathLocale } from "@/i18n/paths";
@@ -19,17 +15,7 @@ export default function NotFoundPage() {
   const { notFound } = dictionary;
 
   return (
-    <div className="flex min-h-dvh w-full flex-col">
-      <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-8">
-        <Link href={`/${locale}`} className="rounded-field">
-          <Logo name={dictionary.site.name} tagline={dictionary.brand.tagline} />
-        </Link>
-        <nav aria-label={dictionary.navigation.preferences} className="flex flex-wrap items-center gap-2">
-          <LanguageSwitcher locale={locale} labels={dictionary.language} />
-          <ThemeToggle labels={dictionary.theme} />
-        </nav>
-      </header>
-
+    <StatusPageFrame locale={locale} dictionary={dictionary}>
       <main className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:gap-12 lg:py-12">
         <section className="flex flex-col items-start text-left">
           <p className="mb-4 rounded-full bg-accent-soft px-4 py-2 text-sm font-extrabold uppercase tracking-[0.12em] text-accent-text">
@@ -48,7 +34,6 @@ export default function NotFoundPage() {
           <MascotIllustration labels={dictionary.illustration} />
         </div>
       </main>
-      <SiteFooter locale={locale} labels={dictionary.footer} />
-    </div>
+    </StatusPageFrame>
   );
 }

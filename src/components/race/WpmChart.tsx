@@ -51,13 +51,13 @@ export function WpmChart({ rows, locale, labels, highlightId }: Props) {
         {rows.map((row, index) => (
           <li key={row.id} className={`flex min-w-0 items-center gap-2 ${row.id === highlightId ? "font-extrabold" : ""}`}>
             <span aria-hidden="true" className="wpm-series inline-block w-5 shrink-0 border-t" style={{ ...seriesStyle(index), borderTopWidth: row.id === highlightId ? 3 : 1.5 }} />
-            <span className="break-words">{row.name}</span>
+            <span className="[overflow-wrap:anywhere]">{row.name}</span>
           </li>
         ))}
       </ul>
       <details className="mt-4 text-sm">
         <summary className="cursor-pointer">{copy.dataSummary}</summary>
-        <table className="mt-2 w-full text-left">
+        <table className="mt-2 w-full table-fixed text-left [overflow-wrap:anywhere]">
           <caption className="sr-only">{copy.accessibleSummary}</caption>
           <thead><tr>
             <th scope="col" className="p-2">{labels.columns.name}</th>
@@ -67,8 +67,8 @@ export function WpmChart({ rows, locale, labels, highlightId }: Props) {
           <tbody>{rows.map((row) => (
             <tr key={row.id} className="border-t border-border">
               <th scope="row" className="break-words p-2">{row.name}</th>
-              <td className="p-2">{number.format(row.wpm)}</td>
-              <td className="p-2">{number.format(Math.max(row.wpm, ...row.wpmSeries.slice(0, Math.ceil(row.timeMs / 1000))))}</td>
+              <td className="p-2 tabular-nums">{number.format(row.wpm)}</td>
+              <td className="p-2 tabular-nums">{number.format(Math.max(row.wpm, ...row.wpmSeries.slice(0, Math.ceil(row.timeMs / 1000))))}</td>
             </tr>
           ))}</tbody>
         </table>
