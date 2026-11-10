@@ -29,6 +29,8 @@ export function HomeRaceTrack() {
     let loading = false;
     let runnerRoute = "";
     let startY = 0;
+    let revealAt = 0;
+    let revealDuration = 0;
     let routeEase = (value: number) => value;
 
     function measure() {
@@ -44,13 +46,15 @@ export function HomeRaceTrack() {
       });
       if (!points.length || !bounds.width || !bounds.height) return;
       // Les ancres réservent 80 px sur le côté et 32 px autour de chaque bloc.
-      const heroTrack = host!.previousElementSibling?.querySelector<HTMLElement>("[data-home-race-track]");
       const typingPanel = host!.previousElementSibling?.querySelector<HTMLElement>("[data-home-typing]")?.getBoundingClientRect();
-      startY = heroTrack ? heroTrack.getBoundingClientRect().bottom - bounds.top - 40 : 0;
-      points.unshift({ x: typingPanel ? Math.min(points[0].x, typingPanel.right - bounds.left - 40) : points[0].x, y: startY });
+      startY = typingPanel ? typingPanel.top + typingPanel.height / 2 - bounds.top : 0;
+      const inset = typingPanel ? Math.min(40, typingPanel.width / 2) : 0;
+      points.unshift({ x: typingPanel ? Math.max(typingPanel.left - bounds.left + inset, Math.min(points[0].x, typingPanel.right - bounds.left - inset)) : points[0].x, y: startY });
       const finish = points[points.length - 1];
       // Le bas du personnage (22 px) s’arrête au début du damier (20 px).
       const end = { x: finish.x, y: finish.y - 42 };
+      revealAt = typingPanel ? Math.max(0, Math.min(1, (typingPanel.bottom - bounds.top - startY) / (end.y - startY))) : 0;
+      revealDuration = Math.min(1 - revealAt, 24 / Math.max(1, end.y - startY));
       // Une approche verticale garde aussi le personnage à l’écart du drapeau.
       points.splice(points.length - 1, 1, { x: finish.x, y: finish.y - 160 }, end);
       const d = points.reduce((route, point, index) => {
@@ -100,8 +104,9 @@ export function HomeRaceTrack() {
           context.add(() => {
             const finish = host!.querySelector("[data-track-point='finish']");
             const flag = host!.querySelector("[data-track-flag]");
+            const veil = host!.querySelector("[data-finish-veil]");
             const route = runnerRoute;
-            gsap.set(runner, { motionPath: { path: route, start: 0, end: 0 } });
+            gsap.set(runner, { opacity: 0, motionPath: { path: route, start: 0, end: 0 } });
             const timeline = gsap.timeline({
               defaults: { ease: "none" },
               scrollTrigger: {
@@ -115,6 +120,10 @@ export function HomeRaceTrack() {
             });
             timeline.fromTo(progress, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1, ease: routeEase }, 0);
             timeline.to(runner, { motionPath: { path: route, autoRotate: false }, duration: 1, ease: routeEase }, 0);
+            timeline.to(runner, { opacity: 1, duration: revealDuration }, revealAt);
+            if (veil) gsap.fromTo(veil, { opacity: 0.65 }, { opacity: 0, ease: "none",
+              scrollTrigger: { trigger: finish, start: "top bottom", end: "top center", scrub: true },
+            });
           });
         };
         schedule();

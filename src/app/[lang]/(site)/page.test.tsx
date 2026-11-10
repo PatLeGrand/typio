@@ -97,6 +97,15 @@ describe("Home", () => {
     for (const link of screen.getAllByRole("link", { name: home.signUp })) {
       expect(link).toHaveAttribute("href", `/${lang}/register`);
     }
+    const finish = screen.getByRole("region", { name: home.cta.title });
+    const panel = finish.querySelector<HTMLElement>("[data-finish-panel]")!;
+    const veil = finish.querySelector("[data-finish-veil]")!;
+    expect(veil).toHaveAttribute("aria-hidden", "true");
+    expect(veil.parentElement).toHaveAttribute("aria-hidden", "true");
+    expect(veil.parentElement).not.toContainElement(panel);
+    expect(panel).toContainElement(within(finish).getByRole("link", { name: home.signUp }));
+    expect(panel).toContainElement(within(finish).getByRole("link", { name: home.signIn }));
+    expect(finish.querySelectorAll("[data-finish-racer]")).toHaveLength(3);
   });
 
   it("un membre connecté retrouve « Créer une course » dans le hero et l'appel final, vers les paramètres", async () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { MediaPlaybackButton } from "./MediaPlaybackButton";
+import { HomeTrackScene } from "./HomeTrackScene";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent, type SyntheticEvent } from "react";
@@ -198,7 +199,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
       if (event.target instanceof Element && event.target.closest("[data-home-typing], [data-home-race-track]") && !event.target.closest("button, a, input, progress")) inputRef.current?.focus();
     }}>
       <div className="relative">
-        <div data-home-race-track aria-hidden="true" className="relative h-[230px] w-full overflow-hidden bg-island-mint sm:h-[260px]">
+        <div data-home-race-track aria-hidden="true" className="relative h-[230px] w-full overflow-hidden bg-island-mint sm:h-[260px] 2xl:h-[340px]">
           <Image
             src={`/home/race-showcase-${locale}-light.webp`}
             alt=""
@@ -217,8 +218,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
             sizes="100vw"
             className="hidden h-full w-full object-cover md:hidden dark:block dark:md:hidden"
           />
-          <div className="absolute inset-0 hidden md:block dark:brightness-50 dark:saturate-50"
-            style={{ backgroundImage: "url('/race/track.svg'), url('/race/meadow.svg'), url('/race/meadow-distant.svg')", backgroundRepeat: "repeat-x", backgroundPosition: "left bottom, left bottom 80px, left bottom 110px", backgroundSize: "1440px 110px, 1440px 120px, 1440px 208px" }} />
+          <HomeTrackScene className="hidden md:block" />
           {(still || !ready) && labels.racers.map((name, index) => <Image key={name}
             src="/race/blob.svg" alt="" aria-hidden="true" width={52} height={52}
             className="absolute hidden md:block"
@@ -233,7 +233,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
           />}
         </div>
       </div>
-      {!still && <div className="pointer-events-none absolute inset-x-0 top-0 h-[210px] sm:h-[240px]">
+      {!still && <div className="pointer-events-none absolute inset-x-0 top-0 h-[210px] sm:h-[240px] 2xl:h-[320px]">
         <div className="pointer-events-auto">
           <MediaPlaybackButton playing={!userPaused} label={userPaused ? labels.resume : labels.pause}
             onClick={() => {

@@ -160,3 +160,24 @@ h2[tabindex="-1"]:focus-visible {
 .wpm-series {
   color: color-mix(in oklab, var(--series-base) var(--series-weight), var(--foreground));
 }
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  [data-home-finish]:has([data-finish-panel]:is(:hover, :focus-within)) [data-finish-racer] {
+    animation: home-finish-hop 450ms ease-out;
+  }
+
+  [data-home-finish]:has([data-finish-panel]:is(:hover, :focus-within)) [data-track-flag] {
+    animation: home-finish-wave 450ms ease-in-out;
+  }
+}
+
+@keyframes home-finish-hop {
+  0%, 100% { transform: translateY(0); }
+  45% { transform: translateY(-12px); }
+}
+
+@keyframes home-finish-wave {
+  0%, 100% { transform: rotate(0); }
+  35% { transform: rotate(-12deg); }
+  70% { transform: rotate(6deg); }
+}
