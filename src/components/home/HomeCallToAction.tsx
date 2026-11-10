@@ -26,7 +26,7 @@ export function HomeCallToAction({ home, locale, user }: HomeCallToActionProps) 
               className="absolute" style={{ right: 80 + index * 66, bottom: 24 + index * 12, filter: `hue-rotate(${index * 47}deg)` }}
             />)}
           </div>
-          <div data-finish-veil aria-hidden="true" className="pointer-events-none absolute inset-0 bg-background opacity-0 transition-[opacity] duration-300 group-hover/finish:opacity-0! group-focus-within/finish:opacity-0! motion-reduce:transition-none" />
+          <div data-finish-veil aria-hidden="true" className="pointer-events-none absolute inset-0 bg-background opacity-0 transition-none group-hover/finish:transition-[opacity] group-focus-within/finish:transition-[opacity] duration-300 group-hover/finish:opacity-0! group-focus-within/finish:opacity-0! motion-reduce:transition-none" />
         </div>
         <div className="absolute inset-x-0 top-0 mx-auto max-w-[960px]">
           <div data-track-point="finish" aria-hidden="true" className="absolute right-4 top-0 sm:right-8">

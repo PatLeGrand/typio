@@ -189,13 +189,13 @@ h2[tabindex="-1"]:focus-visible {
 .button-key .button-label {
   color: var(--key-label-color, var(--key-ink));
   transition: color 160ms ease;
-  transition-delay: var(--key-label-delay, 0ms);
+  transition-delay: var(--key-label-delay, 120ms);
 }
 
 .button-road {
   stroke: var(--accent-text);
   stroke-width: 2px;
-  stroke-dasharray: 2.4 1.6;
+  stroke-dasharray: 8px 6px;
   opacity: var(--road-opacity, 0);
   transition: opacity 120ms ease;
   animation: var(--road-animation, none);
@@ -206,7 +206,7 @@ h2[tabindex="-1"]:focus-visible {
   --blob-y: 0%;
   --blob-visible: 1;
   --key-label-color: var(--accent-foreground);
-  --key-label-delay: 140ms;
+  --key-label-delay: 0ms;
 }
 
 .button-outline:not(:disabled):not([aria-disabled="true"]):focus-visible {
@@ -261,6 +261,7 @@ h2[tabindex="-1"]:focus-visible {
 }
 
 .road-link-inline {
+  background-position: 0 100%;
   background-size: calc(100% + 11px) 2px;
   animation: var(--inline-road-animation, none);
 }
@@ -274,7 +275,7 @@ h2[tabindex="-1"]:focus-visible {
     --blob-y: 0%;
     --blob-visible: 1;
     --key-label-color: var(--accent-foreground);
-    --key-label-delay: 140ms;
+    --key-label-delay: 0ms;
   }
 
   .button-key:not(:focus-visible):has([data-side="right"]:hover) {
@@ -299,8 +300,8 @@ h2[tabindex="-1"]:focus-visible {
 }
 
 @keyframes button-road-travel {
-  from { stroke-dashoffset: 100; }
-  to { stroke-dashoffset: 0; }
+  from { stroke-dashoffset: 14px; }
+  to { stroke-dashoffset: 0px; }
 }
 
 @keyframes inline-road-travel {

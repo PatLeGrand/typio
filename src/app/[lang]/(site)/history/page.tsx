@@ -49,10 +49,10 @@ export default async function HistoryPage({ params, searchParams }: {
             <td className="px-3 py-2">{number.format(row.wpm)}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{raceScreen.results.personalBest}</span>}</td>
             <td className="px-3 py-2">{percent.format(row.accuracy / 100)}</td>
             <td className="px-3 py-2">{statuses[row.status]}</td>
-            <td className="px-3 py-2"><Link className="road-link-inline" href={`${href}/${row.raceId}`}>{history.view}</Link></td>
+            <td className="px-3 py-2"><Link className="road-link-inline text-accent-text" href={`${href}/${row.raceId}`}>{history.view}</Link></td>
           </tr>)}</tbody>
         </table>
-      </div> : <div className="flex flex-col gap-3">
+      </div> : <div className="flex flex-col items-start gap-3">
         <p className="text-muted">{page === 1 ? history.emptyFirst : history.empty}</p>
         <Link className="road-link-inline" href={prefixWithLocale("/play", locale)}>{history.play}</Link>
         {page > 1 && <Link className="road-link-inline" href={href}>{history.firstPage}</Link>}

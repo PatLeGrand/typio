@@ -101,7 +101,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
                 {dictionary.header.signIn}
               </ButtonLink>
               <ButtonLink href={`/${locale}/register`} variant="key" compactOnMobile
-                className={`md:transition-[transform,translate,box-shadow,background-color,color,border-radius] md:duration-300 md:motion-reduce:transition-none ${isScrolled ? "md:rounded-full" : ""}`}>
+                className={`md:transition-[transform,translate,box-shadow,background-color,color,border-radius] md:duration-[100ms,100ms,100ms,100ms,100ms,300ms] md:motion-reduce:transition-none ${isScrolled ? "md:rounded-full" : ""}`}>
                 {dictionary.header.signUp}
                 <CornerDownLeft aria-hidden="true" className="hidden size-4 sm:block" />
               </ButtonLink>

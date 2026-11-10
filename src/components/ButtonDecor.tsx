@@ -17,7 +17,7 @@ export function ButtonDecor({ variant }: { variant: ButtonVariant }) {
 
   return (
     <svg aria-hidden="true" focusable="false" className="button-road pointer-events-none absolute inset-px h-[calc(100%-2px)] w-[calc(100%-2px)] overflow-visible">
-      <rect width="100%" height="100%" rx="11" pathLength="100" fill="none" />
+      <rect width="100%" height="100%" rx="11" fill="none" />
     </svg>
   );
 }

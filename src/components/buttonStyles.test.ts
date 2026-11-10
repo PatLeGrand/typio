@@ -19,6 +19,16 @@ describe("buttonClasses : survol", () => {
     expect(buttonClasses(variant, false, "")).toMatch(/disabled:text-/);
   });
 
+  it.each(["primary", "key"] as const)("%s : aria-disabled neutralise le relief et les déplacements même sans disabled", (variant) => {
+    const classes = buttonClasses(variant, false, "").split(" ");
+    for (const state of ["", "hover:", "active:"]) {
+      expect(classes).toContain(`aria-disabled:${state}shadow-none`);
+      expect(classes).toContain(`aria-disabled:${state}translate-y-0`);
+    }
+    expect(classes).toContain("after:pointer-events-none");
+    expect(classes).toContain("not-disabled:not-aria-disabled:active:after:pointer-events-auto");
+  });
+
   it.each(["primary", "key"] as const)("%s : réserve le relief et les déplacements aux touches actives", (variant) => {
     const classes = buttonClasses(variant, false, "").split(" ");
     expect(classes).toContain("not-disabled:hover:-translate-y-px");

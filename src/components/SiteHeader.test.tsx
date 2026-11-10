@@ -78,7 +78,7 @@ describe("SiteHeader", () => {
     expect(bar).not.toHaveClass("md:pr-2.5");
     vi.spyOn(window, "scrollY", "get").mockReturnValue(30);
     fireEvent.scroll(window);
-    expect(signUp).toHaveClass("md:rounded-full", "md:duration-300");
+    expect(signUp).toHaveClass("md:rounded-full", "md:duration-[100ms,100ms,100ms,100ms,100ms,300ms]");
     expect(bar).toHaveClass("md:pl-8", "md:pr-2.5");
     vi.restoreAllMocks();
     fireEvent.scroll(window);
