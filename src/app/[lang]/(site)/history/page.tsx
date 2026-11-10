@@ -53,15 +53,15 @@ export default async function HistoryPage({ params, searchParams }: {
           </tr>)}</tbody>
         </table>
       </div> : <div className="flex flex-col gap-3">
-        <p className="text-muted">{history.empty}</p>
-        <Link className="underline" href={prefixWithLocale("/", locale)}>{history.play}</Link>
+        <p className="text-muted">{page === 1 ? history.emptyFirst : history.empty}</p>
+        <Link className="underline" href={prefixWithLocale("/play", locale)}>{history.play}</Link>
         {page > 1 && <Link className="underline" href={href}>{history.firstPage}</Link>}
       </div>}
-      <nav aria-label={history.pagination} className="flex flex-wrap items-center gap-4">
+      {(items.length > 0 || page > 1) && <nav aria-label={history.pagination} className="flex flex-wrap items-center gap-4">
         {page > 1 && <Link className="underline" href={`${href}?page=${page - 1}`}>{history.previous}</Link>}
         <span>{history.page.replace("{page}", number.format(page))}</span>
         {hasNext && page < MAX_HISTORY_PAGE && <Link className="underline" href={`${href}?page=${page + 1}`}>{history.next}</Link>}
-      </nav>
+      </nav>}
     </main>
   );
 }

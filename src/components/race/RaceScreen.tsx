@@ -227,7 +227,7 @@ export function RaceScreen({
           locale={locale}
           labels={labels}
           rows={results}
-          headline={headline}
+          headline={labels.results.title}
           playerAvatar={playerAvatar}
           settingsHref={settingsHref}
           onReplay={() => { setConfirmAbandon(false); void replay(); }}

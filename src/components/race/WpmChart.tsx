@@ -27,7 +27,7 @@ export function WpmChart({ rows, locale, labels, highlightId }: Props) {
   return (
     <figure className="min-w-0 rounded-card border border-border bg-surface p-3 sm:p-5">
       <figcaption className="font-extrabold">{copy.title}</figcaption>
-      <svg viewBox="0 0 480 330" role="img" aria-label={`${copy.title}. ${copy.accessibleSummary}`} className="w-full text-foreground">
+      <svg viewBox="0 0 480 330" role="img" aria-label={`${copy.title}. ${copy.accessibleSummary}`} className="mx-auto w-full max-w-[480px] text-foreground">
         {Array.from({ length: 5 }, (_, i) => i * yStep).map((wpm) => (
           <g key={wpm}>
             <line x1="64" x2="456" y1={y(wpm)} y2={y(wpm)} stroke="var(--border)" />

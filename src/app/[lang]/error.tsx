@@ -19,6 +19,7 @@ export default function ErrorPage({ error, retry }: { error: Error & { digest?: 
   const locale = getPathLocale(usePathname()) ?? defaultLocale;
   const dictionary = getDictionary(locale);
   const { errorPage } = dictionary;
+  const title = `${errorPage.title} | ${dictionary.site.name}`;
 
   useEffect(() => {
     // Seul le digest est journalisé : il permet de retrouver l'erreur dans les journaux du serveur.
@@ -27,6 +28,7 @@ export default function ErrorPage({ error, retry }: { error: Error & { digest?: 
 
   return (
     <StatusPageFrame locale={locale} dictionary={dictionary}>
+      <title>{title}</title>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center">
         <h1 className="text-[32px] font-bold leading-[1.15]">{errorPage.title}</h1>
         <p className="text-base leading-[1.55] text-muted">{errorPage.text}</p>

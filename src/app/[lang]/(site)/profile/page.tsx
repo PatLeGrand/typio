@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -13,6 +14,12 @@ import { ProfileStats } from "@/components/profile/ProfileStats";
 import { createDrizzleProfileStatsRepository } from "@/race/drizzleProfileStatsRepository";
 import { ProfileForm } from "./ProfileForm";
 import { AvatarForm } from "./AvatarForm";
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
+  const locale = requireLocale((await params).lang);
+  const { profile, site } = getDictionary(locale);
+  return { title: `${profile.title} | ${site.name}` };
+}
 
 export default async function ProfilePage({ params }: { params: Promise<{ lang: string }> }) {
   const locale = requireLocale((await params).lang);
@@ -57,7 +64,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
             {currentUser.kind === "member" && <ButtonLink href={prefixWithLocale("/history", locale)} variant="secondary">
               {dictionary.history.title}
             </ButtonLink>}
-            <ButtonLink href={prefixWithLocale("/race", locale)} variant="secondary">
+            <ButtonLink href={prefixWithLocale("/play", locale)} variant="secondary">
               <ArrowLeft aria-hidden="true" className="w-4 h-4" />
               {profile.backToCourses}
             </ButtonLink>

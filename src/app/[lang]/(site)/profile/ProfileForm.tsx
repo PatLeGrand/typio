@@ -156,7 +156,7 @@ export function ProfileForm({
                     <Badge>{isGuest ? dictionary.header.guest : profile.identity.member}</Badge>
                   </div>
                   <p className="text-sm text-muted">
-                    {profile.identity.memberSince} {formatter.format(dbUser.createdAt)}
+                    {isGuest ? profile.identity.guestSince : profile.identity.memberSince} {formatter.format(dbUser.createdAt)}
                   </p>
                 </div>
               </div>

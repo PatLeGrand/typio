@@ -13,9 +13,11 @@ export default function NotFoundPage() {
   const locale = getPathLocale(usePathname()) ?? defaultLocale;
   const dictionary = getDictionary(locale);
   const { notFound } = dictionary;
+  const title = `${notFound.title} | ${dictionary.site.name}`;
 
   return (
     <StatusPageFrame locale={locale} dictionary={dictionary}>
+      <title>{title}</title>
       <main className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:gap-12 lg:py-12">
         <section className="flex flex-col items-start text-left">
           <p className="mb-4 rounded-full bg-accent-soft px-4 py-2 text-sm font-extrabold uppercase tracking-[0.12em] text-accent-text">
@@ -31,7 +33,7 @@ export default function NotFoundPage() {
         </section>
 
         <div className="flex min-h-[300px] items-center justify-center overflow-hidden rounded-panel bg-accent-panel p-2 shadow-soft sm:min-h-[390px] sm:p-5">
-          <MascotIllustration labels={dictionary.illustration} />
+          <MascotIllustration labels={{ ...dictionary.illustration, praise: notFound.illustration }} />
         </div>
       </main>
     </StatusPageFrame>

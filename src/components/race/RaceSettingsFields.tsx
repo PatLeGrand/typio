@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { Bot, DoorOpen, SlidersHorizontal, Type } from "lucide-react";
+import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
 import { RadioCard } from "@/components/race/RadioCard";
 import { Switch } from "@/components/race/Switch";
@@ -295,7 +296,7 @@ export function RaceSettingsFields({
           </div>
 
           {/* Bonus de remontée (CONF-09). */}
-          <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center justify-between gap-4 pt-4">
             <div className="flex items-center gap-3">
               <div className="text-accent-text">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
@@ -334,7 +335,7 @@ export function RaceSettingsFields({
           <FieldHeading className="text-[15px] font-semibold">{dict.bots.label}</FieldHeading>
           <span aria-live="polite" aria-atomic="true">{numberFormat.format(value.bots.length)}</span>
           {value.bots.map((level, index) => (
-            <div key={index} className="flex flex-wrap items-center gap-3">
+            <div key={index} className="flex flex-wrap items-end gap-3">
               <SelectField
                 label={dict.bots.level.replace("{number}", numberFormat.format(index + 1))}
                 value={level}
@@ -342,14 +343,14 @@ export function RaceSettingsFields({
                 options={BOT_LEVELS.map((level) => ({ value: level, label: dict.bots.levels[level] }))}
                 onChange={(event) => onChange({ bots: value.bots.map((current, i) => i === index ? event.target.value as BotLevel : current) })}
               />
-              <button type="button" disabled={readOnly} className="text-accent-text disabled:opacity-40" onClick={() => onChange({ bots: value.bots.filter((_, i) => i !== index) })}>
+              <Button variant="secondary" disabled={readOnly} className="h-14" onClick={() => onChange({ bots: value.bots.filter((_, i) => i !== index) })}>
                 {dict.bots.remove.replace("{number}", numberFormat.format(index + 1))}
-              </button>
+              </Button>
             </div>
           ))}
-          <button type="button" disabled={readOnly || value.bots.length >= MAX_BOTS || runnerCount + value.bots.length >= value.capacity} className="self-start text-accent-text disabled:opacity-40" onClick={() => onChange({ bots: [...value.bots, "intermediate"] })}>
+          <Button variant="secondary" disabled={readOnly || value.bots.length >= MAX_BOTS || runnerCount + value.bots.length >= value.capacity} className="self-start" onClick={() => onChange({ bots: [...value.bots, "intermediate"] })}>
             {dict.bots.add}
-          </button>
+          </Button>
           <p className="text-xs text-muted">{BOT_LEVELS.map((level) => dict.bots.help.replace("{level}", dict.bots.levels[level]).replace("{min}", numberFormat.format(BOT_LEVEL_PROFILES[level].minWpm)).replace("{max}", numberFormat.format(BOT_LEVEL_PROFILES[level].maxWpm))).join(" · ")}</p>
         </div>
       </section>
