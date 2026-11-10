@@ -43,7 +43,7 @@ export function InviteClient({ token, role, locale, userId, labels }: InviteClie
     <div className="flex flex-col gap-6">
       <ConnectionBanner status={connection} labels={labels.connection} />
       {failure ? (
-        <RoomUnavailable code={failure} labels={labels} playHref={prefixWithLocale("/play", locale)} />
+        <RoomUnavailable code={failure} labels={labels} playHref={prefixWithLocale("/play", locale)} headingLevel={2} />
       ) : (
         <p className="text-muted-strong">{labels.invite.joining}</p>
       )}

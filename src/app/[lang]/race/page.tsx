@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getCurrentUserForDisplay } from "@/auth/currentUser";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -8,6 +9,16 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
 import { deserializeRaceSettings } from "@/race/config";
 import { nextRaceText } from "./actions";
+
+export async function generateMetadata({ params, searchParams }: {
+  params: Promise<{ lang: string }>;
+  searchParams: Promise<{ config?: string | string[] }>;
+}): Promise<Metadata> {
+  const locale = requireLocale((await params).lang);
+  if (deserializeRaceSettings((await searchParams).config)) return {};
+  const { raceEntry, site } = getDictionary(locale);
+  return { title: `${raceEntry.title} | ${site.name}` };
+}
 
 /** Seed for the bot names, drawn on the server with the text so hydration matches. */
 function drawBotNameSeed(): number {
@@ -34,10 +45,8 @@ export default async function RacePage({ params, searchParams }: {
   );
 
   if (!settings) {
-    const title = `${copy.invalidTitle} | ${dictionary.site.name}`;
     return (
       <StatusPageFrame locale={locale} dictionary={dictionary}>
-        <title>{title}</title>
         <main className="mx-auto flex w-full flex-1 max-w-3xl flex-col gap-6 px-4 py-12 text-foreground">
           <h1 className="text-3xl font-bold">{copy.title}</h1>
           <p role="alert">{copy.invalid}</p>

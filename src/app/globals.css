@@ -153,6 +153,10 @@
   outline-offset: 2px;
 }
 
+h2[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+
 .wpm-series {
   color: color-mix(in oklab, var(--series-base) var(--series-weight), var(--foreground));
 }

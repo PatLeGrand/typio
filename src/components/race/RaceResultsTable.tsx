@@ -38,10 +38,10 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId,
   const seconds = new Intl.NumberFormat(lang, { style: "unit", unit: "second", maximumFractionDigits: 1 });
   return (
     <div tabIndex={0} role="region" aria-label={labels.tableTitle} className="overflow-x-auto rounded-card border border-border bg-surface">
-      <table className="w-full min-w-[40rem] table-fixed text-left text-sm [overflow-wrap:anywhere]">
+      <table className="w-full min-w-[40rem] table-fixed text-left text-sm">
         <caption className="sr-only">{labels.tableTitle}</caption>
         <colgroup>
-          {["7.5%", "22%", "8%", "10%", "11%", "7.5%", "10%", "11%", "13%"].map((width, index) => <col key={index} style={{ width }} />)}
+          {["7.5%", "20.5%", "8%", "10%", "11%", "9%", "10%", "11%", "13%"].map((width, index) => <col key={index} style={{ width }} />)}
         </colgroup>
         <thead><tr>
           {[columns.rank, columns.name, columns.wpm, extraLabels.grossWpm, columns.accuracy, extraLabels.errors, columns.time, columns.bonuses, columns.status].map((label) => <th key={label} scope="col" className="px-2 py-2">{label}</th>)}
@@ -49,7 +49,7 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId,
         <tbody>{rows.map((row) => (
           <tr key={row.id} className={`border-t border-border ${row.id === highlightId ? "bg-accent-panel font-bold" : ""}`}>
             <td className="px-2 py-2 tabular-nums">{number.format(row.rank)}</td>
-            <th scope="row" className="px-2 py-2"><span className="flex items-start gap-2"><Avatar name={row.name} {...(row.avatar ?? { seed: row.id })} size={24} /><span className="min-w-0">{row.name}{row.isBot ? ` (${extraLabels.bot}${row.level ? ` · ${botLevels[row.level]}` : ""})` : ""}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</span></span></th>
+            <th scope="row" className="px-2 py-2"><span className="flex items-start gap-2"><Avatar name={row.name} {...(row.avatar ?? { seed: row.id })} size={24} /><span className="min-w-0 [overflow-wrap:anywhere]">{row.name}{row.isBot ? ` (${extraLabels.bot}${row.level ? ` · ${botLevels[row.level]}` : ""})` : ""}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</span></span></th>
             <td className="px-2 py-2 tabular-nums">{number.format(row.wpm)}</td>
             <td className="px-2 py-2 tabular-nums">{number.format(row.grossWpm)}</td>
             <td className="px-2 py-2 tabular-nums">{percent.format(row.accuracy / 100)}</td>
