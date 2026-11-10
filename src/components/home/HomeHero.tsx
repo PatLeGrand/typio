@@ -23,15 +23,15 @@ export function HomeHero({ home, locale, keyboardLabel }: HomeHeroProps) {
           <span className="block">{home.hero.titleLine2}</span>
         </h1>
       </div>
-      <div className="row-start-2 mt-6 min-w-0 lg:col-span-2 lg:mt-0">
-        <HomeRaceShowcase labels={home.raceShowcase} playable={{ ...home.playableRace, keyboard: keyboardLabel, createRace: home.createRace }} locale={locale} />
-      </div>
       <div className="min-w-0 space-y-3 px-4 pt-6 sm:px-8 lg:col-start-2 lg:row-start-1 lg:pb-6 lg:pt-0">
         <p className="max-w-prose text-base leading-relaxed text-muted">{home.hero.description}</p>
-        <div className="flex min-w-0 flex-col items-start gap-3 xl:flex-row xl:items-end">
+        <div className="flex min-w-0 flex-col items-start gap-3 2xl:flex-row 2xl:items-end">
           <div className="shrink-0"><ButtonLink href={`/${locale}/race/settings`}>{home.createRace}</ButtonLink></div>
           <HomeJoinCodeForm labels={home.joinByCode} locale={locale} />
         </div>
+      </div>
+      <div className="mt-6 min-w-0 lg:col-span-2 lg:row-start-2 lg:mt-0">
+        <HomeRaceShowcase labels={home.raceShowcase} playable={{ ...home.playableRace, keyboard: keyboardLabel }} locale={locale} />
       </div>
     </section>
   );

@@ -78,7 +78,8 @@ it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps the image 
   visible(true);
   expect(screen.queryByTestId("scene")).toBeNull();
   act(() => vi.advanceTimersByTime(200));
-  expect(container.querySelectorAll("img")).toHaveLength(2);
+  expect(container.querySelectorAll("img")).toHaveLength(6);
+  expect(container.querySelectorAll('img[src="/race/blob.svg"]')).toHaveLength(4);
   expect(screen.queryByTestId("scene")).toBeNull();
   expect(importVisualizer).not.toHaveBeenCalled();
   expect(vi.getTimerCount()).toBe(0);
@@ -86,7 +87,7 @@ it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps the image 
   if (mode.includes("mobile")) {
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.getByText(playable.keyboard)).toBeVisible();
-    expect(screen.getByRole("link", { name: playable.createRace })).toHaveAttribute("href", "/fr/race/settings");
+    expect(screen.queryByRole("link", { name: playable.createRace })).toBeNull();
   } else {
     expect(screen.getByRole("textbox", { name: playable.inputLabel })).toBeEnabled();
     expect(screen.getAllByRole("progressbar")).toHaveLength(4);
@@ -95,8 +96,12 @@ it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps the image 
 
 it.each(["fr", "en"] as const)("renders the %s light and dark images on the server and initially", (locale) => {
   const dictionary = getDictionary(locale);
-  const element = <HomeRaceShowcase labels={dictionary.home.raceShowcase} playable={{ ...dictionary.home.playableRace, keyboard: dictionary.room.race.keyboard, createRace: dictionary.home.createRace }} locale={locale} />;
+  const element = <HomeRaceShowcase labels={dictionary.home.raceShowcase} playable={{ ...dictionary.home.playableRace, keyboard: dictionary.room.race.keyboard }} locale={locale} />;
   const markup = renderToStaticMarkup(element);
+  const server = document.createElement("div");
+  server.innerHTML = markup;
+  expect(server.querySelector("[data-home-typing]")).toHaveClass("md:min-h-[204px]");
+  expect(server.querySelector("[data-home-typing] > div")).toHaveClass("md:invisible");
   const { container } = render(element);
   for (const [index, theme] of ["light", "dark"].entries()) {
     const source = encodeURIComponent(`/home/race-showcase-${locale}-${theme}.webp`);
@@ -113,6 +118,21 @@ it.each(["fr", "en"] as const)("renders the %s light and dark images on the serv
   }
   expect(screen.queryByTestId("scene")).toBeNull();
   expect(importVisualizer).not.toHaveBeenCalled();
+});
+
+it("keeps four decorative racers until the canvas is displayed", () => {
+  const { container } = render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
+  const blobs = () => container.querySelectorAll('img[src="/race/blob.svg"]');
+  expect(blobs()).toHaveLength(4);
+  blobs().forEach((blob, index) => {
+    expect(blob).toHaveAttribute("aria-hidden", "true");
+    expect(blob).toHaveClass("hidden", "md:block");
+    expect(blob).toHaveStyle({ filter: `hue-rotate(${index * 47}deg)` });
+  });
+  visible(true);
+  act(() => idle({} as IdleDeadline));
+  expect(screen.getByTestId("scene")).toBeInTheDocument();
+  expect(blobs()).toHaveLength(0);
 });
 
 it("loads the desktop visualizer with the timeout fallback", () => {
@@ -184,7 +204,23 @@ it("focuses the field from the panel and starts even after pausing the demo", ()
   expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "false");
 });
 
-it("shows real results once, focuses replay and starts a new round", () => {
+it("focuses the field from the track, updates its prompt and keeps pause independent", () => {
+  const { container } = render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
+  visible(true);
+  const input = screen.getByRole("textbox", { name: playable.inputLabel });
+  expect(screen.getByText(playable.prompt)).toBeInTheDocument();
+  fireEvent.click(container.querySelector("[data-home-race-track]")!);
+  expect(input).toHaveFocus();
+  expect(screen.getByText(playable.promptFocused.replaceAll("\u00a0", " "))).toBeInTheDocument();
+  const pause = screen.getByRole("button", { name: labels.pause });
+  expect(pause.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  act(() => pause.focus());
+  fireEvent.click(pause);
+  expect(pause).toHaveFocus();
+  expect(screen.getByText(playable.prompt)).toBeInTheDocument();
+});
+
+it("shows real results once, focuses the result heading and starts a new round explicitly", () => {
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
   const input = screen.getByRole("textbox", { name: playable.inputLabel });
@@ -197,10 +233,17 @@ it("shows real results once, focuses replay and starts a new round", () => {
   expect(screen.getByRole("list", { name: playable.place }).querySelectorAll("li")).toHaveLength(4);
   expect(screen.getByRole("link", { name: playable.challenge })).toHaveAttribute("href", "/fr/race/settings");
   const replay = screen.getByRole("button", { name: playable.replay });
-  expect(replay).toHaveFocus();
+  const heading = screen.getByRole("heading", { level: 2, name: /Place/ });
+  expect(heading).toHaveAttribute("tabindex", "-1");
+  expect(heading).toHaveFocus();
+  expect(replay).not.toHaveFocus();
+  fireEvent.keyDown(heading, { key: " " });
+  fireEvent.keyDown(heading, { key: "Enter" });
+  expect(screen.queryByRole("textbox")).toBeNull();
   const announcement = status.textContent;
-  act(() => vi.advanceTimersByTime(500));
+  act(() => vi.advanceTimersByTime(60_000));
   expect(status.textContent).toBe(announcement);
+  expect(heading).toHaveFocus();
   fireEvent.click(replay);
   act(() => vi.advanceTimersByTime(20));
   expect(screen.getByRole("textbox", { name: playable.inputLabel })).toHaveFocus();
@@ -246,18 +289,18 @@ it("keeps reduced motion playable and excludes offscreen time from results", () 
   expect(importVisualizer).not.toHaveBeenCalled();
 });
 
-it("leaves on Escape and resets after 15 seconds without input", () => {
+it("resets on Escape with input focus and preserves the race without input", () => {
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
   const input = screen.getByRole("textbox", { name: playable.inputLabel });
   fireEvent.change(input, { target: { value: "L" } });
   fireEvent.keyDown(input, { key: "Escape" });
+  act(() => vi.advanceTimersByTime(20));
   expect(input).toHaveValue("");
+  expect(input).toHaveFocus();
   fireEvent.change(input, { target: { value: "L" } });
-  act(() => vi.advanceTimersByTime(14_900));
+  act(() => vi.advanceTimersByTime(60_000));
   expect(input).toHaveValue("L");
-  act(() => vi.advanceTimersByTime(100));
-  expect(input).toHaveValue("");
   expect(screen.getByRole("status")).toBeEmptyDOMElement();
 });
 

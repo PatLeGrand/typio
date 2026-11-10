@@ -45,16 +45,18 @@ describe("playable race", () => {
     });
   });
 
-  it("resets on Escape or 15 seconds without input, including after the finish", () => {
+  it("resets explicitly and keeps racing after 15 seconds without input", () => {
     const state = start();
     expect(transitionPlayableRace(state, { type: "reset" })).toEqual(createPlayableRace(text));
-    const nearlyIdle = transitionPlayableRace(state, { type: "tick", deltaMs: 14_999 });
-    expect(nearlyIdle.phase).toBe("racing");
-    expect(transitionPlayableRace(nearlyIdle, { type: "tick", deltaMs: 1 }).phase).toBe("waiting");
-    const active = transitionPlayableRace(nearlyIdle, { type: "input", value: "ab", deltaMs: 0 });
-    expect(transitionPlayableRace(active, { type: "tick", deltaMs: 14_999 }).phase).toBe("racing");
+    const idle = transitionPlayableRace(state, { type: "tick", deltaMs: 60_000 });
+    expect(idle).toMatchObject({ phase: "racing", typed: "a", elapsedMs: 60_000 });
+    const active = transitionPlayableRace(idle, { type: "input", value: "ab", deltaMs: 1000 });
+    expect(active).toMatchObject({ phase: "racing", typed: "ab", elapsedMs: 61_000 });
+  });
+
+  it("keeps finished results after prolonged inactivity", () => {
     const finished = transitionPlayableRace(start(), { type: "input", value: text, deltaMs: 2000 });
-    expect(transitionPlayableRace(finished, { type: "tick", deltaMs: 15_000 })).toEqual(createPlayableRace(text));
+    expect(transitionPlayableRace(finished, { type: "tick", deltaMs: 60_000 })).toBe(finished);
   });
 
   it.each(["fr", "en"] as const)("offers three short sentences in %s", (locale) => {

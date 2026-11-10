@@ -84,7 +84,7 @@ describe("Home", () => {
     expect(trial).toBeVisible();
     expect(trial).not.toHaveFocus();
     const createRace = screen.getAllByRole("link", { name: home.createRace })[0];
-    expect(trial.compareDocumentPosition(createRace) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(createRace.compareDocumentPosition(trial) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it.each(["fr", "en"] as const)("un visiteur peut créer un compte ou se connecter (%s)", async (lang) => {
@@ -142,7 +142,7 @@ describe("Home", () => {
     vi.useFakeTimers();
     act(() => { vi.advanceTimersByTime(5000); });
     const images = container.querySelectorAll("figure img");
-    expect(images).toHaveLength(2);
+    expect(images).toHaveLength(6);
     for (const [index, theme] of ["light", "dark"].entries()) {
       expect(images[index].getAttribute("src")).toContain(encodeURIComponent(`/home/race-showcase-${lang}-${theme}.webp`));
     }

@@ -28,6 +28,8 @@ export function HomeRaceTrack() {
     let animate: (() => void) | undefined;
     let loading = false;
     let runnerRoute = "";
+    let startY = 0;
+    let routeEase = (value: number) => value;
 
     function measure() {
       frame = 0;
@@ -42,7 +44,10 @@ export function HomeRaceTrack() {
       });
       if (!points.length || !bounds.width || !bounds.height) return;
       // Les ancres réservent 80 px sur le côté et 32 px autour de chaque bloc.
-      points.unshift({ x: points[0].x, y: 0 });
+      const heroTrack = host!.previousElementSibling?.querySelector<HTMLElement>("[data-home-race-track]");
+      const typingPanel = host!.previousElementSibling?.querySelector<HTMLElement>("[data-home-typing]")?.getBoundingClientRect();
+      startY = heroTrack ? heroTrack.getBoundingClientRect().bottom - bounds.top - 40 : 0;
+      points.unshift({ x: typingPanel ? Math.min(points[0].x, typingPanel.right - bounds.left - 40) : points[0].x, y: startY });
       const finish = points[points.length - 1];
       // Le bas du personnage (22 px) s’arrête au début du damier (20 px).
       const end = { x: finish.x, y: finish.y - 42 };
@@ -59,6 +64,21 @@ export function HomeRaceTrack() {
       svg!.setAttribute("viewBox", `0 0 ${bounds.width} ${bounds.height}`);
       path!.setAttribute("d", route);
       progress!.setAttribute("d", route);
+      const runnerLength = path!.getTotalLength() - 42;
+      const samples = Array.from({ length: 257 }, (_, index) => path!.getPointAtLength(runnerLength * index / 256).y);
+      // Le défilement avance en y ; MotionPath avance en longueur d’arc.
+      routeEase = (value) => {
+        const y = startY + (end.y - startY) * value;
+        let low = 0;
+        let high = samples.length - 1;
+        while (high - low > 1) {
+          const middle = (low + high) >> 1;
+          if (samples[middle] < y) low = middle;
+          else high = middle;
+        }
+        const span = samples[high] - samples[low];
+        return (low + (span > 0 ? (y - samples[low]) / span : 0)) / 256;
+      };
       runner!.setAttribute("transform", `translate(${end.x} ${end.y})`);
       runner!.style.visibility = "visible";
       if (physicalKeyboard && !motion.matches) animate?.();
@@ -85,7 +105,7 @@ export function HomeRaceTrack() {
             const timeline = gsap.timeline({
               defaults: { ease: "none" },
               scrollTrigger: {
-                trigger: host, start: "top center", endTrigger: finish, end: "top center", scrub: true,
+                trigger: host, start: `top+=${startY} center`, endTrigger: finish, end: "top center", scrub: true,
                 onUpdate: (trigger) => {
                   if (trigger.progress < 1 || arrived.current || !flag) return;
                   arrived.current = true;
@@ -93,8 +113,8 @@ export function HomeRaceTrack() {
                 },
               },
             });
-            timeline.fromTo(progress, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1 }, 0);
-            timeline.to(runner, { motionPath: { path: route, autoRotate: false }, duration: 1 }, 0);
+            timeline.fromTo(progress, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1, ease: routeEase }, 0);
+            timeline.to(runner, { motionPath: { path: route, autoRotate: false }, duration: 1, ease: routeEase }, 0);
           });
         };
         schedule();
@@ -103,6 +123,7 @@ export function HomeRaceTrack() {
 
     const observer = new ResizeObserver(schedule);
     observer.observe(host);
+    if (host.previousElementSibling) observer.observe(host.previousElementSibling);
     host.querySelectorAll("section").forEach((section) => observer.observe(section));
     desktop.addEventListener("change", syncMotion);
     motion.addEventListener("change", syncMotion);

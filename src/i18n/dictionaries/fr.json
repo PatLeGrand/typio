@@ -208,10 +208,11 @@
     "hero": {
       "titleLine1": "Tes amis tapent vite.",
       "titleLine2": "Tape plus vite.",
-      "description": "Une course, quelques phrases, tout le monde sur la même piste. Essaie tout de suite : commence à taper."
+      "description": "Une course, quelques phrases, tout le monde sur la même piste."
     },
     "playableRace": {
-      "prompt": "À toi de jouer : commence à taper.",
+      "prompt": "Clique sur la phrase, puis tape.",
+      "promptFocused": "À toi : commence à taper.",
       "racing": "C’est parti !",
       "inputLabel": "Recopie la phrase pour courir",
       "hint": "Corrige avec Retour arrière. Échap pour quitter.",

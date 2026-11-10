@@ -8,7 +8,6 @@ export interface PlayableRace {
   typed: string;
   keystrokes: Keystrokes;
   elapsedMs: number;
-  inactiveMs: number;
   bots: BotPlan[];
 }
 
@@ -23,7 +22,7 @@ export function createPlayableRace(text: string): PlayableRace {
       extraCorrectTimesMs: plan.extraCorrectTimesMs.map((time) => time * scale),
     };
   });
-  return { phase: "waiting", text, typed: "", keystrokes: NO_KEYSTROKES, elapsedMs: 0, inactiveMs: 0, bots };
+  return { phase: "waiting", text, typed: "", keystrokes: NO_KEYSTROKES, elapsedMs: 0, bots };
 }
 
 type Event = { type: "tick"; deltaMs: number } | { type: "input"; value: string; deltaMs: number } | { type: "reset" };
@@ -32,15 +31,13 @@ type Event = { type: "tick"; deltaMs: number } | { type: "input"; value: string;
 export function transitionPlayableRace(state: PlayableRace, event: Event): PlayableRace {
   if (event.type === "reset") return createPlayableRace(state.text);
   const delta = Math.max(0, event.deltaMs);
-  let current = state.phase === "waiting" ? state : {
+  const current = state.phase !== "racing" ? state : {
     ...state,
-    elapsedMs: state.elapsedMs + (state.phase === "racing" ? delta : 0),
-    inactiveMs: state.inactiveMs + delta,
+    elapsedMs: state.elapsedMs + delta,
   };
-  if (current.inactiveMs >= 15_000) current = createPlayableRace(current.text);
   if (event.type === "tick" || current.phase === "finished" || (!event.value && current.phase === "waiting")) return current;
   const { typed, keystrokes } = applyTypedInput(current.typed, event.value, current.text, "free", current.keystrokes);
-  return { ...current, typed, keystrokes, inactiveMs: 0, phase: typed === current.text ? "finished" : "racing" };
+  return { ...current, typed, keystrokes, phase: typed === current.text ? "finished" : "racing" };
 }
 
 export function playableRaceProgress(state: PlayableRace): number[] {

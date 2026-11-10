@@ -208,10 +208,11 @@
     "hero": {
       "titleLine1": "Your friends type fast.",
       "titleLine2": "Type faster.",
-      "description": "One race, a few sentences, everyone on the same track. Try it now: just start typing."
+      "description": "One race, a few sentences, everyone on the same track."
     },
     "playableRace": {
-      "prompt": "Your turn: start typing.",
+      "prompt": "Click the sentence, then type.",
+      "promptFocused": "Your turn: start typing.",
       "racing": "Go go go!",
       "inputLabel": "Copy the sentence to race",
       "hint": "Use Backspace to correct. Escape to leave.",

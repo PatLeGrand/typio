@@ -20,7 +20,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
     <>
       <main className="flex-1">
         <HomeHero home={home} locale={locale} keyboardLabel={dictionary.room.race.keyboard} />
-        <div className="relative isolate overflow-hidden bg-background">
+        <div className="relative isolate bg-background">
           <HomeRaceTrack />
           <HomeWhySection home={home} />
           <HomeVideoSection home={home} />

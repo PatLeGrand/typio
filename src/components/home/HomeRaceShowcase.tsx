@@ -25,22 +25,27 @@ function subscribeMotion(listener: () => void) {
 }
 const motionSnapshot = () => window.matchMedia(MOTION_QUERY).matches;
 const serverMotionSnapshot = () => true;
+const subscribeHydration = () => () => {};
+const hydrationSnapshot = () => true;
+const serverHydrationSnapshot = () => false;
 
 export function HomeRaceShowcase({ labels, playable, locale }: {
   labels: Dictionary["home"]["raceShowcase"];
-  playable: Dictionary["home"]["playableRace"] & { keyboard: string; createRace: string };
+  playable: Dictionary["home"]["playableRace"] & { keyboard: string };
   locale: Locale;
 }) {
   const figureRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const resultRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLHeadingElement>(null);
   const composing = useRef(false);
   const [draft, setDraft] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
   const [race, setRace] = useState(() => createPlayableRace(playable.texts[0]));
   const raceRef = useRef(race);
   const lastTick = useRef<number | null>(null);
   const reducedMotion = useSyncExternalStore(subscribeMotion, motionSnapshot, serverMotionSnapshot);
   const physicalKeyboard = usePhysicalKeyboard();
+  const hydrated = useSyncExternalStore(subscribeHydration, hydrationSnapshot, serverHydrationSnapshot);
   const still = reducedMotion || !physicalKeyboard;
   const [activity, setActivity] = useState({ inView: false, hidden: true });
   const [ready, setReady] = useState(false);
@@ -163,7 +168,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
   }, [ready, still, paused, race.phase]);
 
   useEffect(() => {
-    if (paused || !physicalKeyboard || race.phase === "waiting") return;
+    if (paused || !physicalKeyboard || race.phase !== "racing") return;
     lastTick.current = performance.now();
     const timer = setInterval(() => {
       const now = performance.now();
@@ -177,17 +182,21 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
   }, [paused, physicalKeyboard, race.phase]);
 
   useEffect(() => {
-    if (race.phase === "finished") resultRef.current?.querySelector("button")?.focus();
+    if (race.phase === "finished") resultRef.current?.focus({ preventScroll: true });
   }, [race.phase]);
 
   return (
     <figure ref={figureRef} className="relative w-full min-w-0" onKeyDown={(event) => {
-      if (event.key === "Escape") { reset(); inputRef.current?.blur(); }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        reset();
+        requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
+      }
     }} onClick={(event) => {
-      if (event.target instanceof Element && event.target.closest("[data-home-typing]") && !event.target.closest("button, a, input, progress")) inputRef.current?.focus();
+      if (event.target instanceof Element && event.target.closest("[data-home-typing], [data-home-race-track]") && !event.target.closest("button, a, input, progress")) inputRef.current?.focus();
     }}>
       <div className="relative">
-        <div aria-hidden="true" className="relative h-[230px] w-full overflow-hidden bg-island-mint sm:h-[260px]">
+        <div data-home-race-track aria-hidden="true" className="relative h-[230px] w-full overflow-hidden bg-island-mint sm:h-[260px]">
           <Image
             src={`/home/race-showcase-${locale}-light.webp`}
             alt=""
@@ -208,6 +217,11 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
           />
           <div className="absolute inset-0 hidden md:block dark:brightness-50 dark:saturate-50"
             style={{ backgroundImage: "url('/race/track.svg'), url('/race/meadow.svg'), url('/race/meadow-distant.svg')", backgroundRepeat: "repeat-x", backgroundPosition: "left bottom, left bottom 80px, left bottom 110px", backgroundSize: "1440px 110px, 1440px 120px, 1440px 208px" }} />
+          {(still || !ready) && labels.racers.map((name, index) => <Image key={name}
+            src="/race/blob.svg" alt="" aria-hidden="true" width={52} height={52}
+            className="absolute hidden md:block"
+            style={{ left: `${18 + index * 20}%`, bottom: 24 + index * 14, filter: `hue-rotate(${index * 47}deg)` }}
+          />)}
           {ready && !still && <RaceVisualizer
             trackLength={1500}
             racers={racers}
@@ -217,11 +231,23 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
           />}
         </div>
       </div>
-      <div className="relative mx-auto -mt-5 max-w-[960px] px-4 sm:px-8">
-        <div data-home-typing className="rounded-card border border-border bg-surface p-4 shadow-soft sm:p-5">
-          {!physicalKeyboard ? <div className="flex flex-wrap items-center justify-between gap-4">
+      {!still && <div className="pointer-events-none absolute inset-x-0 top-0 h-[210px] sm:h-[240px]">
+        <div className="pointer-events-auto">
+          <MediaPlaybackButton playing={!userPaused} label={userPaused ? labels.resume : labels.pause}
+            onClick={() => {
+              if (!userPaused) {
+                const next = transitionPlayableRace(raceRef.current, { type: "tick", deltaMs: elapsed() });
+                raceRef.current = next;
+                setRace(next);
+              }
+              setUserPaused((value) => !value);
+            }} />
+        </div>
+      </div>}
+      <div className="relative z-10 mx-auto -mt-5 max-w-[960px] px-4 sm:px-8">
+        <div data-home-typing className="rounded-card border border-border bg-surface p-4 shadow-soft sm:p-5 md:min-h-[204px]">
+          {!physicalKeyboard ? <div className={hydrated ? undefined : "md:invisible"}>
             <p className="max-w-prose text-sm text-muted">{playable.keyboard}</p>
-            <ButtonLink href={`/${locale}/race/settings`} prefetch={false}>{playable.createRace}</ButtonLink>
           </div> : <>
             {reducedMotion && <div role="group" aria-label={playable.progress} className="mb-4 grid gap-x-4 gap-y-1 sm:grid-cols-2">
               {labels.racers.map((name, index) => <label key={name} className="flex min-w-0 items-center gap-3 text-xs">
@@ -230,15 +256,15 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
               </label>)}
             </div>}
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <p className="font-semibold">{race.phase === "finished" ? playable.place : race.phase === "racing" ? playable.racing : playable.prompt}
-                {race.phase === "finished" && <span className="ml-2 tabular-nums">{number.format(result.place)} / {number.format(4)}</span>}
-              </p>
+              {race.phase === "finished" ? <h2 ref={resultRef} tabIndex={-1} className="font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-text">
+                {playable.place}<span className="ml-2 tabular-nums">{number.format(result.place)} / {number.format(4)}</span>
+              </h2> : <p className="font-semibold">{race.phase === "racing" ? playable.racing : focused ? playable.promptFocused : playable.prompt}</p>}
               <p className="flex gap-4 tabular-nums text-muted">
                 <span>{number.format(result.wpm)} {playable.wpm}</span>
                 <span>{percent.format(result.accuracy / 100)} {playable.accuracy}</span>
               </p>
             </div>
-            {race.phase === "finished" ? <div ref={resultRef} className="mt-4">
+            {race.phase === "finished" ? <div className="mt-4">
               <ol aria-label={playable.place} className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted">
                 {result.order.map((racer, index) => <li key={racer}><span className="mr-1 tabular-nums">{number.format(index + 1)}</span>{labels.racers[racer]}</li>)}
               </ol>
@@ -259,9 +285,10 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
               </label>
               <input ref={inputRef} id="home-race-input" name="trial" type="text" value={draft ?? race.typed}
                 onChange={handleChange}
+                onFocus={() => setFocused(true)}
                 onCompositionStart={() => { composing.current = true; }}
                 onCompositionEnd={(event) => { composing.current = false; setDraft(null); type(event.currentTarget.value); }}
-                onBlur={() => { composing.current = false; setDraft(null); }}
+                onBlur={() => { setFocused(false); composing.current = false; setDraft(null); }}
                 onSelect={keepCaretAtEnd} onKeyUp={keepCaretAtEnd} onMouseUp={keepCaretAtEnd}
                 aria-describedby="home-race-sentence home-race-hint" autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false}
                 className="mt-2 min-h-11 w-full rounded-field border border-border bg-surface px-3 font-mono text-base text-foreground caret-accent-text focus-visible:outline-2 focus-visible:outline-accent-text"
@@ -276,19 +303,6 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
             .replace("{place}", number.format(result.place)) : ""}</p>
         </div>
       </div>
-      {!still && <div className="pointer-events-none absolute inset-x-0 top-0 h-[230px] sm:h-[260px]">
-        <div className="pointer-events-auto">
-          <MediaPlaybackButton playing={!userPaused} label={userPaused ? labels.resume : labels.pause}
-            onClick={() => {
-              if (!userPaused) {
-                const next = transitionPlayableRace(raceRef.current, { type: "tick", deltaMs: elapsed() });
-                raceRef.current = next;
-                setRace(next);
-              }
-              setUserPaused((value) => !value);
-            }} />
-        </div>
-      </div>}
       <figcaption className="mt-3 px-4 text-center text-xs text-muted">{labels.caption}</figcaption>
     </figure>
   );
