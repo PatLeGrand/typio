@@ -6,21 +6,24 @@ type HomeApproachSectionProps = {
 
 export function HomeApproachSection({ home }: HomeApproachSectionProps) {
   return (
-    <section id="approach" className="scroll-mt-24 bg-accent-panel px-4 py-16 sm:px-8 sm:py-[88px]" aria-labelledby="approach-title">
-      <div className="mx-auto flex w-full max-w-[1264px] flex-col gap-12 sm:gap-14">
-        <div className="flex max-w-[750px] flex-col gap-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{home.approach.eyebrow}</p>
-          <h2 id="approach-title" className="text-balance text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
+    <section id="approach" className="relative z-10 scroll-mt-24 py-16 pl-16 pr-6 md:scroll-mt-0 md:px-8 md:py-24" aria-labelledby="approach-title">
+      <div className="mx-auto flex max-w-[1120px] flex-col gap-16 md:gap-24">
+        <div className="relative md:pr-40">
+          <span data-track-point aria-hidden="true" className="absolute -top-8 right-20" />
+          <span data-track-point aria-hidden="true" className="absolute -bottom-8 right-20" />
+          <h2 id="approach-title" className="text-balance text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px] md:max-w-[628px]">
             {home.approach.title}
           </h2>
         </div>
-        <ol className="grid gap-10 md:grid-cols-3 md:gap-16">
+        <ol className="flex flex-col gap-16 md:gap-24">
           {home.approach.steps.map((step, index) => (
-            <li key={step.title} className="flex flex-col gap-[18px]">
-              <span className="text-sm text-accent-text">{String(index + 1).padStart(2, "0")}</span>
-              <span className="h-px w-full bg-border" aria-hidden="true" />
-              <h3 className="text-2xl font-medium text-foreground sm:text-[26px]">{step.title}</h3>
-              <p className="text-base leading-[1.65] text-muted">{step.description}</p>
+            <li key={step.title} className={`relative ${index % 2 === 0 ? "md:pl-40" : "md:pr-40"}`}>
+              <span data-track-point aria-hidden="true" className={`absolute -top-8 ${index % 2 === 0 ? "left-20" : "right-20"}`} />
+              <span data-track-point aria-hidden="true" className={`absolute -bottom-8 ${index % 2 === 0 ? "left-20" : "right-20"}`} />
+              <div className={`flex min-w-0 flex-col gap-4 md:max-w-[628px] ${index % 2 === 0 ? "md:ml-auto" : ""}`}>
+                <h3 className="text-balance text-2xl font-medium text-foreground sm:text-[26px]">{step.title}</h3>
+                <p className="text-base leading-[1.65] text-muted">{step.description}</p>
+              </div>
             </li>
           ))}
         </ol>

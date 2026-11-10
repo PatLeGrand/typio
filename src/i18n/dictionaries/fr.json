@@ -13,6 +13,7 @@
     "actions": "Détail",
     "view": "Voir",
     "empty": "Aucune course sur cette page.",
+    "emptyFirst": "Aucune course pour le moment.",
     "play": "Jouer",
     "firstPage": "Revenir à la page 1",
     "pagination": "Pagination de l’historique",
@@ -24,6 +25,7 @@
     "back": "Retour à l’historique"
   },
   "raceEntry": {
+    "invalidTitle": "Configuration invalide",
     "title": "Course",
     "pending": "Tes réglages sont prêts. La course jouable sera disponible prochainement.",
     "invalid": "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
@@ -108,6 +110,7 @@
       "back": "Modifier les réglages"
     },
     "results": {
+      "title": "Résultats",
       "personalBest": "Record personnel",
       "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
@@ -203,14 +206,33 @@
       "approach": "Démarche"
     },
     "hero": {
-      "titleLine1": "Petit à petit,",
-      "titleLine2": "plus à l’aise au clavier.",
-      "description": "Typio, une plateforme pour apprendre à taper au clavier et prendre de bonnes habitudes, à son rythme."
+      "titleLine1": "Tes amis tapent vite.",
+      "titleLine2": "Tape plus vite.",
+      "description": "Une course, quelques phrases, tout le monde sur la même piste."
+    },
+    "playableRace": {
+      "prompt": "Clique sur la phrase, puis tape.",
+      "promptFocused": "À toi : commence à taper.",
+      "racing": "C’est parti !",
+      "inputLabel": "Recopie la phrase pour courir",
+      "hint": "Corrige avec Retour arrière. Échap pour quitter.",
+      "wpm": "MPM",
+      "accuracy": "Précision",
+      "place": "Place",
+      "replay": "Rejouer",
+      "challenge": "Défier mes amis",
+      "progress": "Progression des coureurs",
+      "result": "Course terminée : {wpm} MPM, {accuracy} de précision, place {place} sur 4.",
+      "texts": [
+        "Le poulpe enfile ses baskets et rejoint ses amis pour une course sur la plage.",
+        "Tes doigts filent sur le clavier pendant que les copains visent la ligne finale.",
+        "Un dernier virage sous les palmiers et toute la bande se retrouve pour la revanche."
+      ]
     },
     "raceShowcase": {
       "pause": "Mettre la course en pause",
       "resume": "Reprendre la course",
-      "caption": "Une course de démonstration : toi et trois bots avancez sur la piste au rythme de la frappe.",
+      "caption": "Une course d’essai contre trois bots, sans compte ni score enregistré.",
       "racers": [
         "Toi",
         "Bot Azur",
@@ -226,42 +248,38 @@
       "videoDescription": "Ton navigateur ne peut pas lire la vidéo de présentation de Typio."
     },
     "why": {
-      "eyebrow": "Pourquoi Typio ?",
-      "title": "Le clavier fait partie du quotidien. L’apprendre aussi.",
-      "description": "Écrire un texte, préparer un devoir, partager une idée… Typio part d’une envie simple : aider les élèves à se familiariser avec la frappe."
+      "title": "Un clavier, des amis, une ligne d’arrivée.",
+      "description": "Devoirs, messages, projets : tout passe par le clavier. Autant progresser en doublant tes amis."
     },
     "video": {
-      "eyebrow": "En vidéo",
-      "title": "Typio, de plus près.",
-      "description": "Une place pour montrer le projet, son interface et son intention."
+      "title": "Une course, en vrai.",
+      "description": "Du décompte aux résultats, regarde comment se passe une partie."
     },
     "approach": {
-      "eyebrow": "La démarche",
-      "title": "Des gestes simples. Du temps pour apprendre.",
+      "title": "Trois étapes avant l’arrivée.",
       "steps": [
         {
-          "title": "Prendre ses repères",
-          "description": "Observer le clavier et trouver une position confortable avant de se lancer."
+          "title": "Crée ta salle",
+          "description": "Règle la course, puis partage le code avec tes amis."
         },
         {
-          "title": "Pratiquer tranquillement",
-          "description": "Taper avec attention, sans chercher à accélérer à tout prix."
+          "title": "Lance le décompte",
+          "description": "Tout le monde s’élance en même temps, sur le même texte."
         },
         {
-          "title": "Revenir à son rythme",
-          "description": "Recommencer pour se familiariser avec les touches, petit à petit."
+          "title": "Prends la tête",
+          "description": "Vise juste autant que vite : seuls les bons caractères te font avancer."
         }
       ]
     },
     "about": {
-      "eyebrow": "Derrière Typio",
-      "title": "Un projet autour d’un geste quotidien.",
-      "description": "Typio est un projet d’apprentissage de la dactylographie destiné aux élèves. Cette page présente son intention, ses aperçus et sa démarche : rendre la pratique du clavier plus familière.",
+      "title": "Fait pour progresser en s’amusant.",
+      "description": "Typio est un projet pensé pour les élèves : plus on joue, plus le clavier devient naturel.",
       "signature": "Petit à petit, plus vite au clavier."
     },
     "cta": {
-      "title": "À ton tour de prendre le clavier.",
-      "description": "Le premier pas commence avec quelques touches.",
+      "title": "Ta place sur la piste t’attend.",
+      "description": "Crée une salle, envoie le code, et que le plus rapide gagne.",
       "existingAccount": "Déjà un compte ?"
     }
   },
@@ -308,6 +326,8 @@
     "ageNote": "Discord et GitHub sont réservés aux 13 ans et plus."
   },
   "auth": {
+    "usernameRequired": "Saisis ton identifiant.",
+    "passwordRequired": "Saisis ton mot de passe.",
     "kicker": "À tes touches, prêt…",
     "enterKey": "Entrée",
     "showPassword": "Afficher le mot de passe",
@@ -405,7 +425,9 @@
       "oauth": "Si tu te connectes avec GitHub ou Discord : seulement l'identifiant numérique de ton compte chez eux, pour te reconnaître la prochaine fois. Ton nom d'utilisateur sur ce service sert une seule fois, à créer ton pseudo (ton nom affiché est le même), et n'est pas conservé à part. Ton nom, ton adresse e-mail, ta photo et tes autres informations ne sont pas conservés, ni les jetons d'accès : ils ne servent qu'une fois, pendant la connexion, puis sont jetés.",
       "preferences": "Ta langue et la disposition de ton clavier.",
       "session": "Ta session sur le serveur : l'empreinte du jeton de ta session et sa date d'expiration. Le jeton lui-même n'est pas stocké.",
-      "results": "Tes résultats de course, quand les courses seront disponibles."
+      "avatar": "Si tu ajoutes une photo de profil, Typio l’enregistre. Tu peux la retirer depuis ton profil.",
+      "results": "Tes résultats de course.",
+      "room": "Un lien temporaire entre ton compte et ta salle, avec son code et ta date d’entrée, pour éviter que tu sois dans deux salles à la fois. Il est effacé quand tu quittes la salle, quand tu en es retiré ou quand le serveur de jeu redémarre."
     },
     "cookiesTitle": "Cookies et stockage",
     "cookies": {
@@ -430,9 +452,11 @@
   "errorPage": {
     "title": "Oups, quelque chose s'est mal passé",
     "text": "Une erreur est survenue. Réessaie dans un instant.",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "home": "Retour à l'accueil"
   },
   "notFound": {
+    "illustration": "Retour à la piste",
     "eyebrow": "Erreur 404",
     "title": "Cette page a pris une mauvaise touche.",
     "text": "Impossible de trouver cette adresse. Le poulpe te raccompagne à l'accueil pour reprendre la course.",
@@ -631,6 +655,7 @@
     "identity": {
       "displayName": "Nom affiché",
       "usernameHelp": "Lecture seule · ton identifiant reste le même.",
+      "guestSince": "Invité depuis le",
       "memberSince": "Membre depuis le",
       "member": "Membre",
       "noUsername": "Aucun (invité)",
@@ -682,6 +707,7 @@
     "close": "Fermer"
   },
   "room": {
+    "unavailableTitle": "Salle indisponible",
     "race": {
       "finishCountdown": "Premier coureur arrivé : {time} pour terminer.",
       "start": "Lancer la course",
@@ -691,9 +717,9 @@
       "grossWpm": "MPM brut",
       "errors": "Erreurs",
       "loading": "Chargement de la course…",
-      "stay": "Vous pouvez rester pour la prochaine course ou quitter la salle.",
-      "keyboard": "Pour participer, utilisez un ordinateur avec un clavier physique.",
-      "reconnecting": "Reconnexion en cours. La saisie reprendra avec votre progression enregistrée.",
+      "stay": "Tu peux rester pour la prochaine course ou quitter la salle.",
+      "keyboard": "Pour participer, utilise un ordinateur avec un clavier physique.",
+      "reconnecting": "Reconnexion en cours. La saisie reprendra avec ta progression enregistrée.",
       "confirmAbandon": "Abandonner cette course ?",
       "confirm": "Oui, abandonner",
       "cancel": "Continuer la course"

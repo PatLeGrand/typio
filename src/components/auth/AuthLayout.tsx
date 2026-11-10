@@ -37,7 +37,7 @@ export function AuthLayout({ locale, dictionary, panel, children }: AuthLayoutPr
         <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 py-2 text-[11px] text-muted lg:px-8">
           <p>{dictionary.footer.copyright}</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <Link href={`/${locale}/privacy`} className="inline-flex min-h-11 items-center rounded-field hover:text-foreground">
+            <Link href={`/${locale}/privacy`} className="road-link inline-flex min-h-11 items-center rounded-field hover:text-foreground">
               {dictionary.footer.privacy}
             </Link>
             <LanguageSwitcher locale={locale} labels={dictionary.language} />

@@ -13,6 +13,7 @@
     "actions": "Details",
     "view": "View",
     "empty": "No races on this page.",
+    "emptyFirst": "No races yet.",
     "play": "Play",
     "firstPage": "Back to page 1",
     "pagination": "Race history pagination",
@@ -24,6 +25,7 @@
     "back": "Back to history"
   },
   "raceEntry": {
+    "invalidTitle": "Invalid settings",
     "title": "Race",
     "pending": "Your settings are ready. The playable race is coming soon.",
     "invalid": "These settings are invalid. Return to settings to prepare your race.",
@@ -67,7 +69,7 @@
       "Lia"
     ],
     "stats": {
-      "title": "Game Stats",
+      "title": "Game stats",
       "timeLeft": "Time left:",
       "time": "Time:",
       "wpm": "WPM:",
@@ -108,6 +110,7 @@
       "back": "Change settings"
     },
     "results": {
+      "title": "Results",
       "personalBest": "Personal best",
       "newPersonalBest": "New personal best!",
       "podium": "Podium",
@@ -203,14 +206,33 @@
       "approach": "Approach"
     },
     "hero": {
-      "titleLine1": "Little by little,",
-      "titleLine2": "more at ease on the keyboard.",
-      "description": "Typio is a place to learn keyboard skills and build good habits at your own pace."
+      "titleLine1": "Your friends type fast.",
+      "titleLine2": "Type faster.",
+      "description": "One race, a few sentences, everyone on the same track."
+    },
+    "playableRace": {
+      "prompt": "Click the sentence, then type.",
+      "promptFocused": "Your turn: start typing.",
+      "racing": "Go go go!",
+      "inputLabel": "Copy the sentence to race",
+      "hint": "Use Backspace to correct. Escape to leave.",
+      "wpm": "WPM",
+      "accuracy": "Accuracy",
+      "place": "Place",
+      "replay": "Play again",
+      "challenge": "Challenge my friends",
+      "progress": "Racer progress",
+      "result": "Race finished: {wpm} WPM, {accuracy} accuracy, place {place} out of 4.",
+      "texts": [
+        "The octopus puts on running shoes and joins a few friends for a race on the beach.",
+        "Your fingers fly across the keyboard while your friends race towards the finish.",
+        "One last turn under the palm trees and the whole crew is ready for another race."
+      ]
     },
     "raceShowcase": {
       "pause": "Pause the race",
       "resume": "Resume the race",
-      "caption": "A demo race: you and three bots move along the track at your typing pace.",
+      "caption": "A trial race against three bots, with no account or saved score.",
       "racers": [
         "You",
         "Bot Azure",
@@ -226,42 +248,38 @@
       "videoDescription": "Your browser cannot play the Typio presentation video."
     },
     "why": {
-      "eyebrow": "Why Typio?",
-      "title": "The keyboard is part of everyday life. Learning it should be too.",
-      "description": "Writing a text, preparing homework, sharing an idea… Typio starts with a simple goal: helping students become comfortable with typing."
+      "title": "A keyboard, your friends, one finish line.",
+      "description": "Homework, messages, projects: it all goes through the keyboard. Might as well get better by overtaking your friends."
     },
     "video": {
-      "eyebrow": "In video",
-      "title": "A closer look at Typio.",
-      "description": "A place to show the project, its interface and its purpose."
+      "title": "A real race, up close.",
+      "description": "From the countdown to the results, see how a race plays out."
     },
     "approach": {
-      "eyebrow": "The approach",
-      "title": "Simple habits. Time to learn.",
+      "title": "Three steps to the finish.",
       "steps": [
         {
-          "title": "Find your bearings",
-          "description": "Observe the keyboard and find a comfortable position before getting started."
+          "title": "Create your room",
+          "description": "Set up the race, then share the code with your friends."
         },
         {
-          "title": "Practise calmly",
-          "description": "Type with care without trying to speed up at all costs."
+          "title": "Start the countdown",
+          "description": "Everyone takes off at once, on the same text."
         },
         {
-          "title": "Return at your pace",
-          "description": "Start again to become familiar with the keys, little by little."
+          "title": "Take the lead",
+          "description": "Aim for accuracy as well as speed: only correct characters move you forward."
         }
       ]
     },
     "about": {
-      "eyebrow": "Behind Typio",
-      "title": "A project built around an everyday skill.",
-      "description": "Typio is a keyboard-learning project for students. This page presents its purpose, previews and approach: making keyboard practice feel more familiar.",
+      "title": "Built to help you improve while having fun.",
+      "description": "Typio is a project made for students: the more you play, the more natural the keyboard feels.",
       "signature": "Little by little, faster at the keyboard."
     },
     "cta": {
-      "title": "Your turn to take the keyboard.",
-      "description": "The first step begins with a few keys.",
+      "title": "Your spot on the track is waiting.",
+      "description": "Create a room, send the code, and may the fastest typist win.",
       "existingAccount": "Already have an account?"
     }
   },
@@ -308,6 +326,8 @@
     "ageNote": "Discord and GitHub are for ages 13 and over."
   },
   "auth": {
+    "usernameRequired": "Enter your username.",
+    "passwordRequired": "Enter your password.",
     "kicker": "Fingers ready…",
     "enterKey": "Enter",
     "showPassword": "Show password",
@@ -405,7 +425,9 @@
       "oauth": "If you sign in with GitHub or Discord: only the numeric ID of your account there, so we can recognise you next time. Your username on that service is used once, to create your username (your display name is the same), and is not kept separately. Your name, your email address, your picture and your other details are not kept, nor are the access tokens: they are used once, during sign-in, then thrown away.",
       "preferences": "Your language and your keyboard layout.",
       "session": "Your session on the server: a fingerprint of your session token and its expiry date. The token itself is not stored.",
-      "results": "Your race results, once races are available."
+      "avatar": "If you upload a profile photo, Typio stores it. You can remove it from your profile.",
+      "results": "Your race results.",
+      "room": "A temporary link between your account and your room, with its code and the date you joined, to keep you from being in two rooms at once. It is deleted when you leave the room, when you are removed from it or when the game server restarts."
     },
     "cookiesTitle": "Cookies and storage",
     "cookies": {
@@ -430,9 +452,11 @@
   "errorPage": {
     "title": "Oops, something went wrong",
     "text": "An error occurred. Try again in a moment.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "home": "Back to home"
   },
   "notFound": {
+    "illustration": "Back to the track",
     "eyebrow": "Error 404",
     "title": "This page hit the wrong key.",
     "text": "We couldn't find this address. The octopus will take you home so you can get back in the race.",
@@ -617,20 +641,21 @@
       "notLinked": "Not linked",
       "alternativeState": "Alternative state · GitHub or Discord",
       "link": "Link",
-      "linkedAccounts": "Linked Accounts",
+      "linkedAccounts": "Linked accounts",
       "setPassword": "Set a password",
       "description": "Your account, safe and sound.",
-      "changePassword": "Change Password",
+      "changePassword": "Change password",
       "noPassword": "If your account was created via GitHub or Discord, the password is optional. Instead:",
       "linkedAccountsDesc": "Your other entry doors to Typio.",
       "hasPassword": "A password is set for this account.",
       "privacy": "Only the account ID is kept, no email or avatar.",
       "title": "Security"
     },
-    "title": "My Profile",
+    "title": "My profile",
     "identity": {
-      "displayName": "Display Name",
+      "displayName": "Display name",
       "usernameHelp": "Read-only · your identifier remains the same.",
+      "guestSince": "Guest since",
       "memberSince": "Member since",
       "member": "Member",
       "noUsername": "None (guest)",
@@ -642,7 +667,7 @@
     "backToCourses": "Back to races",
     "actions": {
       "cancel": "Cancel",
-      "logout": "Log out",
+      "logout": "Sign out",
       "save": "Save",
       "fixErrors": "Fix errors to save.",
       "noChanges": "No changes to save."
@@ -650,13 +675,13 @@
     "settings": {
       "description": "The right settings to keep the rhythm.",
       "layoutHelp": "Used to correctly calculate your error heatmap",
-      "layout": "Keyboard Layout",
+      "layout": "Keyboard layout",
       "layouts": {
         "qwerty": "QWERTY",
         "azerty": "AZERTY",
-        "cmf": "Canadian Multilingual"
+        "cmf": "Canadian multilingual"
       },
-      "language": "Interface Language",
+      "language": "Interface language",
       "title": "Preferences",
       "theme": "Theme"
     },
@@ -682,6 +707,7 @@
     "close": "Close"
   },
   "room": {
+    "unavailableTitle": "Room unavailable",
     "race": {
       "finishCountdown": "First runner finished: {time} left to finish.",
       "start": "Start race",

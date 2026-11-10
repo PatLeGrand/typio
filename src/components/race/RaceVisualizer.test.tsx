@@ -41,7 +41,10 @@ vi.mock("pixi.js", () => {
   };
 });
 
-beforeEach(() => { scene.dark = false; });
+beforeEach(() => {
+  scene.dark = false;
+  vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+});
 
 it("keeps the default race running, pauses after drawing, and resumes at the requested FPS", async () => {
   const { rerender, unmount } = render(<RaceVisualizer racers={[]} />);

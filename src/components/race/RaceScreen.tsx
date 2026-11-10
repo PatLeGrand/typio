@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { usePhysicalKeyboard } from "./usePhysicalKeyboard";
 import Link from "next/link";
 import { BarChart3, Flag, Trophy } from "lucide-react";
@@ -74,7 +74,9 @@ export function RaceScreen({
     now,
     random,
   });
+  const typingRef = useRef<HTMLInputElement>(null);
   const [confirmAbandon, setConfirmAbandon] = useState(false);
+  const [focusAbandon, setFocusAbandon] = useState(false);
   const physicalKeyboard = usePhysicalKeyboard();
   const settingsHref = `/${locale}/race/settings?${serializeRaceSettings(settings)}`;
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
@@ -138,8 +140,8 @@ export function RaceScreen({
             {confirmAbandon && racing ? <div role="group" aria-label={roomLabels.confirmAbandon} className="flex flex-wrap items-center gap-3">
               <p>{roomLabels.confirmAbandon}</p>
               <Button onClick={() => { abandon(); setConfirmAbandon(false); }}>{roomLabels.confirm}</Button>
-              <Button variant="secondary" onClick={() => setConfirmAbandon(false)}>{roomLabels.cancel}</Button>
-            </div> : <Button variant="secondary" disabled={!racing} onClick={() => setConfirmAbandon(true)} className="min-h-11 py-2">
+              <Button autoFocus variant="secondary" onClick={() => { setFocusAbandon(!typingRef.current); setConfirmAbandon(false); typingRef.current?.focus(); }}>{roomLabels.cancel}</Button>
+            </div> : <Button autoFocus={focusAbandon} variant="secondary" disabled={!racing} onClick={() => { setFocusAbandon(false); setConfirmAbandon(true); }} className="min-h-11 py-2">
               <Flag aria-hidden="true" className="size-4" />
               {labels.abandon}
             </Button>}
@@ -226,13 +228,14 @@ export function RaceScreen({
           locale={locale}
           labels={labels}
           rows={results}
-          headline={headline}
+          headline={labels.results.title}
           playerAvatar={playerAvatar}
           settingsHref={settingsHref}
           onReplay={() => { setConfirmAbandon(false); void replay(); }}
         />
       ) : round.session.lifecycle.phase !== "results" ? (
         physicalKeyboard ? <RaceTypingPanel
+          focusRef={typingRef}
           labels={labels.typing}
           fog={(round.fogUntil[PLAYER_ID] ?? 0) > clock}
           bonusMessage={playerBonusMessage(round.bonusEvents, PLAYER_ID, clock, labels.bonuses, racers)}

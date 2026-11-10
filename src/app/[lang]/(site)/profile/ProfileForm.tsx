@@ -150,13 +150,13 @@ export function ProfileForm({
                   height={72}
                   className="bg-accent-panel rounded-full object-cover shrink-0"
                 />
-                <div className="flex flex-col gap-1">
+                <div className="flex min-w-0 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-2xl font-bold text-foreground">{user.displayName}</h2>
+                    <h2 className="min-w-0 [overflow-wrap:anywhere] text-2xl font-bold text-foreground">{user.displayName}</h2>
                     <Badge>{isGuest ? dictionary.header.guest : profile.identity.member}</Badge>
                   </div>
                   <p className="text-sm text-muted">
-                    {profile.identity.memberSince} {formatter.format(dbUser.createdAt)}
+                    {isGuest ? profile.identity.guestSince : profile.identity.memberSince} {formatter.format(dbUser.createdAt)}
                   </p>
                 </div>
               </div>

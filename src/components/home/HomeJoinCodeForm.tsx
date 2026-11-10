@@ -33,7 +33,7 @@ export function HomeJoinCodeForm({ labels, locale }: HomeJoinCodeFormProps) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex w-full flex-col gap-3 text-left sm:flex-row sm:items-start">
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 sm:min-w-36">
         <TextField
           ref={inputRef}
           label={labels.label}

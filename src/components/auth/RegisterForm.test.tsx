@@ -17,7 +17,15 @@ function renderForm(locale: "fr" | "en" = "fr") {
   return dictionary;
 }
 
-async function submit(): Promise<void> {
+async function submit(valid = true): Promise<void> {
+  if (valid) {
+    for (const [name, value] of [["username", "Alice_B"], ["password", "correct-password1"], ["passwordConfirm", "correct-password1"]]) {
+      const input = document.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
+      if (!input.value) fireEvent.change(input, { target: { value } });
+    }
+    const terms = screen.getByRole("checkbox");
+    if (!(terms as HTMLInputElement).checked) fireEvent.click(terms);
+  }
   await act(async () => {
     fireEvent.submit(document.querySelector("form") as HTMLFormElement);
   });
@@ -115,10 +123,12 @@ describe("RegisterForm", () => {
     expect(data.get("locale")).toBe("en");
   });
 
-  it("n'envoie pas « terms » quand la case n'est pas cochée", async () => {
+  it("affiche toutes les erreurs et cible le premier champ sans appeler le serveur", async () => {
     renderForm();
-    await submit();
-    expect(mocks.register.mock.calls[0][1].has("terms")).toBe(false);
+    await submit(false);
+    expect(mocks.register).not.toHaveBeenCalled();
+    expect(document.querySelectorAll('[aria-invalid="true"]')).toHaveLength(4);
+    expect(document.getElementById("register-username")).toHaveFocus();
   });
 
   it("désactive le bouton pendant l'envoi", async () => {
@@ -208,19 +218,19 @@ describe("RegisterForm", () => {
     }
   });
 
-  it("conserve le pseudo et le consentement après une erreur, mais vide les mots de passe", async () => {
-    mocks.register.mockResolvedValue({ status: "error", code: "PASSWORD_MISMATCH", field: "passwordConfirm" });
+  it("conserve le pseudo et le consentement après une erreur, et les mots de passe", async () => {
+    mocks.register.mockResolvedValue({ status: "error", code: "USERNAME_TAKEN", field: "username" });
     const { register } = renderForm();
     type(register.pseudoLabel, "Alice_B");
     type(register.passwordLabel, "correct-password1");
-    type(register.confirmLabel, "correct-password2");
+    type(register.confirmLabel, "correct-password1");
     fireEvent.click(screen.getByRole("checkbox"));
 
     await submit();
 
     expect(screen.getByRole("textbox", { name: register.pseudoLabel })).toHaveValue("Alice_B");
     expect(screen.getByRole("checkbox")).toBeChecked();
-    expect(screen.getByLabelText(register.passwordLabel, { selector: "input" })).toHaveValue("");
-    expect(screen.getByLabelText(register.confirmLabel, { selector: "input" })).toHaveValue("");
+    expect(screen.getByLabelText(register.passwordLabel, { selector: "input" })).toHaveValue("correct-password1");
+    expect(screen.getByLabelText(register.confirmLabel, { selector: "input" })).toHaveValue("correct-password1");
   });
 });

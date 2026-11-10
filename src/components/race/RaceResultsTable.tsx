@@ -38,22 +38,25 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId,
   const seconds = new Intl.NumberFormat(lang, { style: "unit", unit: "second", maximumFractionDigits: 1 });
   return (
     <div tabIndex={0} role="region" aria-label={labels.tableTitle} className="overflow-x-auto rounded-card border border-border bg-surface">
-      <table className="w-full text-left text-sm">
+      <table className="w-full min-w-[40rem] table-fixed text-left text-sm">
         <caption className="sr-only">{labels.tableTitle}</caption>
+        <colgroup>
+          {["6%", "28%", "8%", "8%", "10%", "8%", "9%", "10%", "13%"].map((width, index) => <col key={index} style={{ width }} />)}
+        </colgroup>
         <thead><tr>
-          {[columns.rank, columns.name, columns.wpm, extraLabels.grossWpm, columns.accuracy, extraLabels.errors, columns.time, columns.bonuses, columns.status].map((label) => <th key={label} scope="col" className="whitespace-nowrap px-3 py-2">{label}</th>)}
+          {[columns.rank, columns.name, columns.wpm, extraLabels.grossWpm, columns.accuracy, extraLabels.errors, columns.time, columns.bonuses, columns.status].map((label) => <th key={label} scope="col" className="px-2 py-2">{label}</th>)}
         </tr></thead>
         <tbody>{rows.map((row) => (
           <tr key={row.id} className={`border-t border-border ${row.id === highlightId ? "bg-accent-panel font-bold" : ""}`}>
-            <td className="px-3 py-2">{number.format(row.rank)}</td>
-            <th scope="row" className="px-3 py-2"><span className="inline-flex items-center gap-2"><Avatar name={row.name} {...(row.avatar ?? { seed: row.id })} size={24} />{row.name}{row.isBot ? ` (${extraLabels.bot}${row.level ? ` · ${botLevels[row.level]}` : ""})` : ""}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</span></th>
-            <td className="px-3 py-2">{number.format(row.wpm)}</td>
-            <td className="px-3 py-2">{number.format(row.grossWpm)}</td>
-            <td className="px-3 py-2">{percent.format(row.accuracy / 100)}</td>
-            <td className="px-3 py-2">{number.format(row.errors)}</td>
-            <td className="whitespace-nowrap px-3 py-2">{seconds.format(row.timeMs / 1000)}</td>
-            <td className="px-3 py-2">{number.format(row.bonusesReceived ?? 0)}{row.bonusTypes?.length ? ` (${row.bonusTypes.map((type) => labels.bonusTypes[type]).join(", ")})` : ""}</td>
-            <td className="px-3 py-2">{labels.statuses[row.status]}</td>
+            <td className="px-2 py-2 tabular-nums">{number.format(row.rank)}</td>
+            <th scope="row" className="px-2 py-2"><span className="flex items-start gap-2"><Avatar name={row.name} {...(row.avatar ?? { seed: row.id })} size={24} /><span className="min-w-0 [overflow-wrap:anywhere]">{row.name}{row.isBot ? ` (${extraLabels.bot}${row.level ? ` · ${botLevels[row.level]}` : ""})` : ""}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</span></span></th>
+            <td className="px-2 py-2 tabular-nums">{number.format(row.wpm)}</td>
+            <td className="px-2 py-2 tabular-nums">{number.format(row.grossWpm)}</td>
+            <td className="px-2 py-2 tabular-nums">{percent.format(row.accuracy / 100)}</td>
+            <td className="px-2 py-2 tabular-nums">{number.format(row.errors)}</td>
+            <td className="px-2 py-2 tabular-nums">{seconds.format(row.timeMs / 1000)}</td>
+            <td className="px-2 py-2 tabular-nums">{number.format(row.bonusesReceived ?? 0)}{row.bonusTypes?.length ? ` (${row.bonusTypes.map((type) => labels.bonusTypes[type]).join(", ")})` : ""}</td>
+            <td className="px-2 py-2 tabular-nums">{labels.statuses[row.status]}</td>
           </tr>
         ))}</tbody>
       </table>

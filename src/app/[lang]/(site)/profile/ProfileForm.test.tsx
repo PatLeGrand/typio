@@ -68,6 +68,7 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
     expect(screen.getByRole("group", { name: profile.settings.layout })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: profile.settings.language })).toBeInTheDocument();
     expect(screen.getByText(profile.identity.member)).toBeInTheDocument();
+    expect(screen.getByText(locale === "fr" ? "Membre depuis le 15 janvier 2026" : "Member since January 15, 2026")).toBeInTheDocument();
     expect(screen.getByText(profile.actions.noChanges)).toBeInTheDocument();
     expect(saveButton(dictionary)).toBeDisabled();
   });
@@ -209,6 +210,7 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
       dictionary.profile.identity.noUsername,
     );
     expect(screen.getByText(dictionary.header.guest)).toBeInTheDocument();
+    expect(screen.getByText(locale === "fr" ? "Invité depuis le 15 janvier 2026" : "Guest since January 15, 2026")).toBeInTheDocument();
   });
 });
 

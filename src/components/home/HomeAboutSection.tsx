@@ -6,15 +6,14 @@ type HomeAboutSectionProps = {
 
 export function HomeAboutSection({ home }: HomeAboutSectionProps) {
   return (
-    <section className="bg-surface px-4 py-16 sm:px-8 sm:py-[104px]" aria-labelledby="about-title">
-      <div className="mx-auto grid w-full max-w-[1264px] gap-10 lg:grid-cols-[480px_1fr] lg:gap-28">
-        <div className="flex flex-col gap-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{home.about.eyebrow}</p>
+    <section className="relative z-10 py-16 pl-16 pr-6 md:px-8 md:py-24" aria-labelledby="about-title">
+      <div className="relative mx-auto max-w-[1120px] md:pr-40">
+        <span data-track-point aria-hidden="true" className="absolute -top-8 right-20" />
+        <span data-track-point aria-hidden="true" className="absolute -bottom-8 right-20" />
+        <div className="flex min-w-0 flex-col gap-7 md:max-w-[628px]">
           <h2 id="about-title" className="text-balance text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
             {home.about.title}
           </h2>
-        </div>
-        <div className="flex flex-col gap-7">
           <p className="text-base leading-[1.65] text-muted sm:text-lg">{home.about.description}</p>
           <p className="font-medium text-foreground">{home.about.signature}</p>
         </div>

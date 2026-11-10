@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, CornerDownLeft } from "lucide-react";
 import { logout } from "@/auth/actions";
 import { AUTH_FIELDS, type CurrentUser } from "@/auth/types";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -23,6 +23,7 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
+  const headerRef = useRef<HTMLElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -36,30 +37,44 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof ResizeObserver === "undefined") return;
+    const root = document.documentElement;
+    const measure = () => root.style.setProperty("--site-header-height", `${header.getBoundingClientRect().height}px`);
+    const observer = new ResizeObserver(measure);
+    measure();
+    observer.observe(header);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--site-header-height");
+    };
+  }, []);
+
   return (
-    <header className={`md:sticky top-0 z-50 w-full border-b border-border bg-surface transition-[padding] duration-300 motion-reduce:transition-none ${isScrolled ? "md:border-b-0 md:bg-transparent md:pt-4 md:px-4" : ""}`}>
+    <header ref={headerRef} className={`md:sticky top-0 z-50 w-full border-b border-border bg-surface transition-[padding] duration-300 motion-reduce:transition-none ${isScrolled ? "md:border-b-0 md:bg-transparent md:pt-4 md:px-4" : ""}`}>
       <div className={`mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-3 min-h-24 px-4 py-4 transition-[padding,min-height,border-radius,box-shadow,background-color] duration-300 motion-reduce:transition-none ${
         isScrolled
-          ? "md:min-h-16 md:rounded-[32px] md:border md:border-border bg-surface md:shadow-sm md:py-2 md:px-8"
+          ? "md:min-h-16 md:rounded-[32px] md:border md:border-border bg-surface md:shadow-sm md:py-2 md:pl-8 md:pr-2.5"
           : "md:px-8 xl:px-[88px]"
       }`}>
         <Link href={`/${locale}`} className="rounded-field">
           <Logo name={dictionary.site.name} />
         </Link>
         <nav className={`order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted ${user ? "xl:flex xl:order-none xl:w-auto" : "lg:flex lg:order-none lg:w-auto"}`} aria-label={dictionary.navigation.main}>
-          <Link href={`/${locale}#why`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.why}</Link>
-          <Link href={`/${locale}#video`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
-          <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>
+          <Link href={`/${locale}#why`} className="road-link rounded-field hover:text-foreground">{dictionary.home.navigation.why}</Link>
+          <Link href={`/${locale}#video`} className="road-link rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
+          <Link href={`/${locale}#approach`} className="road-link rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>
         </nav>
         <div className="contents md:flex md:min-w-0 md:flex-wrap md:items-center md:justify-end md:gap-2">
-          <div className="ml-auto flex items-center gap-2 md:ml-0">
+          <div className="ml-auto flex items-center gap-1 md:ml-0">
             <LanguageSwitcher locale={locale} labels={dictionary.language} compact />
             <ThemeToggle labels={dictionary.theme} compact />
           </div>
           {user ? (
             <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-end gap-2 md:w-auto">
               <ProfileModal user={user} dictionary={dictionary} locale={locale}>
-                <span className="text-sm font-semibold text-foreground flex min-w-0 items-center gap-2">
+                <span className="text-sm font-semibold text-foreground flex min-h-11 min-w-0 items-center gap-2">
                   <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={28} />
                   <span className={user.kind === "guest" ? "max-w-24 truncate" : "max-w-24 truncate md:max-w-40"}>{user.displayName}</span>
                   {user.kind === "guest" ? (
@@ -85,7 +100,11 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
               <ButtonLink href={`/${locale}/login`} variant="ghost" compactOnMobile>
                 {dictionary.header.signIn}
               </ButtonLink>
-              <ButtonLink href={`/${locale}/register`} compactOnMobile>{dictionary.header.signUp}</ButtonLink>
+              <ButtonLink href={`/${locale}/register`} variant="key" compactOnMobile
+                className={`md:transition-[transform,translate,box-shadow,background-color,color,border-radius] md:duration-[100ms,100ms,100ms,100ms,100ms,300ms] md:motion-reduce:transition-none ${isScrolled ? "md:rounded-full" : ""}`}>
+                {dictionary.header.signUp}
+                <CornerDownLeft aria-hidden="true" className="hidden size-4 sm:block" />
+              </ButtonLink>
             </div>
           )}
         </div>

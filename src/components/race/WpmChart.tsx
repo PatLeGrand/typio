@@ -27,7 +27,7 @@ export function WpmChart({ rows, locale, labels, highlightId }: Props) {
   return (
     <figure className="min-w-0 rounded-card border border-border bg-surface p-3 sm:p-5">
       <figcaption className="font-extrabold">{copy.title}</figcaption>
-      <svg viewBox="0 0 480 330" role="img" aria-label={`${copy.title}. ${copy.accessibleSummary}`} className="w-full text-foreground">
+      <svg viewBox="0 0 480 330" role="img" aria-label={`${copy.title}. ${copy.accessibleSummary}`} className="mx-auto w-full max-w-[480px] text-foreground">
         {Array.from({ length: 5 }, (_, i) => i * yStep).map((wpm) => (
           <g key={wpm}>
             <line x1="64" x2="456" y1={y(wpm)} y2={y(wpm)} stroke="var(--border)" />
@@ -51,24 +51,24 @@ export function WpmChart({ rows, locale, labels, highlightId }: Props) {
         {rows.map((row, index) => (
           <li key={row.id} className={`flex min-w-0 items-center gap-2 ${row.id === highlightId ? "font-extrabold" : ""}`}>
             <span aria-hidden="true" className="wpm-series inline-block w-5 shrink-0 border-t" style={{ ...seriesStyle(index), borderTopWidth: row.id === highlightId ? 3 : 1.5 }} />
-            <span className="break-words">{row.name}</span>
+            <span className="[overflow-wrap:anywhere]">{row.name}</span>
           </li>
         ))}
       </ul>
       <details className="mt-4 text-sm">
         <summary className="cursor-pointer">{copy.dataSummary}</summary>
-        <table className="mt-2 w-full text-left">
+        <table className="mt-2 w-full table-fixed text-left [overflow-wrap:anywhere]">
           <caption className="sr-only">{copy.accessibleSummary}</caption>
           <thead><tr>
-            <th scope="col" className="p-2">{labels.columns.name}</th>
+            <th scope="col" className="w-1/2 p-2">{labels.columns.name}</th>
             <th scope="col" className="p-2">{copy.finalWpm}</th>
             <th scope="col" className="p-2">{copy.peakWpm}</th>
           </tr></thead>
           <tbody>{rows.map((row) => (
             <tr key={row.id} className="border-t border-border">
               <th scope="row" className="break-words p-2">{row.name}</th>
-              <td className="p-2">{number.format(row.wpm)}</td>
-              <td className="p-2">{number.format(Math.max(row.wpm, ...row.wpmSeries.slice(0, Math.ceil(row.timeMs / 1000))))}</td>
+              <td className="p-2 tabular-nums">{number.format(row.wpm)}</td>
+              <td className="p-2 tabular-nums">{number.format(Math.max(row.wpm, ...row.wpmSeries.slice(0, Math.ceil(row.timeMs / 1000))))}</td>
             </tr>
           ))}</tbody>
         </table>

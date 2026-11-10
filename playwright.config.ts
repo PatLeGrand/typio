@@ -25,7 +25,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "bun run build && bun run start --hostname 127.0.0.1 --port 3100",
+      command: "bun run build && bun run start --hostname 0.0.0.0 --port 3100",
       env: {
         NODE_ENV: "production",
         NEXT_PUBLIC_REALTIME_URL: "http://localhost:3101",

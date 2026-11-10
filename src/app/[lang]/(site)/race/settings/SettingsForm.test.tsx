@@ -39,7 +39,7 @@ describe("SettingsForm", () => {
     const timeLimit = screen.getByRole("radiogroup", { name: fr.raceSettings.timeLimit.label });
     fireEvent.click(within(timeLimit).getByRole("radio", { name: `${minutes} min` }));
     expect(within(screen.getByRole("complementary")).getByText(`${minutes} min`)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Lancer la course →" }));
+    fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.summary.start }));
     const expectedConfig = serializeRaceSettings({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds: seconds as TimeLimitSeconds });
     expect(mockPush).toHaveBeenCalledWith(`/fr/race?${expectedConfig}`);
   });
@@ -50,7 +50,7 @@ describe("SettingsForm", () => {
     fireEvent.click(within(timeLimit).getByRole("radio", { name: "2 min" }));
     fireEvent.click(within(timeLimit).getByRole("radio", { name: fr.raceSettings.timeLimit.none }));
     expect(within(screen.getByRole("complementary")).getByText(fr.raceSettings.timeLimit.noneShort)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Lancer la course →" }));
+    fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.summary.start }));
     const config = new URLSearchParams(mockPush.mock.calls[0][0].split("?")[1]).get("config");
     expect(JSON.parse(config ?? "{}")).toMatchObject({ timeLimitSeconds: null });
   });
@@ -65,7 +65,7 @@ describe("SettingsForm", () => {
   it("blocks excessive exclusions", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
     fireEvent.change(screen.getByRole("textbox", { name: fr.raceSettings.excludedChars.label }), { target: { value: "x".repeat(101) } });
-    fireEvent.click(screen.getByRole("button", { name: "Lancer la course →" }));
+    fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.summary.start }));
     expect(screen.getByRole("alert")).toHaveTextContent(fr.raceSettings.excludedChars.error);
     expect(mockPush).not.toHaveBeenCalled();
   });
@@ -76,13 +76,13 @@ describe("SettingsForm", () => {
   it("affiche la page dans la langue demandée (français ou anglais)", () => {
     const { unmount } = render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
     expect(screen.getByRole("heading", { name: "Paramètres de course" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Lancer la course →" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: fr.raceSettings.summary.start })).toBeInTheDocument();
 
     unmount();
 
     render(<SettingsForm lang="en" dict={en.raceSettings} />);
     expect(screen.getByRole("heading", { name: "Race settings" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Start race →" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: en.raceSettings.summary.start })).toBeInTheDocument();
   });
 
   it("réinitialise les réglages par défaut", () => {
@@ -114,7 +114,7 @@ describe("SettingsForm", () => {
     fireEvent.change(screen.getByRole("combobox", { name: fr.raceSettings.length.label }), { target: { value: "75" } });
 
     // Lancer
-    const startButton = screen.getByRole("button", { name: "Lancer la course →" });
+    const startButton = screen.getByRole("button", { name: fr.raceSettings.summary.start });
     fireEvent.click(startButton);
 
     const expectedConfig = serializeRaceSettings({
@@ -133,7 +133,7 @@ describe("SettingsForm accessibility and plurals", () => {
     const field = screen.getByRole("textbox", { name: fr.raceSettings.excludedChars.label });
     expect(field).toHaveAccessibleDescription(`0 caractère exclu ${fr.raceSettings.excludedChars.help}`);
     fireEvent.change(field, { target: { value: "x".repeat(101) } });
-    fireEvent.click(screen.getByRole("button", { name: "Lancer la course →" }));
+    fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.summary.start }));
     expect(field).toHaveAccessibleDescription(expect.stringContaining(fr.raceSettings.excludedChars.error));
   });
 

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -48,6 +48,41 @@ describe("SiteHeader", () => {
       expect(screen.getByRole("link", { name: dictionary.header.signUp })).toHaveAttribute("href", `/${locale}/register`);
       expect(screen.queryByRole("button", { name: dictionary.header.signOut })).toBeNull();
     });
+
+    it("aligne les liens sur 44 px et réserve l'icône Entrée aux écrans sm et plus", () => {
+      const dictionary = getDictionary(locale);
+      render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
+
+      expect(screen.getByRole("link", { name: dictionary.header.signIn })).toHaveClass("min-h-11", "text-accent-text");
+      const signUp = screen.getByRole("link", { name: dictionary.header.signUp });
+      expect(signUp).toHaveClass("min-h-11", "bg-key-yellow", "text-key-ink", "whitespace-nowrap");
+      expect(signUp.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+      expect(signUp.querySelector("svg")).toHaveClass("hidden", "size-4", "sm:block");
+    });
+  });
+
+  it.each(["fr", "en"] as const)("souligne les trois liens centraux au survol et au clavier (%s)", (locale) => {
+    const dictionary = getDictionary(locale);
+    render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
+
+    for (const name of [dictionary.home.navigation.why, dictionary.home.navigation.preview, dictionary.home.navigation.approach]) {
+      expect(screen.getByRole("link", { name })).toHaveClass("road-link");
+    }
+  });
+
+  it("arrondit la touche et ménage son bord droit uniquement dans la barre réduite", () => {
+    render(<SiteHeader locale="fr" dictionary={getDictionary("fr")} user={null} />);
+    const signUp = screen.getByRole("link", { name: getDictionary("fr").header.signUp });
+    const bar = screen.getByRole("banner").firstElementChild;
+    expect(signUp).not.toHaveClass("md:rounded-full");
+    expect(bar).not.toHaveClass("md:pr-2.5");
+    vi.spyOn(window, "scrollY", "get").mockReturnValue(30);
+    fireEvent.scroll(window);
+    expect(signUp).toHaveClass("md:rounded-full", "md:duration-[100ms,100ms,100ms,100ms,100ms,300ms]");
+    expect(bar).toHaveClass("md:pl-8", "md:pr-2.5");
+    vi.restoreAllMocks();
+    fireEvent.scroll(window);
+    expect(signUp).not.toHaveClass("md:rounded-full");
   });
 
   describe.each(["fr", "en"] as const)("connecté (%s)", (locale) => {

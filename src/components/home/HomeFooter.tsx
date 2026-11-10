@@ -22,27 +22,27 @@ export function HomeFooter({ dictionary, locale, user }: HomeFooterProps) {
             <p className="text-sm text-muted">{brand.tagline}</p>
           </div>
           <div className="grid grid-cols-2 gap-12 text-sm sm:gap-24">
-            <nav aria-label={dictionary.navigation.footer} className="flex flex-col gap-3 text-muted">
+            <nav aria-label={dictionary.navigation.footer} className="flex flex-col items-start gap-3 text-muted">
               <p className="font-semibold text-foreground">{home.navigation.footerExplore}</p>
-              <Link href="#why" className="hover:text-foreground">{home.navigation.why}</Link>
-              <Link href="#video" className="hover:text-foreground">{home.navigation.preview}</Link>
-              <Link href="#approach" className="hover:text-foreground">{home.navigation.approach}</Link>
+              <Link href="#why" className="road-link hover:text-foreground">{home.navigation.why}</Link>
+              <Link href="#video" className="road-link hover:text-foreground">{home.navigation.preview}</Link>
+              <Link href="#approach" className="road-link hover:text-foreground">{home.navigation.approach}</Link>
             </nav>
-            <nav aria-label={dictionary.navigation.account} className="flex flex-col gap-3 text-muted">
+            <nav aria-label={dictionary.navigation.account} className="flex flex-col items-start gap-3 text-muted">
               <p className="font-semibold text-foreground">{home.navigation.footerAccount}</p>
               {user === null ? (
-                <Link href={`/${locale}/login`} className="hover:text-foreground">{home.signIn}</Link>
+                <Link href={`/${locale}/login`} className="road-link hover:text-foreground">{home.signIn}</Link>
               ) : null}
               {user === null || user.kind === "guest" ? (
-                <Link href={`/${locale}/register`} className="hover:text-foreground">{home.signUp}</Link>
+                <Link href={`/${locale}/register`} className="road-link hover:text-foreground">{home.signUp}</Link>
               ) : null}
             </nav>
           </div>
         </div>
         <div className="h-px bg-border" aria-hidden="true" />
-        <div className="flex flex-col justify-between gap-3 text-xs text-muted sm:flex-row">
+        <div className="flex flex-col items-start justify-between gap-3 text-xs text-muted sm:flex-row">
           <p>{footer.copyright}</p>
-          <Link href={`/${locale}/privacy`} className="rounded-field hover:text-foreground">{footer.privacy}</Link>
+          <Link href={`/${locale}/privacy`} className="road-link rounded-field hover:text-foreground">{footer.privacy}</Link>
         </div>
       </div>
     </footer>

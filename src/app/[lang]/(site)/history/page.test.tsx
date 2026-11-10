@@ -53,7 +53,10 @@ describe.each([HistoryPage, RaceHistoryPage])("history access (%s)", (page) => {
 it("validates the page and queries only the current member's results", async () => {
   render(await HistoryPage({ ...props, searchParams: Promise.resolve({ page: ["2", "3"] }) }));
   expect(mocks.list).toHaveBeenCalledWith(member.id, { page: 1, pageSize: 20 });
-  expect(screen.queryByRole("link", { name: getDictionary("en").history.next })).toBeNull();
+  const { history } = getDictionary("en");
+  expect(screen.getByText(history.emptyFirst)).toBeInTheDocument();
+  expect(screen.queryByRole("navigation", { name: history.pagination })).toBeNull();
+  expect(screen.getByRole("link", { name: history.play })).toHaveAttribute("href", "/en/play");
 });
 
 it("offers a return to page 1 when a page is beyond the end", async () => {

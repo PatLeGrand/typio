@@ -42,7 +42,7 @@ export default async function RaceHistoryPage({ params }: {
       <RaceResultsTable rows={race.rows.map((row) => ({ ...row, avatar: { seed: row.id, userId: row.id, avatarVersion: row.avatarVersion } }))} lang={locale} labels={raceScreen.results} extraLabels={room.race} botLevels={raceScreen.botLevels} highlightId={user.id} />
       <WpmChart rows={race.rows} locale={locale} labels={raceScreen.results} highlightId={user.id} />
       <MissedKeysHeatmap missedKeys={race.missedKeys} locale={locale} labels={raceScreen.results} />
-      <Link className="underline" href={prefixWithLocale("/history", locale)}>{history.back}</Link>
+      <Link className="road-link-inline" href={prefixWithLocale("/history", locale)}>{history.back}</Link>
     </main>
   );
 }

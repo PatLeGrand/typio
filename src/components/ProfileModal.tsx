@@ -74,8 +74,8 @@ export function ProfileModal({ user, dictionary, locale, children }: ProfileModa
 
             <div className="flex items-center gap-3 border-b border-border pb-4">
               <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={48} />
-              <div>
-                <h2 id={titleId} className="text-xl font-bold">{user.displayName}</h2>
+              <div className="min-w-0">
+                <h2 id={titleId} className="[overflow-wrap:anywhere] text-xl font-bold">{user.displayName}</h2>
                 {user.kind === "guest" && (
                   <span className="text-sm text-muted">{dictionary.header.guest}</span>
                 )}
