@@ -223,10 +223,13 @@ it("focuses the field from the track, updates its prompt and keeps pause indepen
 it("shows real results once, focuses the result heading and starts a new round explicitly", () => {
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
+  act(() => idle({} as IdleDeadline));
   const input = screen.getByRole("textbox", { name: playable.inputLabel });
   fireEvent.change(input, { target: { value: "L" } });
   act(() => vi.advanceTimersByTime(10_000));
   fireEvent.change(input, { target: { value: playable.texts[0] } });
+  const progress = JSON.parse(screen.getByTestId("scene").getAttribute("data-progress")!);
+  expect(progress[0]).toBe(100);
   const status = screen.getByRole("status");
   expect(status).toHaveTextContent(`${Math.round(playable.texts[0].length / 5 * 6)} MPM`);
   expect(status).toHaveTextContent("100 % de précision, place 1 sur 4");

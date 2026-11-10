@@ -83,7 +83,9 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
     const next = transitionPlayableRace(previous, { type: "input", value, deltaMs: elapsed() });
     raceRef.current = next;
     setRace(next);
-    if (previous.phase === "waiting" && next.phase !== "waiting") {
+    if (next.phase === "finished") {
+      setFrame({ progress: playableRaceProgress(next), pauseTicks: 0, tick: 0 });
+    } else if (previous.phase === "waiting" && next.phase !== "waiting") {
       setFrame({ progress: [0, 0, 0, 0], pauseTicks: 0, tick: 0 });
     }
   }
