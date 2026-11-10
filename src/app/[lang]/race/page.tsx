@@ -15,9 +15,9 @@ export async function generateMetadata({ params, searchParams }: {
   searchParams: Promise<{ config?: string | string[] }>;
 }): Promise<Metadata> {
   const locale = requireLocale((await params).lang);
-  if (deserializeRaceSettings((await searchParams).config)) return {};
+  const settings = deserializeRaceSettings((await searchParams).config);
   const { raceEntry, site } = getDictionary(locale);
-  return { title: `${raceEntry.invalidTitle} | ${site.name}` };
+  return { title: `${settings ? raceEntry.title : raceEntry.invalidTitle} | ${site.name}` };
 }
 
 /** Seed for the bot names, drawn on the server with the text so hydration matches. */

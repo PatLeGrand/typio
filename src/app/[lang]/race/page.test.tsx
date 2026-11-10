@@ -28,6 +28,12 @@ describe("race route boundary", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(raceEntry.invalid);
     expect(screen.getByRole("link", { name: raceEntry.back })).toHaveAttribute("href", `/${lang}/race/settings`);
   });
+  it("uses the race title for valid settings metadata", async () => {
+    const { raceEntry, site } = getDictionary("en");
+    const props = { params: Promise.resolve({ lang: "en" }),
+      searchParams: Promise.resolve({ config: JSON.stringify(DEFAULT_RACE_SETTINGS) }) };
+    expect(await generateMetadata(props)).toEqual({ title: `${raceEntry.title} | ${site.name}` });
+  });
   it("renders the race screen for validated settings", async () => {
     const copy = getDictionary("en").raceScreen;
     render(await RacePage({ params: Promise.resolve({ lang: "en" }),
