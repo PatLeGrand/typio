@@ -16,6 +16,7 @@ describe("LanguageSwitcher", () => {
     expect(link).toHaveAttribute("hreflang", "en");
     expect(link).toHaveAttribute("lang", "en");
     expect(link).not.toHaveAttribute("aria-label");
+    expect(link).toHaveClass("border", "border-border", "bg-surface", "text-foreground");
   });
 
   it("depuis l'anglais, propose le français", () => {
@@ -39,6 +40,9 @@ describe("LanguageSwitcher", () => {
     usePathname.mockReturnValue("/fr");
     render(<LanguageSwitcher locale="fr" labels={getDictionary("fr").language} compact />);
 
-    expect(screen.getByRole("link", { name: "EN — English" })).toHaveTextContent("EN");
+    const link = screen.getByRole("link", { name: "EN — English" });
+    expect(link).toHaveTextContent("EN");
+    expect(link).toHaveClass("min-h-11", "text-muted", "icon-enter", "rounded-full", "hover:text-foreground");
+    expect(link).not.toHaveClass("border", "border-border", "bg-surface");
   });
 });

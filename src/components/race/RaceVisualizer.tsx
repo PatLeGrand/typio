@@ -57,7 +57,7 @@ const ACCELERATION = 4; // douceur des démarrages/arrêts (plus haut = plus ner
 const CAMERA_RATE = 5; // la caméra est plus lente que le Blob → effet d'élan
 const HOP_HEIGHT = 20; // hauteur max du saut en px
 const CAMERA_ANCHOR = 0.22; // position du joueur local à l'écran (fraction de largeur)
-const LABEL_STAGGER = 10; // décalage vertical des étiquettes, en px
+const LABEL_STAGGER = 20; // décalage vertical des étiquettes, en px
 const AVATAR_SIZE = 22; // diamètre de l'avatar à côté du nom, en px
 
 /** Vrai quand les décors sont déjà déclarés auprès de `PIXI.Assets` (partagé par toutes les scènes). */

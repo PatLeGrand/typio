@@ -4,6 +4,7 @@ import { HomeApproachSection } from "@/components/home/HomeApproachSection";
 import { HomeCallToAction } from "@/components/home/HomeCallToAction";
 import { HomeFooter } from "@/components/home/HomeFooter";
 import { HomeHero } from "@/components/home/HomeHero";
+import { HomeRaceTrack } from "@/components/home/HomeRaceTrack";
 import { HomeVideoSection } from "@/components/home/HomeVideoSection";
 import { HomeWhySection } from "@/components/home/HomeWhySection";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -18,12 +19,15 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
   return (
     <>
       <main className="flex-1">
-        <HomeHero home={home} locale={locale} />
-        <HomeWhySection home={home} />
-        <HomeVideoSection home={home} />
-        <HomeApproachSection home={home} />
-        <HomeAboutSection home={home} />
-        <HomeCallToAction home={home} locale={locale} user={user} />
+        <HomeHero home={home} locale={locale} keyboardLabel={dictionary.room.race.keyboard} />
+        <div className="relative isolate bg-background">
+          <HomeRaceTrack />
+          <HomeWhySection home={home} />
+          <HomeVideoSection home={home} />
+          <HomeApproachSection home={home} />
+          <HomeAboutSection home={home} />
+          <HomeCallToAction home={home} locale={locale} user={user} />
+        </div>
       </main>
       <HomeFooter dictionary={dictionary} locale={locale} user={user} />
     </>

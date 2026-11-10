@@ -13,7 +13,7 @@ export function SiteFooter({ locale, labels }: { locale: Locale; labels: Diction
   return (
     <footer className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-6 text-sm text-muted sm:px-8">
       <p>{labels.copyright}</p>
-      <Link href={`/${locale}/privacy`} className="rounded-field hover:text-foreground">{labels.privacy}</Link>
+      <Link href={`/${locale}/privacy`} className="road-link rounded-field hover:text-foreground">{labels.privacy}</Link>
     </footer>
   );
 }
