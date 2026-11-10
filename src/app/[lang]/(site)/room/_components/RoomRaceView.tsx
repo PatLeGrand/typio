@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePhysicalKeyboard } from "@/components/race/usePhysicalKeyboard";
 import { Avatar } from "@/components/Avatar";
 import { avatarUrl, runnerAvatar } from "@/components/avatar";
@@ -48,6 +48,8 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   }, []);
   const [input, setInput] = useState(self ?? { typed: "", keystrokes: { total: 0, correct: 0 } });
   const [resumedSelf, setResumedSelf] = useState(self);
+  const typingRef = useRef<HTMLInputElement>(null);
+  const finishRef = useRef<HTMLHeadingElement>(null);
   const [confirmAbandon, setConfirmAbandon] = useState(false);
   const [pending, setPending] = useState(false);
   const [now, setNow] = useState<number | null>(null);
@@ -75,6 +77,12 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   const runner = race?.runners.find((r) => r.id === userId && r.kind === "human");
   const text = race ? applyTextEdits(race.text, runner?.edits ?? []) : "";
   const active = runner?.status === "ready" || runner?.status === "typing";
+  const endReason = runner?.status === "finished" ? "completed"
+    : runner?.status === "abandoned" ? (runner.connected ? "abandoned" : "timeout")
+    : runner && room.status === "results" ? "timeout" : null;
+  useEffect(() => {
+    if (endReason) finishRef.current?.focus();
+  }, [endReason]);
   const serverTime = race ? race.serverNow + Math.max(0, (now ?? raceReceivedAt ?? 0) - (raceReceivedAt ?? 0)) : 0;
   const countdown = race ? Math.min(3, Math.max(1, Math.ceil((race.startAt - serverTime) / 1000))) : 3;
 
@@ -100,7 +108,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
     const displayRows = results?.map((row) => ({ ...row, avatar: runnerAvatar(row), name: `${row.name}${row.kind === "bot" ? ` (${labels.bot}${row.level ? ` · ${raceLabels.botLevels[row.level]}` : ""})` : ""}` }));
     return (
       <section className="flex flex-col gap-4" aria-label={raceLabels.results.tableTitle}>
-        <h2 className="text-2xl font-bold">{raceLabels.results.tableTitle}</h2>
+        <div role="status"><h2 ref={finishRef} tabIndex={-1} className="text-2xl font-bold focus-visible:outline-none">{endReason ? raceLabels.headline[endReason] : raceLabels.results.tableTitle}</h2></div>
         {records.includes(userId) && <p role="status">{raceLabels.results.newPersonalBest}</p>}
         {results && displayRows ? (
           <>
@@ -124,7 +132,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
       {room.status === "countdown" ? <>
         <h2 className="text-2xl font-bold">{raceLabels.headline.countdown}</h2>
         <p aria-live="assertive" aria-atomic="true" className="text-center text-6xl font-bold">{number.format(countdown)}</p>
-      </> : <h2 className="text-2xl font-bold">{raceLabels.headline.racing}</h2>}
+      </> : <div role="status"><h2 ref={finishRef} tabIndex={-1} className="text-2xl font-bold focus-visible:outline-none">{raceLabels.headline[endReason ?? "racing"]}</h2></div>}
       {room.status === "countdown" ? <p className="break-words rounded-card border border-border bg-surface p-4 font-mono">{text}</p> : null}
       {room.status === "racing" && race.finishDeadline != null && <p role="timer">
         {labels.finishCountdown.replace("{time}", formatClock(Math.max(0, race.finishDeadline - serverTime), "ceil"))}
@@ -139,11 +147,11 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
         </li>)}
       </ol>
       {room.status === "racing" && active ? <>
-        {physicalKeyboard ? connection === "connected" ? <RaceTypingPanel fog={(runner?.fogUntil ?? 0) > serverTime} bonusMessage={playerBonusMessage(race.bonusEvents, userId, serverTime, raceLabels.bonuses, race.runners)} locale={lang} labels={raceLabels.typing} text={text} typed={input.typed} correctChars={countCorrectChars(input.typed, text)} onChange={change} /> : <p role="status">{labels.reconnecting}</p> : <p>{labels.keyboard}</p>}
+        {physicalKeyboard ? connection === "connected" ? <RaceTypingPanel focusRef={typingRef} fog={(runner?.fogUntil ?? 0) > serverTime} bonusMessage={playerBonusMessage(race.bonusEvents, userId, serverTime, raceLabels.bonuses, race.runners)} locale={lang} labels={raceLabels.typing} text={text} typed={input.typed} correctChars={countCorrectChars(input.typed, text)} onChange={change} /> : <p role="status">{labels.reconnecting}</p> : <p>{labels.keyboard}</p>}
         {confirmAbandon ? <div role="group" aria-label={labels.confirmAbandon} className="flex flex-wrap items-center gap-3">
           <p>{labels.confirmAbandon}</p>
           <Button disabled={pending || connection !== "connected"} onClick={() => { buffer.clear(); void command(abandonRace).then(() => setConfirmAbandon(false)); }}>{labels.confirm}</Button>
-          <Button variant="secondary" onClick={() => setConfirmAbandon(false)}>{labels.cancel}</Button>
+          <Button autoFocus variant="secondary" onClick={() => { setConfirmAbandon(false); typingRef.current?.focus(); }}>{labels.cancel}</Button>
         </div> : <Button variant="secondary" onClick={() => setConfirmAbandon(true)}>{raceLabels.abandon}</Button>}
       </> : null}
     </section>

@@ -15,7 +15,13 @@ function renderForm(locale: "fr" | "en" = "fr") {
   return dictionary;
 }
 
-async function submit(): Promise<void> {
+async function submit(valid = true): Promise<void> {
+  if (valid) {
+    for (const [name, value] of [["username", "alice"], ["password", "correct-password1"]]) {
+      const input = document.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
+      if (!input.value) fireEvent.change(input, { target: { value } });
+    }
+  }
   await act(async () => {
     fireEvent.submit(document.querySelector("form") as HTMLFormElement);
   });
@@ -95,9 +101,14 @@ describe("LoginForm", () => {
     expect(screen.getByRole("button", { name: login.submit })).not.toHaveAttribute("aria-disabled");
   });
 
-  it("n'affiche aucune erreur tant que rien n'a échoué", () => {
-    renderForm();
+  it("affiche les erreurs des champs vides sans appeler le serveur", async () => {
+    const { auth } = renderForm();
     expect(screen.queryByRole("alert")).toBeNull();
+    await submit(false);
+    expect(mocks.login).not.toHaveBeenCalled();
+    expect(document.querySelectorAll('[aria-invalid="true"]')).toHaveLength(2);
+    expect(document.getElementById("login-username")).toHaveFocus();
+    expect(screen.getByLabelText(auth.passwordLabel)).toHaveAccessibleDescription(auth.passwordRequired);
   });
 
   describe.each(["fr", "en"] as const)("erreurs sans champ (%s)", (locale) => {

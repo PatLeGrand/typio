@@ -308,6 +308,8 @@
     "ageNote": "Discord and GitHub are for ages 13 and over."
   },
   "auth": {
+    "usernameRequired": "Enter your username.",
+    "passwordRequired": "Enter your password.",
     "kicker": "Fingers ready…",
     "enterKey": "Enter",
     "showPassword": "Show password",
@@ -683,6 +685,7 @@
     "close": "Close"
   },
   "room": {
+    "unavailableTitle": "Room unavailable",
     "race": {
       "finishCountdown": "First runner finished: {time} left to finish.",
       "start": "Start race",

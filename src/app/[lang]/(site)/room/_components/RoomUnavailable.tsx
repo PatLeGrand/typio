@@ -14,6 +14,7 @@ type RoomUnavailableProps = {
 export function RoomUnavailable({ code, labels, playHref }: RoomUnavailableProps) {
   return (
     <div className="flex flex-col items-start gap-6">
+      <h1 className="text-3xl font-bold text-balance">{labels.unavailableTitle}</h1>
       <RoomError code={code} messages={labels.errors} />
       <ButtonLink href={playHref} variant="secondary">
         {labels.back}

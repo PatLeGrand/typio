@@ -308,6 +308,8 @@
     "ageNote": "Discord et GitHub sont réservés aux 13 ans et plus."
   },
   "auth": {
+    "usernameRequired": "Saisis ton identifiant.",
+    "passwordRequired": "Saisis ton mot de passe.",
     "kicker": "À tes touches, prêt…",
     "enterKey": "Entrée",
     "showPassword": "Afficher le mot de passe",
@@ -683,6 +685,7 @@
     "close": "Fermer"
   },
   "room": {
+    "unavailableTitle": "Salle indisponible",
     "race": {
       "finishCountdown": "Premier coureur arrivé : {time} pour terminer.",
       "start": "Lancer la course",

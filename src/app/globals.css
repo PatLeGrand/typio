@@ -142,6 +142,12 @@
   box-shadow: var(--shadow-soft);
 }
 
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: calc(var(--site-header-height, 6rem) + 1rem);
+  }
+}
+
 :focus-visible {
   outline: 2px solid var(--accent-text);
   outline-offset: 2px;

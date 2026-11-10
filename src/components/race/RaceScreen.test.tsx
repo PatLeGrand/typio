@@ -274,9 +274,11 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     const roomLabels = getDictionary("fr").room.race;
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     expect(screen.getByRole("group", { name: roomLabels.confirmAbandon })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: roomLabels.cancel })).toHaveFocus();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(plain(labels.headline.racing));
     fireEvent.click(screen.getByRole("button", { name: roomLabels.cancel }));
     expect(screen.queryByRole("group", { name: roomLabels.confirmAbandon })).not.toBeInTheDocument();
+    expect(input(labels)).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     fireEvent.click(screen.getByRole("button", { name: roomLabels.confirm }));
 

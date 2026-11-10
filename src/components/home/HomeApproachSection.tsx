@@ -6,7 +6,7 @@ type HomeApproachSectionProps = {
 
 export function HomeApproachSection({ home }: HomeApproachSectionProps) {
   return (
-    <section id="approach" className="scroll-mt-24 bg-accent-panel px-4 py-16 sm:px-8 sm:py-[88px]" aria-labelledby="approach-title">
+    <section id="approach" className="scroll-mt-24 md:scroll-mt-0 bg-accent-panel px-4 py-16 sm:px-8 sm:py-[88px]" aria-labelledby="approach-title">
       <div className="mx-auto flex w-full max-w-[1264px] flex-col gap-12 sm:gap-14">
         <div className="flex max-w-[750px] flex-col gap-5">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{home.approach.eyebrow}</p>

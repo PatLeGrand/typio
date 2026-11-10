@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Lock, User } from "lucide-react";
+import { validateUsername, validateNewPassword } from "@/auth/validation";
 import { register } from "@/auth/actions";
 import { AUTH_FIELDS, type AuthField, type AuthFormState } from "@/auth/types";
 import type { Locale } from "@/i18n/config";
@@ -36,20 +37,39 @@ const TERMS_ERROR_ID = "register-terms-error";
 /** Inscription par pseudo et mot de passe (AUTH-01, TEST-03), sans e-mail. La validation fait foi côté serveur. */
 export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
   const [state, formAction, pending] = useActionState(register, IDLE);
-  // Contrôlés : React 19 vide les champs non contrôlés après une action, erreur comprise.
-  // Les deux mots de passe, eux, sont volontairement vidés. La case utilise `defaultChecked`
-  // (et non `checked`) : le reset du formulaire la remet à sa valeur par défaut, qui doit
-  // donc suivre l'état.
+  // Les valeurs restent uniquement côté client après une erreur de l’action.
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [clientErrors, setClientErrors] = useState<Partial<Record<AuthField, string>> | null>(null);
   const [terms, setTerms] = useState(false);
 
-  const errors = getAuthErrorView(state, common.errors, FORM_FIELDS);
+  const errors = clientErrors ? { fieldErrors: clientErrors } : getAuthErrorView(state, common.errors, FORM_FIELDS);
   useFocusOnError(state, FIELD_IDS);
+  useEffect(() => {
+    const first = FORM_FIELDS.find((field) => clientErrors?.[field]);
+    if (first) document.getElementById(FIELD_IDS[first as keyof typeof FIELD_IDS])?.focus();
+  }, [clientErrors]);
+
+  function validate(event: FormEvent<HTMLFormElement>) {
+    const fieldErrors: Partial<Record<AuthField, string>> = {};
+    const validUsername = validateUsername(username);
+    const validPassword = validateNewPassword(password);
+    if (!validUsername.ok) fieldErrors.username = common.errors[validUsername.code];
+    if (!validPassword.ok) fieldErrors.password = common.errors[validPassword.code];
+    if (!passwordConfirm || passwordConfirm !== password) fieldErrors.passwordConfirm = common.errors.PASSWORD_MISMATCH;
+    if (!terms) fieldErrors.terms = common.errors.TERMS_REQUIRED;
+    const first = FORM_FIELDS.find((field) => fieldErrors[field]);
+    setClientErrors(first ? fieldErrors : null);
+    if (first) {
+      event.preventDefault();
+    }
+  }
 
   const privacyHref = `/${locale}/privacy`;
 
   return (
-    <form action={formAction} noValidate className="flex flex-col gap-5">
+    <form action={formAction} onSubmit={validate} noValidate className="flex flex-col gap-5">
       <input type="hidden" name={AUTH_FIELDS.locale} value={locale} />
       <div className="flex flex-col gap-2">
         <TextField
@@ -76,6 +96,8 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
             label={labels.passwordLabel}
             placeholder={labels.passwordPlaceholder}
             icon={<Lock />}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
             autoComplete="new-password"
             required
             aria-describedby={PASSWORD_RULE_ID}
@@ -89,6 +111,8 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
             label={labels.confirmLabel}
             placeholder={labels.confirmPlaceholder}
             icon={<Lock />}
+            value={passwordConfirm}
+            onChange={(event) => setPasswordConfirm(event.target.value)}
             autoComplete="new-password"
             required
             showLabel={common.showPassword}
