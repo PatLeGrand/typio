@@ -104,6 +104,7 @@ describe("Home", () => {
     expect(veil.parentElement).toHaveAttribute("aria-hidden", "true");
     expect(veil.parentElement).not.toContainElement(panel);
     expect(panel).toContainElement(within(finish).getByRole("link", { name: home.signUp }));
+    expect(within(finish).getByRole("link", { name: home.signUp })).toHaveClass("button-key", "min-h-14", "text-base");
     expect(panel).toContainElement(within(finish).getByRole("link", { name: home.signIn }));
     expect(finish.querySelectorAll("[data-finish-racer]")).toHaveLength(3);
   });
@@ -116,6 +117,8 @@ describe("Home", () => {
     const links = screen.getAllByRole("link", { name: home.createRace });
     expect(links).toHaveLength(2);
     for (const link of links) expect(link).toHaveAttribute("href", "/fr/race/settings");
+    const finish = screen.getByRole("region", { name: home.cta.title });
+    expect(within(finish).getByRole("link", { name: home.createRace })).toHaveClass("button-key", "min-h-14", "text-base");
   });
 
   it("un membre connecté ne voit pas les liens de connexion et d'inscription", async () => {

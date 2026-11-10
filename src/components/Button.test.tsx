@@ -88,4 +88,28 @@ describe("Button", () => {
     render(<Button disabled>Go</Button>);
     expect(screen.getByRole("button", { name: "Go" })).toHaveClass("disabled:bg-accent-panel", "disabled:text-muted-strong");
   });
+
+  it.each(["key", "secondary", "ghost"] as const)("%s : le décor reste masqué aux lecteurs d'écran et disparaît si désactivé", (variant) => {
+    const { rerender } = render(<Button variant={variant}>Go</Button>);
+    const button = screen.getByRole("button", { name: "Go" });
+    expect(button.querySelector(".button-blobs, .button-road")).toHaveAttribute("aria-hidden", "true");
+    rerender(<Button variant={variant} disabled>Go</Button>);
+    expect(screen.getByRole("button", { name: "Go" })).toBeDisabled();
+    expect(button.querySelector(".button-blobs, .button-road")).toBeNull();
+    rerender(<Button variant={variant} aria-disabled="true">Go</Button>);
+    expect(button.querySelector(".button-blobs, .button-road")).toBeNull();
+  });
+
+  it("la détection du côté laisse le clic remonter au bouton", () => {
+    const onClick = vi.fn();
+    render(<Button variant="key" onClick={onClick}>Go</Button>);
+    const button = screen.getByRole("button", { name: "Go" });
+    for (const side of button.querySelectorAll("[data-side]")) fireEvent.click(side);
+    expect(onClick).toHaveBeenCalledTimes(2);
+  });
+
+  it("la grande touche garde la pleine largeur et le libellé", () => {
+    render(<Button variant="key" size="large" fullWidth>Go</Button>);
+    expect(screen.getByRole("button", { name: "Go" })).toHaveClass("min-h-14", "py-3", "text-base", "w-full");
+  });
 });

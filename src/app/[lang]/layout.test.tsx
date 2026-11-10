@@ -32,6 +32,12 @@ describe("RootLayout", () => {
     expect(html).toContain('<html lang="fr"');
   });
 
+  it("définit une seule fois le filtre décoratif partagé, hors de l'accessibilité", async () => {
+    const html = renderToStaticMarkup(await RootLayout(layoutProps("fr")));
+    expect(html.match(/id="typio-goo"/g)).toHaveLength(1);
+    expect(html).toMatch(/<svg[^>]*aria-hidden="true"[^>]*width="0"[^>]*height="0"/);
+  });
+
   it("injecte le script de thème dans le <head>, avant le <body>", async () => {
     const html = renderToStaticMarkup(await RootLayout(layoutProps("en")));
     const head = html.slice(html.indexOf("<head>"), html.indexOf("</head>"));

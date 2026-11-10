@@ -28,7 +28,7 @@ export function InviteFriendsUnavailable({ kind, lang, labels }: InviteFriendsUn
         {kind === "anonymous" ? (
           <>
             {" "}
-            <Link href={prefixWithLocale("/login", lang)} className="font-semibold text-accent-text underline">
+            <Link href={prefixWithLocale("/login", lang)} className="road-link-inline font-semibold text-accent-text">
               {labels.loginLink}
             </Link>
           </>

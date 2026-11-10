@@ -76,7 +76,7 @@ describe("ThemeToggle", () => {
     render(<ThemeToggle labels={labels} compact />);
 
     const button = screen.getByRole("button", { name: `${labels.label}: ${labels.system}` });
-    expect(button).toHaveClass("size-11", "text-muted", "hover:bg-accent-soft", "hover:text-foreground");
+    expect(button).toHaveClass("size-11", "text-muted", "icon-enter", "rounded-full", "hover:text-foreground");
     expect(button).not.toHaveClass("border", "border-border", "bg-surface");
     fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.system}` }));
     expect(screen.getByRole("button", { name: `${labels.label}: ${labels.light}` })).toBeInTheDocument();

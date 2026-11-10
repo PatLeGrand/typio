@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -66,8 +66,23 @@ describe("SiteHeader", () => {
     render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
 
     for (const name of [dictionary.home.navigation.why, dictionary.home.navigation.preview, dictionary.home.navigation.approach]) {
-      expect(screen.getByRole("link", { name })).toHaveClass("hover:underline", "focus-visible:underline", "decoration-dashed", "decoration-2", "underline-offset-8");
+      expect(screen.getByRole("link", { name })).toHaveClass("road-link");
     }
+  });
+
+  it("arrondit la touche et ménage son bord droit uniquement dans la barre réduite", () => {
+    render(<SiteHeader locale="fr" dictionary={getDictionary("fr")} user={null} />);
+    const signUp = screen.getByRole("link", { name: getDictionary("fr").header.signUp });
+    const bar = screen.getByRole("banner").firstElementChild;
+    expect(signUp).not.toHaveClass("md:rounded-full");
+    expect(bar).not.toHaveClass("md:pr-2.5");
+    vi.spyOn(window, "scrollY", "get").mockReturnValue(30);
+    fireEvent.scroll(window);
+    expect(signUp).toHaveClass("md:rounded-full", "md:duration-300");
+    expect(bar).toHaveClass("md:pl-8", "md:pr-2.5");
+    vi.restoreAllMocks();
+    fireEvent.scroll(window);
+    expect(signUp).not.toHaveClass("md:rounded-full");
   });
 
   describe.each(["fr", "en"] as const)("connecté (%s)", (locale) => {

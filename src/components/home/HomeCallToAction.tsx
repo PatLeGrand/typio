@@ -47,14 +47,14 @@ export function HomeCallToAction({ home, locale, user }: HomeCallToActionProps) 
             </h2>
             <p className="text-base leading-[1.65] text-muted sm:text-lg">{home.cta.description}</p>
           </div>
-          <div className="flex shrink-0 flex-col items-start gap-3 md:max-w-64">
+          <div className="flex shrink-0 flex-col items-center gap-3 md:max-w-64">
             {canRegister ? (
-              <ButtonLink href={`/${locale}/register`}>{home.signUp}</ButtonLink>
+              <ButtonLink href={`/${locale}/register`} variant="key" size="large">{home.signUp}</ButtonLink>
             ) : (
-              <ButtonLink href={`/${locale}/race/settings`}>{home.createRace}</ButtonLink>
+              <ButtonLink href={`/${locale}/race/settings`} variant="key" size="large">{home.createRace}</ButtonLink>
             )}
             {user === null ? (
-              <p className="text-sm text-muted">
+              <p className="text-center text-sm text-muted">
                 {home.cta.existingAccount}{" "}
                 <ButtonLink href={`/${locale}/login`} variant="ghost">
                   {home.signIn}

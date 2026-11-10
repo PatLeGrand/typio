@@ -161,6 +161,163 @@ h2[tabindex="-1"]:focus-visible {
   color: color-mix(in oklab, var(--series-base) var(--series-weight), var(--foreground));
 }
 
+.button-blob-group {
+  filter: url("#typio-goo");
+}
+
+.button-blob {
+  --blob-index: 0;
+  position: absolute;
+  top: -75%;
+  left: calc(-17.5% + var(--blob-index) * 25%);
+  width: 60%;
+  height: 250%;
+  border-radius: 50%;
+  transform: translateY(var(--blob-y, 110%));
+  transition: transform 240ms ease-out;
+  transition-delay: calc(var(--blob-start, 0ms) + var(--blob-index) * var(--blob-step, 70ms));
+}
+
+.button-blob:nth-child(2) { --blob-index: 1; }
+.button-blob:nth-child(3) { --blob-index: 2; }
+.button-blob:nth-child(4) { --blob-index: 3; }
+
+.button-key {
+  --key-shadow: color-mix(in oklab, var(--key-yellow), var(--key-ink) 35%);
+}
+
+.button-key .button-label {
+  color: var(--key-label-color, var(--key-ink));
+  transition: color 160ms ease;
+  transition-delay: var(--key-label-delay, 0ms);
+}
+
+.button-road {
+  stroke: var(--accent-text);
+  stroke-width: 2px;
+  stroke-dasharray: 2.4 1.6;
+  opacity: var(--road-opacity, 0);
+  transition: opacity 120ms ease;
+  animation: var(--road-animation, none);
+}
+
+.button-key:not(:disabled):not([aria-disabled="true"]):focus-visible {
+  --key-shadow: var(--accent-shadow);
+  --blob-y: 0%;
+  --blob-visible: 1;
+  --key-label-color: var(--accent-foreground);
+  --key-label-delay: 140ms;
+}
+
+.button-outline:not(:disabled):not([aria-disabled="true"]):focus-visible {
+  --road-opacity: 1;
+  --road-animation: button-road-travel 700ms ease-out;
+  border-color: transparent;
+}
+
+.icon-enter {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.icon-enter::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-color: var(--icon-enter-color, var(--accent-soft));
+  transform: translateX(var(--icon-x, -101%));
+  transition: transform 220ms ease-out;
+}
+
+/* Le lecteur est positionné dans sa vidéo, contrairement aux icônes de l'en-tête. */
+.icon-enter.icon-enter-media {
+  position: absolute;
+  --icon-enter-color: var(--accent);
+  color: var(--icon-ink, var(--foreground));
+}
+
+.icon-enter:not(:disabled):not([aria-disabled="true"]):focus-visible {
+  --icon-x: 0%;
+  --icon-visible: 1;
+  --icon-ink: var(--accent-foreground);
+}
+
+.road-link,
+.road-link-inline {
+  background-image: repeating-linear-gradient(to right, currentColor 0 6px, transparent 6px 11px);
+  background-repeat: no-repeat;
+  /* Suit la ligne de texte, y compris au centre d'une cible inline-flex de 44 px. */
+  background-position: 0 calc(50% + 0.65em);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.road-link {
+  background-size: var(--road-link-width, 0%) 2px;
+  transition: background-size 250ms ease-out;
+}
+
+.road-link-inline {
+  background-size: calc(100% + 11px) 2px;
+  animation: var(--inline-road-animation, none);
+}
+
+.road-link:focus-visible { --road-link-width: 100%; }
+.road-link-inline:focus-visible { --inline-road-animation: inline-road-travel 250ms ease-out; }
+
+@media (hover: hover) {
+  .button-key:not(:disabled):not([aria-disabled="true"]):hover {
+    --key-shadow: var(--accent-shadow);
+    --blob-y: 0%;
+    --blob-visible: 1;
+    --key-label-color: var(--accent-foreground);
+    --key-label-delay: 140ms;
+  }
+
+  .button-key:not(:focus-visible):has([data-side="right"]:hover) {
+    --blob-start: 210ms;
+    --blob-step: -70ms;
+  }
+
+  .button-outline:not(:disabled):not([aria-disabled="true"]):hover {
+    --road-opacity: 1;
+    --road-animation: button-road-travel 700ms ease-out;
+    border-color: transparent;
+  }
+
+  .icon-enter:not(:disabled):not([aria-disabled="true"]):hover {
+    --icon-x: 0%;
+    --icon-visible: 1;
+    --icon-ink: var(--accent-foreground);
+  }
+
+  .road-link:hover { --road-link-width: 100%; }
+  .road-link-inline:hover { --inline-road-animation: inline-road-travel 250ms ease-out; }
+}
+
+@keyframes button-road-travel {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes inline-road-travel {
+  from { background-position-x: -11px; }
+  to { background-position-x: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-blob-group { opacity: var(--blob-visible, 0); }
+  .button-blob { transform: none; transition: none; }
+  .button-key .button-label { transition: none; }
+  .button-road { animation: none; transition: none; }
+  .icon-enter::before { transform: none; opacity: var(--icon-visible, 0); transition: none; }
+  .road-link { transition: none; }
+  .road-link-inline { animation: none; }
+}
+
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
   [data-home-finish]:has([data-finish-panel]:is(:hover, :focus-within)) [data-finish-racer] {
     animation: home-finish-hop 450ms ease-out;

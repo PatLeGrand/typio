@@ -48,7 +48,7 @@ describe("ButtonLink", () => {
     render(<ButtonLink href="/fr/register" variant="key">Créer un compte</ButtonLink>);
     expect(screen.getByRole("link", { name: "Créer un compte" })).toHaveClass(
       "bg-key-yellow", "text-key-ink", "min-h-11",
-      "not-disabled:shadow-[0_4px_0_color-mix(in_oklab,var(--key-yellow),var(--key-ink)_35%)]",
+      "not-disabled:shadow-[0_4px_0_var(--key-shadow)]",
       "not-disabled:active:translate-y-[3px]",
     );
   });
@@ -62,6 +62,20 @@ describe("ButtonLink", () => {
     );
 
     expect(screen.getByRole("link", { name: "Jouer en invité" })).toBeInTheDocument();
+  });
+
+  it.each(["key", "secondary", "ghost"] as const)("%s : le décor est aria-hidden et absent si aria-disabled", (variant) => {
+    const { rerender } = render(<ButtonLink href="/fr" variant={variant}>Go</ButtonLink>);
+    const link = screen.getByRole("link", { name: "Go" });
+    expect(link.querySelector(".button-blobs, .button-road")).toHaveAttribute("aria-hidden", "true");
+    rerender(<ButtonLink href="/fr" variant={variant} aria-disabled>Go</ButtonLink>);
+    expect(screen.getByRole("link", { name: "Go" })).toHaveAttribute("href", "/fr");
+    expect(link.querySelector(".button-blobs, .button-road")).toBeNull();
+  });
+
+  it("accepte une grande touche sans perdre les classes, la largeur ni le libellé", () => {
+    render(<ButtonLink href="/fr" variant="key" size="large" fullWidth className="md:rounded-full">Go</ButtonLink>);
+    expect(screen.getByRole("link", { name: "Go" })).toHaveClass("min-h-14", "py-3", "text-base", "w-full", "md:rounded-full");
   });
 });
 

@@ -13,7 +13,7 @@ export function AuthAltLink({ prompt, linkLabel, href }: AuthAltLinkProps) {
   return (
     <p className="text-center text-[13px] text-muted">
       {prompt}{" "}
-      <Link href={href} className="inline-flex min-h-11 items-center font-semibold text-accent-text underline-offset-2 hover:underline">
+      <Link href={href} className="road-link-inline inline-flex min-h-11 items-center font-semibold text-accent-text">
         {linkLabel}
       </Link>
     </p>

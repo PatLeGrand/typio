@@ -55,16 +55,16 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
     <header ref={headerRef} className={`md:sticky top-0 z-50 w-full border-b border-border bg-surface transition-[padding] duration-300 motion-reduce:transition-none ${isScrolled ? "md:border-b-0 md:bg-transparent md:pt-4 md:px-4" : ""}`}>
       <div className={`mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-3 min-h-24 px-4 py-4 transition-[padding,min-height,border-radius,box-shadow,background-color] duration-300 motion-reduce:transition-none ${
         isScrolled
-          ? "md:min-h-16 md:rounded-[32px] md:border md:border-border bg-surface md:shadow-sm md:py-2 md:px-8"
+          ? "md:min-h-16 md:rounded-[32px] md:border md:border-border bg-surface md:shadow-sm md:py-2 md:pl-8 md:pr-2.5"
           : "md:px-8 xl:px-[88px]"
       }`}>
         <Link href={`/${locale}`} className="rounded-field">
           <Logo name={dictionary.site.name} />
         </Link>
         <nav className={`order-3 hidden w-full items-center justify-center gap-8 text-sm text-muted ${user ? "xl:flex xl:order-none xl:w-auto" : "lg:flex lg:order-none lg:w-auto"}`} aria-label={dictionary.navigation.main}>
-          <Link href={`/${locale}#why`} className="rounded-field hover:text-foreground hover:underline focus-visible:underline decoration-dashed decoration-2 underline-offset-8">{dictionary.home.navigation.why}</Link>
-          <Link href={`/${locale}#video`} className="rounded-field hover:text-foreground hover:underline focus-visible:underline decoration-dashed decoration-2 underline-offset-8">{dictionary.home.navigation.preview}</Link>
-          <Link href={`/${locale}#approach`} className="rounded-field hover:text-foreground hover:underline focus-visible:underline decoration-dashed decoration-2 underline-offset-8">{dictionary.home.navigation.approach}</Link>
+          <Link href={`/${locale}#why`} className="road-link rounded-field hover:text-foreground">{dictionary.home.navigation.why}</Link>
+          <Link href={`/${locale}#video`} className="road-link rounded-field hover:text-foreground">{dictionary.home.navigation.preview}</Link>
+          <Link href={`/${locale}#approach`} className="road-link rounded-field hover:text-foreground">{dictionary.home.navigation.approach}</Link>
         </nav>
         <div className="contents md:flex md:min-w-0 md:flex-wrap md:items-center md:justify-end md:gap-2">
           <div className="ml-auto flex items-center gap-1 md:ml-0">
@@ -100,7 +100,8 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
               <ButtonLink href={`/${locale}/login`} variant="ghost" compactOnMobile>
                 {dictionary.header.signIn}
               </ButtonLink>
-              <ButtonLink href={`/${locale}/register`} variant="key" compactOnMobile>
+              <ButtonLink href={`/${locale}/register`} variant="key" compactOnMobile
+                className={`md:transition-[transform,translate,box-shadow,background-color,color,border-radius] md:duration-300 md:motion-reduce:transition-none ${isScrolled ? "md:rounded-full" : ""}`}>
                 {dictionary.header.signUp}
                 <CornerDownLeft aria-hidden="true" className="hidden size-4 sm:block" />
               </ButtonLink>

@@ -42,7 +42,7 @@ describe("LanguageSwitcher", () => {
 
     const link = screen.getByRole("link", { name: "EN — English" });
     expect(link).toHaveTextContent("EN");
-    expect(link).toHaveClass("min-h-11", "text-muted", "hover:bg-accent-soft", "hover:text-foreground");
+    expect(link).toHaveClass("min-h-11", "text-muted", "icon-enter", "rounded-full", "hover:text-foreground");
     expect(link).not.toHaveClass("border", "border-border", "bg-surface");
   });
 });

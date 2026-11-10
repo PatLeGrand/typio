@@ -40,6 +40,14 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
       <body
         className={`${inter.variable} flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased`}
       >
+        <svg aria-hidden="true" focusable="false" width="0" height="0" className="pointer-events-none absolute">
+          <defs>
+            <filter id="typio-goo" x="-30%" y="-50%" width="160%" height="200%" colorInterpolationFilters="sRGB">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+              <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9" />
+            </filter>
+          </defs>
+        </svg>
         {/* L'en-tête vit dans (site)/layout.tsx : les pages (auth) ont le leur. */}
         {children}
       </body>
