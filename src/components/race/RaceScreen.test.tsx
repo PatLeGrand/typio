@@ -274,9 +274,11 @@ describe("RaceScreen : fins et résultats (A-D7, AC-6)", () => {
     const roomLabels = getDictionary("fr").room.race;
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     expect(screen.getByRole("group", { name: roomLabels.confirmAbandon })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: roomLabels.cancel })).toHaveFocus();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(plain(labels.headline.racing));
     fireEvent.click(screen.getByRole("button", { name: roomLabels.cancel }));
     expect(screen.queryByRole("group", { name: roomLabels.confirmAbandon })).not.toBeInTheDocument();
+    expect(input(labels)).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
     fireEvent.click(screen.getByRole("button", { name: roomLabels.confirm }));
 
@@ -421,4 +423,8 @@ it.each(["fr", "en"] as const)("DES-06 : remplace la saisie sans clavier physiqu
   expect(window.matchMedia).toHaveBeenCalledWith("(min-width: 768px) and (pointer: fine)");
   expect(screen.getByText(getDictionary(locale).room.race.keyboard)).toBeInTheDocument();
   expect(screen.queryByLabelText(labels.typing.inputLabel)).not.toBeInTheDocument();
+  const roomLabels = getDictionary(locale).room.race;
+  fireEvent.click(screen.getByRole("button", { name: labels.abandon }));
+  fireEvent.click(screen.getByRole("button", { name: roomLabels.cancel }));
+  expect(screen.getByRole("button", { name: labels.abandon })).toHaveFocus();
 });

@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
-import { config, proxy } from "./proxy";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+import { KNOWN_ROUTES, config, proxy } from "./proxy";
 
 function request(path: string, headers: Record<string, string> = {}) {
   return new NextRequest(`http://localhost:3000${path}`, { headers });
@@ -38,13 +40,13 @@ describe("proxy", () => {
   });
 
   it("laisse passer un chemin déjà préfixé", () => {
-    const response = proxy(request("/en/room", { cookie: "NEXT_LOCALE=en" }));
+    const response = proxy(request("/en/play", { cookie: "NEXT_LOCALE=en" }));
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 
   it("mémorise la langue du chemin quand le cookie est absent", () => {
-    const response = proxy(request("/en/room"));
+    const response = proxy(request("/en/play"));
     expect(response.headers.get("x-middleware-next")).toBe("1");
     const cookie = response.cookies.get("NEXT_LOCALE");
     expect(cookie).toMatchObject({ value: "en", path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
@@ -56,7 +58,7 @@ describe("proxy", () => {
   });
 
   it("n'écrit pas de cookie quand il correspond déjà", () => {
-    const response = proxy(request("/fr/room", { cookie: "NEXT_LOCALE=fr" }));
+    const response = proxy(request("/fr/play", { cookie: "NEXT_LOCALE=fr" }));
     expect(response.cookies.get("NEXT_LOCALE")).toBeUndefined();
   });
 
@@ -68,6 +70,43 @@ describe("proxy", () => {
   it("laisse passer /api et /_next", () => {
     expect(proxy(request("/api/health")).headers.get("location")).toBeNull();
     expect(proxy(request("/_next/static/x.js")).headers.get("location")).toBeNull();
+  });
+});
+
+describe("proxy : adresses inconnues", () => {
+  it.each(["/fr/nexiste-pas", "/en/play/xyz", "/fr/race/settings/x", "/fr/history/a/b", "/fr/missing"])(
+    "réécrit %s vers la page 404 avec le statut 404",
+    (path) => {
+      const response = proxy(request(path));
+      expect(response.status).toBe(404);
+      expect(response.headers.get("x-middleware-rewrite")).toBe(`http://localhost:3000/${path.slice(1, 3)}/missing`);
+    },
+  );
+
+  it("garde le cookie de langue sur la réécriture", () => {
+    expect(proxy(request("/en/nexiste-pas")).cookies.get("NEXT_LOCALE")?.value).toBe("en");
+  });
+
+  it.each(["/fr", "/fr/", "/en/login", "/fr/history/abc", "/fr/room/ABCDEF", "/en/invite/tok", "/fr/race/settings"])(
+    "laisse passer la route connue %s",
+    (path) => {
+      const response = proxy(request(path));
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+    },
+  );
+
+  it("KNOWN_ROUTES reflète les dossiers page.tsx de src/app/[lang]", () => {
+    const found: string[] = [];
+    const walk = (dir: string, route: string[]) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.isDirectory()) walk(join(dir, entry.name), entry.name.startsWith("(") ? route : [...route, entry.name]);
+        else if (entry.name === "page.tsx") found.push(route.join("/"));
+      }
+    };
+    walk(join(__dirname, "app", "[lang]"), []);
+    const pages = found.filter((route) => route !== "missing" && !route.startsWith("[..."));
+    expect([...KNOWN_ROUTES].sort()).toEqual(pages.sort());
   });
 });
 

@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { ButtonLink } from "@/components/ButtonLink";
+import { StatusPageFrame } from "@/components/StatusPageFrame";
 import { Button } from "@/components/Button";
 import { defaultLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -15,7 +17,9 @@ import { getPathLocale } from "@/i18n/paths";
  */
 export default function ErrorPage({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   const locale = getPathLocale(usePathname()) ?? defaultLocale;
-  const { errorPage } = getDictionary(locale);
+  const dictionary = getDictionary(locale);
+  const { errorPage } = dictionary;
+  const title = `${errorPage.title} | ${dictionary.site.name}`;
 
   useEffect(() => {
     // Seul le digest est journalisé : il permet de retrouver l'erreur dans les journaux du serveur.
@@ -23,10 +27,16 @@ export default function ErrorPage({ error, retry }: { error: Error & { digest?: 
   }, [error]);
 
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center">
-      <h1 className="text-[32px] font-bold leading-[1.15]">{errorPage.title}</h1>
-      <p className="text-base leading-[1.55] text-muted">{errorPage.text}</p>
-      <Button onClick={() => retry()}>{errorPage.retry}</Button>
-    </main>
+    <StatusPageFrame locale={locale} dictionary={dictionary}>
+      <title>{title}</title>
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center">
+        <h1 className="text-[32px] font-bold leading-[1.15]">{errorPage.title}</h1>
+        <p className="text-base leading-[1.55] text-muted">{errorPage.text}</p>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button onClick={() => retry()}>{errorPage.retry}</Button>
+          <ButtonLink href={`/${locale}`} variant="secondary">{errorPage.home}</ButtonLink>
+        </div>
+      </main>
+    </StatusPageFrame>
   );
 }

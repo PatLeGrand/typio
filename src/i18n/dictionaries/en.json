@@ -13,6 +13,7 @@
     "actions": "Details",
     "view": "View",
     "empty": "No races on this page.",
+    "emptyFirst": "No races yet.",
     "play": "Play",
     "firstPage": "Back to page 1",
     "pagination": "Race history pagination",
@@ -24,6 +25,7 @@
     "back": "Back to history"
   },
   "raceEntry": {
+    "invalidTitle": "Invalid settings",
     "title": "Race",
     "pending": "Your settings are ready. The playable race is coming soon.",
     "invalid": "These settings are invalid. Return to settings to prepare your race.",
@@ -67,7 +69,7 @@
       "Lia"
     ],
     "stats": {
-      "title": "Game Stats",
+      "title": "Game stats",
       "timeLeft": "Time left:",
       "time": "Time:",
       "wpm": "WPM:",
@@ -108,6 +110,7 @@
       "back": "Change settings"
     },
     "results": {
+      "title": "Results",
       "personalBest": "Personal best",
       "newPersonalBest": "New personal best!",
       "podium": "Podium",
@@ -308,6 +311,8 @@
     "ageNote": "Discord and GitHub are for ages 13 and over."
   },
   "auth": {
+    "usernameRequired": "Enter your username.",
+    "passwordRequired": "Enter your password.",
     "kicker": "Fingers ready…",
     "enterKey": "Enter",
     "showPassword": "Show password",
@@ -405,7 +410,9 @@
       "oauth": "If you sign in with GitHub or Discord: only the numeric ID of your account there, so we can recognise you next time. Your username on that service is used once, to create your username (your display name is the same), and is not kept separately. Your name, your email address, your picture and your other details are not kept, nor are the access tokens: they are used once, during sign-in, then thrown away.",
       "preferences": "Your language and your keyboard layout.",
       "session": "Your session on the server: a fingerprint of your session token and its expiry date. The token itself is not stored.",
-      "results": "Your race results, once races are available."
+      "avatar": "If you upload a profile photo, Typio stores it. You can remove it from your profile.",
+      "results": "Your race results.",
+      "room": "A temporary link between your account and your room, with its code and the date you joined, to keep you from being in two rooms at once. It is deleted when you leave the room, when you are removed from it or when the game server restarts."
     },
     "cookiesTitle": "Cookies and storage",
     "cookies": {
@@ -430,9 +437,11 @@
   "errorPage": {
     "title": "Oops, something went wrong",
     "text": "An error occurred. Try again in a moment.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "home": "Back to home"
   },
   "notFound": {
+    "illustration": "Back to the track",
     "eyebrow": "Error 404",
     "title": "This page hit the wrong key.",
     "text": "We couldn't find this address. The octopus will take you home so you can get back in the race.",
@@ -617,20 +626,21 @@
       "notLinked": "Not linked",
       "alternativeState": "Alternative state · GitHub or Discord",
       "link": "Link",
-      "linkedAccounts": "Linked Accounts",
+      "linkedAccounts": "Linked accounts",
       "setPassword": "Set a password",
       "description": "Your account, safe and sound.",
-      "changePassword": "Change Password",
+      "changePassword": "Change password",
       "noPassword": "If your account was created via GitHub or Discord, the password is optional. Instead:",
       "linkedAccountsDesc": "Your other entry doors to Typio.",
       "hasPassword": "A password is set for this account.",
       "privacy": "Only the account ID is kept, no email or avatar.",
       "title": "Security"
     },
-    "title": "My Profile",
+    "title": "My profile",
     "identity": {
-      "displayName": "Display Name",
+      "displayName": "Display name",
       "usernameHelp": "Read-only · your identifier remains the same.",
+      "guestSince": "Guest since",
       "memberSince": "Member since",
       "member": "Member",
       "noUsername": "None (guest)",
@@ -642,7 +652,7 @@
     "backToCourses": "Back to races",
     "actions": {
       "cancel": "Cancel",
-      "logout": "Log out",
+      "logout": "Sign out",
       "save": "Save",
       "fixErrors": "Fix errors to save.",
       "noChanges": "No changes to save."
@@ -650,13 +660,13 @@
     "settings": {
       "description": "The right settings to keep the rhythm.",
       "layoutHelp": "Used to correctly calculate your error heatmap",
-      "layout": "Keyboard Layout",
+      "layout": "Keyboard layout",
       "layouts": {
         "qwerty": "QWERTY",
         "azerty": "AZERTY",
-        "cmf": "Canadian Multilingual"
+        "cmf": "Canadian multilingual"
       },
-      "language": "Interface Language",
+      "language": "Interface language",
       "title": "Preferences",
       "theme": "Theme"
     },
@@ -682,6 +692,7 @@
     "close": "Close"
   },
   "room": {
+    "unavailableTitle": "Room unavailable",
     "race": {
       "finishCountdown": "First runner finished: {time} left to finish.",
       "start": "Start race",

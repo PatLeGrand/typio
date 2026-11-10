@@ -13,6 +13,7 @@
     "actions": "Détail",
     "view": "Voir",
     "empty": "Aucune course sur cette page.",
+    "emptyFirst": "Aucune course pour le moment.",
     "play": "Jouer",
     "firstPage": "Revenir à la page 1",
     "pagination": "Pagination de l’historique",
@@ -24,6 +25,7 @@
     "back": "Retour à l’historique"
   },
   "raceEntry": {
+    "invalidTitle": "Configuration invalide",
     "title": "Course",
     "pending": "Tes réglages sont prêts. La course jouable sera disponible prochainement.",
     "invalid": "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
@@ -108,6 +110,7 @@
       "back": "Modifier les réglages"
     },
     "results": {
+      "title": "Résultats",
       "personalBest": "Record personnel",
       "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
@@ -308,6 +311,8 @@
     "ageNote": "Discord et GitHub sont réservés aux 13 ans et plus."
   },
   "auth": {
+    "usernameRequired": "Saisis ton identifiant.",
+    "passwordRequired": "Saisis ton mot de passe.",
     "kicker": "À tes touches, prêt…",
     "enterKey": "Entrée",
     "showPassword": "Afficher le mot de passe",
@@ -405,7 +410,9 @@
       "oauth": "Si tu te connectes avec GitHub ou Discord : seulement l'identifiant numérique de ton compte chez eux, pour te reconnaître la prochaine fois. Ton nom d'utilisateur sur ce service sert une seule fois, à créer ton pseudo (ton nom affiché est le même), et n'est pas conservé à part. Ton nom, ton adresse e-mail, ta photo et tes autres informations ne sont pas conservés, ni les jetons d'accès : ils ne servent qu'une fois, pendant la connexion, puis sont jetés.",
       "preferences": "Ta langue et la disposition de ton clavier.",
       "session": "Ta session sur le serveur : l'empreinte du jeton de ta session et sa date d'expiration. Le jeton lui-même n'est pas stocké.",
-      "results": "Tes résultats de course, quand les courses seront disponibles."
+      "avatar": "Si tu ajoutes une photo de profil, Typio l’enregistre. Tu peux la retirer depuis ton profil.",
+      "results": "Tes résultats de course.",
+      "room": "Un lien temporaire entre ton compte et ta salle, avec son code et ta date d’entrée, pour éviter que tu sois dans deux salles à la fois. Il est effacé quand tu quittes la salle, quand tu en es retiré ou quand le serveur de jeu redémarre."
     },
     "cookiesTitle": "Cookies et stockage",
     "cookies": {
@@ -430,9 +437,11 @@
   "errorPage": {
     "title": "Oups, quelque chose s'est mal passé",
     "text": "Une erreur est survenue. Réessaie dans un instant.",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "home": "Retour à l'accueil"
   },
   "notFound": {
+    "illustration": "Retour à la piste",
     "eyebrow": "Erreur 404",
     "title": "Cette page a pris une mauvaise touche.",
     "text": "Impossible de trouver cette adresse. Le poulpe te raccompagne à l'accueil pour reprendre la course.",
@@ -631,6 +640,7 @@
     "identity": {
       "displayName": "Nom affiché",
       "usernameHelp": "Lecture seule · ton identifiant reste le même.",
+      "guestSince": "Invité depuis le",
       "memberSince": "Membre depuis le",
       "member": "Membre",
       "noUsername": "Aucun (invité)",
@@ -682,6 +692,7 @@
     "close": "Fermer"
   },
   "room": {
+    "unavailableTitle": "Salle indisponible",
     "race": {
       "finishCountdown": "Premier coureur arrivé : {time} pour terminer.",
       "start": "Lancer la course",
@@ -691,9 +702,9 @@
       "grossWpm": "MPM brut",
       "errors": "Erreurs",
       "loading": "Chargement de la course…",
-      "stay": "Vous pouvez rester pour la prochaine course ou quitter la salle.",
-      "keyboard": "Pour participer, utilisez un ordinateur avec un clavier physique.",
-      "reconnecting": "Reconnexion en cours. La saisie reprendra avec votre progression enregistrée.",
+      "stay": "Tu peux rester pour la prochaine course ou quitter la salle.",
+      "keyboard": "Pour participer, utilise un ordinateur avec un clavier physique.",
+      "reconnecting": "Reconnexion en cours. La saisie reprendra avec ta progression enregistrée.",
       "confirmAbandon": "Abandonner cette course ?",
       "confirm": "Oui, abandonner",
       "cancel": "Continuer la course"

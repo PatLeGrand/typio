@@ -81,6 +81,14 @@ export function RaceVisualizer({
   maxFPS = 0,
   className = "relative h-[350px] w-full overflow-hidden rounded-xl border border-border shadow-inner",
 }: RaceVisualizerProps) {
+  const reducedMotionRef = useRef(false);
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => { reducedMotionRef.current = query.matches; };
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
   const containerRef = useRef<HTMLDivElement>(null);
   const playbackRef = useRef({ paused, maxFPS });
   const syncPlaybackRef = useRef<(() => void) | null>(null);
@@ -304,7 +312,8 @@ export function RaceVisualizer({
 
       const blobTexture = PIXI.Assets.get<PIXI.Texture>("blob");
       const updateScene = (dt: number) => {
-        elapsed += dt;
+        const reducedMotion = reducedMotionRef.current;
+        if (!reducedMotion) elapsed += dt;
         const list = racersRef.current;
         const length = trackLengthRef.current;
         const groundBottom = Math.max(0, app.screen.height - 34);
@@ -361,15 +370,15 @@ export function RaceVisualizer({
           // 2. Intensité de l'animation = vitesse réelle / vitesse max.
           const wanted = Math.min(1, Math.max(0, speed / MAX_SPEED));
           view.intensity += (wanted - view.intensity) * (1 - Math.exp(-10 * dt));
-          const k = view.intensity;
+          const k = reducedMotion ? 0 : view.intensity;
 
           // 3. Cycle de saut : la cadence suit la vitesse.
-          view.phase += dt * (5 + k * 7);
+          if (!reducedMotion) view.phase += dt * (5 + k * 7);
           const s = Math.abs(Math.sin(view.phase)); // 0 au sol, 1 à l'apogée
 
           const groundY = groundBottom - index * laneGap;
           const hop = s * HOP_HEIGHT * k;
-          const breathing = Math.sin(elapsed * 2.5 + index) * 0.02 * (1 - k);
+          const breathing = reducedMotion ? 0 : Math.sin(elapsed * 2.5 + index) * 0.02 * (1 - k);
 
           // Squash au sol, stretch en l'air, volume conservé.
           const scaleY = 1 - 0.14 * k * (1 - s) + 0.08 * k * s + breathing;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { logout } from "@/auth/actions";
@@ -23,6 +23,7 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
+  const headerRef = useRef<HTMLElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -36,8 +37,22 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof ResizeObserver === "undefined") return;
+    const root = document.documentElement;
+    const measure = () => root.style.setProperty("--site-header-height", `${header.getBoundingClientRect().height}px`);
+    const observer = new ResizeObserver(measure);
+    measure();
+    observer.observe(header);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--site-header-height");
+    };
+  }, []);
+
   return (
-    <header className={`md:sticky top-0 z-50 w-full border-b border-border bg-surface transition-[padding] duration-300 motion-reduce:transition-none ${isScrolled ? "md:border-b-0 md:bg-transparent md:pt-4 md:px-4" : ""}`}>
+    <header ref={headerRef} className={`md:sticky top-0 z-50 w-full border-b border-border bg-surface transition-[padding] duration-300 motion-reduce:transition-none ${isScrolled ? "md:border-b-0 md:bg-transparent md:pt-4 md:px-4" : ""}`}>
       <div className={`mx-auto flex w-full max-w-[1440px] flex-wrap items-center justify-between gap-x-5 gap-y-3 min-h-24 px-4 py-4 transition-[padding,min-height,border-radius,box-shadow,background-color] duration-300 motion-reduce:transition-none ${
         isScrolled
           ? "md:min-h-16 md:rounded-[32px] md:border md:border-border bg-surface md:shadow-sm md:py-2 md:px-8"

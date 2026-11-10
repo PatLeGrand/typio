@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type RefObject, type SyntheticEvent } from "react";
 import { CircleCheck, Delete, Keyboard, Sparkles } from "lucide-react";
 import type { Dictionary } from "@/i18n/dictionaries";
 
 type Props = {
   locale?: string;
+  focusRef?: RefObject<HTMLInputElement | null>;
   labels: Dictionary["raceScreen"]["typing"];
   text: string;
   typed: string;
@@ -18,8 +19,9 @@ type Props = {
 const TEXT_ID = "race-text";
 
 /** Texte à taper (caractères colorés selon la frappe) et champ de saisie, sans copier-coller (COURSE-04). */
-export function RaceTypingPanel({ locale, labels, text, typed, correctChars, fog = false, bonusMessage = "", onChange }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
+export function RaceTypingPanel({ focusRef, locale, labels, text, typed, correctChars, fog = false, bonusMessage = "", onChange }: Props) {
+  const localInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = focusRef ?? localInputRef;
   // Pendant une composition (touche morte « ^ » puis « e », IME), la valeur brute est affichée
   // sans être jugée : « ^ » n'est pas une frappe, seul « ê » final compte.
   const composing = useRef(false);
@@ -29,7 +31,7 @@ export function RaceTypingPanel({ locale, labels, text, typed, correctChars, fog
   // la saisie est ignorée tant que le départ n'est pas donné.
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
+  }, [inputRef]);
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     if (composing.current || (event.nativeEvent as InputEvent).isComposing) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState, type FormEvent } from "react";
 import { Lock, User } from "lucide-react";
 import { login } from "@/auth/actions";
 import { AUTH_FIELDS, type AuthField, type AuthFormState } from "@/auth/types";
@@ -32,13 +32,30 @@ export function LoginForm({ locale, labels, common }: LoginFormProps) {
   // vidé. La case utilise `defaultChecked` (et non `checked`) : le reset du formulaire la remet
   // à sa valeur par défaut, qui doit donc suivre l'état.
   const [username, setUsername] = useState("");
+  const [clientErrors, setClientErrors] = useState<Partial<Record<AuthField, string>> | null>(null);
   const [remember, setRemember] = useState(false);
 
-  const errors = getAuthErrorView(state, common.errors, FORM_FIELDS);
+  const errors = clientErrors ? { fieldErrors: clientErrors } : getAuthErrorView(state, common.errors, FORM_FIELDS);
   useFocusOnError(state, FIELD_IDS);
+  useEffect(() => {
+    const first = FORM_FIELDS.find((field) => clientErrors?.[field]);
+    if (first) document.getElementById(FIELD_IDS[first as keyof typeof FIELD_IDS])?.focus();
+  }, [clientErrors]);
+
+  function validate(event: FormEvent<HTMLFormElement>) {
+    const data = new FormData(event.currentTarget);
+    const fieldErrors: Partial<Record<AuthField, string>> = {};
+    if (!String(data.get(AUTH_FIELDS.username) ?? "").trim()) fieldErrors.username = common.usernameRequired;
+    if (!data.get(AUTH_FIELDS.password)) fieldErrors.password = common.passwordRequired;
+    const first = FORM_FIELDS.find((field) => fieldErrors[field]);
+    setClientErrors(first ? fieldErrors : null);
+    if (first) {
+      event.preventDefault();
+    }
+  }
 
   return (
-    <form action={formAction} noValidate className="flex flex-col gap-5">
+    <form action={formAction} onSubmit={validate} noValidate className="flex flex-col gap-5">
       <input type="hidden" name={AUTH_FIELDS.locale} value={locale} />
       <TextField
         id={FIELD_IDS.username}
