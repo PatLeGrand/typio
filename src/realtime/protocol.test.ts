@@ -5,9 +5,32 @@ import {
   TIME_LIMITS_SECONDS,
   normalizeExcludedCharacters,
   parseCreatePayload,
+  parseSoloStartPayload,
   parseJoinPayload,
   parseRoomConfigPatch,
 } from "./protocol";
+
+describe("parseSoloStartPayload", () => {
+  it("defaults the config and reuses race field validation and normalization", () => {
+    expect(parseSoloStartPayload({})).toEqual({ config: {} });
+    expect(parseSoloStartPayload({ config: { bots: [], length: 10, excludedCharacters: "b a b" } }))
+      .toEqual({ config: { bots: [], length: 10, excludedCharacters: "ab" } });
+    for (const length of TEXT_WORD_COUNTS) expect(parseSoloStartPayload({ config: { length } })).not.toBeNull();
+    for (const timeLimitSeconds of [null, ...TIME_LIMITS_SECONDS]) {
+      expect(parseSoloStartPayload({ config: { timeLimitSeconds } })).not.toBeNull();
+    }
+  });
+
+  it.each([
+    undefined, null, [], "solo", { role: "spectator" }, { solo: true }, { userId: "other" },
+    { config: null }, { config: [] }, { config: { visibility: "public" } }, { config: { capacity: 1 } },
+    { config: { language: "de" } }, { config: { length: 11 } }, { config: { timeLimitSeconds: 1 } },
+    { config: { bots: Array(8).fill("expert") } }, { config: { bots: ["unknown"] } },
+    { config: { includedCharacters: "a".repeat(101) } }, { config: { length: undefined } },
+  ])("rejects an invalid or untrusted solo payload: %o", (payload) => {
+    expect(parseSoloStartPayload(payload)).toBeNull();
+  });
+});
 
 describe("parseCreatePayload", () => {
   it("defaults to an empty config and runner role", () => {

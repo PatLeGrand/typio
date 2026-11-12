@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/i18n/config";
-import { getDictionary, type Dictionary } from "@/i18n/dictionaries";
+import type { Dictionary } from "@/i18n/dictionaries";
 import { prefixWithLocale } from "@/i18n/paths";
 import type { ParticipantRole, RoomConfigPatch } from "@/realtime/protocol";
 import { isRoomCode } from "@/realtime/roomCode";
@@ -24,13 +24,14 @@ type RoomClientProps = {
   userId: string;
   labels: Dictionary["room"];
   settingsLabels: Dictionary["raceSettings"];
+  raceLabels: Dictionary["raceScreen"];
 };
 
 /**
  * Salle d'attente (SALLE-01, SALLE-05, COURSE-05, CONF-12, ancien SALLE-13, SALLE-08). Rejoint la salle de l'URL une
  * seule fois par montage (D6) ; quitter la page sans « Quitter » ne quitte pas la salle (D7).
  */
-export function RoomClient({ code, role, locale, userId, labels, settingsLabels }: RoomClientProps) {
+export function RoomClient({ code, role, locale, userId, labels, settingsLabels, raceLabels }: RoomClientProps) {
   const router = useRouter();
   const session = useRoom(userId);
   const { connection, room, error, kicked, join, updateConfig, leave, clearError } = session;
@@ -133,7 +134,7 @@ export function RoomClient({ code, role, locale, userId, labels, settingsLabels 
         <RoomView
           room={room}
           session={session}
-          raceLabels={getDictionary(locale).raceScreen}
+          raceLabels={raceLabels}
           userId={userId}
           labels={labels}
           settingsLabels={settingsLabels}

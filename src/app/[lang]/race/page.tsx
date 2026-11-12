@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { getCurrentUserForDisplay } from "@/auth/currentUser";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { getCurrentUser } from "@/auth/currentUser";
 import { StatusPageFrame } from "@/components/StatusPageFrame";
 import { ButtonLink } from "@/components/ButtonLink";
-import { RaceScreen } from "@/components/race/RaceScreen";
+import { GuestForm } from "@/components/auth/GuestForm";
+import { SoloRaceEntry } from "./SoloRaceEntry";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
-import { deserializeRaceSettings } from "@/race/config";
-import { nextRaceText } from "./actions";
+import { deserializeRaceSettings, serializeRaceSettings } from "@/race/config";
 
 export async function generateMetadata({ params, searchParams }: {
   params: Promise<{ lang: string }>;
@@ -20,15 +18,6 @@ export async function generateMetadata({ params, searchParams }: {
   return { title: `${settings ? raceEntry.title : raceEntry.invalidTitle} | ${site.name}` };
 }
 
-/** Seed for the bot names, drawn on the server with the text so hydration matches. */
-function drawBotNameSeed(): number {
-  return Math.floor(Math.random() * 4294967296);
-}
-
-/**
- * Entry boundary: validates the settings, draws the first text on the server (so the client
- * hydrates the same text, CONF-02, CONF-04, CONF-06, CONF-07) and hands both to the playable race screen.
- */
 export default async function RacePage({ params, searchParams }: {
   params: Promise<{ lang: string }>;
   searchParams: Promise<{ config?: string | string[] }>;
@@ -37,12 +26,6 @@ export default async function RacePage({ params, searchParams }: {
   const settings = deserializeRaceSettings((await searchParams).config);
   const dictionary = getDictionary(locale);
   const { raceEntry: copy } = dictionary;
-  const preferences = (
-    <div className="flex flex-wrap justify-end gap-2 border-b border-border bg-background p-4 text-foreground">
-      <LanguageSwitcher locale={locale} labels={dictionary.language} compact />
-      <ThemeToggle labels={dictionary.theme} />
-    </div>
-  );
 
   if (!settings) {
     return (
@@ -56,24 +39,18 @@ export default async function RacePage({ params, searchParams }: {
     );
   }
 
-  const user = await getCurrentUserForDisplay();
-  const generated = await nextRaceText({ settings });
+  const user = await getCurrentUser();
+  const returnTo = `/${locale}/race?${serializeRaceSettings(settings)}`;
   return (
-    <>
-      {preferences}
-      <RaceScreen
-        locale={locale}
-        labels={dictionary.raceScreen}
-        roomLabels={dictionary.room.race}
-        siteName={dictionary.site.name}
-        settings={settings}
-        userName={user?.displayName ?? null}
-        userId={user?.id ?? null}
-        avatarVersion={user?.avatarVersion ?? null}
-        initialText={generated.ok ? generated.text : null}
-        initialError={!generated.ok && generated.error === "RATE_LIMITED" ? "RATE_LIMITED" : undefined}
-        botNameSeed={drawBotNameSeed()}
-      />
-    </>
+    <StatusPageFrame locale={locale} dictionary={dictionary}>
+      <main className="mx-auto flex w-full flex-1 max-w-3xl flex-col gap-6 px-4 py-12 text-foreground">
+        <h1 className="text-balance text-3xl font-bold">{user ? copy.title : dictionary.guest.title}</h1>
+        {user ? (
+          <SoloRaceEntry locale={locale} userId={user.id} settings={settings} labels={copy} roomLabels={dictionary.room} />
+        ) : (
+          <GuestForm locale={locale} labels={dictionary.guest} common={dictionary.auth} returnTo={returnTo} />
+        )}
+      </main>
+    </StatusPageFrame>
   );
 }

@@ -105,6 +105,21 @@ describe("RaceSettingsFields (editable)", () => {
     expect(input).toHaveAccessibleDescription(expect.stringContaining("oups"));
   });
 
+  it("shows the included characters error linked to the field", () => {
+    render(
+      <RaceSettingsFields
+        value={{ ...DEFAULT_RACE_SETTINGS, textMode: "words" }}
+        onChange={vi.fn()}
+        dict={copy}
+        lang="fr"
+        includedError="oups"
+      />,
+    );
+    const input = screen.getByRole("textbox", { name: copy.includedChars.label });
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveAccessibleDescription(expect.stringContaining("oups"));
+  });
+
   it("reports the end of typing in the excluded characters field", () => {
     const onExcludedBlur = vi.fn();
     render(

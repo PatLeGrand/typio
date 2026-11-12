@@ -15,7 +15,9 @@ import {
   type LobbyRoom,
   type ParticipantRole,
   type RoomConfigPatch,
+  type SoloConfigPatch,
   type RoomErrorCode,
+  type Ack,
   type RoomState,
   type ServerToClientEvents,
 } from "./protocol";
@@ -96,6 +98,7 @@ export interface RoomConnection {
   /** Coupe le socket s'il appartient à un autre utilisateur que `userId` (ou si `userId` est `null`). */
   syncUser(userId: string | null): void;
   create(config?: RoomConfigPatch, role?: ParticipantRole): Promise<ActionResult<{ code: string }>>;
+  startSolo(config?: SoloConfigPatch): Promise<ActionResult<{ code: string }>>;
   join(payload: JoinPayload): Promise<ActionResult<{ code: string }>>;
   /** Partie rapide (JOIN-03) : `NO_ROOM_AVAILABLE` s'il n'y a aucune salle. */
   quickJoin(): Promise<ActionResult<{ code: string }>>;
@@ -133,7 +136,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
   function update(patch: Partial<RoomSnapshot>): void {
     const next = { ...snapshot, ...patch };
-    if (next.room === null || next.room.status === "waiting" || next.room.status === "closed") {
+    if (next.room?.code !== snapshot.room?.code || next.room === null || next.room.status === "waiting" || next.room.status === "closed") {
       next.race = null;
       next.results = null;
       next.self = null;
@@ -279,17 +282,41 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     return socket !== null && socket.connected ? socket : null;
   }
 
-  function raceCommand(event: "race:start" | "race:abandon" | "room:restart" | "room:close"): Promise<ActionResult> {
+  type AckFailure = { ok: false; error: RoomErrorCode };
+  type SendWithAck<D> = (
+    target: RoomSocket,
+    ack: (timedOut: unknown, response: { ok: true; data: D } | AckFailure) => void,
+  ) => void;
+
+  /** Préambule et traitement communs des commandes à accusé : hors connexion, délai dépassé, refus, succès. */
+  function requestAck<D>(send: SendWithAck<D>): Promise<ActionResult<D>> {
     return new Promise((resolve) => {
       update({ error: null });
       const target = connectedSocket();
       if (target === null) return resolve(fail("OFFLINE"));
-      target.timeout(ACK_TIMEOUT_MS).emit(event, {}, (timedOut, response) => {
+      send(target, (timedOut, response) => {
         if (timedOut) return resolve(fail("TIMEOUT"));
         if (!response.ok) return resolve(fail(response.error));
-        resolve({ ok: true, data: undefined });
+        resolve({ ok: true, data: response.data });
       });
     });
+  }
+
+  /** Comme `requestAck` pour une commande dont l'accusé ne porte aucune donnée. */
+  function requestVoidAck(
+    send: (target: RoomSocket, ack: (timedOut: unknown, response: Ack) => void) => void,
+  ): Promise<ActionResult> {
+    return requestAck<undefined>((target, ack) =>
+      send(target, (timedOut, response) => {
+        // Délai dépassé : `response` est absent et `requestAck` ne lit pas la réponse.
+        if (timedOut) return ack(timedOut, { ok: false, error: "INTERNAL" });
+        ack(timedOut, response.ok ? { ok: true, data: undefined } : response);
+      }),
+    );
+  }
+
+  function raceCommand(event: "race:start" | "race:abandon" | "room:restart" | "room:close"): Promise<ActionResult> {
+    return requestVoidAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit(event, {}, ack));
   }
 
   return {
@@ -329,82 +356,32 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     },
 
     create(config, role = "runner") {
-      return new Promise((resolve) => {
-        update({ error: null });
-        const target = connectedSocket();
-        if (target === null) return resolve(fail("OFFLINE"));
-        // `{}` et non `undefined` : un argument `undefined` arriverait en `null` côté serveur.
-        target.timeout(ACK_TIMEOUT_MS).emit("room:create", { config: config ?? {}, role }, (timedOut, response) => {
-          if (timedOut) return resolve(fail("TIMEOUT"));
-          if (!response.ok) return resolve(fail(response.error));
-          resolve({ ok: true, data: response.data });
-        });
-      });
+      // `{}` et non `undefined` : un argument `undefined` arriverait en `null` côté serveur.
+      return requestAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("room:create", { config: config ?? {}, role }, ack));
+    },
+
+    startSolo(config) {
+      return requestAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("solo:start", { config: config ?? {} }, ack));
     },
 
     join(payload) {
-      return new Promise((resolve) => {
-        update({ error: null });
-        const target = connectedSocket();
-        if (target === null) return resolve(fail("OFFLINE"));
-        target.timeout(ACK_TIMEOUT_MS).emit("room:join", payload, (timedOut, response) => {
-          if (timedOut) return resolve(fail("TIMEOUT"));
-          if (!response.ok) return resolve(fail(response.error));
-          resolve({ ok: true, data: response.data });
-        });
-      });
+      return requestAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("room:join", payload, ack));
     },
 
     quickJoin() {
-      return new Promise((resolve) => {
-        update({ error: null });
-        const target = connectedSocket();
-        if (target === null) return resolve(fail("OFFLINE"));
-        target.timeout(ACK_TIMEOUT_MS).emit("room:quickJoin", {}, (timedOut, response) => {
-          if (timedOut) return resolve(fail("TIMEOUT"));
-          if (!response.ok) return resolve(fail(response.error));
-          resolve({ ok: true, data: response.data });
-        });
-      });
+      return requestAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("room:quickJoin", {}, ack));
     },
 
     joinInvite(token, role) {
-      return new Promise((resolve) => {
-        update({ error: null });
-        const target = connectedSocket();
-        if (target === null) return resolve(fail("OFFLINE"));
-        target.timeout(ACK_TIMEOUT_MS).emit("room:joinInvite", { token, role }, (timedOut, response) => {
-          if (timedOut) return resolve(fail("TIMEOUT"));
-          if (!response.ok) return resolve(fail(response.error));
-          resolve({ ok: true, data: response.data });
-        });
-      });
+      return requestAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("room:joinInvite", { token, role }, ack));
     },
 
     createInvite() {
-      return new Promise((resolve) => {
-        update({ error: null });
-        const target = connectedSocket();
-        if (target === null) return resolve(fail("OFFLINE"));
-        target.timeout(ACK_TIMEOUT_MS).emit("room:createInvite", {}, (timedOut, response) => {
-          if (timedOut) return resolve(fail("TIMEOUT"));
-          if (!response.ok) return resolve(fail(response.error));
-          resolve({ ok: true, data: response.data });
-        });
-      });
+      return requestAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("room:createInvite", {}, ack));
     },
 
     kick(userId) {
-      return new Promise((resolve) => {
-        update({ error: null });
-        const target = connectedSocket();
-        if (target === null) return resolve(fail("OFFLINE"));
-        target.timeout(ACK_TIMEOUT_MS).emit("room:kick", { userId }, (timedOut, response) => {
-          if (timedOut) return resolve(fail("TIMEOUT"));
-          if (!response.ok) return resolve(fail(response.error));
-          resolve({ ok: true, data: undefined });
-        });
-      });
+      return requestVoidAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("room:kick", { userId }, ack));
     },
 
     subscribeLobby() {
@@ -427,16 +404,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     },
 
     updateConfig(patch) {
-      return new Promise((resolve) => {
-        update({ error: null });
-        const target = connectedSocket();
-        if (target === null) return resolve(fail("OFFLINE"));
-        target.timeout(ACK_TIMEOUT_MS).emit("room:updateConfig", patch, (timedOut, response) => {
-          if (timedOut) return resolve(fail("TIMEOUT"));
-          if (!response.ok) return resolve(fail(response.error));
-          resolve({ ok: true, data: undefined });
-        });
-      });
+      return requestVoidAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("room:updateConfig", patch, ack));
     },
 
     leave() {

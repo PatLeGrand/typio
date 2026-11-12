@@ -41,14 +41,14 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{room.status === "waiting" ? labels.title : room.status === "results" ? labels.resultsTitle : labels.raceTitle}</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{room.status === "results" || (room.solo && room.status === "waiting") ? labels.resultsTitle : room.status === "waiting" ? labels.title : labels.raceTitle}</h1>
         <Button variant="secondary" onClick={onLeave} disabled={leaving}>
           {labels.leave}
         </Button>
       </div>
       {error ? <RoomError code={error} messages={labels.errors} /> : null}
-      <RoomCodeCard code={room.code} labels={labels.code} />
-      {room.status === "waiting" ? <div className="flex flex-col gap-6">
+      {!room.solo ? <RoomCodeCard code={room.code} labels={labels.code} /> : null}
+      {room.status === "waiting" && !room.solo ? <div className="flex flex-col gap-6">
         <ParticipantList room={room} currentUserId={userId} labels={labels.participants} raceLabels={raceLabels} onKick={room.hostId === userId ? session.kick : undefined} />
         {room.hostId === userId ? <div className="flex flex-col items-start gap-2">
           <Button variant="start" disabled={pending || !enoughRunners || session.connection !== "connected"} aria-describedby={!enoughRunners ? "race-start-reason" : undefined} onClick={() => void startRace()}>{labels.race.start}</Button>

@@ -58,6 +58,36 @@ function client(id: string, kind: "member" | "guest") {
 }
 
 describe("persistance RES-05", () => {
+  it.each(["member", "guest"] as const)("solo %s: uses the result repository only for members", async (kind) => {
+    vi.useFakeTimers();
+    transport.broadcasts.length = 0;
+    let time = 1000;
+    const recordRace = vi.fn<RaceRepository["recordRace"]>(async () => ["solo"]);
+    const server = createRealtimeServer({
+      corpus: TEST_CORPUS, sessions: createFakeSessions().repository, allowedOrigins: [],
+      now: () => new Date(time), generateSeed: () => 42, raceRepository: { recordRace },
+    });
+    try {
+      const solo = client("solo", kind);
+      const started = await solo.command("solo:start", { config: { length: 10 } });
+      if (!started.ok) throw new Error(started.error);
+      const snapshot = transport.broadcasts.find((b) => b.event === "race:state")!.payload as ReturnType<typeof raceSnapshot>;
+      time = snapshot.startAt;
+      for (let i = 0; i < snapshot.text.length; i += 10) {
+        time += 1000;
+        solo.input(snapshot.text.slice(i, i + 10).split(""));
+      }
+      await vi.advanceTimersByTimeAsync(0);
+      expect(transport.broadcasts).toContainEqual({ event: "race:results", payload: expect.any(Array) });
+      if (kind === "member") {
+        expect(recordRace).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ roomCode: started.data.code, hostId: "solo", participantCount: 1 }),
+          [expect.objectContaining({ userId: "solo", status: "finished", rank: 1 })],
+        );
+      } else expect(recordRace).not.toHaveBeenCalled();
+    } finally { server.httpServer.emit("close"); }
+  });
+
   it("écrit une fois à la dernière saisie, puis une seconde course distincte après relance et abandons", async () => {
     vi.useFakeTimers();
     transport.broadcasts.length = 0;

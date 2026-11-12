@@ -1,26 +1,20 @@
 import { Avatar } from "@/components/Avatar";
 import type { AvatarIdentity } from "@/components/avatar";
-import type { BonusType } from "@/race/bonuses";
-import type { BotLevel } from "@/realtime/protocol";
+import { formatBotSuffix } from "./formatRacerName";
+import type { ServerToClientEvents } from "@/realtime/protocol";
 import type { Dictionary } from "@/i18n/dictionaries";
 
-export type RaceResultsRow = {
-  id: string;
-  name: string;
-  isBot?: boolean;
-  avatar?: AvatarIdentity;
-  level?: BotLevel;
-  personalBest?: boolean;
-  rank: number;
-  wpm: number;
-  grossWpm: number;
-  accuracy: number;
-  errors: number;
-  bonusesReceived?: number;
-  bonusTypes?: BonusType[];
-  timeMs: number;
-  status: "finished" | "unfinished" | "abandoned";
-};
+type ResultEventRow = Parameters<ServerToClientEvents["race:results"]>[0][number];
+
+export type RaceResultsRow = Pick<
+  ResultEventRow,
+  "id" | "name" | "rank" | "wpm" | "grossWpm" | "accuracy" | "errors" | "timeMs" | "status"
+> &
+  Partial<Pick<ResultEventRow, "level" | "bonusesReceived" | "bonusTypes">> & {
+    isBot?: boolean;
+    avatar?: AvatarIdentity;
+    personalBest?: boolean;
+  };
 
 type Props = {
   rows: RaceResultsRow[];
@@ -49,7 +43,7 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId,
         <tbody>{rows.map((row) => (
           <tr key={row.id} className={`border-t border-border ${row.id === highlightId ? "bg-accent-panel font-bold" : ""}`}>
             <td className="px-2 py-2 tabular-nums">{number.format(row.rank)}</td>
-            <th scope="row" className="px-2 py-2"><span className="flex items-start gap-2"><Avatar name={row.name} {...(row.avatar ?? { seed: row.id })} size={24} /><span className="min-w-0 [overflow-wrap:anywhere]">{row.name}{row.isBot ? ` (${extraLabels.bot}${row.level ? ` · ${botLevels[row.level]}` : ""})` : ""}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</span></span></th>
+            <th scope="row" className="px-2 py-2"><span className="flex items-start gap-2"><Avatar name={row.name} {...(row.avatar ?? { seed: row.id })} size={24} /><span className="min-w-0 [overflow-wrap:anywhere]">{row.name}{formatBotSuffix(Boolean(row.isBot), row.level, extraLabels.bot, botLevels)}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</span></span></th>
             <td className="px-2 py-2 tabular-nums">{number.format(row.wpm)}</td>
             <td className="px-2 py-2 tabular-nums">{number.format(row.grossWpm)}</td>
             <td className="px-2 py-2 tabular-nums">{percent.format(row.accuracy / 100)}</td>

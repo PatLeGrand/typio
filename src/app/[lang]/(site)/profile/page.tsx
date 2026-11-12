@@ -13,6 +13,7 @@ import { isKeyboardLayout } from "@/profile/profileSettings";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { createDrizzleProfileStatsRepository } from "@/race/drizzleProfileStatsRepository";
 import { ProfileForm } from "./ProfileForm";
+import { ProfileSecurityPanel } from "./ProfileSecurityPanel";
 import { AvatarForm } from "./AvatarForm";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
@@ -84,9 +85,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
             // La base garantit la valeur (contrainte CHECK) ; la garde recale un éventuel écart de schéma.
             keyboardLayout: isKeyboardLayout(dbUser.keyboardLayout) ? dbUser.keyboardLayout : "qwerty",
           }}
-          hasPassword={hasPassword}
-          hasGithub={hasGithub}
-          hasDiscord={hasDiscord}
+          securityPanel={
+            currentUser.kind === "member" ? (
+              <ProfileSecurityPanel
+                hasPassword={hasPassword}
+                hasGithub={hasGithub}
+                hasDiscord={hasDiscord}
+                dictionary={dictionary}
+              />
+            ) : null
+          }
           dictionary={dictionary} 
           locale={locale} 
         />

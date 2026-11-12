@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import { usePhysicalKeyboard } from "@/components/race/usePhysicalKeyboard";
+import { REDUCED_MOTION_QUERY } from "@/theme/reducedMotion";
 
 export function HomeRaceTrack() {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -21,7 +22,7 @@ export function HomeRaceTrack() {
     if (typeof ResizeObserver === "undefined") return;
     if (!svg || !host || !path || !progress || !runner) return;
     const desktop = window.matchMedia("(min-width: 768px)");
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const motion = window.matchMedia(REDUCED_MOTION_QUERY);
     let disposed = false;
     let frame = 0;
     let context: ReturnType<typeof import("gsap").gsap.context> | undefined;

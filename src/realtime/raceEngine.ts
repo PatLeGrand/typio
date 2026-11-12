@@ -80,7 +80,7 @@ export function startRace(
     return { ok: false, error: "RACE_NOT_ALLOWED" };
   }
   const humans = room.participants.filter((p) => p.role === "runner");
-  if (humans.length === 0 || humans.length + room.config.bots.length < 2) {
+  if (humans.length === 0 || humans.length + room.config.bots.length < (room.solo ? 1 : 2)) {
     return { ok: false, error: "NOT_ENOUGH_RUNNERS" };
   }
   const random = createSeededRandom(seed);

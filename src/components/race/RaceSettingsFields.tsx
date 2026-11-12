@@ -1,17 +1,12 @@
 "use client";
 
 import { useId } from "react";
-import { Bot, DoorOpen, Plus, SlidersHorizontal, Type, X } from "lucide-react";
-import { Button } from "@/components/Button";
-import { SelectField } from "@/components/SelectField";
-import { RadioCard } from "@/components/race/RadioCard";
-import { Switch } from "@/components/race/Switch";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { formatPlural } from "@/race/format";
 import type { RaceSettings } from "@/race/config";
-import { BOT_LEVEL_PROFILES } from "@/race/bots";
-import { BOT_LEVELS, MAX_BOTS, MAX_CAPACITY, MIN_CAPACITY, ROOM_VISIBILITIES, TEXT_COMPLEXITIES, TEXT_WORD_COUNTS, TIME_LIMITS_SECONDS } from "@/realtime/protocol";
-import type { BotLevel, RoomVisibility, TextLength } from "@/realtime/protocol";
+import { RaceOpponentSettings } from "./RaceOpponentSettings";
+import { RaceRoomSettings } from "./RaceRoomSettings";
+import { RaceRulesSettings } from "./RaceRulesSettings";
+import { RaceTextSettings } from "./RaceTextSettings";
 
 interface RaceSettingsFieldsProps {
   value: RaceSettings;
@@ -49,362 +44,35 @@ export function RaceSettingsFields({
   onExcludedBlur,
   headingLevel = 2,
 }: RaceSettingsFieldsProps) {
-  const SectionHeading = headingLevel === 3 ? "h3" : "h2";
-  const FieldHeading = headingLevel === 3 ? "h4" : "h3";
   const uid = useId();
-  const id = (name: string) => `${uid}-${name}`;
-
-  const numberFormat = new Intl.NumberFormat(lang);
-  const capacityOptions = Array.from({ length: MAX_CAPACITY - MIN_CAPACITY + 1 }, (_, index) => {
-    const capacity = MIN_CAPACITY + index;
-    return { value: String(capacity), label: numberFormat.format(capacity) };
-  });
-
-  const excludedCount = new Set(Array.from(value.excludedCharacters).filter((character) => !/\s/u.test(character))).size;
 
   return (
     <div className="flex flex-col gap-6">
-      {/* SECTION 1: TEXTE A TAPER */}
-      <section className="bg-surface border border-border rounded-[24px] p-4 sm:p-8">
-        <div className="flex flex-wrap items-center gap-4 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-accent-soft text-accent-text flex items-center justify-center">
-            <Type className="w-6 h-6" aria-hidden="true" />
-          </div>
-          <div>
-            <SectionHeading className="text-xl font-bold text-foreground">{dict.textSection.title}</SectionHeading>
-            <p className="text-sm text-muted">{dict.textSection.subtitle}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8">
-          {/* Type de texte */}
-          <div>
-            <FieldHeading id={id("text-mode-label")} className="text-[15px] font-semibold mb-3">{dict.textMode.label}</FieldHeading>
-            <div className="flex gap-3" role="radiogroup" aria-labelledby={id("text-mode-label")}>
-              <RadioCard
-                disabled={readOnly}
-                checked={value.textMode === "sentences"}
-                onChange={() => onChange({ textMode: "sentences" })}
-                label={dict.textMode.sentences}
-              />
-              <RadioCard
-                disabled={readOnly}
-                checked={value.textMode === "words"}
-                onChange={() => onChange({ textMode: "words" })}
-                label={dict.textMode.words}
-              />
-            </div>
-          </div>
-
-          {/* Langue */}
-          <div>
-            <FieldHeading id={id("language-label")} className="text-[15px] font-semibold mb-3">{dict.language.label}</FieldHeading>
-            <div className="flex gap-3" role="radiogroup" aria-labelledby={id("language-label")}>
-              <RadioCard
-                disabled={readOnly}
-                checked={value.language === "fr"}
-                onChange={() => onChange({ language: "fr" })}
-                label={dict.language.fr}
-              />
-              <RadioCard
-                disabled={readOnly}
-                checked={value.language === "en"}
-                onChange={() => onChange({ language: "en" })}
-                label={dict.language.en}
-              />
-            </div>
-          </div>
-
-          {/* Complexité (CONF-05) */}
-          <div className="sm:col-span-2">
-            <FieldHeading id={id("complexity-label")} className="text-[15px] font-semibold mb-3">{dict.complexity.label}</FieldHeading>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" role="radiogroup" aria-labelledby={id("complexity-label")}>
-              {TEXT_COMPLEXITIES.map((complexity) => (
-                <RadioCard
-                  key={complexity}
-                  disabled={readOnly}
-                  checked={value.complexity === complexity}
-                  onChange={() => onChange({ complexity })}
-                  label={dict.complexity[complexity]}
-                  description={dict.complexity.descriptions[complexity]}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Accents */}
-          <div>
-            <FieldHeading id={id("accents-label")} className="text-[15px] font-semibold mb-3">{dict.accents.label}</FieldHeading>
-            <div className="flex gap-3" role="radiogroup" aria-labelledby={id("accents-label")}>
-              <RadioCard
-                disabled={readOnly}
-                checked={value.accents === true}
-                onChange={() => onChange({ accents: true })}
-                label={dict.accents.include}
-              />
-              <RadioCard
-                disabled={readOnly}
-                checked={value.accents === false}
-                onChange={() => onChange({ accents: false })}
-                label={dict.accents.exclude}
-              />
-            </div>
-          </div>
-
-          {/* Options du texte (CONF-06) */}
-          <div className="flex flex-col gap-4">
-            {(["punctuation", "numbers", "uppercase"] as const).map((option) => (
-              <div key={option} className="flex items-center justify-between gap-3">
-                <span id={id(`${option}-label`)} className="text-[15px] font-semibold">{dict[option].label}</span>
-                <Switch
-                  aria-labelledby={id(`${option}-label`)}
-                  disabled={readOnly}
-                  checked={value[option]}
-                  onChange={(checked) => onChange({ [option]: checked })}
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Longueur */}
-          <div>
-            <SelectField
-              label={dict.length.label}
-              value={String(value.length)}
-              disabled={readOnly}
-              options={TEXT_WORD_COUNTS.map((count) => ({ value: String(count), label: dict.length.words.replace("{count}", numberFormat.format(count)) }))}
-              onChange={(event) => onChange({ length: Number(event.target.value) as TextLength })}
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label htmlFor={id("included-chars")} className="block text-[15px] font-semibold mb-3">{dict.includedChars.label}</label>
-            <input
-              id={id("included-chars")}
-              type="text"
-              value={value.includedCharacters}
-              readOnly={readOnly}
-              disabled={value.textMode === "sentences"}
-              aria-invalid={Boolean(includedError)}
-              aria-describedby={id("included-chars-help")}
-              onChange={(event) => onChange({ includedCharacters: event.target.value })}
-              onBlur={onIncludedBlur}
-              className="w-full h-12 px-4 rounded-field border border-border bg-background disabled:opacity-40"
-            />
-            <p id={id("included-chars-help")} className="text-sm text-muted mt-2">
-              {value.textMode === "sentences" ? dict.includedChars.sentencesHelp : dict.includedChars.help}
-            </p>
-            {includedError && <p role="alert" className="text-sm text-danger mt-1">{includedError}</p>}
-          </div>
-
-          {/* Caractères exclus */}
-          <div className="sm:col-span-2">
-            <FieldHeading className="text-[15px] font-semibold mb-3">{dict.excludedChars.label}</FieldHeading>
-            <div className="relative">
-              <input
-                type="text"
-                aria-label={dict.excludedChars.label}
-                aria-invalid={Boolean(excludedError)}
-                aria-describedby={`${id("excluded-chars-count")} ${id("excluded-chars-help")}${excludedError ? ` ${id("excluded-chars-error")}` : ""}`}
-                value={value.excludedCharacters}
-                readOnly={readOnly}
-                onChange={(event) => onChange({ excludedCharacters: event.target.value })}
-                onBlur={onExcludedBlur}
-                placeholder={readOnly ? undefined : dict.excludedChars.placeholder}
-                className="w-full h-12 px-4 rounded-field border border-border bg-background focus:outline-none focus:ring-2 focus:ring-accent-text focus:border-transparent text-[15px] read-only:text-muted-strong"
-              />
-              <span id={id("excluded-chars-count")} className="mt-1 block text-sm text-muted">
-                {formatPlural(lang, excludedCount, dict.excludedChars.count).replace("{count}", numberFormat.format(excludedCount))}
-              </span>
-            </div>
-            <p id={id("excluded-chars-help")} className="text-sm text-muted mt-2">
-              {dict.excludedChars.help}
-            </p>
-            {excludedError && (
-              <p id={id("excluded-chars-error")} role="alert" className="text-sm text-danger mt-1">{excludedError}</p>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 2: REGLES DU JEU */}
-      <section className="bg-surface border border-border rounded-[24px] p-4 sm:p-8">
-        <div className="flex flex-wrap items-center gap-4 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-accent-soft text-accent-text flex items-center justify-center">
-            <SlidersHorizontal className="w-6 h-6" aria-hidden="true" />
-          </div>
-          <div>
-            <SectionHeading className="text-xl font-bold text-foreground">{dict.rulesSection.title}</SectionHeading>
-            <p className="text-sm text-muted">{dict.rulesSection.subtitle}</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-8">
-          {/* Limite de temps */}
-          <fieldset className="border-b border-border pb-8">
-            <legend id={id("time-limit-label")} className="text-[15px] font-semibold">{dict.timeLimit.label}</legend>
-            <p id={id("time-limit-help")} className="text-sm text-muted mt-1 mb-3">{dict.timeLimit.help}</p>
-            <div
-              className="grid grid-cols-2 sm:grid-cols-3 gap-3"
-              role="radiogroup"
-              aria-labelledby={id("time-limit-label")}
-              aria-describedby={id("time-limit-help")}
-            >
-              <RadioCard
-                disabled={readOnly}
-                checked={value.timeLimitSeconds === null}
-                onChange={() => onChange({ timeLimitSeconds: null })}
-                label={dict.timeLimit.none}
-                className="justify-center text-center"
-              />
-              {TIME_LIMITS_SECONDS.map((seconds) => (
-                <RadioCard
-                  key={seconds}
-                  disabled={readOnly}
-                  checked={value.timeLimitSeconds === seconds}
-                  onChange={() => onChange({ timeLimitSeconds: seconds })}
-                  label={seconds < 60
-                    ? dict.timeLimit.seconds.replace("{seconds}", numberFormat.format(seconds))
-                    : dict.timeLimit.minutes.replace("{minutes}", numberFormat.format(seconds / 60))}
-                  className="justify-center text-center"
-                />
-              ))}
-            </div>
-          </fieldset>
-
-          {/* Mode de saisie */}
-          <div>
-            <FieldHeading id={id("input-mode-label")} className="text-[15px] font-semibold mb-3">{dict.inputMode.label}</FieldHeading>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="radiogroup" aria-labelledby={id("input-mode-label")}>
-              <RadioCard
-                layout="vertical"
-                disabled={readOnly}
-                checked={value.inputMode === "free"}
-                onChange={() => onChange({ inputMode: "free" })}
-                label={dict.inputMode.free}
-                description={dict.inputMode.freeDesc}
-              />
-              <RadioCard
-                layout="vertical"
-                disabled={readOnly}
-                checked={value.inputMode === "blocking"}
-                onChange={() => onChange({ inputMode: "blocking" })}
-                label={dict.inputMode.blocking}
-                description={dict.inputMode.blockingDesc}
-              />
-            </div>
-          </div>
-
-          {/* Bonus de remontée (CONF-09). */}
-          <div className="flex items-center justify-between gap-4 pt-4">
-            <div className="flex items-center gap-3">
-              <div className="text-accent-text">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
-              </div>
-              <div>
-                <FieldHeading className="text-[15px] font-semibold">{dict.bonuses.label}</FieldHeading>
-                <p id={id("bonuses-help")} className="text-sm text-muted mt-1">{dict.bonuses.help}</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-4">
-              <Switch
-                aria-label={dict.bonuses.label}
-                aria-describedby={id("bonuses-help")}
-                checked={value.bonuses}
-                onChange={(bonuses) => onChange({ bonuses })}
-                disabled={readOnly}
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 3: ADVERSAIRES */}
-      <section className="bg-surface border border-border rounded-[24px] p-4 sm:p-8">
-        <div className="flex flex-wrap items-center gap-4 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-accent-soft text-accent-text flex items-center justify-center">
-            <Bot className="w-6 h-6" aria-hidden="true" />
-          </div>
-          <div>
-            <SectionHeading className="text-xl font-bold text-foreground">{dict.opponentsSection.title}</SectionHeading>
-            <p className="text-sm text-muted">{dict.opponentsSection.subtitle}</p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <FieldHeading className="text-[15px] font-semibold">{dict.bots.label}</FieldHeading>
-            <span aria-live="polite" aria-atomic="true" className="rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold tabular-nums text-accent-text">
-              {numberFormat.format(value.bots.length)} / {numberFormat.format(MAX_BOTS)}
-            </span>
-          </div>
-          {value.bots.length === 0 && <p className="text-sm text-muted">{dict.bots.empty}</p>}
-          {value.bots.map((level, index) => (
-            <div key={index} className="grid min-w-0 grid-cols-[minmax(0,1fr)_44px] items-center gap-x-3 gap-y-2 rounded-2xl border border-border bg-surface p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_44px]">
-              <span className="text-sm font-semibold sm:row-start-1">{dict.bots.name.replace("{number}", numberFormat.format(index + 1))}</span>
-              <label htmlFor={id(`bot-${index}`)} className="sr-only">{dict.bots.level.replace("{number}", numberFormat.format(index + 1))}</label>
-              <select
-                id={id(`bot-${index}`)}
-                aria-describedby={id(`bot-${index}-speed`)}
-                value={level}
-                disabled={readOnly}
-                className="col-start-1 row-start-2 h-11 w-full min-w-0 rounded-field border border-border bg-surface px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:text-muted sm:col-start-2 sm:row-start-1"
-                onChange={(event) => onChange({ bots: value.bots.map((current, i) => i === index ? event.target.value as BotLevel : current) })}
-              >
-                {BOT_LEVELS.map((option) => <option key={option} value={option}>{dict.bots.levels[option]}</option>)}
-              </select>
-              <span id={id(`bot-${index}-speed`)} className="col-start-1 text-sm tabular-nums text-muted sm:col-start-3 sm:row-start-1">
-                {dict.bots.speed.replace("{min}", numberFormat.format(BOT_LEVEL_PROFILES[level].minWpm)).replace("{max}", numberFormat.format(BOT_LEVEL_PROFILES[level].maxWpm))}
-              </span>
-              <button type="button" disabled={readOnly} aria-label={dict.bots.remove.replace("{number}", numberFormat.format(index + 1))} className="col-start-2 row-start-1 row-span-3 inline-flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-accent-text disabled:cursor-not-allowed disabled:opacity-50 sm:col-start-4 sm:row-span-1" onClick={() => onChange({ bots: value.bots.filter((_, i) => i !== index) })}>
-                <X aria-hidden="true" className="size-5" />
-              </button>
-            </div>
-          ))}
-          <Button variant="secondary" disabled={readOnly || value.bots.length >= MAX_BOTS || runnerCount + value.bots.length >= value.capacity} fullWidth className="border-dashed" onClick={() => onChange({ bots: [...value.bots, "intermediate"] })}>
-            <Plus aria-hidden="true" className="size-5 shrink-0" />
-            {dict.bots.add}
-          </Button>
-        </div>
-      </section>
-
-      {/* SECTION 4: SALLE (SALLE-03, SALLE-05) */}
-      <section className="bg-surface border border-border rounded-[24px] p-4 sm:p-8">
-        <div className="flex flex-wrap items-center gap-4 mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-accent-soft text-accent-text flex items-center justify-center">
-            <DoorOpen className="w-6 h-6" aria-hidden="true" />
-          </div>
-          <div>
-            <SectionHeading className="text-xl font-bold text-foreground">{dict.roomSection.title}</SectionHeading>
-            <p className="text-sm text-muted">{dict.roomSection.subtitle}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-          <div className="flex flex-col gap-2">
-            <SelectField
-              label={dict.visibility.label}
-              value={value.visibility}
-              disabled={readOnly}
-              options={ROOM_VISIBILITIES.map((visibility) => ({ value: visibility, label: dict.visibility[visibility] }))}
-              onChange={(event) => onChange({ visibility: event.target.value as RoomVisibility })}
-              aria-describedby={id("visibility-help")}
-            />
-            <p id={id("visibility-help")} className="text-xs text-muted">{dict.visibility.help}</p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <SelectField
-              label={dict.capacity.label}
-              value={String(value.capacity)}
-              disabled={readOnly}
-              options={capacityOptions}
-              onChange={(event) => onChange({ capacity: Number(event.target.value) })}
-              aria-describedby={id("capacity-help")}
-            />
-            <p id={id("capacity-help")} className="text-xs text-muted">{dict.capacity.help}</p>
-          </div>
-        </div>
-      </section>
+      <RaceTextSettings
+        value={value}
+        onChange={onChange}
+        readOnly={readOnly}
+        dict={dict}
+        lang={lang}
+        idPrefix={uid}
+        headingLevel={headingLevel}
+        includedError={includedError}
+        excludedError={excludedError}
+        onIncludedBlur={onIncludedBlur}
+        onExcludedBlur={onExcludedBlur}
+      />
+      <RaceRulesSettings value={value} onChange={onChange} readOnly={readOnly} dict={dict} lang={lang} idPrefix={uid} headingLevel={headingLevel} />
+      <RaceOpponentSettings
+        value={value}
+        onChange={onChange}
+        readOnly={readOnly}
+        dict={dict}
+        lang={lang}
+        idPrefix={uid}
+        headingLevel={headingLevel}
+        runnerCount={runnerCount}
+      />
+      <RaceRoomSettings value={value} onChange={onChange} readOnly={readOnly} dict={dict} lang={lang} idPrefix={uid} headingLevel={headingLevel} />
     </div>
   );
 }

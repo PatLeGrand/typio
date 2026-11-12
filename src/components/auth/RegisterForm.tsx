@@ -23,14 +23,13 @@ type RegisterFormProps = {
 };
 
 const IDLE: AuthFormState = { status: "idle" };
-const FORM_FIELDS: readonly AuthField[] = ["username", "password", "passwordConfirm", "terms"];
+const FORM_FIELDS = ["username", "password", "passwordConfirm", "terms"] as const satisfies readonly AuthField[];
 const FIELD_IDS = {
   username: "register-username",
   password: "register-password",
   passwordConfirm: "register-password-confirm",
   terms: "register-terms",
 } as const;
-const PSEUDO_HINT_ID = "register-username-hint";
 const PASSWORD_RULE_ID = "register-password-rule";
 const TERMS_ERROR_ID = "register-terms-error";
 
@@ -48,7 +47,7 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
   useFocusOnError(state, FIELD_IDS);
   useEffect(() => {
     const first = FORM_FIELDS.find((field) => clientErrors?.[field]);
-    if (first) document.getElementById(FIELD_IDS[first as keyof typeof FIELD_IDS])?.focus();
+    if (first) document.getElementById(FIELD_IDS[first])?.focus();
   }, [clientErrors]);
 
   function validate(event: FormEvent<HTMLFormElement>) {
@@ -82,7 +81,6 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
           autoCapitalize="none"
           spellCheck={false}
           required
-          aria-describedby={PSEUDO_HINT_ID}
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           error={errors.fieldErrors.username}

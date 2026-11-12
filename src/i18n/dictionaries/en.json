@@ -27,12 +27,11 @@
   "raceEntry": {
     "invalidTitle": "Invalid settings",
     "title": "Race",
-    "pending": "Your settings are ready. The playable race is coming soon.",
+    "pending": "Preparing the race…",
     "invalid": "These settings are invalid. Return to settings to prepare your race.",
     "back": "Back to settings"
   },
   "raceScreen": {
-    "loading": "Loading text…",
     "bonuses": {
       "types": {
         "shorten": "−3 words",
@@ -47,16 +46,7 @@
     },
     "bot": "Bot",
     "botLevels": {"noob": "Noob", "beginner": "Beginner", "intermediate": "Intermediate", "expert": "Expert", "impossible": "Impossible"},
-    "roomName": "Blob Meadow",
-    "playerOne": "player",
-    "playerOther": "players",
     "abandon": "Give up",
-    "go": "Go!",
-    "status": {
-      "countdown": "STARTING",
-      "racing": "RACING",
-      "finished": "FINISHED"
-    },
     "leaderboard": "Leaderboard",
     "you": "You",
     "botNames": [
@@ -68,18 +58,6 @@
       "Max",
       "Lia"
     ],
-    "stats": {
-      "title": "Game stats",
-      "timeLeft": "Time left:",
-      "time": "Time:",
-      "wpm": "WPM:",
-      "accuracy": "Accuracy:"
-    },
-    "kicker": {
-      "countdown": "THE RACE IS ABOUT TO START",
-      "racing": "THE RACE IS ON",
-      "finished": "RACE OVER"
-    },
     "headline": {
       "countdown": "Get ready!",
       "racing": "Keep the rhythm!",
@@ -94,7 +72,6 @@
       "few": "{rank}rd",
       "other": "{rank}th"
     },
-    "trackProgress": "of the track",
     "typing": {
       "title": "On your keys, get set, go!",
       "characters": "characters",
@@ -102,12 +79,6 @@
       "hint": "Every correct character moves your Blob forward.",
       "fix": "to fix",
       "autoValidate": "Ends automatically at the last character"
-    },
-    "noText": {
-      "rateLimited": "Too many text requests. Try again in a minute.",
-      "title": "No text available",
-      "message": "The chosen settings leave no text (language, accents, excluded or included characters). Loosen them to start the race.",
-      "back": "Change settings"
     },
     "results": {
       "title": "Results",
@@ -716,6 +687,8 @@
     "race": {
       "finishCountdown": "First runner finished: {time} left to finish.",
       "start": "Start race",
+      "soloReplay": "Play again",
+      "soloSettings": "Change settings",
       "restart": "Restart",
       "close": "Close room",
       "bot": "Bot",
