@@ -13,9 +13,11 @@ import type { RealtimeServer } from "./server";
 import type { Ack } from "./protocol";
 
 /** Frontières Socket.IO et minuteurs simulées ; store et moteur réels. */
-async function setup(loadCorpus?: () => Promise<SentenceCorpus>) {
+async function setup(loadCorpus?: () => Promise<SentenceCorpus>, initialRoom = true) {
   let time = 1000;
-  const store = createRoomStore({ corpus: TEST_CORPUS, now: () => time, generateSeed: () => 42, generateCode: () => "ABCDEF" });
+  let codeIndex = 0;
+  const store = createRoomStore({ corpus: TEST_CORPUS, now: () => time, generateSeed: () => 42,
+    generateCode: () => ["ABCDEF", "BCDEFG", "CDEFGH"][codeIndex++] });
   const persistentStore = createPersistentRoomStore(store, createMemoryRoomMembershipRepository());
   const sockets = createUserSockets();
   const expirations = new Map<string, { delay: number; expire: () => void }>();
@@ -30,12 +32,12 @@ async function setup(loadCorpus?: () => Promise<SentenceCorpus>) {
   const raceInputs = createRateLimiter({ limit: 12, windowMs: 1000, now: () => time });
   const joinFailures = createRateLimiter({ limit: 10, windowMs: 60_000, now: () => time });
   let counter = 0;
-  function client(id: string) {
+  function client(id: string, kind: "member" | "guest" = "member") {
     const handlers = new Map<string, (...args: unknown[]) => void>();
     const received: { event: string; payload: unknown }[] = [];
     const rooms = new Set<string>();
     const socket = {
-      id: String(++counter), data: { user: { id, kind: "member", displayName: id }, roomCode: null },
+      id: String(++counter), data: { user: { id, kind, displayName: id }, roomCode: null },
       on(event: string, handler: (...args: unknown[]) => void) { handlers.set(event, handler); },
       emit(event: string, payload: unknown) { received.push({ event, payload }); },
       join(code: string) { rooms.add(code); },
@@ -67,13 +69,79 @@ async function setup(loadCorpus?: () => Promise<SentenceCorpus>) {
     };
   }
   const host = client("host");
-  await host.command("room:create", { config: { length: 25 } });
+  if (initialRoom) await host.command("room:create", { config: { length: 25 } });
   const guest = client("guest");
-  await guest.command("room:join", { code: "ABCDEF", role: "runner" });
+  if (initialRoom) await guest.command("room:join", { code: "ABCDEF", role: "runner" });
   return { store, host, guest, client, broadcasts, expirations, at: (value: number) => { time = value; } };
 }
 
 describe("frontière client des courses (COURSE-06)", () => {
+  it("solo:start validates, allows guests and prevents all outside entry paths", async () => {
+    const { client, guest, store, broadcasts } = await setup(undefined, false);
+    const solo = client("solo-guest", "guest");
+    expect(await solo.command("solo:start", { config: { capacity: 1 } })).toEqual({ ok: false, error: "INVALID_PAYLOAD" });
+    expect(store.roomOf("solo-guest")).toBeNull();
+    expect(await solo.command("room:create")).toEqual({ ok: false, error: "GUEST_CANNOT_CREATE" });
+    expect(await solo.command("solo:start")).toEqual({ ok: true, data: { code: "ABCDEF" } });
+    expect(solo.rooms).toEqual(new Set(["ABCDEF"]));
+    expect(broadcasts.at(-1)).toMatchObject({ event: "race:state", payload: { status: "countdown" } });
+    expect(await guest.command("room:join", { code: "ABCDEF", role: "spectator" })).toEqual({ ok: false, error: "ROOM_NOT_FOUND" });
+    expect(await guest.command("room:joinInvite", { token: "T".repeat(43), role: "runner" })).toEqual({ ok: false, error: "INVITE_INVALID" });
+    expect(await guest.command("room:quickJoin")).toEqual({ ok: false, error: "NO_ROOM_AVAILABLE" });
+    expect(await solo.command("room:createInvite")).toEqual({ ok: false, error: "RACE_NOT_ALLOWED" });
+    expect(store.lobby()).toEqual([]);
+  });
+
+  it("solo:start replaces the room across tabs and preserves the 30 s reconnect grace", async () => {
+    const { host, client, store, expirations, at } = await setup(undefined, false);
+    await host.command("solo:start");
+    const tab = client("host");
+    expect(tab.rooms).toEqual(new Set(["ABCDEF"]));
+    expect(store.get("ABCDEF")?.solo).toBe(true);
+    expect(await tab.command("solo:start")).toEqual({ ok: true, data: { code: "BCDEFG" } });
+    expect(store.get("ABCDEF")).toBeNull();
+    expect(host.rooms).toEqual(new Set(["BCDEFG"]));
+    expect(tab.rooms).toEqual(new Set(["BCDEFG"]));
+    host.disconnect();
+    tab.disconnect();
+    expect(expirations.get("host")?.delay).toBe(30_000);
+    const resumed = client("host");
+    expect(expirations.has("host")).toBe(false);
+    expect(resumed.received).toContainEqual({ event: "race:self", payload: expect.objectContaining({ typed: "" }) });
+    resumed.disconnect();
+    at(31_000);
+    await expirations.get("host")!.expire();
+    expect(store.get("BCDEFG")).toBeNull();
+    expect(store.roomOf("host")).toBeNull();
+  });
+
+  it("solo:start refuses an existing normal room and handles corpus failures without creating a room", async () => {
+    const loadCorpus = vi.fn(async () => { throw new Error("unavailable"); });
+    const { host, client, store } = await setup(loadCorpus);
+    expect(await host.command("solo:start")).toEqual({ ok: false, error: "ALREADY_IN_ROOM" });
+    expect(loadCorpus).not.toHaveBeenCalled();
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(await client("solo").command("solo:start")).toEqual({ ok: false, error: "INTERNAL" });
+      expect(store.roomOf("solo")).toBeNull();
+      expect(store.roomOf("host")).toBe("ABCDEF");
+    } finally { log.mockRestore(); }
+  });
+
+  it("clears the old solo in every tab if the replacement has no available text", async () => {
+    const { host, client, store } = await setup(undefined, false);
+    await host.command("solo:start");
+    const tab = client("host");
+    expect(await host.command("solo:start", { config: { excludedCharacters: "abcdefghijklmnopqrstuvwxyz" } }))
+      .toEqual({ ok: false, error: "NO_TEXT_AVAILABLE" });
+    expect(store.roomOf("host")).toBeNull();
+    expect(host.rooms.size).toBe(0);
+    expect(tab.rooms.size).toBe(0);
+    for (const socket of [host, tab]) {
+      expect(socket.received).toContainEqual({ event: "room:state", payload: expect.objectContaining({ status: "closed" }) });
+    }
+  });
+
   it("réserve le départ à l’hôte et diffuse le décompte sans l’état privé", async () => {
     const { host, guest, broadcasts, store } = await setup();
     expect(await guest.command("race:start")).toEqual({ ok: false, error: "NOT_HOST" });

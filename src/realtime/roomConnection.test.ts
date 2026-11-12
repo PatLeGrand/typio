@@ -450,6 +450,25 @@ describe("accusés (D8)", () => {
     await result;
   });
 
+  it("startSolo : transmet la config et propage code, refus et timeout", async () => {
+    await expect(connection.startSolo()).resolves.toEqual({ ok: false, error: "OFFLINE" });
+    startConnected();
+    const started = connection.startSolo({ bots: [], length: 10 });
+    expect(socket.emissions[0]).toMatchObject({
+      event: "solo:start", args: [{ config: { bots: [], length: 10 } }], timeoutMs: ACK_TIMEOUT_MS,
+    });
+    socket.emissions[0].ack(null, { ok: true, data: { code: "ABC234" } });
+    await expect(started).resolves.toEqual({ ok: true, data: { code: "ABC234" } });
+    const refused = connection.startSolo();
+    expect(socket.emissions[1].args).toEqual([{ config: {} }]);
+    socket.emissions[1].ack(null, { ok: false, error: "ALREADY_IN_ROOM" });
+    await expect(refused).resolves.toEqual({ ok: false, error: "ALREADY_IN_ROOM" });
+    expect(connection.getSnapshot().error).toBe("ALREADY_IN_ROOM");
+    const timeout = connection.startSolo();
+    socket.emissions[2].ack(new Error("timeout"));
+    await expect(timeout).resolves.toEqual({ ok: false, error: "TIMEOUT" });
+  });
+
   it("join : renvoie le refus du serveur et le mémorise", async () => {
     startConnected();
     const result = connection.join({ code: "ABC234", role: "spectator" });
@@ -521,6 +540,13 @@ describe("multiplayer race", () => {
     socket.fire("race:results", results);
     socket.fire("race:self", self);
   }
+
+  it("clears the previous solo's results and input when a new solo starts directly in countdown", () => {
+    startConnected();
+    receiveRace();
+    socket.fire("room:state", { ...roomState([ME], "BCDEFG"), solo: true, status: "countdown" });
+    expect(connection.getSnapshot()).toMatchObject({ race: null, results: null, self: null, raceReceivedAt: null });
+  });
 
   it("publishes race events and records the local receipt time", () => {
     startConnected();

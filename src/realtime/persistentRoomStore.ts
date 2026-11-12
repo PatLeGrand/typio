@@ -50,6 +50,17 @@ export function createPersistentRoomStore(store: ReturnType<typeof createRoomSto
 
   return {
     ...store,
+    startSolo(...args: Parameters<typeof store.startSolo>) {
+      return serialize(async () => {
+        const current = store.roomOf(args[0].id);
+        if (current && !store.get(current)?.solo) return { ok: false, error: "ALREADY_IN_ROOM" };
+        const code = store.allocateCode();
+        if (current) {
+          await remove(current, () => store.leave(args[0].id, current));
+        }
+        return enter(args[0], code, args[2], () => store.startSolo(args[0], args[1], args[2], args[3], code));
+      });
+    },
     create(...args: Parameters<typeof store.create>) {
       return serialize(async () => {
         if (args[0].kind === "guest" || store.roomOf(args[0].id)) return store.create(...args);

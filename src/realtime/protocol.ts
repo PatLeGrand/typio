@@ -82,6 +82,7 @@ export interface RoomConfig {
 }
 
 export type RoomConfigPatch = Partial<RoomConfig>;
+export type SoloConfigPatch = Partial<Omit<RoomConfig, "visibility" | "capacity">>;
 
 export const DEFAULT_ROOM_CONFIG: RoomConfig = {
   textMode: "sentences",
@@ -125,6 +126,8 @@ export interface Participant {
 
 export interface RoomState {
   code: string;
+  /** Salle personnelle : exception solo à AUTH-03 et COURSE-02. */
+  solo?: boolean;
   status: RoomStatus;
   hostId: string;
   config: RoomConfig;
@@ -203,6 +206,8 @@ export interface JoinPayload {
 
 /** Client → serveur ; les frappes seules ne demandent pas d’accusé. */
 export interface ClientToServerEvents {
+  /** Membres et invités : salle solo, coureur forcé, départ immédiat avec décompte. */
+  "solo:start": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
   /** Membre seulement (SALLE-01, AUTH-03). `{ config, role }` : hôte coureur ou spectateur. */
   "room:create": (payload: unknown, ack: (res: Ack<{ code: string }>) => void) => void;
   /** Rejoindre par code (SALLE-02, JOIN-01) comme coureur ou spectateur (SALLE-01, SALLE-05). */
@@ -352,6 +357,16 @@ export function parseRoomConfigPatch(input: unknown): RoomConfigPatch | null {
 }
 
 const participantRoleSchema = z.enum(["runner", "spectator"]);
+
+/** Même validation que la création, sans visibilité, capacité ni rôle client. */
+export const soloStartPayloadSchema = plainObject.pipe(z.strictObject({
+  config: plainObject.pipe(roomConfigPatchSchema.out.omit({ visibility: true, capacity: true })).optional(),
+}));
+
+export function parseSoloStartPayload(input: unknown): { config: SoloConfigPatch } | null {
+  const result = soloStartPayloadSchema.safeParse(input);
+  return result.success ? { config: result.data.config ?? {} } : null;
+}
 
 /** `{ config, role }` : configuration vide et rôle coureur par défaut, clés inconnues refusées. */
 export const createPayloadSchema = plainObject
