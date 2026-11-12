@@ -560,7 +560,9 @@
       "add": "Ajouter un bot",
       "remove": "Retirer le bot {number}",
       "level": "Niveau du bot {number}",
-      "help": "{level} : {min}–{max} MPM",
+      "name": "Bot {number}",
+      "speed": "{min}–{max} MPM",
+      "empty": "Aucun bot pour le moment. Ajoute un adversaire pour t’entraîner.",
       "levels": {
         "noob": "Noob",
         "beginner": "Débutant",
@@ -682,8 +684,7 @@
         "cmf": "Canadien multilingue"
       },
       "language": "Langue de l'interface",
-      "title": "Préférences",
-      "theme": "Thème"
+      "title": "Préférences"
     },
     "status": {
       "saved": "Ton profil est à jour. Les modifications sont enregistrées."

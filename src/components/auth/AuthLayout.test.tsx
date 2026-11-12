@@ -25,7 +25,7 @@ describe("AuthLayout", () => {
     expect(screen.getByRole("link", { name: dictionary.footer.privacy })).toHaveAttribute("href", `/${locale}/privacy`);
     const other = locale === "fr" ? "en" : "fr";
     expect(screen.getByRole("link", { name: dictionary.language.names[other] })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: dictionary.theme.label })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: new RegExp(`^${dictionary.theme.label}:`) })).toBeInTheDocument();
   });
 
   it("n'utilise pas le SiteHeader : un seul en-tête (banner)", () => {

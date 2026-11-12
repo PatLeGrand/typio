@@ -167,7 +167,7 @@ describe("RoomConfigPanel, host", () => {
   it("a refused setting does not change what is shown (room state is the source)", () => {
     setup({ onChange: vi.fn<Send>(async () => ({ ok: false, error: "ROOM_FULL" })) });
     fireEvent.click(screen.getByRole("button", { name: raceSettings.bots.add }));
-    expect(screen.getByText(String(DEFAULT_ROOM_CONFIG.bots.length))).toBeInTheDocument();
+    expect(screen.getByText(`${DEFAULT_ROOM_CONFIG.bots.length} / 7`)).toBeInTheDocument();
   });
 });
 
@@ -194,6 +194,6 @@ describe("RoomConfigPanel, non-host (CONF-12)", () => {
 
     expect(screen.getByRole("radio", { name: raceSettings.textMode.words })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("radio", { name: new RegExp(`^${raceSettings.inputMode.blocking}`) })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByText("5", { selector: "[aria-live]" })).toBeInTheDocument();
+    expect(screen.getByText("5 / 7", { selector: "[aria-live]" })).toBeInTheDocument();
   });
 });

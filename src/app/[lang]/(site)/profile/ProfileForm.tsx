@@ -19,7 +19,6 @@ import { Button } from "@/components/Button";
 import { TextField } from "@/components/TextField";
 import { Card } from "@/components/Card";
 import { Badge } from "@/components/Badge";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { GithubIcon } from "@/components/GithubIcon";
 import { DiscordIcon } from "@/components/DiscordIcon";
 import { logout } from "@/auth/actions";
@@ -228,7 +227,7 @@ export function ProfileForm({
                   <p className="text-xs text-muted">{profile.settings.layoutHelp}</p>
                 </fieldset>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 border-t border-border pt-8">
+                <div className="grid grid-cols-1 gap-8 border-t border-border pt-8">
                   <fieldset className="flex flex-col gap-3">
                     <legend className="text-sm font-semibold text-foreground mb-3">{profile.settings.language}</legend>
                     <div className="grid grid-cols-2 gap-2">
@@ -247,13 +246,6 @@ export function ProfileForm({
                       ))}
                     </div>
                   </fieldset>
-
-                  <div className="flex flex-col gap-3">
-                    <p className="text-sm font-semibold text-foreground">{profile.settings.theme}</p>
-                    <div className="w-full flex">
-                      <ThemeToggle labels={dictionary.theme} compact={false} />
-                    </div>
-                  </div>
                 </div>
               </div>
             </Card>
