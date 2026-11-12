@@ -6,6 +6,7 @@ import type { Dictionary } from "@/i18n/dictionaries";
 
 type Props = {
   locale?: string;
+  embedded?: boolean;
   focusRef?: RefObject<HTMLInputElement | null>;
   labels: Dictionary["raceScreen"]["typing"];
   text: string;
@@ -19,7 +20,7 @@ type Props = {
 const TEXT_ID = "race-text";
 
 /** Texte à taper (caractères colorés selon la frappe) et champ de saisie, sans copier-coller (COURSE-04). */
-export function RaceTypingPanel({ focusRef, locale, labels, text, typed, correctChars, fog = false, bonusMessage = "", onChange }: Props) {
+export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, text, typed, correctChars, fog = false, bonusMessage = "", onChange }: Props) {
   const localInputRef = useRef<HTMLInputElement>(null);
   const inputRef = focusRef ?? localInputRef;
   // Pendant une composition (touche morte « ^ » puis « e », IME), la valeur brute est affichée
@@ -62,13 +63,13 @@ export function RaceTypingPanel({ focusRef, locale, labels, text, typed, correct
   const done = text.length === 0 ? 0 : (correctChars / text.length) * 100;
 
   return (
-    <section className="mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 py-8 sm:px-8">
+    <section className={embedded ? "flex min-w-0 flex-col gap-4" : "mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 py-8 sm:px-8"}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Keyboard aria-hidden="true" className="size-5 text-accent-text" />
           <h2 className="text-lg font-extrabold">{labels.title}</h2>
         </div>
-        <div className="flex items-center gap-3 text-xs font-bold text-muted">
+        <div className="flex flex-wrap items-center gap-3 text-xs font-bold tabular-nums text-muted">
           <span>{number.format(correctChars)} / {number.format(text.length)} {labels.characters}</span>
           <span className="h-2 w-28 overflow-hidden rounded-full bg-accent-soft" aria-hidden="true">
             <span className="block h-full rounded-full bg-accent" style={{ width: `${done}%` }} />
@@ -78,7 +79,7 @@ export function RaceTypingPanel({ focusRef, locale, labels, text, typed, correct
 
       <p role="status" aria-live="polite" aria-atomic="true" className="text-sm font-bold text-accent-text">{bonusMessage}</p>
 
-      <p id={TEXT_ID} className="break-words rounded-card border border-border bg-surface px-4 py-5 font-mono text-lg leading-relaxed sm:px-6 sm:text-2xl">
+      <p id={TEXT_ID} className={embedded ? "break-words whitespace-pre-wrap font-mono text-base leading-relaxed" : "break-words rounded-card border border-border bg-surface px-4 py-5 font-mono text-lg leading-relaxed sm:px-6 sm:text-2xl"}>
         {Array.from(text).map((char, index) => {
           const entered = typed[index];
           const tone =

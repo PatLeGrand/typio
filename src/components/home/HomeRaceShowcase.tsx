@@ -2,6 +2,7 @@
 
 import { MediaPlaybackButton } from "./MediaPlaybackButton";
 import { HomeTrackScene } from "./HomeTrackScene";
+import { RaceInputCard } from "@/components/race/RaceInputCard";
 import { HomeTrialInput } from "./HomeTrialInput";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -242,7 +243,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
         </div>
       </div>}
       <div className="relative z-10 mx-auto -mt-5 max-w-[960px] px-4 sm:px-8">
-        <div data-home-typing className="rounded-card border border-border bg-surface p-4 shadow-soft sm:p-5 md:min-h-[204px]">
+        <RaceInputCard data-home-typing>
           {!physicalKeyboard ? <div className={hydrated ? undefined : "md:invisible"}>
             <p className="max-w-prose text-sm text-muted">{playable.keyboard}</p>
           </div> : <>
@@ -294,7 +295,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
             .replace("{wpm}", number.format(result.wpm))
             .replace("{accuracy}", percent.format(result.accuracy / 100))
             .replace("{place}", number.format(result.place)) : ""}</p>
-        </div>
+        </RaceInputCard>
       </div>
       <figcaption className="mt-3 px-4 text-center text-xs text-muted">{labels.caption}</figcaption>
     </figure>
