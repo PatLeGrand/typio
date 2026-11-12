@@ -120,7 +120,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
           </>
         ) : <p role="status">{labels.loading}</p>}
         {room.hostId === userId ? <div className="flex flex-wrap gap-3">
-          <Button disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>{labels.restart}</Button>
+          <Button variant="start" disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>{labels.restart}</Button>
           <Button variant="secondary" disabled={pending || connection !== "connected"} onClick={() => void command(closeRoom)}>{labels.close}</Button>
         </div> : <p>{labels.stay}</p>}
       </section>

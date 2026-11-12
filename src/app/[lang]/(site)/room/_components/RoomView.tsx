@@ -51,7 +51,7 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
       {room.status === "waiting" ? <div className="flex flex-col gap-6">
         <ParticipantList room={room} currentUserId={userId} labels={labels.participants} raceLabels={raceLabels} onKick={room.hostId === userId ? session.kick : undefined} />
         {room.hostId === userId ? <div className="flex flex-col items-start gap-2">
-          <Button disabled={pending || !enoughRunners || session.connection !== "connected"} aria-describedby={!enoughRunners ? "race-start-reason" : undefined} onClick={() => void startRace()}>{labels.race.start}</Button>
+          <Button variant="start" disabled={pending || !enoughRunners || session.connection !== "connected"} aria-describedby={!enoughRunners ? "race-start-reason" : undefined} onClick={() => void startRace()}>{labels.race.start}</Button>
           {!enoughRunners ? <p id="race-start-reason">{labels.errors.NOT_ENOUGH_RUNNERS}</p> : null}
         </div> : null}
         {room.hostId === userId ? <InvitePanel invites={session.invites} lang={lang} labels={labels.invites} errors={labels.errors} onCreate={session.createInvite} /> : null}

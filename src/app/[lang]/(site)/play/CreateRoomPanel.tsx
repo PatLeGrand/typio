@@ -32,11 +32,11 @@ export function CreateRoomPanel({ locale, labels, isGuest, disabled }: CreateRoo
         </p>
       ) : null}
       {isGuest || disabled ? (
-        <Button disabled aria-describedby={isGuest ? noticeId : undefined}>
+        <Button variant="start" className="self-start" disabled aria-describedby={isGuest ? noticeId : undefined}>
           {labels.button}
         </Button>
       ) : (
-        <ButtonLink href={prefixWithLocale("/race/settings", locale)}>{labels.button}</ButtonLink>
+        <ButtonLink variant="start" className="self-start" href={prefixWithLocale("/race/settings", locale)}>{labels.button}</ButtonLink>
       )}
     </Card>
   );
