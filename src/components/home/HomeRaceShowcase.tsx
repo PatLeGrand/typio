@@ -2,6 +2,7 @@
 
 import { MediaPlaybackButton } from "./MediaPlaybackButton";
 import { HomeTrackScene } from "./HomeTrackScene";
+import { HomeTrialInput } from "./HomeTrialInput";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent, type SyntheticEvent } from "react";
@@ -275,28 +276,24 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
                 <ButtonLink href={`/${locale}/race/settings`} prefetch={false} variant="secondary">{playable.challenge}</ButtonLink>
               </div>
             </div> : <>
-              <label htmlFor="home-race-input" className="mt-3 block cursor-text">
-                <span className="text-sm text-muted">{playable.inputLabel}</span>
-                <span id="home-race-text" className="mt-1 block break-words whitespace-pre-wrap font-mono text-base leading-relaxed" aria-hidden="true">
-                  {Array.from(race.text).map((char, index) => <span key={index} className={
-                    index < race.typed.length
-                      ? race.typed[index] === char ? "text-accent-text" : "bg-danger/15 text-danger underline"
-                      : index === race.typed.length ? "text-foreground underline decoration-accent-text decoration-2 underline-offset-4" : "text-muted"
-                  }>{char}</span>)}
-                </span>
-              </label>
-              <input ref={inputRef} id="home-race-input" name="trial" type="text" value={draft ?? race.typed}
-                onChange={handleChange}
-                onFocus={() => setFocused(true)}
-                onCompositionStart={() => { composing.current = true; }}
-                onCompositionEnd={(event) => { composing.current = false; setDraft(null); type(event.currentTarget.value); }}
-                onBlur={() => { setFocused(false); composing.current = false; setDraft(null); }}
-                onSelect={keepCaretAtEnd} onKeyUp={keepCaretAtEnd} onMouseUp={keepCaretAtEnd}
-                aria-describedby="home-race-sentence home-race-hint" autoComplete="off" autoCapitalize="off" autoCorrect="off" spellCheck={false}
-                className="mt-2 min-h-11 w-full rounded-field border border-border bg-surface px-3 font-mono text-base text-foreground caret-accent-text focus-visible:outline-2 focus-visible:outline-accent-text"
+              <HomeTrialInput
+                text={race.text}
+                typed={race.typed}
+                inputLabel={playable.inputLabel}
+                hint={playable.hint}
+                inputProps={{
+                  ref: inputRef,
+                  value: draft ?? race.typed,
+                  onChange: handleChange,
+                  onFocus: () => setFocused(true),
+                  onCompositionStart: () => { composing.current = true; },
+                  onCompositionEnd: (event) => { composing.current = false; setDraft(null); type(event.currentTarget.value); },
+                  onBlur: () => { setFocused(false); composing.current = false; setDraft(null); },
+                  onSelect: keepCaretAtEnd,
+                  onKeyUp: keepCaretAtEnd,
+                  onMouseUp: keepCaretAtEnd,
+                }}
               />
-              <p id="home-race-sentence" className="sr-only">{race.text}</p>
-              <p id="home-race-hint" className="mt-2 text-xs text-muted">{playable.hint}</p>
             </>}
           </>}
           <p role="status" className="sr-only">{race.phase === "finished" ? playable.result
