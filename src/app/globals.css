@@ -192,9 +192,26 @@ h2[tabindex="-1"]:focus-visible {
   transition-delay: var(--key-label-delay, 120ms);
 }
 
+.button-start {
+  --start-arrow-rest-width: 40px;
+  --start-arrow-expanded-width: 54px;
+}
+
+@media (min-width: 640px) {
+  .button-start {
+    --start-arrow-rest-width: 44px;
+    --start-arrow-expanded-width: 64px;
+  }
+}
+
+.button-start:focus-visible {
+  outline-color: var(--foreground);
+  outline-offset: 3px;
+}
+
 .button-start .button-label {
   display: block;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* Couvre les 5 px entre le survol (-1 px) et l'appui (+4 px). */
@@ -222,16 +239,27 @@ h2[tabindex="-1"]:focus-visible {
 }
 
 .button-start-arrow {
-  /* Les 64 px sont réservés dans le padding : le libellé ne se déplace pas. */
-  width: var(--start-arrow-width, 44px);
+  /* La largeur maximale est réservée dans le padding : le libellé ne se déplace pas. */
+  width: var(--start-arrow-width, var(--start-arrow-rest-width));
   transition: width 180ms ease-out;
   transition-delay: var(--start-arrow-delay, 0ms);
+}
+
+.button-start:is(:disabled, [aria-disabled="true"]) .button-start-arrow {
+  background-color: var(--accent-panel);
+  color: var(--muted-strong);
+  transition: none;
+}
+
+.button-start:is(:disabled, [aria-disabled="true"]) .button-start-light::before {
+  opacity: 0;
+  transition: none;
 }
 
 .button-start:not(:disabled):not([aria-disabled="true"]):focus-visible {
   --start-lit: 1;
   --start-step: 90ms;
-  --start-arrow-width: 64px;
+  --start-arrow-width: var(--start-arrow-expanded-width);
   --start-arrow-delay: 270ms;
 }
 
@@ -316,7 +344,7 @@ h2[tabindex="-1"]:focus-visible {
   .button-start:not(:disabled):not([aria-disabled="true"]):hover {
     --start-lit: 1;
     --start-step: 90ms;
-    --start-arrow-width: 64px;
+    --start-arrow-width: var(--start-arrow-expanded-width);
     --start-arrow-delay: 270ms;
   }
 
@@ -353,7 +381,7 @@ h2[tabindex="-1"]:focus-visible {
   --start-lit: 1;
   --start-step: 0ms;
   --start-active-color: var(--key-mint);
-  --start-arrow-width: 64px;
+  --start-arrow-width: var(--start-arrow-expanded-width);
   --start-arrow-delay: 0ms;
 }
 

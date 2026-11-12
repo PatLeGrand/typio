@@ -33,10 +33,10 @@ describe("buttonClasses : survol", () => {
     const classes = buttonClasses("start", false, "", true).split(" ");
     expect(classes).toEqual(expect.arrayContaining([
       "rounded-full", "border-2", "border-border", "bg-surface", "text-accent-text", "font-bold",
-      "min-h-14", "min-w-0", "max-w-full", "text-center", "pl-[72px]", "pr-[84px]",
+      "min-h-14", "min-w-0", "max-w-full", "text-center", "pl-14", "pr-[68px]", "sm:pl-[72px]", "sm:pr-[84px]",
       "not-disabled:shadow-[0_6px_0_var(--accent-shadow)]",
       "not-disabled:hover:shadow-[0_8px_0_var(--accent-shadow)]",
-      "not-disabled:focus-visible:shadow-[0_8px_0_var(--accent-shadow)]",
+      "not-disabled:focus-visible:shadow-[0_6px_0_var(--accent-shadow)]",
       "not-disabled:active:shadow-[0_1px_0_var(--accent-shadow)]",
       "not-disabled:active:translate-y-[4px]", "motion-reduce:transition-none",
       "aria-disabled:focus-visible:shadow-none", "aria-disabled:focus-visible:translate-y-0",

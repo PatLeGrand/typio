@@ -89,7 +89,7 @@ describe("Button", () => {
     expect(screen.getByRole("button", { name: "Go" })).toHaveClass("disabled:bg-accent-panel", "disabled:text-muted-strong");
   });
 
-  it.each(["key", "secondary", "ghost", "start"] as const)("%s : le décor reste masqué aux lecteurs d'écran et disparaît si désactivé", (variant) => {
+  it.each(["key", "secondary", "ghost"] as const)("%s : le décor reste masqué aux lecteurs d'écran et disparaît si désactivé", (variant) => {
     const { rerender } = render(<Button variant={variant}>Go</Button>);
     const button = screen.getByRole("button", { name: "Go" });
     expect(button.querySelector(".button-blobs, .button-road, .button-start-decor")).toHaveAttribute("aria-hidden", "true");
@@ -100,6 +100,15 @@ describe("Button", () => {
     expect(button.querySelector(".button-blobs, .button-road, .button-start-decor")).toBeNull();
     rerender(<Button variant={variant} aria-disabled>Go</Button>);
     expect(button.querySelector(".button-blobs, .button-road, .button-start-decor")).toBeNull();
+  });
+
+  it.each([{ disabled: true }, { "aria-disabled": "true" }, { "aria-disabled": true }] as const)("start : conserve le décor aria-hidden si désactivé (%j)", (props) => {
+    render(<Button variant="start" {...props}>Go</Button>);
+    const button = screen.getByRole("button", { name: "Go" });
+    expect(button.querySelector(".button-start-decor")).toHaveAttribute("aria-hidden", "true");
+    expect(button.querySelectorAll(".button-start-light")).toHaveLength(3);
+    expect(button.querySelector(".button-start-arrow svg")).toBeInTheDocument();
+    expect(button).toHaveAccessibleName("Go");
   });
 
   it.each(["Créer une course", "Create a race", "Rejouer", "Play again"])("start : trois feux et une flèche gardent le nom accessible « %s »", (label) => {

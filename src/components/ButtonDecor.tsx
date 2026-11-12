@@ -7,11 +7,11 @@ export function ButtonDecor({ variant }: { variant: ButtonVariant }) {
   if (variant === "start") {
     return (
       <span aria-hidden="true" className="button-start-decor pointer-events-none absolute inset-0">
-        <span className="absolute inset-y-0 left-5 flex items-center gap-[5px]">
-          {[0, 1, 2].map((index) => <span key={index} className="button-start-light relative size-2.5 rounded-full bg-foreground/15" />)}
+        <span className="absolute inset-y-0 left-4 flex items-center gap-1 sm:left-5 sm:gap-[5px]">
+          {[0, 1, 2].map((index) => <span key={index} className="button-start-light relative size-2 rounded-full bg-foreground/15 sm:size-2.5" />)}
         </span>
         <span className="absolute inset-y-0 right-2 flex items-center">
-          <span className="button-start-arrow flex h-11 items-center justify-center rounded-full bg-accent text-accent-foreground">
+          <span className="button-start-arrow flex h-10 items-center justify-center rounded-full bg-accent text-accent-foreground sm:h-11">
             <ArrowRight size={20} />
           </span>
         </span>
