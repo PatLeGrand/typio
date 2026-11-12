@@ -27,9 +27,9 @@ function setRoom(next: UseRoom, rerender?: () => void): void {
 
 function renderRoom(options: { locale?: "fr" | "en"; userId?: string; code?: string; role?: "runner" | "spectator" } = {}) {
   const { locale = "fr", userId = ME, code = "ABC234", role = "runner" } = options;
-  const { room: labels, raceSettings: settingsLabels } = getDictionary(locale);
+  const { room: labels, raceSettings: settingsLabels, raceScreen: raceLabels } = getDictionary(locale);
   const ui = () => (
-    <RoomClient code={code} role={role} locale={locale} userId={userId} labels={labels} settingsLabels={settingsLabels} />
+    <RoomClient code={code} role={role} locale={locale} userId={userId} labels={labels} settingsLabels={settingsLabels} raceLabels={raceLabels} />
   );
   return { ...render(ui()), ui, labels, settingsLabels };
 }
