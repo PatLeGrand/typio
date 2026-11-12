@@ -5,6 +5,7 @@ import { X, Activity } from "lucide-react";
 import type { CurrentUser } from "@/auth/types";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
+import { getProfileSummary } from "@/app/[lang]/(site)/profile/statsActions";
 import { Avatar } from "./Avatar";
 import { ButtonLink } from "./ButtonLink";
 
@@ -17,10 +18,30 @@ type ProfileModalProps = {
 
 export function ProfileModal({ user, dictionary, locale, children }: ProfileModalProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [summary, setSummary] = useState<Awaited<ReturnType<typeof getProfileSummary>> | null>(null);
+  const requestRef = useRef(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   
   const dict = dictionary.profileDropdown;
+  const labels = dictionary.profile.stats;
+  const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+  const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 });
+
+  async function openProfile() {
+    if (isOpen) return;
+    setIsOpen(true);
+    setSummary(null);
+    if (user.kind !== "member") return;
+
+    const request = ++requestRef.current;
+    try {
+      const result = await getProfileSummary();
+      if (request === requestRef.current) setSummary(result);
+    } catch {
+      if (request === requestRef.current) setSummary({ ok: false });
+    }
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -46,7 +67,7 @@ export function ProfileModal({ user, dictionary, locale, children }: ProfileModa
     <>
       <button 
         type="button" 
-        onClick={() => setIsOpen(true)}
+        onClick={openProfile}
         aria-haspopup="dialog"
         className="cursor-pointer relative z-10 pointer-events-auto text-left hover:opacity-80 transition-opacity outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-accent flex items-center"
       >
@@ -101,7 +122,23 @@ export function ProfileModal({ user, dictionary, locale, children }: ProfileModa
                     <Activity aria-hidden="true" className="w-5 h-5 text-accent-text" />
                     {dict.stats.title}
                   </h3>
-                  <p className="text-xs text-muted text-center">{dict.stats.comingSoon}</p>
+                  <div aria-busy={summary === null} aria-live="polite">
+                    {summary === null ? <p className="text-xs text-muted">{dict.stats.loading}</p>
+                      : !summary.ok ? <p className="text-sm text-muted">{dict.stats.error}</p>
+                      : summary.stats.raceCount === 0 ? <p className="text-sm text-muted">{dict.stats.empty}</p>
+                      : <dl className="grid grid-cols-2 gap-3 text-sm">
+                        {([
+                          [labels.bestWpm, summary.stats.bestWpm === null ? labels.noValue : number.format(summary.stats.bestWpm)],
+                          [labels.averageWpm, summary.stats.averageWpm === null ? labels.noValue : number.format(summary.stats.averageWpm)],
+                          [labels.averageAccuracy, summary.stats.averageAccuracy === null ? labels.noValue : percent.format(summary.stats.averageAccuracy / 100)],
+                          [labels.raceCount, number.format(summary.stats.raceCount)],
+                          [labels.wins, number.format(summary.stats.wins)],
+                        ]).map(([label, value]) => <div key={label}>
+                          <dt className="text-muted">{label}</dt>
+                          <dd className="font-semibold tabular-nums">{value}</dd>
+                        </div>)}
+                      </dl>}
+                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-border mt-2 flex flex-col gap-2">
