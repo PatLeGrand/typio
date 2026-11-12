@@ -701,7 +701,9 @@
     "register": "Créer un compte",
     "stats": {
       "title": "Statistiques",
-      "comingSoon": "Les statistiques arrivent bientôt !"
+      "loading": "Chargement des statistiques…",
+      "empty": "Aucune course enregistrée. Lance une course pour commencer !",
+      "error": "Les statistiques sont indisponibles. Réessaie plus tard."
     },
     "viewFullProfile": "Voir le profil complet",
     "close": "Fermer"

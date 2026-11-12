@@ -701,7 +701,9 @@
     "register": "Create account",
     "stats": {
       "title": "Statistics",
-      "comingSoon": "Statistics are coming soon!"
+      "loading": "Loading statistics…",
+      "empty": "No races recorded yet. Start a race to get going!",
+      "error": "Statistics are unavailable. Try again later."
     },
     "viewFullProfile": "View full profile",
     "close": "Close"
