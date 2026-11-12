@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RaceSettingsFields } from "@/components/race/RaceSettingsFields";
 import { Button } from "@/components/Button";
-import { ArrowRight, Settings2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { DEFAULT_RACE_SETTINGS, serializeRaceSettings } from "@/race/config";
 import type { RaceSettings } from "@/race/config";
 import { MAX_EXCLUDED_INPUT_LENGTH } from "@/realtime/protocol";
@@ -195,8 +195,8 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
                   </p>
                 </div>
 
-                <Button fullWidth className="text-[15px] mt-auto" onClick={handleLaunch}>
-                  {dict.summary.start} <ArrowRight aria-hidden="true" className="ml-1 size-4" />
+                <Button variant="start" fullWidth className="mt-auto" onClick={handleLaunch}>
+                  {dict.summary.start}
                 </Button>
                 <p className="text-center text-xs text-muted mt-4">
                   {dict.summary.ready}
