@@ -56,7 +56,7 @@ export function RadioCard({
         <Circle className="shrink-0 absolute right-4 top-4 w-5 h-5 text-border" />
       ) : null}
 
-      <div className={`flex flex-col ${isVertical ? "pr-8" : ""}`}>
+      <span className={`flex flex-col ${isVertical ? "pr-8" : ""}`}>
         <span className={`font-semibold ${isVertical ? "text-base text-foreground" : "text-sm"}`}>
           {label}
         </span>
@@ -65,7 +65,7 @@ export function RadioCard({
             {description}
           </span>
         )}
-      </div>
+      </span>
     </button>
   );
 }
