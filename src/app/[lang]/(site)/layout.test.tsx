@@ -7,7 +7,16 @@ const mocks = vi.hoisted(() => ({
   getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>(),
   schedulePurge: vi.fn(),
   guard: vi.fn(),
+  getActiveRoomCode: vi.fn<() => Promise<string | null>>(),
+  widget: vi.fn(),
   pathname: "/fr",
+}));
+vi.mock("@/auth/activeRoom", () => ({ getActiveRoomCode: mocks.getActiveRoomCode }));
+vi.mock("@/components/ActiveRoomWidget", () => ({
+  ActiveRoomWidget: (props: { userId: string; roomCode: string }) => {
+    mocks.widget(props);
+    return null;
+  },
 }));
 vi.mock("@/realtime/RoomSessionGuard", () => ({
   RoomSessionGuard: (props: { userId: string | null }) => {
@@ -32,6 +41,8 @@ function layoutProps(lang: string) {
 
 beforeEach(() => {
   mocks.guard.mockClear();
+  mocks.widget.mockClear();
+  mocks.getActiveRoomCode.mockReset().mockResolvedValue(null);
   mocks.pathname = "/fr";
   mocks.getCurrentUserForDisplay.mockResolvedValue(null);
 });
@@ -43,6 +54,8 @@ describe("SiteLayout", () => {
     expect(screen.getByRole("banner")).toBeInTheDocument();
     expect(screen.getByText("contenu")).toBeInTheDocument();
     expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
+    expect(mocks.getActiveRoomCode).not.toHaveBeenCalled();
+    expect(mocks.widget).not.toHaveBeenCalled();
   });
 
   it.each(["fr", "en"] as const)("ajoute un pied de page traduit hors accueil (%s)", async (locale) => {
@@ -103,5 +116,15 @@ describe("SiteLayout", () => {
 
   it("déclenche une 404 pour une locale inconnue", async () => {
     await expect(SiteLayout(layoutProps("de"))).rejects.toMatchObject({ digest: expect.stringContaining("404") });
+  });
+
+  it.each(["member", "guest"] as const)("monte le rappel uniquement avec une réservation (%s)", async (kind) => {
+    const user = { id: "11111111-1111-1111-1111-111111111111", kind, displayName: "Alice", username: null, locale: "fr" as const, avatarVersion: null };
+    mocks.getCurrentUserForDisplay.mockResolvedValue(user);
+    render(await SiteLayout(layoutProps("fr")));
+    expect(mocks.widget).not.toHaveBeenCalled();
+    mocks.getActiveRoomCode.mockResolvedValue("ABC234");
+    render(await SiteLayout(layoutProps("fr")));
+    expect(mocks.widget).toHaveBeenCalledWith(expect.objectContaining({ userId: user.id, roomCode: "ABC234" }));
   });
 });

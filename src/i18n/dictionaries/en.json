@@ -24,6 +24,17 @@
     "membersOnly": "Only member results are saved. Guests and bots do not appear in this table.",
     "back": "Back to history"
   },
+  "activeRoom": {
+    "label": "Your active room",
+    "waiting": "You are in room {code}",
+    "racing": "Your race is in progress",
+    "results": "Your race results are ready",
+    "return": "Return to room",
+    "leave": "Leave room",
+    "leaving": "Leaving…",
+    "confirmLeave": "Leaving the room means abandoning the race. Do you want to continue?",
+    "leaveError": "Unable to leave the room. Check your connection and try again."
+  },
   "raceEntry": {
     "invalidTitle": "Invalid settings",
     "title": "Race",

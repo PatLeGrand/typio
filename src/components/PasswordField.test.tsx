@@ -48,7 +48,7 @@ describe("PasswordField", () => {
     const lock = screen.getByTestId("lock");
     expect(lock.parentElement).toHaveAttribute("aria-hidden", "true");
     expect(container.querySelectorAll("svg")).toHaveLength(2); // cadenas + œil
-    expect(screen.getByLabelText("Mot de passe")).toHaveClass("pl-12");
+    expect(screen.getByLabelText("Mot de passe")).toHaveClass("pl-field-icon");
   });
 
   it("affiche l'erreur reliée au champ", () => {

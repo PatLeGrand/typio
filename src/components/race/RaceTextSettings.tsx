@@ -145,7 +145,7 @@ export function RaceTextSettings({ value, onChange, readOnly, dict, lang, idPref
         </div>
 
         <div className="sm:col-span-2">
-          <label htmlFor={id("included-chars")} className="block text-[15px] font-semibold mb-3">{dict.includedChars.label}</label>
+          <label htmlFor={id("included-chars")} className="px-field block text-[15px] font-semibold mb-3">{dict.includedChars.label}</label>
           <input
             id={id("included-chars")}
             type="text"
@@ -156,17 +156,17 @@ export function RaceTextSettings({ value, onChange, readOnly, dict, lang, idPref
             aria-describedby={`${id("included-chars-help")}${includedError ? ` ${id("included-chars-error")}` : ""}`}
             onChange={(event) => onChange({ includedCharacters: event.target.value })}
             onBlur={onIncludedBlur}
-            className="w-full h-12 px-4 rounded-field border border-border bg-background disabled:opacity-40"
+            className="w-full h-12 px-field rounded-field border border-border bg-background disabled:opacity-40"
           />
-          <p id={id("included-chars-help")} className="text-sm text-muted mt-2">
+          <p id={id("included-chars-help")} className="px-field text-sm text-muted mt-2">
             {value.textMode === "sentences" ? dict.includedChars.sentencesHelp : dict.includedChars.help}
           </p>
-          {includedError && <p id={id("included-chars-error")} role="alert" className="text-sm text-danger mt-1">{includedError}</p>}
+          {includedError && <p id={id("included-chars-error")} role="alert" className="px-field text-sm text-danger mt-1">{includedError}</p>}
         </div>
 
         {/* Caractères exclus */}
         <div className="sm:col-span-2">
-          <FieldHeading className="text-[15px] font-semibold mb-3">{dict.excludedChars.label}</FieldHeading>
+          <FieldHeading className="px-field text-[15px] font-semibold mb-3">{dict.excludedChars.label}</FieldHeading>
           <div className="relative">
             <input
               type="text"
@@ -178,17 +178,17 @@ export function RaceTextSettings({ value, onChange, readOnly, dict, lang, idPref
               onChange={(event) => onChange({ excludedCharacters: event.target.value })}
               onBlur={onExcludedBlur}
               placeholder={readOnly ? undefined : dict.excludedChars.placeholder}
-              className="w-full h-12 px-4 rounded-field border border-border bg-background focus:outline-none focus:ring-2 focus:ring-accent-text focus:border-transparent text-[15px] read-only:text-muted-strong"
+              className="w-full h-12 px-field rounded-field border border-border bg-background focus:outline-none focus:ring-2 focus:ring-accent-text focus:border-transparent text-[15px] read-only:text-muted-strong"
             />
-            <span id={id("excluded-chars-count")} className="mt-1 block text-sm text-muted">
+            <span id={id("excluded-chars-count")} className="px-field mt-1 block text-sm text-muted">
               {formatPlural(lang, excludedCount, dict.excludedChars.count).replace("{count}", numberFormat.format(excludedCount))}
             </span>
           </div>
-          <p id={id("excluded-chars-help")} className="text-sm text-muted mt-2">
+          <p id={id("excluded-chars-help")} className="px-field text-sm text-muted mt-2">
             {dict.excludedChars.help}
           </p>
           {excludedError && (
-            <p id={id("excluded-chars-error")} role="alert" className="text-sm text-danger mt-1">{excludedError}</p>
+            <p id={id("excluded-chars-error")} role="alert" className="px-field text-sm text-danger mt-1">{excludedError}</p>
           )}
         </div>
       </div>

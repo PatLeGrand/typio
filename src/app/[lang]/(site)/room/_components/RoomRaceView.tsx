@@ -116,8 +116,8 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
   if (room.status === "results" || (room.solo && room.status === "waiting")) {
     return (
       <section className="flex flex-col gap-4" aria-label={raceLabels.results.tableTitle}>
-        <div role="status"><h2 ref={finishRef} tabIndex={-1} className="text-2xl font-bold focus-visible:outline-none">{endReason ? raceLabels.headline[endReason] : raceLabels.results.tableTitle}</h2></div>
-        {records.includes(userId) && <p role="status">{raceLabels.results.newPersonalBest}</p>}
+        <div role="status"><h2 ref={finishRef} tabIndex={-1} className="px-card text-2xl font-bold focus-visible:outline-none">{endReason ? raceLabels.headline[endReason] : raceLabels.results.tableTitle}</h2></div>
+        {records.includes(userId) && <p role="status" className="px-card">{raceLabels.results.newPersonalBest}</p>}
         {results ? (
           <RoomRaceResultsContent results={results} self={self} records={records} userId={userId} lang={lang} labels={labels} raceLabels={raceLabels} />
         ) : room.status === "results" ? <p role="status">{labels.loading}</p> : null}

@@ -30,14 +30,14 @@ export function SelectField({
 
   return (
     <div className="flex flex-col gap-[9px]">
-      <label htmlFor={selectId} className="text-sm font-semibold text-foreground">
+      <label htmlFor={selectId} className="px-field text-sm font-semibold text-foreground">
         {label}
       </label>
       <select
         id={selectId}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedByIds}
-        className={`h-14 w-full rounded-field border bg-surface px-4 text-[15px] text-foreground disabled:cursor-not-allowed disabled:text-muted ${
+        className={`h-14 w-full rounded-field border bg-surface px-field text-[15px] text-foreground disabled:cursor-not-allowed disabled:text-muted ${
           error ? "border-danger" : "border-border"
         }`}
         {...props}
@@ -49,7 +49,7 @@ export function SelectField({
         ))}
       </select>
       {error ? (
-        <p id={errorId} className="text-[13px] font-semibold text-danger">
+        <p id={errorId} className="px-field text-[13px] font-semibold text-danger">
           {error}
         </p>
       ) : null}

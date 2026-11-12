@@ -166,7 +166,7 @@ export function ProfileForm({
                     onBlur={() => setNameTouched(true)}
                     error={nameError === null ? undefined : profileErrorMessage(nameError, dictionary)}
                   />
-                  <div className="flex justify-between text-xs text-muted">
+                  <div className="px-field flex justify-between text-xs text-muted">
                     <span>{profile.identity.displayNameHelp}</span>
                     <span className={nameLength > PSEUDO_MAX_LENGTH ? "text-danger font-medium" : ""}>
                       {nameLength} / {PSEUDO_MAX_LENGTH}
@@ -182,7 +182,7 @@ export function ProfileForm({
                     disabled
                     readOnly
                   />
-                  <p className="text-xs text-muted">{profile.identity.usernameHelp}</p>
+                  <p className="pl-field-icon pr-field text-xs text-muted">{profile.identity.usernameHelp}</p>
                 </div>
               </div>
             </Card>
