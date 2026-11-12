@@ -21,7 +21,7 @@ export function QuickJoinPanel({ labels, noRoomMessage, noRoom, isGuest, disable
     <Card className="flex flex-col gap-4 border border-border p-6">
       <h2 className="text-xl font-bold text-foreground">{labels.title}</h2>
       <p className="text-muted-strong">{labels.description}</p>
-      <Button disabled={disabled} onClick={onQuickJoin}>
+      <Button variant="start" className="self-start" disabled={disabled} onClick={onQuickJoin}>
         {labels.button}
       </Button>
       {noRoom ? (
