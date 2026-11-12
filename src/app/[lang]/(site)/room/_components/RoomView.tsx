@@ -32,6 +32,7 @@ type RoomViewProps = {
 
 export function RoomView({ room, userId, labels, settingsLabels, lang, error, leaving, onLeave, onConfigChange, raceLabels, session }: RoomViewProps) {
   const [pending, setPending] = useState(false);
+  const immersive = room.status === "countdown" || room.status === "racing";
   const humans = room.participants.filter((p) => p.role === "runner").length;
   const enoughRunners = humans > 0 && humans + room.config.bots.length >= 2;
   async function startRace() {
@@ -40,14 +41,16 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
   }
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">{room.status === "results" || (room.solo && room.status === "waiting") ? labels.resultsTitle : room.status === "waiting" ? labels.title : labels.raceTitle}</h1>
-        <Button variant="secondary" onClick={onLeave} disabled={leaving}>
-          {labels.leave}
-        </Button>
+      <div className={immersive ? "-mx-4 md:-mx-8" : undefined}>
+        <div className={`flex flex-wrap items-center justify-between gap-4 ${immersive ? "mx-auto max-w-[1440px] px-4 md:px-8 xl:px-[88px]" : ""}`}>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{room.status === "results" || (room.solo && room.status === "waiting") ? labels.resultsTitle : room.status === "waiting" ? labels.title : labels.raceTitle}</h1>
+          <Button variant="secondary" onClick={onLeave} disabled={leaving}>
+            {labels.leave}
+          </Button>
+        </div>
       </div>
       {error ? <RoomError code={error} messages={labels.errors} /> : null}
-      {!room.solo ? <RoomCodeCard code={room.code} labels={labels.code} /> : null}
+      {!room.solo && !immersive ? <RoomCodeCard code={room.code} labels={labels.code} /> : null}
       {room.status === "waiting" && !room.solo ? <div className="flex flex-col gap-6">
         <ParticipantList room={room} currentUserId={userId} labels={labels.participants} raceLabels={raceLabels} onKick={room.hostId === userId ? session.kick : undefined} />
         {room.hostId === userId ? <div className="flex flex-col items-start gap-2">
@@ -64,7 +67,7 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
           settingsLabels={settingsLabels}
           onChange={onConfigChange}
         />
-      </div> : <RoomRaceView key={room.code} room={room} userId={userId} lang={lang} labels={labels.race} raceLabels={raceLabels} session={session} />}
+      </div> : <RoomRaceView key={room.code} room={room} userId={userId} lang={lang} labels={labels.race} codeLabels={labels.code} raceLabels={raceLabels} session={session} />}
     </>
   );
 }
