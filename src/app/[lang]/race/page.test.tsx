@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RacePage, { generateMetadata } from "./page";
 import { SoloRaceEntry } from "./SoloRaceEntry";
 import { DEFAULT_RACE_SETTINGS, serializeRaceSettings } from "@/race/config";
+import { toSoloConfig } from "@/components/race/roomSettings";
 import { getDictionary } from "@/i18n/dictionaries";
 import { plain } from "@/test/text";
 
@@ -58,7 +59,7 @@ describe("race route boundary", () => {
     render(<StrictMode>{await RacePage(props())}</StrictMode>);
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/fr/room/ABC234"));
     expect(mocks.startSolo).toHaveBeenCalledTimes(1);
-    expect(mocks.startSolo).toHaveBeenCalledWith(DEFAULT_RACE_SETTINGS);
+    expect(mocks.startSolo).toHaveBeenCalledWith(toSoloConfig(DEFAULT_RACE_SETTINGS));
   });
 
   it("waits for the connection and starts once across reconnects", async () => {
