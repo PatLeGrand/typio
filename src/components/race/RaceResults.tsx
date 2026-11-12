@@ -89,7 +89,7 @@ export function RaceResults({ locale, labels, rows, headline, playerAvatar, sett
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Button onClick={onReplay}>{copy.replay}</Button>
+        <Button variant="start" onClick={onReplay}>{copy.replay}</Button>
         <ButtonLink href={settingsHref} variant="secondary">{copy.editSettings}</ButtonLink>
       </div>
     </section>
