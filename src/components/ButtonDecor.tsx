@@ -1,7 +1,23 @@
+import { ArrowRight } from "lucide-react";
 import type { ButtonVariant } from "./buttonStyles";
 
 export function ButtonDecor({ variant }: { variant: ButtonVariant }) {
   if (variant === "primary") return null;
+
+  if (variant === "start") {
+    return (
+      <span aria-hidden="true" className="button-start-decor pointer-events-none absolute inset-0">
+        <span className="absolute inset-y-0 left-5 flex items-center gap-[5px]">
+          {[0, 1, 2].map((index) => <span key={index} className="button-start-light relative size-2.5 rounded-full bg-foreground/15" />)}
+        </span>
+        <span className="absolute inset-y-0 right-2 flex items-center">
+          <span className="button-start-arrow flex h-11 items-center justify-center rounded-full bg-accent text-accent-foreground">
+            <ArrowRight size={20} />
+          </span>
+        </span>
+      </span>
+    );
+  }
 
   if (variant === "key") {
     return (

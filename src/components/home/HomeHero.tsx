@@ -27,7 +27,7 @@ export function HomeHero({ home, locale, keyboardLabel }: HomeHeroProps) {
         <div className="min-w-0 space-y-3 pt-6 lg:col-start-2 lg:row-start-1 lg:pb-6 lg:pt-0">
           <p className="max-w-prose text-base leading-relaxed text-muted">{home.hero.description}</p>
           <div className="flex min-w-0 flex-col items-start gap-3 2xl:flex-row 2xl:items-end">
-            <div className="shrink-0"><ButtonLink href={`/${locale}/race/settings`}>{home.createRace}</ButtonLink></div>
+            <div className="min-w-0 max-w-full shrink-0"><ButtonLink href={`/${locale}/race/settings`} variant="start">{home.createRace}</ButtonLink></div>
             <HomeJoinCodeForm labels={home.joinByCode} locale={locale} />
           </div>
         </div>

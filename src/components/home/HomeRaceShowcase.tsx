@@ -271,7 +271,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
                 {result.order.map((racer, index) => <li key={racer}><span className="mr-1 tabular-nums">{number.format(index + 1)}</span>{labels.racers[racer]}</li>)}
               </ol>
               <div className="flex flex-wrap gap-3">
-                <Button onClick={() => { reset(true); setUserPaused(false); requestAnimationFrame(() => inputRef.current?.focus()); }}>{playable.replay}</Button>
+                <Button variant="start" onClick={() => { reset(true); setUserPaused(false); requestAnimationFrame(() => inputRef.current?.focus()); }}>{playable.replay}</Button>
                 <ButtonLink href={`/${locale}/race/settings`} prefetch={false} variant="secondary">{playable.challenge}</ButtonLink>
               </div>
             </div> : <>

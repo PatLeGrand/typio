@@ -64,13 +64,24 @@ describe("ButtonLink", () => {
     expect(screen.getByRole("link", { name: "Jouer en invité" })).toBeInTheDocument();
   });
 
-  it.each(["key", "secondary", "ghost"] as const)("%s : le décor est aria-hidden et absent si aria-disabled", (variant) => {
+  it.each(["key", "secondary", "ghost", "start"] as const)("%s : le décor est aria-hidden et absent si aria-disabled", (variant) => {
     const { rerender } = render(<ButtonLink href="/fr" variant={variant}>Go</ButtonLink>);
     const link = screen.getByRole("link", { name: "Go" });
-    expect(link.querySelector(".button-blobs, .button-road")).toHaveAttribute("aria-hidden", "true");
+    expect(link.querySelector(".button-blobs, .button-road, .button-start-decor")).toHaveAttribute("aria-hidden", "true");
     rerender(<ButtonLink href="/fr" variant={variant} aria-disabled>Go</ButtonLink>);
     expect(screen.getByRole("link", { name: "Go" })).toHaveAttribute("href", "/fr");
-    expect(link.querySelector(".button-blobs, .button-road")).toBeNull();
+    expect(link.querySelector(".button-blobs, .button-road, .button-start-decor")).toBeNull();
+    rerender(<ButtonLink href="/fr" variant={variant} aria-disabled="true">Go</ButtonLink>);
+    expect(link.querySelector(".button-blobs, .button-road, .button-start-decor")).toBeNull();
+  });
+
+  it.each(["Créer une course", "Create a race"])("start : conserve la cible et le nom accessible « %s »", (label) => {
+    render(<ButtonLink href="/fr/race/settings" variant="start">{label}</ButtonLink>);
+    const link = screen.getByRole("link", { name: label });
+    expect(link).toHaveAttribute("href", "/fr/race/settings");
+    expect(link).toHaveAccessibleName(label);
+    expect(link.querySelectorAll(".button-start-light")).toHaveLength(3);
+    expect(link.querySelectorAll(".button-start-arrow svg")).toHaveLength(1);
   });
 
   it("accepte une grande touche sans perdre les classes, la largeur ni le libellé", () => {
