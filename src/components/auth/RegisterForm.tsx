@@ -30,7 +30,6 @@ const FIELD_IDS = {
   passwordConfirm: "register-password-confirm",
   terms: "register-terms",
 } as const;
-const PSEUDO_HINT_ID = "register-username-hint";
 const PASSWORD_RULE_ID = "register-password-rule";
 const TERMS_ERROR_ID = "register-terms-error";
 
@@ -82,7 +81,6 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
           autoCapitalize="none"
           spellCheck={false}
           required
-          aria-describedby={PSEUDO_HINT_ID}
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           error={errors.fieldErrors.username}
