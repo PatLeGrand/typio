@@ -1,5 +1,6 @@
 import { runnerAvatar } from "@/components/avatar";
 import { MissedKeysHeatmap } from "@/components/race/MissedKeysHeatmap";
+import { formatBotSuffix } from "@/components/race/formatRacerName";
 import { RacePodium } from "@/components/race/RacePodium";
 import { RaceResultsTable } from "@/components/race/RaceResultsTable";
 import { WpmChart } from "@/components/race/WpmChart";
@@ -20,7 +21,7 @@ type Props = {
 /** Podium, courbe, touches manquées et tableau des résultats d'une course de salle. */
 export function RoomRaceResultsContent({ results, self, records, userId, lang, labels, raceLabels }: Props) {
   const localResult = results.find((row) => row.id === userId && row.kind === "human");
-  const displayRows = results.map((row) => ({ ...row, avatar: runnerAvatar(row), name: `${row.name}${row.kind === "bot" ? ` (${labels.bot}${row.level ? ` · ${raceLabels.botLevels[row.level]}` : ""})` : ""}` }));
+  const displayRows = results.map((row) => ({ ...row, avatar: runnerAvatar(row), name: `${row.name}${formatBotSuffix(row.kind === "bot", row.level, labels.bot, raceLabels.botLevels)}` }));
   return (
     <>
       <RacePodium rows={displayRows} locale={lang} labels={raceLabels} highlightId={userId} />
