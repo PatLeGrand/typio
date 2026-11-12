@@ -1,27 +1,20 @@
 import { Avatar } from "@/components/Avatar";
 import type { AvatarIdentity } from "@/components/avatar";
 import { formatBotSuffix } from "./formatRacerName";
-import type { BonusType } from "@/race/bonuses";
-import type { BotLevel } from "@/realtime/protocol";
+import type { ServerToClientEvents } from "@/realtime/protocol";
 import type { Dictionary } from "@/i18n/dictionaries";
 
-export type RaceResultsRow = {
-  id: string;
-  name: string;
-  isBot?: boolean;
-  avatar?: AvatarIdentity;
-  level?: BotLevel;
-  personalBest?: boolean;
-  rank: number;
-  wpm: number;
-  grossWpm: number;
-  accuracy: number;
-  errors: number;
-  bonusesReceived?: number;
-  bonusTypes?: BonusType[];
-  timeMs: number;
-  status: "finished" | "unfinished" | "abandoned";
-};
+type ResultEventRow = Parameters<ServerToClientEvents["race:results"]>[0][number];
+
+export type RaceResultsRow = Pick<
+  ResultEventRow,
+  "id" | "name" | "rank" | "wpm" | "grossWpm" | "accuracy" | "errors" | "timeMs" | "status"
+> &
+  Partial<Pick<ResultEventRow, "level" | "bonusesReceived" | "bonusTypes">> & {
+    isBot?: boolean;
+    avatar?: AvatarIdentity;
+    personalBest?: boolean;
+  };
 
 type Props = {
   rows: RaceResultsRow[];
