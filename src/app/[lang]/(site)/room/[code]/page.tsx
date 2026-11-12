@@ -28,7 +28,7 @@ export default async function RoomPage({ params, searchParams }: RoomPageProps) 
   const dict = getDictionary(locale);
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 md:px-8 md:py-12">
+    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 md:px-8 md:py-12 has-[.room-race-screen]:max-w-none">
       <RoomClient
         code={normalizeRoomCode(code)}
         role={parseJoinRole((await searchParams).role)}

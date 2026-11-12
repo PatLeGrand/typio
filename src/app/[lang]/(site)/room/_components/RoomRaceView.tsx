@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePhysicalKeyboard } from "@/components/race/usePhysicalKeyboard";
-import { Avatar } from "@/components/Avatar";
 import { avatarUrl, runnerAvatar } from "@/components/avatar";
 import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
 import { formatBotSuffix } from "@/components/race/formatRacerName";
 import { playerBonusMessage, racerBonusLabel } from "@/components/race/bonusAnnouncements";
+import { RaceInputCard } from "@/components/race/RaceInputCard";
 import { RaceTypingPanel } from "@/components/race/RaceTypingPanel";
 import { RaceVisualizer } from "@/components/race/RaceVisualizer";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -19,6 +19,7 @@ import { createRaceInputBuffer, raceInputOps } from "@/realtime/raceInput";
 import { getSocket } from "@/realtime/client";
 import type { RoomState } from "@/realtime/protocol";
 import type { UseRoom } from "@/realtime/useRoom";
+import { RoomRaceSidebar } from "./RoomRaceSidebar";
 import { RoomRaceResultsContent } from "./RoomRaceResultsContent";
 
 type Props = {
@@ -26,12 +27,13 @@ type Props = {
   userId: string;
   lang: string;
   labels: Dictionary["room"]["race"];
+  codeLabels: Dictionary["room"]["code"];
   raceLabels: Dictionary["raceScreen"];
   session: Pick<UseRoom, "race" | "results" | "self" | "raceReceivedAt" | "connection" | "sendInput" | "abandonRace" | "restartRace" | "startRace" | "closeRoom">;
 };
 
 /** Saisie optimiste ; piste et classement restent entièrement pilotés par le serveur. */
-export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }: Props) {
+export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabels, session }: Props) {
   const { race, results, self, raceReceivedAt, connection, sendInput, abandonRace, restartRace, startRace, closeRoom } = session;
   const [records, setRecords] = useState<string[]>([]);
   const [recordStart, setRecordStart] = useState(race?.startAt);
@@ -74,7 +76,6 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   }, [room.status]);
 
   const number = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
-  const percent = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 1 });
   const runner = race?.runners.find((r) => r.id === userId && r.kind === "human");
   const text = race ? applyTextEdits(race.text, runner?.edits ?? []) : "";
   const active = runner?.status === "ready" || runner?.status === "typing";
@@ -135,32 +136,29 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
 
   if (!race) return <p role="status">{labels.loading}</p>;
   return (
-    <section className="flex flex-col gap-4" aria-label={raceLabels.leaderboard}>
-      {room.status === "countdown" ? <>
-        <h2 className="text-2xl font-bold">{raceLabels.headline.countdown}</h2>
-        <p aria-live="assertive" aria-atomic="true" className="text-center text-6xl font-bold">{number.format(countdown)}</p>
-      </> : <div role="status"><h2 ref={finishRef} tabIndex={-1} className="text-2xl font-bold focus-visible:outline-none">{raceLabels.headline[endReason ?? "racing"]}</h2></div>}
-      {room.status === "countdown" ? <p className="break-words rounded-card border border-border bg-surface p-4 font-mono">{text}</p> : null}
-      {room.status === "racing" && race.finishDeadline != null && <p role="timer">
-        {labels.finishCountdown.replace("{time}", formatClock(Math.max(0, race.finishDeadline - serverTime), "ceil"))}
-      </p>}
-      <RaceVisualizer racers={race.runners.map((r, index) => ({ id: r.id, name: `${r.name}${formatBotSuffix(r.kind === "bot", r.level, labels.bot, raceLabels.botLevels)}`, progress: r.progress * 100, isLocal: r.id === userId, seed: runnerAvatar(r).seed, avatarName: r.name, avatarUrl: avatarUrl(r.kind === "human" ? r.id : undefined, r.avatarVersion), hue: index * 47, bonusLabel: racerBonusLabel(race.bonusEvents, r.id, serverTime, raceLabels.bonuses) }))} />
-      <ol className="flex flex-col gap-2">
-        {race.runners.map((r) => <li key={r.id} className={`rounded-card border border-border p-3 ${r.id === userId ? "bg-accent-panel font-bold" : "bg-surface"}`}>
-          <Avatar name={r.name} {...runnerAvatar(r)} size={24} />{" "}{r.name}{formatBotSuffix(r.kind === "bot", r.level, labels.bot, raceLabels.botLevels)} {r.id === userId ? `(${raceLabels.you})` : ""}
-          {" · "}{number.format(r.position)} / {number.format(r.textLength)} {raceLabels.typing.characters}
-          {" · "}{number.format(r.wpm)} {raceLabels.results.columns.wpm}
-          {" · "}{percent.format(r.accuracy / 100)} {raceLabels.results.columns.accuracy}
-        </li>)}
-      </ol>
-      {room.status === "racing" && active ? <>
-        {physicalKeyboard ? connection === "connected" ? <RaceTypingPanel focusRef={typingRef} fog={(runner?.fogUntil ?? 0) > serverTime} bonusMessage={playerBonusMessage(race.bonusEvents, userId, serverTime, raceLabels.bonuses, race.runners)} locale={lang} labels={raceLabels.typing} text={text} typed={input.typed} correctChars={countCorrectChars(input.typed, text)} onChange={change} /> : <p role="status">{labels.reconnecting}</p> : <p>{labels.keyboard}</p>}
-        {confirmAbandon ? <div role="group" aria-label={labels.confirmAbandon} className="flex flex-wrap items-center gap-3">
-          <p>{labels.confirmAbandon}</p>
-          <Button disabled={pending || connection !== "connected"} onClick={() => { buffer.clear(); void command(abandonRace).then(() => setConfirmAbandon(false)); }}>{labels.confirm}</Button>
-          <Button autoFocus variant="secondary" onClick={() => { setFocusAbandon(!typingRef.current); setConfirmAbandon(false); typingRef.current?.focus(); }}>{labels.cancel}</Button>
-        </div> : <Button autoFocus={focusAbandon} variant="secondary" onClick={() => { setFocusAbandon(false); setConfirmAbandon(true); }}>{raceLabels.abandon}</Button>}
-      </> : null}
+    <section className="room-race-screen relative -mx-4 [--race-track-height:260px] sm:[--race-track-height:320px] md:-mx-8 lg:[--race-track-height:420px]" aria-label={raceLabels.leaderboard}>
+      <RaceVisualizer paused={!physicalKeyboard} className="relative h-[var(--race-track-height)] w-full overflow-hidden" racers={race.runners.map((r, index) => ({ id: r.id, name: `${r.name}${formatBotSuffix(r.kind === "bot", r.level, labels.bot, raceLabels.botLevels)}`, progress: r.progress * 100, isLocal: r.id === userId, seed: runnerAvatar(r).seed, avatarName: r.name, avatarUrl: avatarUrl(r.kind === "human" ? r.id : undefined, r.avatarVersion), hue: index * 47, bonusLabel: racerBonusLabel(race.bonusEvents, r.id, serverTime, raceLabels.bonuses) }))} />
+      <div className="relative z-10 mx-auto -mt-5 max-w-[960px] px-4 sm:px-8">
+        <RaceInputCard className="flex flex-col items-stretch gap-4">
+          {room.status === "countdown" ? <>
+            <h2 className="text-lg font-bold text-balance">{raceLabels.headline.countdown}</h2>
+            <p aria-live="assertive" aria-atomic="true" className="text-center text-6xl font-bold tabular-nums">{number.format(countdown)}</p>
+          </> : <div role="status"><h2 ref={finishRef} tabIndex={-1} className={`${endReason ? "" : "sr-only "}text-lg font-bold text-balance focus-visible:outline-none`}>{raceLabels.headline[endReason ?? "racing"]}</h2></div>}
+          {room.status === "countdown" ? <p className="break-words whitespace-pre-wrap font-mono text-base leading-relaxed">{text}</p> : null}
+          {room.status === "racing" && race.finishDeadline != null && <p role="timer" className="tabular-nums">
+            {labels.finishCountdown.replace("{time}", formatClock(Math.max(0, race.finishDeadline - serverTime), "ceil"))}
+          </p>}
+          {room.status === "racing" && active ? <>
+            {physicalKeyboard ? connection === "connected" ? <RaceTypingPanel embedded focusRef={typingRef} fog={(runner?.fogUntil ?? 0) > serverTime} bonusMessage={playerBonusMessage(race.bonusEvents, userId, serverTime, raceLabels.bonuses, race.runners)} locale={lang} labels={raceLabels.typing} text={text} typed={input.typed} correctChars={countCorrectChars(input.typed, text)} onChange={change} /> : <p role="status">{labels.reconnecting}</p> : <p>{labels.keyboard}</p>}
+            {confirmAbandon ? <div role="group" aria-label={labels.confirmAbandon} className="flex flex-wrap items-center gap-3">
+              <p>{labels.confirmAbandon}</p>
+              <Button disabled={pending || connection !== "connected"} onClick={() => { buffer.clear(); void command(abandonRace).then(() => setConfirmAbandon(false)); }}>{labels.confirm}</Button>
+              <Button autoFocus variant="secondary" onClick={() => { setFocusAbandon(!typingRef.current); setConfirmAbandon(false); typingRef.current?.focus(); }}>{labels.cancel}</Button>
+            </div> : <Button className="self-start" autoFocus={focusAbandon} variant="secondary" onClick={() => { setFocusAbandon(false); setConfirmAbandon(true); }}>{raceLabels.abandon}</Button>}
+          </> : null}
+        </RaceInputCard>
+      </div>
+      <RoomRaceSidebar runners={race.runners} userId={userId} lang={lang} code={room.solo ? undefined : room.code} codeLabels={codeLabels} labels={labels} raceLabels={raceLabels} />
     </section>
   );
 }
