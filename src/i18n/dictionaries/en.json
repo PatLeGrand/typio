@@ -560,7 +560,9 @@
       "add": "Add a bot",
       "remove": "Remove bot {number}",
       "level": "Bot {number} level",
-      "help": "{level}: {min}–{max} WPM",
+      "name": "Bot {number}",
+      "speed": "{min}–{max} WPM",
+      "empty": "No bots yet. Add an opponent to practise.",
       "levels": {
         "noob": "Noob",
         "beginner": "Beginner",
@@ -682,8 +684,7 @@
         "cmf": "Canadian multilingual"
       },
       "language": "Interface language",
-      "title": "Preferences",
-      "theme": "Theme"
+      "title": "Preferences"
     },
     "status": {
       "saved": "Your profile is up to date. Your changes are saved."

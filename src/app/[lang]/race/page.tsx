@@ -40,7 +40,7 @@ export default async function RacePage({ params, searchParams }: {
   const preferences = (
     <div className="flex flex-wrap justify-end gap-2 border-b border-border bg-background p-4 text-foreground">
       <LanguageSwitcher locale={locale} labels={dictionary.language} compact />
-      <ThemeToggle labels={dictionary.theme} compact />
+      <ThemeToggle labels={dictionary.theme} />
     </div>
   );
 
