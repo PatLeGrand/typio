@@ -11,6 +11,7 @@ import { ButtonLink } from "@/components/ButtonLink";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { usePhysicalKeyboard } from "@/components/race/usePhysicalKeyboard";
+import { getReducedMotionSnapshot, subscribeToReducedMotion } from "@/theme/reducedMotion";
 import { createPlayableRace, playableRaceProgress, playableRaceResult, transitionPlayableRace } from "./playableRace";
 
 const RaceVisualizer = memo(dynamic(
@@ -18,14 +19,7 @@ const RaceVisualizer = memo(dynamic(
   { ssr: false },
 ));
 
-const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const SPEEDS = [1.14, 1.2, 1.16, 1.17];
-function subscribeMotion(listener: () => void) {
-  const query = window.matchMedia(MOTION_QUERY);
-  query.addEventListener("change", listener);
-  return () => query.removeEventListener("change", listener);
-}
-const motionSnapshot = () => window.matchMedia(MOTION_QUERY).matches;
 const serverMotionSnapshot = () => true;
 const subscribeHydration = () => () => {};
 const hydrationSnapshot = () => true;
@@ -45,7 +39,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
   const [race, setRace] = useState(() => createPlayableRace(playable.texts[0]));
   const raceRef = useRef(race);
   const lastTick = useRef<number | null>(null);
-  const reducedMotion = useSyncExternalStore(subscribeMotion, motionSnapshot, serverMotionSnapshot);
+  const reducedMotion = useSyncExternalStore(subscribeToReducedMotion, getReducedMotionSnapshot, serverMotionSnapshot);
   const physicalKeyboard = usePhysicalKeyboard();
   const hydrated = useSyncExternalStore(subscribeHydration, hydrationSnapshot, serverHydrationSnapshot);
   const still = reducedMotion || !physicalKeyboard;
