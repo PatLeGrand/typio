@@ -34,7 +34,7 @@ export function TextField({
 
   return (
     <div className="flex flex-col gap-[9px]">
-      <label htmlFor={inputId} className={`pr-field ${icon ? "pl-field-icon" : "pl-field"} text-sm font-semibold text-foreground`}>
+      <label htmlFor={inputId} className="text-sm font-semibold text-foreground">
         {label}
       </label>
       <div className="relative">
@@ -59,7 +59,7 @@ export function TextField({
         {endSlot ? <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center">{endSlot}</div> : null}
       </div>
       {error ? (
-        <p id={errorId} role="alert" className={`pr-field ${icon ? "pl-field-icon" : "pl-field"} text-[13px] font-semibold text-danger`}>
+        <p id={errorId} role="alert" className="text-[13px] font-semibold text-danger">
           {error}
         </p>
       ) : null}

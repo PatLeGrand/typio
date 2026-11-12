@@ -48,7 +48,7 @@ export function RaceRoomSettings({ value, onChange, readOnly, dict, lang, idPref
             onChange={(event) => onChange({ visibility: event.target.value as RoomVisibility })}
             aria-describedby={id("visibility-help")}
           />
-          <p id={id("visibility-help")} className="px-field text-xs text-muted">{dict.visibility.help}</p>
+          <p id={id("visibility-help")} className="text-xs text-muted">{dict.visibility.help}</p>
         </div>
         <div className="flex flex-col gap-2">
           <SelectField
@@ -59,7 +59,7 @@ export function RaceRoomSettings({ value, onChange, readOnly, dict, lang, idPref
             onChange={(event) => onChange({ capacity: Number(event.target.value) })}
             aria-describedby={id("capacity-help")}
           />
-          <p id={id("capacity-help")} className="px-field text-xs text-muted">{dict.capacity.help}</p>
+          <p id={id("capacity-help")} className="text-xs text-muted">{dict.capacity.help}</p>
         </div>
       </div>
     </section>

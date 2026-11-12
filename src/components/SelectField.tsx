@@ -30,7 +30,7 @@ export function SelectField({
 
   return (
     <div className="flex flex-col gap-[9px]">
-      <label htmlFor={selectId} className="px-field text-sm font-semibold text-foreground">
+      <label htmlFor={selectId} className="text-sm font-semibold text-foreground">
         {label}
       </label>
       <select
@@ -49,7 +49,7 @@ export function SelectField({
         ))}
       </select>
       {error ? (
-        <p id={errorId} className="px-field text-[13px] font-semibold text-danger">
+        <p id={errorId} className="text-[13px] font-semibold text-danger">
           {error}
         </p>
       ) : null}
