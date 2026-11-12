@@ -45,14 +45,14 @@ test("la piste reste fluide avec 30 participants réels (PERF-03, PERF-02)", asy
       await solo.goto(`/fr/race?${serializeRaceSettings(DEFAULT_RACE_SETTINGS)}`);
       await expect(solo.getByRole("heading", { name: fr.raceScreen.headline.racing, exact: true }))
         .toBeVisible({ timeout: 10_000 });
-      const soloRunners = solo.getByRole("complementary").filter({
-        has: solo.getByRole("heading", { name: fr.raceScreen.leaderboard, exact: true }),
-      }).getByRole("listitem");
+      const soloRunners = solo.getByRole("region", { name: fr.raceScreen.leaderboard, exact: true }).getByRole("listitem");
       await expect(soloRunners).toHaveCount(3);
       await expect(solo.locator("main canvas")).toBeVisible();
       await solo.locator("main canvas").scrollIntoViewIfNeeded();
       const frames = await sampleFrames(solo, 5_000);
       fpsSolo = frames.length * 1000 / frames.reduce((sum, interval) => sum + interval, 0);
+      await solo.getByRole("button", { name: fr.room.leave, exact: true }).click();
+      await expect(solo).toHaveURL("/fr/play");
     } finally {
       await solo.close();
     }

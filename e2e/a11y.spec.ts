@@ -88,8 +88,9 @@ for (const colorScheme of ["light", "dark"] as const) {
         await expect(page.getByRole("textbox", { name: fr.raceScreen.typing.inputLabel, exact: true }))
           .toBeVisible();
         await expect(page.locator("canvas")).toBeVisible();
-        // H-41 : la course solo immersive conserve header/main/h1, sans nav ni footer du site.
-        await audit(page, "fr", true, true);
+        await audit(page, "fr", true);
+        await page.getByRole("button", { name: fr.room.leave, exact: true }).click();
+        await expect(page).toHaveURL("/fr/play");
       });
 
       test("axe et structure : invitation, résultats membre et invité, détail d’historique (A11Y-01 à A11Y-03, SALLE-04)", async ({ page, browser, baseURL }) => {

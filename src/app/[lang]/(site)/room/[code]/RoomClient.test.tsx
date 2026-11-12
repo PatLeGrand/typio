@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import { ROOM_ERROR_CODES } from "@/realtime/protocol";
 import type { UseRoom } from "@/realtime/useRoom";
+import { serializeRaceSettings } from "@/race/config";
 import { makeParticipant, makeRoom, makeUseRoom, ME, OTHER } from "@/test/roomFixtures";
 
 const mocks = vi.hoisted(() => ({
@@ -110,6 +111,73 @@ describe("vue d'un participant", () => {
     expect(english).toBeDisabled();
     expect(screen.getByRole("textbox", { name: settingsLabels.excludedChars.label })).toHaveAttribute("readonly");
     expect(screen.getByText(labels.config.hostOnly)).toBeVisible();
+  });
+});
+
+describe("course solo", () => {
+  beforeEach(() => {
+    vi.stubGlobal("matchMedia", () => ({
+      matches: false,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each(["fr", "en"] as const)("affiche les actions solo sans code, invitation ni configuration (%s)", (locale) => {
+    const room = makeRoom([makeParticipant(ME)], { solo: true, status: "results" });
+    current = makeUseRoom({ room });
+    const { labels, settingsLabels } = renderRoom({ locale });
+
+    expect(screen.queryByText(room.code)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: labels.invites.title })).not.toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: labels.participants.title })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: settingsLabels.timeLimit.label })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: labels.race.soloReplay })).toBeEnabled();
+    expect(screen.getByRole("link", { name: labels.race.soloSettings })).toHaveAttribute("href", `/${locale}/race/settings?${serializeRaceSettings(room.config)}`);
+    expect(screen.getByRole("button", { name: labels.leave })).toBeEnabled();
+  });
+
+  it("rejoue seulement après l'accusé de remise à zéro", async () => {
+    let resolveRestart!: (result: Awaited<ReturnType<UseRoom["restartRace"]>>) => void;
+    const restartRace = vi.fn<UseRoom["restartRace"]>(() => new Promise((resolve) => { resolveRestart = resolve; }));
+    const startRace = vi.fn<UseRoom["startRace"]>(async () => ({ ok: true, data: undefined }));
+    const room = makeRoom([makeParticipant(ME)], { solo: true, status: "results" });
+    current = makeUseRoom({ room, restartRace, startRace });
+    const view = renderRoom();
+
+    fireEvent.click(screen.getByRole("button", { name: view.labels.race.soloReplay }));
+    expect(restartRace).toHaveBeenCalledTimes(1);
+    expect(startRace).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: view.labels.race.soloReplay })).toBeDisabled();
+    setRoom(makeUseRoom({ room: { ...room, status: "waiting" }, restartRace, startRace }), () => view.rerender(view.ui()));
+    await act(async () => resolveRestart({ ok: true, data: undefined }));
+    expect(startRace).toHaveBeenCalledTimes(1);
+  });
+
+  it("garde les actions en attente et démarre sans demander une nouvelle remise à zéro", async () => {
+    const restartRace = vi.fn<UseRoom["restartRace"]>();
+    const startRace = vi.fn<UseRoom["startRace"]>(async () => ({ ok: true, data: undefined }));
+    current = makeUseRoom({ room: makeRoom([makeParticipant(ME)], { solo: true }), restartRace, startRace });
+    const { labels } = renderRoom();
+
+    expect(screen.queryByRole("button", { name: labels.race.start })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: labels.invites.title })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: labels.race.soloSettings })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: labels.race.soloReplay }));
+    await waitFor(() => expect(startRace).toHaveBeenCalledTimes(1));
+    expect(restartRace).not.toHaveBeenCalled();
+  });
+
+  it("ne relance pas si la remise à zéro est refusée", async () => {
+    const restartRace = vi.fn<UseRoom["restartRace"]>(async () => ({ ok: false, error: "OFFLINE" }));
+    const startRace = vi.fn<UseRoom["startRace"]>();
+    current = makeUseRoom({ room: makeRoom([makeParticipant(ME)], { solo: true, status: "results" }), restartRace, startRace });
+    const { labels } = renderRoom();
+
+    fireEvent.click(screen.getByRole("button", { name: labels.race.soloReplay }));
+    await waitFor(() => expect(screen.getByRole("button", { name: labels.race.soloReplay })).toBeEnabled());
+    expect(startRace).not.toHaveBeenCalled();
   });
 });
 

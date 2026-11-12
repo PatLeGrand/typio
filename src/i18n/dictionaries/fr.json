@@ -27,12 +27,11 @@
   "raceEntry": {
     "invalidTitle": "Configuration invalide",
     "title": "Course",
-    "pending": "Tes réglages sont prêts. La course jouable sera disponible prochainement.",
+    "pending": "Préparation de la course…",
     "invalid": "Ces réglages sont invalides. Retourne aux paramètres pour préparer ta course.",
     "back": "Retour aux paramètres"
   },
   "raceScreen": {
-    "loading": "Chargement du texte…",
     "bonuses": {
       "types": {
         "shorten": "−3 mots",
@@ -47,16 +46,7 @@
     },
     "bot": "Bot",
     "botLevels": {"noob": "Noob", "beginner": "Débutant", "intermediate": "Intermédiaire", "expert": "Expert", "impossible": "Impossible"},
-    "roomName": "Prairie des Blobs",
-    "playerOne": "joueur",
-    "playerOther": "joueurs",
     "abandon": "Abandonner",
-    "go": "Partez !",
-    "status": {
-      "countdown": "DÉPART",
-      "racing": "EN COURSE",
-      "finished": "TERMINÉE"
-    },
     "leaderboard": "Classement",
     "you": "Toi",
     "botNames": [
@@ -68,18 +58,6 @@
       "Max",
       "Lia"
     ],
-    "stats": {
-      "title": "Statistiques",
-      "timeLeft": "Temps restant :",
-      "time": "Temps :",
-      "wpm": "MPM :",
-      "accuracy": "Précision :"
-    },
-    "kicker": {
-      "countdown": "LA COURSE VA COMMENCER",
-      "racing": "LA COURSE EST LANCÉE",
-      "finished": "COURSE TERMINÉE"
-    },
     "headline": {
       "countdown": "Prépare-toi !",
       "racing": "Garde le rythme !",
@@ -94,7 +72,6 @@
       "few": "{rank}e",
       "other": "{rank}e"
     },
-    "trackProgress": "du parcours",
     "typing": {
       "title": "À tes touches, prêt, pars !",
       "characters": "caractères",
@@ -102,12 +79,6 @@
       "hint": "Chaque caractère correct fait avancer ton Blob.",
       "fix": "pour corriger",
       "autoValidate": "Fin automatique au dernier caractère"
-    },
-    "noText": {
-      "rateLimited": "Trop de demandes de texte. Réessaie dans une minute.",
-      "title": "Aucun texte disponible",
-      "message": "Les réglages choisis ne laissent aucun texte (langue, accents, caractères exclus ou inclus). Assouplis-les pour lancer la course.",
-      "back": "Modifier les réglages"
     },
     "results": {
       "title": "Résultats",
@@ -716,6 +687,8 @@
     "race": {
       "finishCountdown": "Premier coureur arrivé : {time} pour terminer.",
       "start": "Lancer la course",
+      "soloReplay": "Rejouer",
+      "soloSettings": "Modifier les réglages",
       "restart": "Relancer",
       "close": "Fermer la salle",
       "bot": "Bot",

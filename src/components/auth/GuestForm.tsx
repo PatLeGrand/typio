@@ -16,6 +16,7 @@ type GuestFormProps = {
   locale: Locale;
   labels: Dictionary["guest"];
   common: Dictionary["auth"];
+  returnTo?: string;
 };
 
 const IDLE: AuthFormState = { status: "idle" };
@@ -24,7 +25,7 @@ const FIELD_IDS = { pseudo: "guest-pseudo" } as const;
 const HINT_ID = "guest-pseudo-hint";
 
 /** Jeu en invité avec un simple pseudo (AUTH-02, AUTH-03). */
-export function GuestForm({ locale, labels, common }: GuestFormProps) {
+export function GuestForm({ locale, labels, common, returnTo }: GuestFormProps) {
   const [state, formAction, pending] = useActionState(continueAsGuest, IDLE);
   // Contrôlé : React 19 vide les champs non contrôlés après une action, erreur comprise.
   const [pseudo, setPseudo] = useState("");
@@ -35,6 +36,7 @@ export function GuestForm({ locale, labels, common }: GuestFormProps) {
   return (
     <form action={formAction} noValidate className="flex flex-col gap-5">
       <input type="hidden" name={AUTH_FIELDS.locale} value={locale} />
+      {returnTo ? <input type="hidden" name={AUTH_FIELDS.returnTo} value={returnTo} /> : null}
       <div className="flex flex-col gap-2">
         <TextField
           id={FIELD_IDS.pseudo}

@@ -45,7 +45,7 @@ const loginFormSchema = z.strictObject({
   [AUTH_FIELDS.password]: text,
   [AUTH_FIELDS.remember]: checkbox,
 });
-const guestFormSchema = z.strictObject({ [AUTH_FIELDS.locale]: localeField, [AUTH_FIELDS.pseudo]: text });
+const guestFormSchema = z.strictObject({ [AUTH_FIELDS.locale]: localeField, [AUTH_FIELDS.pseudo]: text, [AUTH_FIELDS.returnTo]: text });
 
 /**
  * Remplace la session du navigateur : l'ancienne session (si le cookie en porte une) est
@@ -70,6 +70,7 @@ async function runAuthAction(
   actionName: string,
   locale: Locale,
   flow: (deps: AuthDeps, ip: string, locale: Locale) => Promise<AuthFlowResult>,
+  returnTo?: string,
 ): Promise<AuthFormState> {
   let result: AuthFlowResult;
   try {
@@ -86,7 +87,8 @@ async function runAuthAction(
   if (!result.ok) {
     return { status: "error", ...result.error };
   }
-  redirect(`/${locale}`);
+  // Seuls les chemins internes de cette langue sont admis, même si le champ est falsifié.
+  redirect(returnTo?.startsWith(`/${locale}/`) && !/[\\\u0000-\u001f\u007f]/.test(returnTo) ? returnTo : `/${locale}`);
 }
 
 export async function register(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -124,6 +126,7 @@ export async function continueAsGuest(
   const form = readForm(formData, guestFormSchema);
   return runAuthAction("continueAsGuest", form.locale, (deps, ip, locale) =>
     createGuest(deps, { ip, pseudo: form.pseudo, locale }),
+    form.returnTo,
   );
 }
 
