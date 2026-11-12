@@ -15,6 +15,7 @@ vi.mock("./actions", () => ({ updateProfile: mocks.updateProfile }));
 vi.mock("@/auth/actions", () => ({ logout: mocks.logout }));
 
 import { ProfileForm } from "./ProfileForm";
+import { ProfileSecurityPanel } from "./ProfileSecurityPanel";
 import { plain } from "@/test/text";
 
 const member: CurrentUser = {
@@ -32,9 +33,7 @@ function renderForm(locale: "fr" | "en", user: CurrentUser = member) {
     <ProfileForm
       user={user}
       dbUser={{ createdAt: new Date("2026-01-15T12:00:00Z"), keyboardLayout: "qwerty" }}
-      hasPassword
-      hasGithub={false}
-      hasDiscord
+      securityPanel={<ProfileSecurityPanel hasPassword hasGithub={false} hasDiscord dictionary={dictionary} />}
       dictionary={dictionary}
       locale={locale}
     />,
