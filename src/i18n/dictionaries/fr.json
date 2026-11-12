@@ -24,6 +24,17 @@
     "membersOnly": "Seuls les résultats des membres sont enregistrés. Les invités et les bots ne figurent pas dans ce tableau.",
     "back": "Retour à l’historique"
   },
+  "activeRoom": {
+    "label": "Ta salle en cours",
+    "waiting": "Tu es dans la salle {code}",
+    "racing": "Ta course est en cours",
+    "results": "Les résultats de ta course sont prêts",
+    "return": "Y retourner",
+    "leave": "Quitter la salle",
+    "leaving": "Départ…",
+    "confirmLeave": "Quitter la salle vaut abandon de la course. Veux-tu continuer ?",
+    "leaveError": "Impossible de quitter la salle. Vérifie ta connexion et réessaie."
+  },
   "raceEntry": {
     "invalidTitle": "Configuration invalide",
     "title": "Course",
