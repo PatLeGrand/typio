@@ -1,4 +1,6 @@
 import { getCurrentUserForDisplay } from "@/auth/currentUser";
+import { getActiveRoomCode } from "@/auth/activeRoom";
+import { ActiveRoomWidget } from "@/components/ActiveRoomWidget";
 import { schedulePurge } from "@/auth/schedulePurge";
 import { SiteHeader } from "@/components/SiteHeader";
 import { pickSiteHeaderDictionary } from "@/components/siteHeaderDictionary";
@@ -15,6 +17,7 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
   const locale = requireLocale((await params).lang);
   schedulePurge();
   const user = await getCurrentUserForDisplay();
+  const roomCode = user ? await getActiveRoomCode() : null;
 
   return (
     <>
@@ -22,6 +25,7 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
       <RoomSessionGuard userId={user?.id ?? null} />
       {children}
       <SiteFooter locale={locale} labels={getDictionary(locale).footer} />
+      {user && roomCode ? <ActiveRoomWidget key={user.id} userId={user.id} roomCode={roomCode} locale={locale} labels={getDictionary(locale).activeRoom} /> : null}
     </>
   );
 }

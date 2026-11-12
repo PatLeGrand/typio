@@ -33,6 +33,7 @@ type RoomClientProps = {
  */
 export function RoomClient({ code, role, locale, userId, labels, settingsLabels, raceLabels }: RoomClientProps) {
   const router = useRouter();
+  const refresh = router.refresh;
   const session = useRoom(userId);
   const { connection, room, error, kicked, join, updateConfig, leave, clearError } = session;
   useLoginRedirect(connection, locale);
@@ -55,6 +56,11 @@ export function RoomClient({ code, role, locale, userId, labels, settingsLabels,
   // « Ajustement d'état pendant le rendu » : retient qu'on a bien fait partie de cette salle,
   // pour distinguer « pas encore arrivé » de « n'en fait plus partie ».
   if (inThisRoom && !wasInRoom) setWasInRoom(true);
+
+  useEffect(() => {
+    // Le layout persiste entre les pages : relire sa réservation une fois la salle rejointe.
+    if (inThisRoom) refresh();
+  }, [inThisRoom, refresh]);
 
   useEffect(() => {
     clearError();

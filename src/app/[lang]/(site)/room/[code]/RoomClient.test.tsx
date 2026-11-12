@@ -9,10 +9,11 @@ import { makeParticipant, makeRoom, makeUseRoom, ME, OTHER } from "@/test/roomFi
 const mocks = vi.hoisted(() => ({
   useRoom: vi.fn<() => UseRoom>(),
   replace: vi.fn(),
+  refresh: vi.fn(),
 }));
 
 vi.mock("@/realtime/useRoom", () => ({ useRoom: mocks.useRoom }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mocks.replace, push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mocks.replace, push: vi.fn(), refresh: mocks.refresh }) }));
 
 import { RoomClient } from "./RoomClient";
 import { plain } from "@/test/text";
@@ -44,6 +45,15 @@ beforeEach(() => {
 });
 
 describe("titre de la salle", () => {
+  it("relit la réservation du layout quand la salle est rejointe", () => {
+    const view = renderRoom();
+    expect(mocks.refresh).not.toHaveBeenCalled();
+    setRoom(makeUseRoom({ room: hostRoom }), () => view.rerender(view.ui()));
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+    view.rerender(view.ui());
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+  });
+
   beforeEach(() => {
     vi.stubGlobal("matchMedia", () => ({
       matches: false,
