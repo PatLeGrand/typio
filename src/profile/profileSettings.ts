@@ -30,11 +30,7 @@ export type ProfileErrorCode = (typeof PROFILE_ERROR_CODES)[number];
 
 export type ProfileUpdateResult = { ok: true; locale: Locale } | { ok: false; code: ProfileErrorCode };
 
-export interface ProfileUpdate {
-  displayName: string;
-  keyboardLayout: KeyboardLayout;
-  locale: Locale;
-}
+export type ProfileUpdate = z.infer<typeof profileUpdateSchema>;
 
 export type ProfileValidationResult = { ok: true; value: ProfileUpdate } | { ok: false; code: ProfileErrorCode };
 

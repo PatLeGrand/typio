@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ChevronDown, CornerDownLeft } from "lucide-react";
 import { logout } from "@/auth/actions";
 import { AUTH_FIELDS, type CurrentUser } from "@/auth/types";
-import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
@@ -14,10 +13,11 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { ProfileModal } from "./ProfileModal";
+import type { SiteHeaderDictionary } from "./siteHeaderDictionary";
 
 type SiteHeaderProps = {
   locale: Locale;
-  dictionary: Dictionary;
+  dictionary: SiteHeaderDictionary;
   /** Utilisateur connecté (membre ou invité), ou `null` pour un visiteur. */
   user: CurrentUser | null;
 };

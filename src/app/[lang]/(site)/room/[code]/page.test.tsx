@@ -56,6 +56,7 @@ describe("page /room/[code]", () => {
       userId: member.id,
       labels: getDictionary(lang).room,
       settingsLabels: getDictionary(lang).raceSettings,
+      raceLabels: getDictionary(lang).raceScreen,
     });
   });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { getReducedMotionSnapshot, subscribeToReducedMotion } from "@/theme/reducedMotion";
 import { MediaPlaybackButton } from "./MediaPlaybackButton";
 
 type InteractiveVideoProps = {
@@ -12,13 +13,6 @@ type InteractiveVideoProps = {
   details: string;
 };
 
-const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-function subscribeMotion(listener: () => void) {
-  const query = window.matchMedia(MOTION_QUERY);
-  query.addEventListener("change", listener);
-  return () => query.removeEventListener("change", listener);
-}
-const motionSnapshot = () => window.matchMedia(MOTION_QUERY).matches;
 const serverMotionSnapshot = () => true;
 
 export function InteractiveVideo({ ariaLabel, fallbackText, src, playLabel, pauseLabel, details }: InteractiveVideoProps) {
@@ -26,7 +20,7 @@ export function InteractiveVideo({ ariaLabel, fallbackText, src, playLabel, paus
   const detailsId = useId();
   const manuallyPaused = useRef(false);
   const [playing, setPlaying] = useState(false);
-  const reducedMotion = useSyncExternalStore(subscribeMotion, motionSnapshot, serverMotionSnapshot);
+  const reducedMotion = useSyncExternalStore(subscribeToReducedMotion, getReducedMotionSnapshot, serverMotionSnapshot);
 
   useEffect(() => {
     const video = videoRef.current;

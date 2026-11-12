@@ -6,11 +6,8 @@ import { Avatar } from "@/components/Avatar";
 import { avatarUrl, runnerAvatar } from "@/components/avatar";
 import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
+import { formatBotSuffix } from "@/components/race/formatRacerName";
 import { playerBonusMessage, racerBonusLabel } from "@/components/race/bonusAnnouncements";
-import { RacePodium } from "@/components/race/RacePodium";
-import { MissedKeysHeatmap } from "@/components/race/MissedKeysHeatmap";
-import { WpmChart } from "@/components/race/WpmChart";
-import { RaceResultsTable } from "@/components/race/RaceResultsTable";
 import { RaceTypingPanel } from "@/components/race/RaceTypingPanel";
 import { RaceVisualizer } from "@/components/race/RaceVisualizer";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -22,6 +19,7 @@ import { createRaceInputBuffer, raceInputOps } from "@/realtime/raceInput";
 import { getSocket } from "@/realtime/client";
 import type { RoomState } from "@/realtime/protocol";
 import type { UseRoom } from "@/realtime/useRoom";
+import { RoomRaceResultsContent } from "./RoomRaceResultsContent";
 
 type Props = {
   room: RoomState;
@@ -115,19 +113,12 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
   }
 
   if (room.status === "results" || (room.solo && room.status === "waiting")) {
-    const localResult = results?.find((row) => row.id === userId && row.kind === "human");
-    const displayRows = results?.map((row) => ({ ...row, avatar: runnerAvatar(row), name: `${row.name}${row.kind === "bot" ? ` (${labels.bot}${row.level ? ` · ${raceLabels.botLevels[row.level]}` : ""})` : ""}` }));
     return (
       <section className="flex flex-col gap-4" aria-label={raceLabels.results.tableTitle}>
         <div role="status"><h2 ref={finishRef} tabIndex={-1} className="text-2xl font-bold focus-visible:outline-none">{endReason ? raceLabels.headline[endReason] : raceLabels.results.tableTitle}</h2></div>
         {records.includes(userId) && <p role="status">{raceLabels.results.newPersonalBest}</p>}
-        {results && displayRows ? (
-          <>
-            <RacePodium rows={displayRows} locale={lang} labels={raceLabels} highlightId={userId} />
-            <WpmChart rows={displayRows} locale={lang} labels={raceLabels.results} highlightId={userId} />
-            {localResult && self?.missedKeys && <MissedKeysHeatmap missedKeys={self.missedKeys} locale={lang} labels={raceLabels.results} />}
-            <RaceResultsTable rows={results.map((row) => ({ ...row, avatar: runnerAvatar(row), isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} botLevels={raceLabels.botLevels} highlightId={userId} />
-          </>
+        {results ? (
+          <RoomRaceResultsContent results={results} self={self} records={records} userId={userId} lang={lang} labels={labels} raceLabels={raceLabels} />
         ) : room.status === "results" ? <p role="status">{labels.loading}</p> : null}
         {room.hostId === userId ? <div className="flex flex-wrap gap-3">
           {room.solo ? <>
@@ -153,10 +144,10 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
       {room.status === "racing" && race.finishDeadline != null && <p role="timer">
         {labels.finishCountdown.replace("{time}", formatClock(Math.max(0, race.finishDeadline - serverTime), "ceil"))}
       </p>}
-      <RaceVisualizer racers={race.runners.map((r, index) => ({ id: r.id, name: r.kind === "bot" ? `${r.name} (${labels.bot}${r.level ? ` · ${raceLabels.botLevels[r.level]}` : ""})` : r.name, progress: r.progress * 100, isLocal: r.id === userId, seed: runnerAvatar(r).seed, avatarName: r.name, avatarUrl: avatarUrl(r.kind === "human" ? r.id : undefined, r.avatarVersion), hue: index * 47, bonusLabel: racerBonusLabel(race.bonusEvents, r.id, serverTime, raceLabels.bonuses) }))} />
+      <RaceVisualizer racers={race.runners.map((r, index) => ({ id: r.id, name: `${r.name}${formatBotSuffix(r.kind === "bot", r.level, labels.bot, raceLabels.botLevels)}`, progress: r.progress * 100, isLocal: r.id === userId, seed: runnerAvatar(r).seed, avatarName: r.name, avatarUrl: avatarUrl(r.kind === "human" ? r.id : undefined, r.avatarVersion), hue: index * 47, bonusLabel: racerBonusLabel(race.bonusEvents, r.id, serverTime, raceLabels.bonuses) }))} />
       <ol className="flex flex-col gap-2">
         {race.runners.map((r) => <li key={r.id} className={`rounded-card border border-border p-3 ${r.id === userId ? "bg-accent-panel font-bold" : "bg-surface"}`}>
-          <Avatar name={r.name} {...runnerAvatar(r)} size={24} />{" "}{r.name} {r.kind === "bot" ? `(${labels.bot}${r.level ? ` · ${raceLabels.botLevels[r.level]}` : ""})` : ""} {r.id === userId ? `(${raceLabels.you})` : ""}
+          <Avatar name={r.name} {...runnerAvatar(r)} size={24} />{" "}{r.name}{formatBotSuffix(r.kind === "bot", r.level, labels.bot, raceLabels.botLevels)} {r.id === userId ? `(${raceLabels.you})` : ""}
           {" · "}{number.format(r.position)} / {number.format(r.textLength)} {raceLabels.typing.characters}
           {" · "}{number.format(r.wpm)} {raceLabels.results.columns.wpm}
           {" · "}{percent.format(r.accuracy / 100)} {raceLabels.results.columns.accuracy}

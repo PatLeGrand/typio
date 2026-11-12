@@ -22,7 +22,6 @@ type GuestFormProps = {
 const IDLE: AuthFormState = { status: "idle" };
 const FORM_FIELDS: readonly AuthField[] = ["pseudo"];
 const FIELD_IDS = { pseudo: "guest-pseudo" } as const;
-const HINT_ID = "guest-pseudo-hint";
 
 /** Jeu en invité avec un simple pseudo (AUTH-02, AUTH-03). */
 export function GuestForm({ locale, labels, common, returnTo }: GuestFormProps) {
@@ -47,7 +46,6 @@ export function GuestForm({ locale, labels, common, returnTo }: GuestFormProps) 
           autoComplete="nickname"
           spellCheck={false}
           required
-          aria-describedby={HINT_ID}
           value={pseudo}
           onChange={(event) => setPseudo(event.target.value)}
           error={errors.fieldErrors.pseudo}

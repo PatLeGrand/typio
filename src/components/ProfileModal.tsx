@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useId } from "react";
 import { X, Activity } from "lucide-react";
 import type { CurrentUser } from "@/auth/types";
-import type { Dictionary } from "@/i18n/dictionaries";
+import type { SiteHeaderDictionary } from "./siteHeaderDictionary";
 import type { Locale } from "@/i18n/config";
 import { getProfileSummary } from "@/app/[lang]/(site)/profile/statsActions";
 import { Avatar } from "./Avatar";
@@ -11,7 +11,7 @@ import { ButtonLink } from "./ButtonLink";
 
 type ProfileModalProps = {
   user: CurrentUser;
-  dictionary: Dictionary;
+  dictionary: SiteHeaderDictionary;
   locale: Locale;
   children: React.ReactNode;
 };

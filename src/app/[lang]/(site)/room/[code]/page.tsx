@@ -36,6 +36,7 @@ export default async function RoomPage({ params, searchParams }: RoomPageProps) 
         userId={user.id}
         labels={dict.room}
         settingsLabels={dict.raceSettings}
+        raceLabels={dict.raceScreen}
       />
     </main>
   );
