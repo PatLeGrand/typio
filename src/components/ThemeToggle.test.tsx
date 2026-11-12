@@ -22,33 +22,32 @@ afterEach(() => {
 });
 
 describe("ThemeToggle", () => {
-  it.each(["fr", "en"] as const)("expose un groupe de trois choix traduits (%s)", (locale) => {
+  it.each(["fr", "en"] as const)("expose un bouton traduit (%s)", (locale) => {
     const labels = getDictionary(locale).theme;
     render(<ThemeToggle labels={labels} />);
 
-    expect(screen.getByRole("group", { name: labels.label })).toBeInTheDocument();
-    expect(screen.getAllByRole("radio")).toHaveLength(3);
-    for (const name of [labels.light, labels.dark, labels.system]) {
-      expect(screen.getByRole("radio", { name })).toBeInTheDocument();
-    }
+    expect(screen.getByRole("button", { name: `${labels.label}: ${labels.system}` })).toBeInTheDocument();
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
   });
 
   it("sélectionne « système » par défaut", () => {
     const labels = getDictionary("fr").theme;
     render(<ThemeToggle labels={labels} />);
-    expect(screen.getByRole("radio", { name: labels.system })).toBeChecked();
+    expect(screen.getByRole("button", { name: `${labels.label}: ${labels.system}` })).toBeInTheDocument();
   });
 
   it("applique et mémorise un choix manuel", () => {
     const labels = getDictionary("en").theme;
     render(<ThemeToggle labels={labels} />);
 
-    fireEvent.click(screen.getByRole("radio", { name: labels.dark }));
-    expect(screen.getByRole("radio", { name: labels.dark })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.system}` }));
+    fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.light}` }));
+    expect(screen.getByRole("button", { name: `${labels.label}: ${labels.dark}` })).toBeInTheDocument();
     expect(document.documentElement).toHaveClass("dark");
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
 
-    fireEvent.click(screen.getByRole("radio", { name: labels.light }));
+    fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.dark}` }));
+    fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.system}` }));
     expect(document.documentElement).not.toHaveClass("dark");
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
   });
@@ -57,9 +56,10 @@ describe("ThemeToggle", () => {
     const labels = getDictionary("fr").theme;
     render(<ThemeToggle labels={labels} />);
 
-    fireEvent.click(screen.getByRole("radio", { name: labels.dark }));
-    fireEvent.click(screen.getByRole("radio", { name: labels.system }));
-    expect(screen.getByRole("radio", { name: labels.system })).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.system}` }));
+    fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.light}` }));
+    fireEvent.click(screen.getByRole("button", { name: `${labels.label}: ${labels.dark}` }));
+    expect(screen.getByRole("button", { name: `${labels.label}: ${labels.system}` })).toBeInTheDocument();
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("system");
     expect(document.documentElement).not.toHaveClass("dark");
   });
@@ -68,12 +68,12 @@ describe("ThemeToggle", () => {
     window.localStorage.setItem(THEME_STORAGE_KEY, "dark");
     const labels = getDictionary("fr").theme;
     render(<ThemeToggle labels={labels} />);
-    expect(screen.getByRole("radio", { name: labels.dark })).toBeChecked();
+    expect(screen.getByRole("button", { name: `${labels.label}: ${labels.dark}` })).toBeInTheDocument();
   });
 
-  it("le mode compact fait défiler les trois préférences", () => {
+  it("le bouton fait défiler les trois préférences", () => {
     const labels = getDictionary("fr").theme;
-    render(<ThemeToggle labels={labels} compact />);
+    render(<ThemeToggle labels={labels} />);
 
     const button = screen.getByRole("button", { name: `${labels.label}: ${labels.system}` });
     expect(button).toHaveClass("size-11", "text-muted", "icon-enter", "rounded-full", "hover:text-foreground");

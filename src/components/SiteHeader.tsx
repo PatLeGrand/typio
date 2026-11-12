@@ -69,7 +69,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
         <div className="contents md:flex md:min-w-0 md:flex-wrap md:items-center md:justify-end md:gap-2">
           <div className="ml-auto flex items-center gap-1 md:ml-0">
             <LanguageSwitcher locale={locale} labels={dictionary.language} compact />
-            <ThemeToggle labels={dictionary.theme} compact />
+            <ThemeToggle labels={dictionary.theme} />
           </div>
           {user ? (
             <div className="flex w-full min-w-0 max-w-full flex-wrap items-center justify-end gap-2 md:w-auto">

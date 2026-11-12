@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { Bot, DoorOpen, SlidersHorizontal, Type } from "lucide-react";
+import { Bot, DoorOpen, Plus, SlidersHorizontal, Type, X } from "lucide-react";
 import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
 import { RadioCard } from "@/components/race/RadioCard";
@@ -332,26 +332,39 @@ export function RaceSettingsFields({
         </div>
 
         <div className="flex flex-col gap-3">
-          <FieldHeading className="text-[15px] font-semibold">{dict.bots.label}</FieldHeading>
-          <span aria-live="polite" aria-atomic="true">{numberFormat.format(value.bots.length)}</span>
+          <div className="flex items-center justify-between gap-3">
+            <FieldHeading className="text-[15px] font-semibold">{dict.bots.label}</FieldHeading>
+            <span aria-live="polite" aria-atomic="true" className="rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold tabular-nums text-accent-text">
+              {numberFormat.format(value.bots.length)} / {numberFormat.format(MAX_BOTS)}
+            </span>
+          </div>
+          {value.bots.length === 0 && <p className="text-sm text-muted">{dict.bots.empty}</p>}
           {value.bots.map((level, index) => (
-            <div key={index} className="flex flex-wrap items-end gap-3">
-              <SelectField
-                label={dict.bots.level.replace("{number}", numberFormat.format(index + 1))}
+            <div key={index} className="grid min-w-0 grid-cols-[minmax(0,1fr)_44px] items-center gap-x-3 gap-y-2 rounded-2xl border border-border bg-surface p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_44px]">
+              <span className="text-sm font-semibold sm:row-start-1">{dict.bots.name.replace("{number}", numberFormat.format(index + 1))}</span>
+              <label htmlFor={id(`bot-${index}`)} className="sr-only">{dict.bots.level.replace("{number}", numberFormat.format(index + 1))}</label>
+              <select
+                id={id(`bot-${index}`)}
+                aria-describedby={id(`bot-${index}-speed`)}
                 value={level}
                 disabled={readOnly}
-                options={BOT_LEVELS.map((level) => ({ value: level, label: dict.bots.levels[level] }))}
+                className="col-start-1 row-start-2 h-11 w-full min-w-0 rounded-field border border-border bg-surface px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:text-muted sm:col-start-2 sm:row-start-1"
                 onChange={(event) => onChange({ bots: value.bots.map((current, i) => i === index ? event.target.value as BotLevel : current) })}
-              />
-              <Button variant="secondary" disabled={readOnly} className="h-14" onClick={() => onChange({ bots: value.bots.filter((_, i) => i !== index) })}>
-                {dict.bots.remove.replace("{number}", numberFormat.format(index + 1))}
-              </Button>
+              >
+                {BOT_LEVELS.map((option) => <option key={option} value={option}>{dict.bots.levels[option]}</option>)}
+              </select>
+              <span id={id(`bot-${index}-speed`)} className="col-start-1 text-sm tabular-nums text-muted sm:col-start-3 sm:row-start-1">
+                {dict.bots.speed.replace("{min}", numberFormat.format(BOT_LEVEL_PROFILES[level].minWpm)).replace("{max}", numberFormat.format(BOT_LEVEL_PROFILES[level].maxWpm))}
+              </span>
+              <button type="button" disabled={readOnly} aria-label={dict.bots.remove.replace("{number}", numberFormat.format(index + 1))} className="col-start-2 row-start-1 row-span-3 inline-flex size-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-accent-text disabled:cursor-not-allowed disabled:opacity-50 sm:col-start-4 sm:row-span-1" onClick={() => onChange({ bots: value.bots.filter((_, i) => i !== index) })}>
+                <X aria-hidden="true" className="size-5" />
+              </button>
             </div>
           ))}
-          <Button variant="secondary" disabled={readOnly || value.bots.length >= MAX_BOTS || runnerCount + value.bots.length >= value.capacity} className="self-start" onClick={() => onChange({ bots: [...value.bots, "intermediate"] })}>
+          <Button variant="secondary" disabled={readOnly || value.bots.length >= MAX_BOTS || runnerCount + value.bots.length >= value.capacity} fullWidth className="border-dashed" onClick={() => onChange({ bots: [...value.bots, "intermediate"] })}>
+            <Plus aria-hidden="true" className="size-5 shrink-0" />
             {dict.bots.add}
           </Button>
-          <p className="text-xs text-muted">{BOT_LEVELS.map((level) => dict.bots.help.replace("{level}", dict.bots.levels[level]).replace("{min}", numberFormat.format(BOT_LEVEL_PROFILES[level].minWpm)).replace("{max}", numberFormat.format(BOT_LEVEL_PROFILES[level].maxWpm))).join(" · ")}</p>
         </div>
       </section>
 

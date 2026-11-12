@@ -4,6 +4,8 @@ import en from "@/i18n/dictionaries/en.json";
 import fr from "@/i18n/dictionaries/fr.json";
 import { DEFAULT_RACE_SETTINGS, type RaceSettings } from "@/race/config";
 import { RaceSettingsFields } from "./RaceSettingsFields";
+import { BOT_LEVEL_PROFILES } from "@/race/bots";
+import { MAX_BOTS } from "@/realtime/protocol";
 import { plain } from "@/test/text";
 
 const copy = fr.raceSettings;
@@ -67,6 +69,22 @@ describe("RaceSettingsFields (editable)", () => {
     expect(atMax).not.toHaveBeenCalled();
   });
 
+  it.each(["fr", "en"] as const)("shows only selected bot speeds and the empty state (%s)", (lang) => {
+    const dict = lang === "fr" ? fr.raceSettings : en.raceSettings;
+    const { rerender } = render(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS, bots: ["expert"] }} onChange={vi.fn()} dict={dict} lang={lang} />);
+    const speed = dict.bots.speed.replace("{min}", String(BOT_LEVEL_PROFILES.expert.minWpm)).replace("{max}", String(BOT_LEVEL_PROFILES.expert.maxWpm));
+    expect(screen.getByRole("combobox", { name: dict.bots.level.replace("{number}", "1") })).toHaveAccessibleDescription(speed);
+    expect(screen.getByText(speed)).toBeInTheDocument();
+    rerender(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS, bots: [] }} onChange={vi.fn()} dict={dict} lang={lang} />);
+    expect(screen.getByText(dict.bots.empty)).toBeInTheDocument();
+    expect(screen.queryByText(speed)).not.toBeInTheDocument();
+  });
+
+  it("disables adding when room capacity is reached", () => {
+    renderFields({ value: { capacity: 2, bots: ["intermediate"] } });
+    expect(screen.getByRole("button", { name: copy.bots.add })).toBeDisabled();
+  });
+
   it("sends the typed excluded characters", () => {
     const onChange = renderFields();
     fireEvent.change(screen.getByRole("textbox", { name: copy.excludedChars.label }), { target: { value: "@#" } });
@@ -124,7 +142,7 @@ describe("RaceSettingsFields (read only)", () => {
     for (const radio of screen.getAllByRole("radio")) expect(radio).toBeDisabled();
     expect(screen.getByRole("button", { name: copy.bots.add })).toBeDisabled();
     expect(screen.getByRole("button", { name: copy.bots.remove.replace("{number}", "1") })).toBeDisabled();
-    expect(screen.getByText("3", { selector: "[aria-live]" })).toBeInTheDocument();
+    expect(screen.getByText(`3 / ${MAX_BOTS}`, { selector: "[aria-live]" })).toBeInTheDocument();
     const input = screen.getByRole("textbox", { name: copy.excludedChars.label });
     expect(input).toHaveValue("xy");
     expect(input).toHaveAttribute("readonly");
