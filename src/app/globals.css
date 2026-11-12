@@ -192,6 +192,77 @@ h2[tabindex="-1"]:focus-visible {
   transition-delay: var(--key-label-delay, 120ms);
 }
 
+.button-start {
+  --start-arrow-rest-width: 40px;
+  --start-arrow-expanded-width: 54px;
+}
+
+@media (min-width: 640px) {
+  .button-start {
+    --start-arrow-rest-width: 44px;
+    --start-arrow-expanded-width: 64px;
+  }
+}
+
+.button-start:focus-visible {
+  outline-color: var(--foreground);
+  outline-offset: 3px;
+}
+
+.button-start .button-label {
+  display: block;
+  overflow-wrap: break-word;
+}
+
+/* Couvre les 5 px entre le survol (-1 px) et l'appui (+4 px). */
+.button-start::after { top: -5px; }
+
+.button-start-light::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--start-active-color, var(--key-coral));
+  opacity: var(--start-lit, 0);
+  transition: opacity 0s linear;
+  transition-delay: calc(var(--start-index, 0) * var(--start-step, 0ms));
+}
+
+.button-start-light:nth-child(2)::before {
+  --start-index: 1;
+  background-color: var(--start-active-color, var(--key-yellow));
+}
+
+.button-start-light:nth-child(3)::before {
+  --start-index: 2;
+  background-color: var(--start-active-color, var(--key-mint));
+}
+
+.button-start-arrow {
+  /* La largeur maximale est réservée dans le padding : le libellé ne se déplace pas. */
+  width: var(--start-arrow-width, var(--start-arrow-rest-width));
+  transition: width 180ms ease-out;
+  transition-delay: var(--start-arrow-delay, 0ms);
+}
+
+.button-start:is(:disabled, [aria-disabled="true"]) .button-start-arrow {
+  background-color: var(--accent-panel);
+  color: var(--muted-strong);
+  transition: none;
+}
+
+.button-start:is(:disabled, [aria-disabled="true"]) .button-start-light::before {
+  opacity: 0;
+  transition: none;
+}
+
+.button-start:not(:disabled):not([aria-disabled="true"]):focus-visible {
+  --start-lit: 1;
+  --start-step: 90ms;
+  --start-arrow-width: var(--start-arrow-expanded-width);
+  --start-arrow-delay: 270ms;
+}
+
 .button-road {
   stroke: var(--accent-text);
   stroke-width: 2px;
@@ -270,6 +341,13 @@ h2[tabindex="-1"]:focus-visible {
 .road-link-inline:focus-visible { --inline-road-animation: inline-road-travel 250ms ease-out; }
 
 @media (hover: hover) {
+  .button-start:not(:disabled):not([aria-disabled="true"]):hover {
+    --start-lit: 1;
+    --start-step: 90ms;
+    --start-arrow-width: var(--start-arrow-expanded-width);
+    --start-arrow-delay: 270ms;
+  }
+
   .button-key:not(:disabled):not([aria-disabled="true"]):hover {
     --key-shadow: var(--accent-shadow);
     --blob-y: 0%;
@@ -299,6 +377,14 @@ h2[tabindex="-1"]:focus-visible {
   .road-link-inline:hover { --inline-road-animation: inline-road-travel 250ms ease-out; }
 }
 
+.button-start:not(:disabled):not([aria-disabled="true"]):active {
+  --start-lit: 1;
+  --start-step: 0ms;
+  --start-active-color: var(--key-mint);
+  --start-arrow-width: var(--start-arrow-expanded-width);
+  --start-arrow-delay: 0ms;
+}
+
 @keyframes button-road-travel {
   from { stroke-dashoffset: 14px; }
   to { stroke-dashoffset: 0px; }
@@ -313,6 +399,8 @@ h2[tabindex="-1"]:focus-visible {
   .button-blob-group { opacity: var(--blob-visible, 0); }
   .button-blob { transform: none; transition: none; }
   .button-key .button-label { transition: none; }
+  .button-start-light::before,
+  .button-start-arrow { transition: none; }
   .button-road { animation: none; transition: none; }
   .icon-enter::before { transform: none; opacity: var(--icon-visible, 0); transition: none; }
   .road-link { transition: none; }

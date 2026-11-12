@@ -18,7 +18,7 @@ export function Button({
   children,
   ...props
 }: ButtonProps) {
-  const decorated = variant !== "primary" && !props.disabled && props["aria-disabled"] !== true && props["aria-disabled"] !== "true";
+  const decorated = variant === "start" || (variant !== "primary" && !props.disabled && props["aria-disabled"] !== true && props["aria-disabled"] !== "true");
   return (
     <button type={type} className={buttonClasses(variant, fullWidth, className, false, size)} {...props}>
       {decorated ? <ButtonDecor variant={variant} /> : null}

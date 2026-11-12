@@ -18,7 +18,7 @@ type ButtonLinkProps = ComponentProps<typeof Link> & {
  * Les icônes passent en enfants, comme pour `Button` (`<UserRound aria-hidden="true" />`).
  */
 export function ButtonLink({ variant = "primary", fullWidth = false, compactOnMobile = false, size = "default", className = "", children, ...props }: ButtonLinkProps) {
-  const decorated = variant !== "primary" && props["aria-disabled"] !== true && props["aria-disabled"] !== "true";
+  const decorated = variant === "start" || (variant !== "primary" && props["aria-disabled"] !== true && props["aria-disabled"] !== "true");
   return (
     <Link className={buttonClasses(variant, fullWidth, className, compactOnMobile, size)} {...props}>
       {decorated ? <ButtonDecor variant={variant} /> : null}
