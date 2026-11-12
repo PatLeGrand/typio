@@ -577,9 +577,11 @@
       "participants": "Toi + {bots} bots · {total} participants",
       "tip": "La vitesse, c'est bien. La précision fait avancer ton Blob !",
       "start": "Lancer la course",
-      "ready": "Tout est prêt. À tes touches, prêt, pars !"
+      "ready": "Tu cours toi-même, seul ou contre les bots. À tes touches, prêt, pars !"
     },
     "invite": {
+      "title": "Avec des amis",
+      "description": "Crée une salle et partage le code. Tu peux la suivre en spectateur.",
       "button": "Inviter des amis",
       "roleLabel": "Ton rôle dans la salle",
       "runner": "Coureur",

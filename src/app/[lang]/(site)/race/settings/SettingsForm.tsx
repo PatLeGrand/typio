@@ -112,7 +112,7 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
               {/* Illustration Header */}
               <div className="h-[180px] bg-island-mint relative overflow-hidden flex flex-col items-center justify-end">
                 <div className="absolute top-6 left-6 text-left">
-                  <h3 className="text-[22px] font-extrabold text-foreground">{dict.summary.title}</h3>
+                  <h2 className="text-[22px] font-extrabold text-foreground">{dict.summary.title}</h2>
                 </div>
 
                 {/* Hills mockup */}
@@ -201,7 +201,9 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
                 <p className="text-center text-xs text-muted mt-4">
                   {dict.summary.ready}
                 </p>
-                <div className="mt-4 flex flex-col gap-2">
+                <div className="mt-6 border-t border-border pt-6 flex flex-col gap-3">
+                  <h3 className="text-balance text-lg font-semibold text-foreground">{dict.invite.title}</h3>
+                  <p className="text-sm text-muted-strong">{dict.invite.description}</p>
                   {invite.kind === "member" ? (
                     <InviteFriendsButton
                       lang={lang}

@@ -577,9 +577,11 @@
       "participants": "You + {bots} bots · {total} participants",
       "tip": "Speed is good. Accuracy moves your Blob forward!",
       "start": "Start race",
-      "ready": "Everything is ready. Ready, set, type!"
+      "ready": "You race yourself, alone or against the bots. Ready, set, type!"
     },
     "invite": {
+      "title": "With friends",
+      "description": "Create a room and share the code. You can watch as a spectator.",
       "button": "Invite friends",
       "roleLabel": "Your role in the room",
       "runner": "Runner",
