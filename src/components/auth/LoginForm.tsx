@@ -21,7 +21,7 @@ type LoginFormProps = {
 };
 
 const IDLE: AuthFormState = { status: "idle" };
-const FORM_FIELDS: readonly AuthField[] = ["username", "password"];
+const FORM_FIELDS = ["username", "password"] as const satisfies readonly AuthField[];
 const FIELD_IDS = { username: "login-username", password: "login-password" } as const;
 
 /** Connexion par identifiant et mot de passe (AUTH-01, TEST-03). */
@@ -39,7 +39,7 @@ export function LoginForm({ locale, labels, common }: LoginFormProps) {
   useFocusOnError(state, FIELD_IDS);
   useEffect(() => {
     const first = FORM_FIELDS.find((field) => clientErrors?.[field]);
-    if (first) document.getElementById(FIELD_IDS[first as keyof typeof FIELD_IDS])?.focus();
+    if (first) document.getElementById(FIELD_IDS[first])?.focus();
   }, [clientErrors]);
 
   function validate(event: FormEvent<HTMLFormElement>) {

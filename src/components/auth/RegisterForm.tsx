@@ -23,7 +23,7 @@ type RegisterFormProps = {
 };
 
 const IDLE: AuthFormState = { status: "idle" };
-const FORM_FIELDS: readonly AuthField[] = ["username", "password", "passwordConfirm", "terms"];
+const FORM_FIELDS = ["username", "password", "passwordConfirm", "terms"] as const satisfies readonly AuthField[];
 const FIELD_IDS = {
   username: "register-username",
   password: "register-password",
@@ -48,7 +48,7 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
   useFocusOnError(state, FIELD_IDS);
   useEffect(() => {
     const first = FORM_FIELDS.find((field) => clientErrors?.[field]);
-    if (first) document.getElementById(FIELD_IDS[first as keyof typeof FIELD_IDS])?.focus();
+    if (first) document.getElementById(FIELD_IDS[first])?.focus();
   }, [clientErrors]);
 
   function validate(event: FormEvent<HTMLFormElement>) {
