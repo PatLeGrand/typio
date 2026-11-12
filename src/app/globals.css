@@ -107,6 +107,9 @@
 }
 
 @theme inline {
+  --spacing-field: 1rem;
+  --spacing-field-icon: calc(var(--spacing-field) + 2rem);
+  --spacing-card: 1.25rem;
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);

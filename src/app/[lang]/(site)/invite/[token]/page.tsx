@@ -32,25 +32,27 @@ export default async function InvitePage({ params, searchParams }: InvitePagePro
   const { room } = getDictionary(locale);
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 md:px-8 md:py-12">
-      <h1 className="mb-8 text-3xl font-bold tracking-tight text-foreground">{room.invite.title}</h1>
-      {user ? (
-        <InviteClient
-          token={INVITE_TOKEN_PATTERN.test(token) ? token : null}
-          role={parseJoinRole((await searchParams).role)}
-          locale={locale}
-          userId={user.id}
-          labels={room}
-        />
-      ) : (
-        <div className="flex flex-col items-start gap-6">
-          <p className="text-muted-strong">{room.invite.signInRequired}</p>
-          <div className="flex flex-wrap gap-3">
-            <ButtonLink href={prefixWithLocale("/login", locale)}>{room.invite.signIn}</ButtonLink>
-            <ButtonLink href={prefixWithLocale("/guest", locale)} variant="secondary">{room.invite.guest}</ButtonLink>
+    <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-8 md:px-8 md:py-12 xl:px-[88px]">
+      <div className="max-w-4xl">
+        <h1 className="mb-8 text-3xl font-bold tracking-tight text-foreground">{room.invite.title}</h1>
+        {user ? (
+          <InviteClient
+            token={INVITE_TOKEN_PATTERN.test(token) ? token : null}
+            role={parseJoinRole((await searchParams).role)}
+            locale={locale}
+            userId={user.id}
+            labels={room}
+          />
+        ) : (
+          <div className="flex flex-col items-start gap-6">
+            <p className="text-muted-strong">{room.invite.signInRequired}</p>
+            <div className="flex flex-wrap gap-3">
+              <ButtonLink href={prefixWithLocale("/login", locale)}>{room.invite.signIn}</ButtonLink>
+              <ButtonLink href={prefixWithLocale("/guest", locale)} variant="secondary">{room.invite.guest}</ButtonLink>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
 }

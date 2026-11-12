@@ -28,16 +28,18 @@ export default async function RoomPage({ params, searchParams }: RoomPageProps) 
   const dict = getDictionary(locale);
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 md:px-8 md:py-12 has-[.room-race-screen]:max-w-none">
-      <RoomClient
-        code={normalizeRoomCode(code)}
-        role={parseJoinRole((await searchParams).role)}
-        locale={locale}
-        userId={user.id}
-        labels={dict.room}
-        settingsLabels={dict.raceSettings}
-        raceLabels={dict.raceScreen}
-      />
+    <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-8 md:px-8 md:py-12 xl:px-[88px] has-[.room-race-screen]:max-w-none has-[.room-race-screen]:xl:px-8">
+      <div className="max-w-4xl has-[.room-race-screen]:max-w-none">
+        <RoomClient
+          code={normalizeRoomCode(code)}
+          role={parseJoinRole((await searchParams).role)}
+          locale={locale}
+          userId={user.id}
+          labels={dict.room}
+          settingsLabels={dict.raceSettings}
+          raceLabels={dict.raceScreen}
+        />
+      </div>
     </main>
   );
 }

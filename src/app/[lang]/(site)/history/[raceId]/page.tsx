@@ -35,10 +35,10 @@ export default async function RaceHistoryPage({ params }: {
 
   return (
     <main className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-6 px-4 py-8 md:px-8 md:py-12">
-      <h1 className="text-4xl font-bold text-foreground">{history.detailTitle}</h1>
-      <p><time dateTime={race.endedAt.toISOString()}>{date.format(race.endedAt)}</time></p>
-      <p>{history.participants.replace("{count}", number.format(race.participantCount))}</p>
-      <p className="text-sm text-muted">{history.membersOnly}</p>
+      <h1 className="px-card text-4xl font-bold text-foreground">{history.detailTitle}</h1>
+      <p className="px-card"><time dateTime={race.endedAt.toISOString()}>{date.format(race.endedAt)}</time></p>
+      <p className="px-card">{history.participants.replace("{count}", number.format(race.participantCount))}</p>
+      <p className="px-card text-sm text-muted">{history.membersOnly}</p>
       <RaceResultsTable rows={race.rows.map((row) => ({ ...row, avatar: { seed: row.id, userId: row.id, avatarVersion: row.avatarVersion } }))} lang={locale} labels={raceScreen.results} extraLabels={room.race} botLevels={raceScreen.botLevels} highlightId={user.id} />
       <WpmChart rows={race.rows} locale={locale} labels={raceScreen.results} highlightId={user.id} />
       <MissedKeysHeatmap missedKeys={race.missedKeys} locale={locale} labels={raceScreen.results} />

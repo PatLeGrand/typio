@@ -34,14 +34,14 @@ export function TextField({
 
   return (
     <div className="flex flex-col gap-[9px]">
-      <label htmlFor={inputId} className="text-sm font-semibold text-foreground">
+      <label htmlFor={inputId} className={`pr-field ${icon ? "pl-field-icon" : "pl-field"} text-sm font-semibold text-foreground`}>
         {label}
       </label>
       <div className="relative">
         {icon ? (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute left-4 top-1/2 inline-flex size-5 -translate-y-1/2 items-center justify-center text-muted [&>svg]:size-full"
+            className="pointer-events-none absolute left-field top-1/2 inline-flex size-5 -translate-y-1/2 items-center justify-center text-muted [&>svg]:size-full"
           >
             {icon}
           </span>
@@ -53,13 +53,13 @@ export function TextField({
           aria-describedby={describedByIds}
           className={`h-14 w-full rounded-field border bg-surface text-[15px] text-foreground placeholder:text-muted disabled:cursor-not-allowed disabled:text-muted ${
             error ? "border-danger" : "border-border"
-          } ${icon ? "pl-12" : "pl-4"} ${endSlot ? "pr-14" : "pr-4"}`}
+          } ${icon ? "pl-field-icon" : "pl-field"} ${endSlot ? "pr-14" : "pr-field"}`}
           {...props}
         />
         {endSlot ? <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center">{endSlot}</div> : null}
       </div>
       {error ? (
-        <p id={errorId} role="alert" className="text-[13px] font-semibold text-danger">
+        <p id={errorId} role="alert" className={`pr-field ${icon ? "pl-field-icon" : "pl-field"} text-[13px] font-semibold text-danger`}>
           {error}
         </p>
       ) : null}

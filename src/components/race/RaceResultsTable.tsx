@@ -38,11 +38,11 @@ export function RaceResultsTable({ rows, lang, labels, extraLabels, highlightId,
           {["6%", "28%", "8%", "8%", "10%", "8%", "9%", "10%", "13%"].map((width, index) => <col key={index} style={{ width }} />)}
         </colgroup>
         <thead><tr>
-          {[columns.rank, columns.name, columns.wpm, extraLabels.grossWpm, columns.accuracy, extraLabels.errors, columns.time, columns.bonuses, columns.status].map((label) => <th key={label} scope="col" className="px-2 py-2">{label}</th>)}
+          {[columns.rank, columns.name, columns.wpm, extraLabels.grossWpm, columns.accuracy, extraLabels.errors, columns.time, columns.bonuses, columns.status].map((label) => <th key={label} scope="col" className="px-2 py-2 first:pl-card">{label}</th>)}
         </tr></thead>
         <tbody>{rows.map((row) => (
           <tr key={row.id} className={`border-t border-border ${row.id === highlightId ? "bg-accent-panel font-bold" : ""}`}>
-            <td className="px-2 py-2 tabular-nums">{number.format(row.rank)}</td>
+            <td className="pl-card pr-2 py-2 tabular-nums">{number.format(row.rank)}</td>
             <th scope="row" className="px-2 py-2"><span className="flex items-start gap-2"><Avatar name={row.name} {...(row.avatar ?? { seed: row.id })} size={24} /><span className="min-w-0 [overflow-wrap:anywhere]">{row.name}{formatBotSuffix(Boolean(row.isBot), row.level, extraLabels.bot, botLevels)}{row.personalBest && <span className="ml-2 rounded border border-border px-2 py-1 text-xs text-accent-text">{labels.personalBest}</span>}</span></span></th>
             <td className="px-2 py-2 tabular-nums">{number.format(row.wpm)}</td>
             <td className="px-2 py-2 tabular-nums">{number.format(row.grossWpm)}</td>
