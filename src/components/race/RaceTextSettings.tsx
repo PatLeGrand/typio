@@ -153,7 +153,7 @@ export function RaceTextSettings({ value, onChange, readOnly, dict, lang, idPref
             readOnly={readOnly}
             disabled={value.textMode === "sentences"}
             aria-invalid={Boolean(includedError)}
-            aria-describedby={id("included-chars-help")}
+            aria-describedby={`${id("included-chars-help")}${includedError ? ` ${id("included-chars-error")}` : ""}`}
             onChange={(event) => onChange({ includedCharacters: event.target.value })}
             onBlur={onIncludedBlur}
             className="w-full h-12 px-4 rounded-field border border-border bg-background disabled:opacity-40"
@@ -161,7 +161,7 @@ export function RaceTextSettings({ value, onChange, readOnly, dict, lang, idPref
           <p id={id("included-chars-help")} className="text-sm text-muted mt-2">
             {value.textMode === "sentences" ? dict.includedChars.sentencesHelp : dict.includedChars.help}
           </p>
-          {includedError && <p role="alert" className="text-sm text-danger mt-1">{includedError}</p>}
+          {includedError && <p id={id("included-chars-error")} role="alert" className="text-sm text-danger mt-1">{includedError}</p>}
         </div>
 
         {/* Caractères exclus */}
