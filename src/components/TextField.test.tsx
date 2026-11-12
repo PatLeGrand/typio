@@ -49,13 +49,13 @@ describe("TextField", () => {
     const svg = container.querySelector("svg");
     expect(svg?.parentElement).toHaveAttribute("aria-hidden", "true");
     expect(svg?.parentElement).toHaveClass("size-5", "text-muted");
-    expect(screen.getByRole("textbox", { name: "Pseudo" })).toHaveClass("pl-12");
+    expect(screen.getByRole("textbox", { name: "Pseudo" })).toHaveClass("pl-field-icon");
   });
 
   it("sans icône : pas de conteneur d'icône", () => {
     const { container } = render(<TextField label="Pseudo" />);
     expect(container.querySelector("[aria-hidden]")).toBeNull();
-    expect(screen.getByRole("textbox", { name: "Pseudo" })).toHaveClass("pl-4");
+    expect(screen.getByRole("textbox", { name: "Pseudo" })).toHaveClass("pl-field");
   });
 
   it("affiche le slot de droite et réserve sa place", () => {
