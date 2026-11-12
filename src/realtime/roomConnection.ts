@@ -15,6 +15,7 @@ import {
   type LobbyRoom,
   type ParticipantRole,
   type RoomConfigPatch,
+  type SoloConfigPatch,
   type RoomErrorCode,
   type RoomState,
   type ServerToClientEvents,
@@ -96,6 +97,7 @@ export interface RoomConnection {
   /** Coupe le socket s'il appartient à un autre utilisateur que `userId` (ou si `userId` est `null`). */
   syncUser(userId: string | null): void;
   create(config?: RoomConfigPatch, role?: ParticipantRole): Promise<ActionResult<{ code: string }>>;
+  startSolo(config?: SoloConfigPatch): Promise<ActionResult<{ code: string }>>;
   join(payload: JoinPayload): Promise<ActionResult<{ code: string }>>;
   /** Partie rapide (JOIN-03) : `NO_ROOM_AVAILABLE` s'il n'y a aucune salle. */
   quickJoin(): Promise<ActionResult<{ code: string }>>;
@@ -133,7 +135,7 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
 
   function update(patch: Partial<RoomSnapshot>): void {
     const next = { ...snapshot, ...patch };
-    if (next.room === null || next.room.status === "waiting" || next.room.status === "closed") {
+    if (next.room?.code !== snapshot.room?.code || next.room === null || next.room.status === "waiting" || next.room.status === "closed") {
       next.race = null;
       next.results = null;
       next.self = null;
@@ -335,6 +337,19 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
         if (target === null) return resolve(fail("OFFLINE"));
         // `{}` et non `undefined` : un argument `undefined` arriverait en `null` côté serveur.
         target.timeout(ACK_TIMEOUT_MS).emit("room:create", { config: config ?? {}, role }, (timedOut, response) => {
+          if (timedOut) return resolve(fail("TIMEOUT"));
+          if (!response.ok) return resolve(fail(response.error));
+          resolve({ ok: true, data: response.data });
+        });
+      });
+    },
+
+    startSolo(config) {
+      return new Promise((resolve) => {
+        update({ error: null });
+        const target = connectedSocket();
+        if (target === null) return resolve(fail("OFFLINE"));
+        target.timeout(ACK_TIMEOUT_MS).emit("solo:start", { config: config ?? {} }, (timedOut, response) => {
           if (timedOut) return resolve(fail("TIMEOUT"));
           if (!response.ok) return resolve(fail(response.error));
           resolve({ ok: true, data: response.data });

@@ -5,6 +5,7 @@ import { usePhysicalKeyboard } from "@/components/race/usePhysicalKeyboard";
 import { Avatar } from "@/components/Avatar";
 import { avatarUrl, runnerAvatar } from "@/components/avatar";
 import { Button } from "@/components/Button";
+import { ButtonLink } from "@/components/ButtonLink";
 import { playerBonusMessage, racerBonusLabel } from "@/components/race/bonusAnnouncements";
 import { RacePodium } from "@/components/race/RacePodium";
 import { MissedKeysHeatmap } from "@/components/race/MissedKeysHeatmap";
@@ -14,6 +15,7 @@ import { RaceTypingPanel } from "@/components/race/RaceTypingPanel";
 import { RaceVisualizer } from "@/components/race/RaceVisualizer";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { formatClock } from "@/race/format";
+import { serializeRaceSettings } from "@/race/config";
 import { applyTextEdits } from "@/race/bonuses";
 import { applyTypedInput, countCorrectChars } from "@/race/metrics";
 import { createRaceInputBuffer, raceInputOps } from "@/realtime/raceInput";
@@ -27,12 +29,12 @@ type Props = {
   lang: string;
   labels: Dictionary["room"]["race"];
   raceLabels: Dictionary["raceScreen"];
-  session: Pick<UseRoom, "race" | "results" | "self" | "raceReceivedAt" | "connection" | "sendInput" | "abandonRace" | "restartRace" | "closeRoom">;
+  session: Pick<UseRoom, "race" | "results" | "self" | "raceReceivedAt" | "connection" | "sendInput" | "abandonRace" | "restartRace" | "startRace" | "closeRoom">;
 };
 
 /** Saisie optimiste ; piste et classement restent entièrement pilotés par le serveur. */
 export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }: Props) {
-  const { race, results, self, raceReceivedAt, connection, sendInput, abandonRace, restartRace, closeRoom } = session;
+  const { race, results, self, raceReceivedAt, connection, sendInput, abandonRace, restartRace, startRace, closeRoom } = session;
   const [records, setRecords] = useState<string[]>([]);
   const [recordStart, setRecordStart] = useState(race?.startAt);
   if (recordStart !== race?.startAt) {
@@ -92,6 +94,14 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
     try { await action(); } finally { setPending(false); }
   }
 
+  async function replaySolo() {
+    if (room.status !== "waiting") {
+      const result = await restartRace();
+      if (!result.ok) return;
+    }
+    await startRace();
+  }
+
   function change(value: string) {
     if (!race || !active || connection !== "connected" || pending || race.status !== "racing" || room.status !== "racing" || input.typed === text) return;
     const ops = raceInputOps(input.typed, value);
@@ -104,7 +114,7 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
     buffer.push(ops);
   }
 
-  if (room.status === "results") {
+  if (room.status === "results" || (room.solo && room.status === "waiting")) {
     const localResult = results?.find((row) => row.id === userId && row.kind === "human");
     const displayRows = results?.map((row) => ({ ...row, avatar: runnerAvatar(row), name: `${row.name}${row.kind === "bot" ? ` (${labels.bot}${row.level ? ` · ${raceLabels.botLevels[row.level]}` : ""})` : ""}` }));
     return (
@@ -118,10 +128,15 @@ export function RoomRaceView({ room, userId, lang, labels, raceLabels, session }
             {localResult && self?.missedKeys && <MissedKeysHeatmap missedKeys={self.missedKeys} locale={lang} labels={raceLabels.results} />}
             <RaceResultsTable rows={results.map((row) => ({ ...row, avatar: runnerAvatar(row), isBot: row.kind === "bot", personalBest: records.includes(row.id) }))} lang={lang} labels={raceLabels.results} extraLabels={labels} botLevels={raceLabels.botLevels} highlightId={userId} />
           </>
-        ) : <p role="status">{labels.loading}</p>}
+        ) : room.status === "results" ? <p role="status">{labels.loading}</p> : null}
         {room.hostId === userId ? <div className="flex flex-wrap gap-3">
-          <Button variant="start" disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>{labels.restart}</Button>
-          <Button variant="secondary" disabled={pending || connection !== "connected"} onClick={() => void command(closeRoom)}>{labels.close}</Button>
+          {room.solo ? <>
+            <Button variant="start" disabled={pending || connection !== "connected"} onClick={() => void command(replaySolo)}>{labels.soloReplay}</Button>
+            <ButtonLink variant="secondary" href={`/${lang}/race/settings?${serializeRaceSettings(room.config)}`}>{labels.soloSettings}</ButtonLink>
+          </> : <>
+            <Button variant="start" disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>{labels.restart}</Button>
+            <Button variant="secondary" disabled={pending || connection !== "connected"} onClick={() => void command(closeRoom)}>{labels.close}</Button>
+          </>}
         </div> : <p>{labels.stay}</p>}
       </section>
     );

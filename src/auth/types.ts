@@ -53,6 +53,7 @@ export const AUTH_FIELDS = {
   pseudo: "pseudo",
   /** Champ caché : langue de l'interface (`fr` ou `en`). */
   locale: "locale",
+  returnTo: "returnTo",
 } as const;
 
 export interface AuthFailure {

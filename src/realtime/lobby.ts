@@ -13,7 +13,7 @@ export interface LobbyEntry {
 
 /** Entrée de l'explorateur, ou `null` si la salle n'est pas publique ou est fermée (SALLE-03). */
 export function toLobbyEntry(state: RoomState, createdAt: number): LobbyEntry | null {
-  if (state.config.visibility !== "public" || state.status === "closed") return null;
+  if (state.solo || state.config.visibility !== "public" || state.status === "closed") return null;
   const runners =
     state.participants.filter((participant) => participant.role === "runner").length + state.config.bots.length;
   const host = state.participants.find((participant) => participant.userId === state.hostId);

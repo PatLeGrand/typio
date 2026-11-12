@@ -1,5 +1,5 @@
 import type { RaceSettings } from "@/race/config";
-import type { RoomConfig, RoomConfigPatch } from "@/realtime/protocol";
+import type { RoomConfig, RoomConfigPatch, SoloConfigPatch } from "@/realtime/protocol";
 
 /** Réglages partagés entre la salle et la course. */
 export function toRaceSettings(config: RoomConfig): RaceSettings {
@@ -26,6 +26,13 @@ export function toRoomConfig(settings: RaceSettings): RoomConfig {
     visibility: settings.visibility,
     capacity: settings.capacity,
   };
+}
+
+/** Réglages envoyés à `solo:start`. */
+export function toSoloConfig(settings: RaceSettings): SoloConfigPatch {
+  const { visibility, capacity, ...config } = toRoomConfig(settings);
+  void visibility; void capacity;
+  return config;
 }
 
 /** Patch envoyé à `room:updateConfig`. */

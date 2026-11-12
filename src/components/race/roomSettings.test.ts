@@ -1,9 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_RACE_SETTINGS } from "@/race/config";
-import { DEFAULT_ROOM_CONFIG } from "@/realtime/protocol";
-import { toRaceSettings, toRoomConfig, toRoomConfigPatch } from "./roomSettings";
+import { DEFAULT_RACE_SETTINGS, type RaceSettings } from "@/race/config";
+import { DEFAULT_ROOM_CONFIG, parseSoloStartPayload } from "@/realtime/protocol";
+import { toRaceSettings, toRoomConfig, toRoomConfigPatch, toSoloConfig } from "./roomSettings";
 
 describe("roomSettings", () => {
+  it.each<{ label: string; settings: RaceSettings }>([
+    { label: "default settings", settings: DEFAULT_RACE_SETTINGS },
+    { label: "custom bots", settings: { ...DEFAULT_RACE_SETTINGS, bots: ["beginner", "expert"] } },
+  ])("toSoloConfig produces a valid solo payload with $label", ({ settings }) => {
+    const config = toSoloConfig(settings);
+    expect(parseSoloStartPayload({ config })).not.toBeNull();
+    expect(config.bots).toEqual(settings.bots);
+  });
+
   it("toRoomConfig keeps the shared protocol keys", () => {
     const config = toRoomConfig({ ...DEFAULT_RACE_SETTINGS, bonuses: true, bots: ["intermediate", "intermediate", "intermediate", "intermediate"] });
     expect(config).not.toHaveProperty("abilities");

@@ -398,6 +398,18 @@ describe("client IP", () => {
 });
 
 describe("continueAsGuest", () => {
+  it("returns to the requested race after creating the guest session", async () => {
+    const returnTo = '/en/race?config=%7B%22bots%22%3A%5B%5D%7D';
+    await run(continueAsGuest(IDLE, form({ pseudo: "Zoé", locale: "en", returnTo })));
+    expect(mocks.redirect).toHaveBeenCalledWith(returnTo);
+    expect(mocks.cookieStore.set).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["https://example.com", "//example.com", "/fr/race", "/en/\\\\example.com", "/en/\n/evil"])("rejects unsafe guest destinations: %j", async (returnTo) => {
+    await run(continueAsGuest(IDLE, form({ pseudo: "Zoé", locale: "en", returnTo })));
+    expect(mocks.redirect).toHaveBeenCalledWith("/en");
+  });
+
   it("creates a guest, sets a session cookie, and redirects", async () => {
     const result = await run(continueAsGuest(IDLE, form({ pseudo: "Zoé", locale: "en" })));
 

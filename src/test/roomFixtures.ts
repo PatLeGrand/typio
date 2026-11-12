@@ -43,6 +43,7 @@ export function makeUseRoom(overrides: Partial<UseRoom> = {}): UseRoom {
     kicked: false,
     error: null,
     create: async () => ({ ok: true, data: { code: "ABC234" } }),
+    startSolo: async () => ({ ok: true, data: { code: "ABC234" } }),
     join: async () => ({ ok: true, data: { code: "ABC234" } }),
     joinInvite: async () => ({ ok: true, data: { code: "ABC234" } }),
     createInvite: async () => ({ ok: true, data: { id: "invite-1", token: "T".repeat(43) } }),

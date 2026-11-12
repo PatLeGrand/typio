@@ -9,6 +9,7 @@ import {
   type InviteInfo,
   type ParticipantRole,
   type RoomConfigPatch,
+  type SoloConfigPatch,
   type RoomErrorCode,
   type RoomState,
   type RoomStatus,
@@ -30,6 +31,7 @@ export interface UserContext {
 function cloneState(state: RoomState): RoomState {
   return {
     code: state.code,
+    ...(state.solo ? { solo: true } : {}),
     status: state.status,
     hostId: state.hostId,
     config: { ...state.config },
@@ -165,6 +167,8 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       return { ok: true, state: cloneState(room) };
     }
 
+    if (room.solo) return { ok: false, error: "ROOM_NOT_FOUND" };
+
     // SALLE-03 : le code seul ne suffit pas pour une salle privée, il faut un lien (SALLE-04).
     if (room.config.visibility === "private" && !invited) return { ok: false, error: "INVITE_REQUIRED" };
 
@@ -234,9 +238,10 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       configPatch: RoomConfigPatch,
       role: ParticipantRole,
       now: number,
-      reservedCode?: string
+      reservedCode?: string,
+      solo = false,
     ): RoomResult {
-      if (user.kind === "guest") {
+      if (user.kind === "guest" && !solo) {
         return { ok: false, error: "GUEST_CANNOT_CREATE" };
       }
 
@@ -245,6 +250,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       const code = reservedCode ?? generateUniqueRoomCode((c) => rooms.has(c), generateCode);
       const state: RoomState = {
         code,
+        ...(solo ? { solo: true } : {}),
         status: "waiting",
         hostId: user.id,
         config: { ...DEFAULT_ROOM_CONFIG, ...configPatch },
@@ -267,6 +273,22 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       return { ok: true, state: cloneState(state) };
     },
 
+    startSolo(user: UserContext, config: SoloConfigPatch, at: number, corpus = options.corpus, reservedCode?: string): RoomResult {
+      const current = roomOf(user.id);
+      if (current && !rooms.get(current)?.solo) return { ok: false, error: "ALREADY_IN_ROOM" };
+      const code = reservedCode ?? generateUniqueRoomCode((c) => rooms.has(c), generateCode);
+      if (current) {
+        removeParticipant(current, user.id);
+      }
+      const created = this.create(user, {
+        ...config, visibility: "private", capacity: 1 + (config.bots?.length ?? 0),
+      }, "runner", at, code, true);
+      if (!created.ok) return created;
+      const started = this.start(user.id, created.state.code, corpus);
+      if (!started.ok) removeParticipant(created.state.code, user.id);
+      return started;
+    },
+
     join(
       user: UserContext,
       code: string,
@@ -285,6 +307,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       if (!room) return { ok: false, error: "ROOM_NOT_FOUND" };
       if (!room.participants.some((p) => p.userId === userId)) return { ok: false, error: "NOT_IN_ROOM" };
       if (room.hostId !== userId) return { ok: false, error: "NOT_HOST" };
+      if (room.solo) return { ok: false, error: "RACE_NOT_ALLOWED" };
       if (room.invites.size >= MAX_INVITES_PER_ROOM) return { ok: false, error: "INVITE_LIMIT" };
 
       const token = generateInviteToken();
@@ -312,7 +335,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       const code = inviteRooms.get(hash);
       const room = code === undefined ? undefined : rooms.get(code);
       const invite = room?.invites.get(hash);
-      if (!room || !invite) return { ok: false, error: "INVITE_INVALID" };
+      if (!room || room.solo || !invite) return { ok: false, error: "INVITE_INVALID" };
       if (room.banned.has(user.id)) return { ok: false, error: "KICKED" };
       if (invite.revoked) return { ok: false, error: "INVITE_INVALID" };
       if (invite.usedBy && (invite.usedBy.userId !== user.id || invite.usedBy.ip !== ip)) {
@@ -334,6 +357,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       if (!room) return { ok: false, error: "ROOM_NOT_FOUND" };
       if (!room.participants.some((p) => p.userId === hostId)) return { ok: false, error: "NOT_IN_ROOM" };
       if (room.hostId !== hostId) return { ok: false, error: "NOT_HOST" };
+      if (room.solo) return { ok: false, error: "RACE_NOT_ALLOWED" };
       if (targetId === hostId) return { ok: false, error: "INVALID_PAYLOAD" };
       if (!room.participants.some((p) => p.userId === targetId)) return { ok: false, error: "NOT_IN_ROOM" };
 
@@ -357,7 +381,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       const p = room.participants.find((p) => p.userId === userId);
       if (!p) return { ok: false, error: "NOT_IN_ROOM" };
       if (room.hostId !== userId) return { ok: false, error: "NOT_HOST" };
-      if (room.status !== "waiting") return { ok: false, error: "CONFIG_LOCKED" };
+      if (room.solo || room.status !== "waiting") return { ok: false, error: "CONFIG_LOCKED" };
 
       // SALLE-05 : ni la capacité sous les coureurs et bots présents, ni des bots au-delà de la capacité.
       const config = { ...room.config, ...patch };

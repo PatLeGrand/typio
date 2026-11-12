@@ -13,6 +13,7 @@ import type { RateLimiter } from "@/auth/rateLimit";
 import type { GraceTimers } from "./graceTimers";
 import {
   parseCreatePayload,
+  parseSoloStartPayload,
   parseRaceCommand,
   parseRaceInput,
   parseJoinPayload,
@@ -225,6 +226,44 @@ export function registerRoomHandlers(
   } catch (e) {
     console.error("[realtime] reattach failed:", describeError(e));
   }
+
+  socket.on("solo:start", (payloadInput, ack) => {
+    respond(ack, async () => {
+      const payload = parseSoloStartPayload(payloadInput);
+      if (!payload) return failure("INVALID_PAYLOAD");
+      const current = store.roomOf(user.id);
+      if (current && !store.get(current)?.solo) return failure("ALREADY_IN_ROOM");
+      const corpus = await deps.loadCorpus?.();
+      const previousCode = store.roomOf(user.id);
+      const previousState = previousCode ? store.get(previousCode) : null;
+      const res = await store.startSolo(user, payload.config, now().getTime(), corpus);
+      // La réservation sérialisée a pu remplacer une autre course du même utilisateur.
+      for (const s of userSockets()) {
+        const previous = s.data.roomCode;
+        if (previous && previous !== store.roomOf(user.id)) {
+          void s.leave(previous);
+          s.data.roomCode = null;
+          deps.syncRace(previous);
+        }
+      }
+      if (!res.ok) return {
+        ...failure(res.error),
+        publish: () => {
+          if (previousState && !store.roomOf(user.id)) {
+            timers.cancel(user.id);
+            // Informe aussi les onglets qui affichent encore la course remplacée.
+            for (const s of userSockets()) s.emit("room:state", { ...previousState, status: "closed" });
+          }
+        },
+      };
+      timers.cancel(user.id);
+      attachUser(res.state.code);
+      return {
+        reply: { ok: true, data: { code: res.state.code } },
+        publish: () => broadcast(res.state),
+      };
+    });
+  });
 
   socket.on("room:create", (payloadInput, ack) => {
     respond(ack, async () => {
