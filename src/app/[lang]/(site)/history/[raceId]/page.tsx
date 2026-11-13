@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/auth/currentUser";
+import { NotFoundView, notFoundTitle } from "@/components/NotFoundView";
 import { WpmChart } from "@/components/race/WpmChart";
 import { MissedKeysHeatmap } from "@/components/race/MissedKeysHeatmap";
 import { RaceResultsTable } from "@/components/race/RaceResultsTable";
@@ -26,9 +27,17 @@ export default async function RaceHistoryPage({ params }: {
   const user = await getCurrentUser();
   if (!user) redirect(prefixWithLocale("/login", locale));
   if (user.kind === "guest") redirect(prefixWithLocale("/register", locale));
-  if (!isRaceId(raceId)) notFound();
-  const race = await createDrizzleRaceHistoryRepository(getDb()).getRaceForUser(user.id, raceId);
-  if (!race) notFound();
+  const race = isRaceId(raceId)
+    ? await createDrizzleRaceHistoryRepository(getDb()).getRaceForUser(user.id, raceId)
+    : null;
+  // Rendu direct : conserve le HTML et le script de thème du layout (statut 200).
+  if (!race) return (
+    <>
+      <title>{notFoundTitle(locale)}</title>
+      <meta name="robots" content="noindex" />
+      <NotFoundView locale={locale} withFrame={false} />
+    </>
+  );
   const { history, raceScreen, room } = getDictionary(locale);
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
   const number = new Intl.NumberFormat(locale);

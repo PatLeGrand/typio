@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -65,12 +66,22 @@ it("offers a return to page 1 when a page is beyond the end", async () => {
   expect(screen.getByRole("link", { name: getDictionary("en").history.firstPage })).toHaveAttribute("href", "/en/history");
 });
 
-it("rejects malformed identifiers before querying the database", async () => {
-  await expect(RaceHistoryPage({ params: Promise.resolve({ lang: "en", raceId: "invalid" }) })).rejects.toThrow("NOT_FOUND");
-  expect(mocks.db).not.toHaveBeenCalled();
-});
-
-it("returns 404 for missing or inaccessible races", async () => {
-  await expect(RaceHistoryPage(props)).rejects.toThrow("NOT_FOUND");
-  expect(mocks.detail).toHaveBeenCalledWith(member.id, raceId);
+it.each(["invalid", raceId])("renders the missing race content in server HTML (%s)", async (id) => {
+  const html = renderToStaticMarkup(await RaceHistoryPage({ params: Promise.resolve({ lang: "en", raceId: id }) }));
+  const document = new DOMParser().parseFromString(html, "text/html");
+  const { notFound, site } = getDictionary("en");
+  expect(html).toContain(notFound.title);
+  expect(document.body.textContent).toContain(notFound.text);
+  expect(html).toContain('href="/en"');
+  expect(html).toContain('<meta name="robots" content="noindex"');
+  expect(document.title).toBe(`${notFound.title} | ${site.name}`);
+  // L'en-tête et le pied de page sont déjà fournis par (site)/layout.tsx.
+  expect(html).not.toContain("<header");
+  expect(html).not.toContain("<footer");
+  if (id === "invalid") {
+    expect(mocks.db).not.toHaveBeenCalled();
+    expect(mocks.detail).not.toHaveBeenCalled();
+  } else {
+    expect(mocks.detail).toHaveBeenCalledWith(member.id, raceId);
+  }
 });
