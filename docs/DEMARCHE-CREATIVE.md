@@ -1,14 +1,14 @@
 # Démarche créative
 
-Squelette pour documenter DES-01 à DES-03. Le nom et le logo doivent venir de
-Patrick, sans génération par IA. Les références au dépôt ci-dessous servent
-uniquement à retrouver les éléments existants.
+Ce document couvre DES-01 à DES-03. Le nom et le logo viennent de Patrick,
+sans génération par IA.
 
 ## Nom
 
-> À compléter par Patrick : présenter les noms envisagés personnellement, les
-> recherches d'originalité (sources, dates et résultats), le nom retenu et la
-> raison du choix. Joindre les traces de cette démarche.
+Nom retenu : **Typio**.
+
+Vérification d'originalité : le mot « Typio » existait déjà, mais aucun site web
+ne porte ce nom : la plateforme ne se confond donc avec aucun site existant.
 
 ## Logo
 
@@ -25,6 +25,19 @@ Repère existant : `src/components/Logo.tsx`.
 > choisie et comment elle répond au public et à l'usage.
 
 Repères existants : `docs/design/`, dont `docs/design/login/README.md` et sa maquette.
+
+## Maquettes Figma (DES-03)
+
+La direction artistique a été conçue dans Figma avant l'intégration :
+[fichier de maquettes Typio](https://www.figma.com/design/SqbF9bf8Tsqbd1J4zK1Yl0/Typio-connection).
+
+- [Connexion](https://www.figma.com/design/SqbF9bf8Tsqbd1J4zK1Yl0/Typio-connection?node-id=6-472) :
+  intégrée dans `src/app/[lang]/(auth)/`, notes dans `docs/design/login/README.md`.
+- [Inscription](https://www.figma.com/design/SqbF9bf8Tsqbd1J4zK1Yl0/Typio-connection?node-id=18-204) :
+  notes dans `docs/design/inscription/README.md`.
+
+Les couleurs et typographies des maquettes sont reprises en tokens CSS
+(sections Palette et Typographies ci-dessous).
 
 ## Palette
 

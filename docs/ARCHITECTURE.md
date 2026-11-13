@@ -304,7 +304,7 @@ stateDiagram-v2
 
 > Un invité ne peut pas *créer* une salle (AUTH-03) mais peut en *hériter*. Le cahier ne
 > l'interdit pas, et fermer la salle d'une classe parce que le plus ancien est un invité
-> serait pire. **À confirmer** avec le client.
+> serait pire. **Confirmé** avec le client le 4 novembre 2026 (H-46 dans `EXIGENCES.md`).
 
 ## 3. Le coureur pendant une course
 
