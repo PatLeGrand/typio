@@ -11,12 +11,11 @@ export function notFoundTitle(locale: Locale): string {
 }
 
 /** Interface 404, partagée par `not-found.tsx` (secours client) et par la page servie en HTML (`/<locale>/missing`). */
-export function NotFoundView({ locale }: { locale: Locale }) {
+export function NotFoundView({ locale, withFrame = true }: { locale: Locale; withFrame?: boolean }) {
   const dictionary = getDictionary(locale);
   const { notFound } = dictionary;
 
-  return (
-    <StatusPageFrame locale={locale} dictionary={dictionary}>
+  const content = (
       <main className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:gap-12 lg:py-12">
         <section className="flex flex-col items-start text-left">
           <p className="mb-4 rounded-full bg-accent-soft px-4 py-2 text-sm font-extrabold uppercase tracking-[0.12em] text-accent-text">
@@ -35,6 +34,7 @@ export function NotFoundView({ locale }: { locale: Locale }) {
           <MascotIllustration labels={{ ...dictionary.illustration, praise: notFound.illustration }} />
         </div>
       </main>
-    </StatusPageFrame>
   );
+
+  return withFrame ? <StatusPageFrame locale={locale} dictionary={dictionary}>{content}</StatusPageFrame> : content;
 }
