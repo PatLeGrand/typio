@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -83,6 +83,59 @@ describe("SiteHeader", () => {
     vi.restoreAllMocks();
     fireEvent.scroll(window);
     expect(signUp).not.toHaveClass("md:rounded-full");
+  });
+
+  describe.each(["fr", "en"] as const)("menu mobile (%s)", (locale) => {
+    const dictionary = getDictionary(locale);
+    const navNames = [dictionary.home.navigation.why, dictionary.home.navigation.preview, dictionary.home.navigation.approach];
+
+    it("ouvre un panneau non modal avec la navigation et les actions de compte", () => {
+      render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
+      const button = screen.getByRole("button", { name: dictionary.header.openMenu });
+      expect(button).toHaveAttribute("aria-expanded", "false");
+      expect(screen.getAllByRole("navigation")).toHaveLength(1);
+
+      fireEvent.click(button);
+
+      const toggle = screen.getByRole("button", { name: dictionary.header.closeMenu });
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+      const panel = document.getElementById(toggle.getAttribute("aria-controls") ?? "");
+      expect(panel).not.toBeNull();
+      const inPanel = within(panel as HTMLElement);
+      for (const name of navNames) expect(inPanel.getByRole("link", { name })).toBeInTheDocument();
+      expect(inPanel.getByRole("link", { name: dictionary.header.signIn })).toBeInTheDocument();
+      expect(inPanel.getByRole("link", { name: dictionary.header.signUp })).toBeInTheDocument();
+      expect(inPanel.getAllByRole("link")[0]).toHaveFocus();
+    });
+
+    it("propose la création de compte et la déconnexion dans le panneau d'un invité", () => {
+      render(<SiteHeader locale={locale} dictionary={dictionary} user={guest} />);
+      fireEvent.click(screen.getByRole("button", { name: dictionary.header.openMenu }));
+      expect(screen.getAllByRole("button", { name: dictionary.header.signOut })).toHaveLength(2);
+      expect(screen.getAllByRole("link", { name: dictionary.header.signUp })).toHaveLength(2);
+    });
+
+    it("Échap ferme le panneau et rend le focus au bouton", () => {
+      render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
+      fireEvent.click(screen.getByRole("button", { name: dictionary.header.openMenu }));
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      const button = screen.getByRole("button", { name: dictionary.header.openMenu });
+      expect(button).toHaveAttribute("aria-expanded", "false");
+      expect(button).toHaveFocus();
+      expect(screen.getAllByRole("navigation")).toHaveLength(1);
+    });
+
+    it("un clic sur un lien ou hors du panneau le ferme", () => {
+      render(<SiteHeader locale={locale} dictionary={dictionary} user={null} />);
+      fireEvent.click(screen.getByRole("button", { name: dictionary.header.openMenu }));
+      fireEvent.click(within(screen.getAllByRole("navigation")[1]).getByRole("link", { name: navNames[0] }));
+      expect(screen.getByRole("button", { name: dictionary.header.openMenu })).toHaveAttribute("aria-expanded", "false");
+
+      fireEvent.click(screen.getByRole("button", { name: dictionary.header.openMenu }));
+      fireEvent.pointerDown(document.body);
+      expect(screen.getByRole("button", { name: dictionary.header.openMenu })).toHaveAttribute("aria-expanded", "false");
+    });
   });
 
   describe.each(["fr", "en"] as const)("connecté (%s)", (locale) => {
