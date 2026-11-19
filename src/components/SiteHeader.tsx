@@ -80,12 +80,15 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
     panelRef.current?.querySelector<HTMLElement>("a")?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      // Échap dans la boîte de profil ne ferme que celle-ci.
+      if (event.target instanceof Element && event.target.closest("dialog")) return;
       setMenuOpen(false);
       menuButtonRef.current?.focus();
     };
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Node)) return;
+      if (target instanceof Element && target.closest("dialog")) return;
       if (panelRef.current?.contains(target) || menuButtonRef.current?.contains(target)) return;
       setMenuOpen(false);
     };
@@ -121,6 +124,19 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
     </>
   ) : null;
 
+  const profile = user ? (
+    <ProfileModal user={user} dictionary={dictionary} locale={locale}>
+      <span className="text-sm font-semibold text-foreground flex min-h-11 min-w-0 items-center gap-2">
+        <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={28} />
+        <span className={user.kind === "guest" ? "max-w-24 truncate" : "max-w-24 truncate md:max-w-40"}>{user.displayName}</span>
+        {user.kind === "guest" ? (
+          <span className="text-xs font-normal text-muted ml-0.5">({dictionary.header.guest})</span>
+        ) : null}
+        <ChevronDown aria-hidden="true" className="size-4 opacity-50" />
+      </span>
+    </ProfileModal>
+  ) : null;
+
   return (
     <header ref={headerRef} className={`md:sticky top-0 z-50 w-full border-b border-border bg-surface transition-[padding] duration-300 motion-reduce:transition-none ${isScrolled ? "md:border-b-0 md:bg-transparent md:pt-4 md:px-4" : ""}`}>
       <div className={`mx-auto flex w-full max-w-[1440px] items-center justify-between gap-x-3 min-h-24 px-4 py-4 transition-[padding,min-height,border-radius,box-shadow,background-color] duration-300 motion-reduce:transition-none ${
@@ -141,16 +157,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
           </div>
           {user ? (
             <div className="flex min-w-0 items-center justify-end gap-2">
-              <ProfileModal user={user} dictionary={dictionary} locale={locale}>
-                <span className="text-sm font-semibold text-foreground flex min-h-11 min-w-0 items-center gap-2">
-                  <Avatar name={user.displayName} seed={user.id} userId={user.id} avatarVersion={user.avatarVersion} size={28} />
-                  <span className={`sr-only sm:not-sr-only ${user.kind === "guest" ? "max-w-24 truncate" : "max-w-24 truncate md:max-w-40"}`}>{user.displayName}</span>
-                  {user.kind === "guest" ? (
-                    <span className="sr-only text-xs font-normal text-muted ml-0.5 sm:not-sr-only">({dictionary.header.guest})</span>
-                  ) : null}
-                  <ChevronDown aria-hidden="true" className="size-4 opacity-50" />
-                </span>
-              </ProfileModal>
+              <div className="hidden sm:block">{profile}</div>
               <div className="hidden items-center gap-2 xl:flex">{memberActions}</div>
             </div>
           ) : (
@@ -192,7 +199,10 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
           </nav>
           <div className="mt-2 flex flex-col items-stretch gap-2 border-t border-border pt-3">
             {user ? (
-              memberActions
+              <>
+                <div className="sm:hidden">{profile}</div>
+                {memberActions}
+              </>
             ) : (
               <>
                 <ButtonLink href={`/${locale}/login`} variant="ghost">
