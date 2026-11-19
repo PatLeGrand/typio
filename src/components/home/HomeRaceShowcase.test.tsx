@@ -4,31 +4,24 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import { HomeRaceShowcase } from "./HomeRaceShowcase";
 
-const { importVisualizer } = vi.hoisted(() => ({ importVisualizer: vi.fn() }));
-vi.mock("next/dynamic", () => ({
-  default: (loader: () => unknown) => (props: { paused: boolean; maxFPS: number; racers: { progress: number }[] }) => {
-    importVisualizer();
-    void loader();
-    return <div data-testid="scene" data-paused={props.paused} data-fps={props.maxFPS} data-progress={JSON.stringify(props.racers.map((racer) => racer.progress))} />;
-  },
-}));
-vi.mock("@/components/race/RaceVisualizer", () => ({ RaceVisualizer: () => null }));
 let intersect: (entries: { isIntersecting: boolean }[]) => void;
-let idle: IdleRequestCallback;
 let desktop = true;
 let reducedMotion = false;
 const labels = getDictionary("fr").home.raceShowcase;
 const playable = { ...getDictionary("fr").home.playableRace, keyboard: getDictionary("fr").room.race.keyboard, createRace: getDictionary("fr").home.createRace };
 const visible = (inView: boolean) => act(() => intersect([{ isIntersecting: inView }]));
+const DEMO_START = [58, 44, 71, 33];
+/** Coureurs de la piste DOM : position (`left` en %) et état de foulée. */
+const runners = () => Array.from(document.querySelectorAll<HTMLElement>(".home-runner"));
+const progress = () => runners().map((runner) => Number.parseFloat(runner.style.left));
+const moving = () => runners().map((runner) => runner.dataset.moving);
 
 beforeEach(() => {
   vi.useFakeTimers();
   desktop = true;
   reducedMotion = false;
-  importVisualizer.mockClear();
   vi.spyOn(Math, "random").mockReturnValue(0);
   vi.spyOn(document, "hidden", "get").mockReturnValue(false);
-  vi.spyOn(document, "readyState", "get").mockReturnValue("complete");
   vi.stubGlobal("matchMedia", (query: string) => ({
     matches: query.includes("min-width") ? desktop : reducedMotion,
     addEventListener: vi.fn(), removeEventListener: vi.fn(),
@@ -38,8 +31,6 @@ beforeEach(() => {
     observe = vi.fn();
     disconnect = vi.fn();
   });
-  vi.stubGlobal("requestIdleCallback", vi.fn((callback: IdleRequestCallback) => { idle = callback; return 1; }));
-  vi.stubGlobal("cancelIdleCallback", vi.fn());
 });
 afterEach(() => {
   cleanup();
@@ -48,40 +39,36 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it("waits for load, visibility and idle, then pauses offscreen and in a hidden tab", () => {
-  vi.spyOn(document, "readyState", "get").mockReturnValue("loading");
+it("runs the demo only in view and in a visible tab", () => {
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
-  expect(screen.queryByTestId("scene")).toBeNull();
+  expect(progress()).toEqual(DEMO_START);
+  expect(moving()).toEqual(["false", "false", "false", "false"]);
+  act(() => vi.advanceTimersByTime(1000));
+  expect(progress()).toEqual(DEMO_START);
   visible(true);
-  expect(window.requestIdleCallback).not.toHaveBeenCalled();
-  act(() => window.dispatchEvent(new Event("load")));
-  expect(screen.queryByTestId("scene")).toBeNull();
-  expect(importVisualizer).not.toHaveBeenCalled();
-  act(() => idle({} as IdleDeadline));
-  expect(importVisualizer).toHaveBeenCalled();
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "false");
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-fps", "30");
+  expect(moving()).toEqual(["true", "true", "true", "true"]);
+  act(() => vi.advanceTimersByTime(200));
+  progress().forEach((value, index) => expect(value).toBeGreaterThan(DEMO_START[index]));
   visible(false);
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "true");
+  const offscreen = progress();
+  act(() => vi.advanceTimersByTime(1000));
+  expect(progress()).toEqual(offscreen);
+  expect(moving()).toEqual(["false", "false", "false", "false"]);
   visible(true);
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "false");
   vi.spyOn(document, "hidden", "get").mockReturnValue(true);
   act(() => document.dispatchEvent(new Event("visibilitychange")));
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "true");
+  expect(moving()).toEqual(["false", "false", "false", "false"]);
 });
 
-it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps the image without importing the visualizer for %s", (mode) => {
+it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps a still race without timers for %s", (mode) => {
   desktop = !mode.includes("mobile");
   reducedMotion = mode.includes("reduced motion");
-  Reflect.deleteProperty(window, "requestIdleCallback");
   const { container } = render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
-  expect(screen.queryByTestId("scene")).toBeNull();
   act(() => vi.advanceTimersByTime(200));
-  expect(container.querySelectorAll("img")).toHaveLength(6);
-  expect(container.querySelectorAll('img[src="/race/blob.svg"]')).toHaveLength(4);
-  expect(screen.queryByTestId("scene")).toBeNull();
-  expect(importVisualizer).not.toHaveBeenCalled();
+  expect(container.querySelectorAll('img[src*="blob.svg"]')).toHaveLength(4);
+  expect(progress()).toEqual(DEMO_START);
+  expect(moving()).toEqual(["false", "false", "false", "false"]);
   expect(vi.getTimerCount()).toBe(0);
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
   if (mode.includes("mobile")) {
@@ -94,114 +81,72 @@ it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps the image 
   }
 });
 
-it.each(["fr", "en"] as const)("renders the %s light and dark images on the server and initially", (locale) => {
+it.each(["fr", "en"] as const)("renders the %s track with every racer on the server", (locale) => {
   const dictionary = getDictionary(locale);
-  const element = <HomeRaceShowcase labels={dictionary.home.raceShowcase} playable={{ ...dictionary.home.playableRace, keyboard: dictionary.room.race.keyboard }} locale={locale} />;
-  const markup = renderToStaticMarkup(element);
+  const markup = renderToStaticMarkup(<HomeRaceShowcase labels={dictionary.home.raceShowcase} playable={{ ...dictionary.home.playableRace, keyboard: dictionary.room.race.keyboard }} locale={locale} />);
   const server = document.createElement("div");
   server.innerHTML = markup;
   expect(server.querySelector("[data-home-typing]")).toHaveClass("md:min-h-[204px]");
   expect(server.querySelector("[data-home-typing] > div")).toHaveClass("md:invisible");
-  const { container } = render(element);
-  for (const [index, theme] of ["light", "dark"].entries()) {
-    const source = encodeURIComponent(`/home/race-showcase-${locale}-${theme}.webp`);
-    expect(markup).toContain(source);
-    const image = container.querySelectorAll("img")[index];
-    expect(image.getAttribute("src")).toContain(source);
-    expect(image).toHaveAttribute("alt", "");
-    expect(image).toHaveAttribute("width", "756");
-    expect(image).toHaveAttribute("height", "518");
-    expect(image).toHaveClass("object-cover", "md:hidden", theme === "light" ? "dark:hidden" : "dark:md:hidden");
-    expect(image).toHaveClass(theme === "light" ? "block" : "hidden");
-    expect(image).toHaveAttribute("fetchpriority", "high");
-    expect(image).toHaveAttribute("loading", "lazy");
-  }
-  expect(screen.queryByTestId("scene")).toBeNull();
-  expect(importVisualizer).not.toHaveBeenCalled();
+  const track = server.querySelector("[data-home-race-track] > [aria-hidden='true']")!;
+  for (const name of dictionary.home.raceShowcase.racers) expect(track).toHaveTextContent(name);
+  expect(track.querySelectorAll(".home-runner")).toHaveLength(4);
 });
 
-it("keeps four decorative racers until the canvas is displayed", () => {
+it("draws four decorative racers, the bots recoloured", () => {
   const { container } = render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
-  const blobs = () => container.querySelectorAll('img[src="/race/blob.svg"]');
-  expect(blobs()).toHaveLength(4);
-  blobs().forEach((blob, index) => {
-    expect(blob).toHaveAttribute("aria-hidden", "true");
-    expect(blob).toHaveClass("hidden", "md:block");
-    expect(blob).toHaveStyle({ filter: `hue-rotate(${index * 47}deg)` });
+  const blobs = container.querySelectorAll('img[src*="blob.svg"]');
+  expect(blobs).toHaveLength(4);
+  blobs.forEach((blob, index) => {
+    expect(blob).toHaveAttribute("alt", "");
+    expect(blob.closest('[aria-hidden="true"]')).not.toBeNull();
+    if (index) expect(blob).toHaveStyle({ filter: `hue-rotate(${index * 47}deg)` });
   });
-  visible(true);
-  act(() => idle({} as IdleDeadline));
-  expect(screen.getByTestId("scene")).toBeInTheDocument();
-  expect(blobs()).toHaveLength(0);
-});
-
-it("loads the desktop visualizer with the timeout fallback", () => {
-  Reflect.deleteProperty(window, "requestIdleCallback");
-  render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
-  visible(true);
-  expect(importVisualizer).not.toHaveBeenCalled();
-  act(() => vi.advanceTimersByTime(200));
-  expect(screen.getByTestId("scene")).toBeInTheDocument();
-  expect(importVisualizer).toHaveBeenCalled();
-});
-
-it("cancels pending idle work when the showcase leaves the viewport", () => {
-  render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
-  visible(true);
-  visible(false);
-  expect(window.cancelIdleCallback).toHaveBeenCalledWith(1);
-  expect(screen.queryByTestId("scene")).toBeNull();
 });
 
 it("keeps the user's pause when the showcase re-enters the viewport", () => {
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
-  act(() => idle({} as IdleDeadline));
   const control = screen.getByRole("button", { name: labels.pause });
   expect(control).toHaveClass("size-11", "absolute", "bottom-3", "right-3");
   expect(control.closest('[aria-hidden="true"]')).toBeNull();
   expect(control).toHaveTextContent("");
   fireEvent.click(control);
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "true");
+  expect(moving()[0]).toBe("false");
   visible(false);
   visible(true);
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "true");
+  expect(moving()[0]).toBe("false");
   fireEvent.click(screen.getByRole("button", { name: labels.resume }));
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "false");
+  expect(moving()[0]).toBe("true");
 });
 
 it("starts only in the input, resets the demo and throttles scenery without delaying typing", () => {
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
-  act(() => idle({} as IdleDeadline));
   const input = screen.getByRole("textbox", { name: playable.inputLabel });
   expect(input).not.toHaveFocus();
   fireEvent.keyDown(document, { key: "L" });
   expect(input).toHaveValue("");
   act(() => vi.advanceTimersByTime(400));
   fireEvent.change(input, { target: { value: "L" } });
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-progress", "[0,0,0,0]");
-  const renders = importVisualizer.mock.calls.length;
+  expect(progress()).toEqual([0, 0, 0, 0]);
   fireEvent.change(input, { target: { value: "Le " } });
   expect(input).toHaveValue("Le ");
-  expect(importVisualizer.mock.calls.length).toBe(renders);
+  expect(progress()[0]).toBe(0);
   act(() => vi.advanceTimersByTime(100));
-  expect(importVisualizer.mock.calls.length).toBe(renders + 1);
-  const progress = JSON.parse(screen.getByTestId("scene").getAttribute("data-progress")!);
-  expect(progress[0]).toBeCloseTo(3 / playable.texts[0].length * 100);
+  expect(progress()[0]).toBeCloseTo(3 / playable.texts[0].length * 100);
 });
 
 it("focuses the field from the panel and starts even after pausing the demo", () => {
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
-  act(() => idle({} as IdleDeadline));
   fireEvent.click(screen.getByRole("button", { name: labels.pause }));
-  fireEvent.click(screen.getByText(playable.prompt.replaceAll("\u00a0", " ")));
+  fireEvent.click(screen.getByText(playable.prompt.replaceAll(" ", " ")));
   const input = screen.getByRole("textbox", { name: playable.inputLabel });
   expect(input).toHaveFocus();
   fireEvent.change(input, { target: { value: "L" } });
   expect(input).toHaveValue("L");
-  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "false");
+  expect(moving()[0]).toBe("true");
 });
 
 it("focuses the field from the track, updates its prompt and keeps pause independent", () => {
@@ -223,13 +168,11 @@ it("focuses the field from the track, updates its prompt and keeps pause indepen
 it("shows real results once, focuses the result heading and starts a new round explicitly", () => {
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
-  act(() => idle({} as IdleDeadline));
   const input = screen.getByRole("textbox", { name: playable.inputLabel });
   fireEvent.change(input, { target: { value: "L" } });
   act(() => vi.advanceTimersByTime(10_000));
   fireEvent.change(input, { target: { value: playable.texts[0] } });
-  const progress = JSON.parse(screen.getByTestId("scene").getAttribute("data-progress")!);
-  expect(progress[0]).toBe(100);
+  expect(progress()[0]).toBe(100);
   const status = screen.getByRole("status");
   expect(status).toHaveTextContent(`${Math.round(playable.texts[0].length / 5 * 6)} MPM`);
   expect(status).toHaveTextContent("100 % de précision, place 1 sur 4");
@@ -289,7 +232,6 @@ it("keeps reduced motion playable and excludes offscreen time from results", () 
   fireEvent.change(input, { target: { value: playable.texts[0] } });
   expect(screen.getByRole("status")).toHaveTextContent(`${Math.round(playable.texts[0].length / 5 * 30)} MPM`);
   expect(screen.getAllByRole("progressbar")).toHaveLength(4);
-  expect(importVisualizer).not.toHaveBeenCalled();
 });
 
 it("resets on Escape with input focus and preserves the race without input", () => {

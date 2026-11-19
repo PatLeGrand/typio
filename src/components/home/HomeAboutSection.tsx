@@ -4,18 +4,20 @@ type HomeAboutSectionProps = {
   home: Dictionary["home"];
 };
 
+/** La pelouse au centre du stade : le passage calme, adressé aussi aux profs et aux parents. */
 export function HomeAboutSection({ home }: HomeAboutSectionProps) {
   return (
-    <section className="relative z-10 py-16 pl-16 pr-6 md:px-8 md:py-24" aria-labelledby="about-title">
-      <div className="relative mx-auto max-w-[1120px] md:pr-40">
-        <span data-track-point aria-hidden="true" className="absolute -top-8 right-20" />
-        <span data-track-point aria-hidden="true" className="absolute -bottom-8 right-20" />
-        <div className="flex min-w-0 flex-col gap-7 md:max-w-[628px]">
-          <h2 id="about-title" className="text-balance text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
-            {home.about.title}
-          </h2>
-          <p className="text-base leading-[1.65] text-muted sm:text-lg">{home.about.description}</p>
-          <p className="font-medium text-foreground">{home.about.signature}</p>
+    <section className="bg-island-mint py-20 md:py-28" aria-labelledby="about-title">
+      <div className="home-lane-content grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12">
+        <h2 id="about-title" className="text-balance font-display text-[clamp(2.25rem,5vw,3.75rem)] font-black leading-[0.92] text-foreground">
+          {home.about.title}
+        </h2>
+        <div className="flex max-w-prose flex-col gap-6 lg:pt-2">
+          <p className="text-xl leading-relaxed text-foreground">{home.about.description}</p>
+          <p className="flex items-center gap-3 font-display text-xl font-bold text-foreground">
+            <span aria-hidden="true" className="h-1 w-10 shrink-0 bg-track" />
+            {home.about.signature}
+          </p>
         </div>
       </div>
     </section>
