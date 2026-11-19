@@ -271,7 +271,9 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "guest": "guest",
-    "signUp": "Create an account"
+    "signUp": "Create an account",
+    "openMenu": "Open the menu",
+    "closeMenu": "Close the menu"
   },
   "footer": {
     "copyright": "© 2026 Typio",
