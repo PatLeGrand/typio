@@ -2,8 +2,9 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
+import type { Locale } from "@/i18n/config";
 import { HomeTrackScene } from "./HomeTrackScene";
 
 const RaceVisualizer = memo(dynamic(
@@ -17,13 +18,21 @@ type HomeLiveSceneProps = {
   /** Mobile ou mouvement réduit : décor fixe, aucun canvas (PERF-01). */
   still: boolean;
   paused: boolean;
+  /** Les coureurs avancent (démo ou essai en cours) : sert d'état observable de la scène. */
+  moving: boolean;
+  locale: Locale;
+  /** Bouton pause, posé sur la scène hors de la zone `aria-hidden`. */
+  pauseControl?: ReactNode;
 };
 
 /**
- * Vue au sol de la même course que les couloirs : bandeau « essai en direct », légende des coureurs,
+ * Course d'essai de l'accueil, pilotée par `playableRace` : bandeau « essai en direct », légende des coureurs,
  * puis la scène PixiJS chargée après le chargement de la page et quand le navigateur est inactif.
  */
-export function HomeLiveScene({ labels, progress, still, paused }: HomeLiveSceneProps) {
+export function HomeLiveScene({ labels, progress, still, paused, moving, locale, pauseControl }: HomeLiveSceneProps) {
+  const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+  // L'espace initiale sépare le nom du pourcentage pour les lecteurs d'écran.
+  const shares = progress.map((value) => ` ${percent.format(value / 100)}`);
   const [ready, setReady] = useState(false);
   const racers = useMemo(() => labels.racers.map((name, index) => ({
     id: `demo-${index}`, name, progress: progress[index], isLocal: index === 0, hue: index * 47,
@@ -58,29 +67,34 @@ export function HomeLiveScene({ labels, progress, still, paused }: HomeLiveScene
           </p>
           <ul aria-label={labels.gridLabel} className="flex flex-wrap items-center gap-x-4 gap-y-1">
             {labels.racers.map((name, index) => (
-              <li key={name} className={`inline-flex items-center gap-1.5 ${index === 0 ? "font-semibold" : ""}`}>
+              <li key={name} data-progress={progress[index]} className={`inline-flex items-center gap-1.5 ${index === 0 ? "font-semibold" : ""}`}>
                 <Image src="/race/blob.svg" alt="" width={16} height={16} className="size-4" style={index ? { filter: `hue-rotate(${index * 47}deg)` } : undefined} />
                 <span>{name}</span>
+                {/* La scène est décorative : la progression reste lisible par les lecteurs d'écran (A11Y-03). */}
+                <span className="sr-only">{shares[index]}</span>
               </li>
             ))}
           </ul>
         </div>
       </div>
-      <div aria-hidden="true" className="relative h-[180px] w-full overflow-hidden bg-island-mint sm:h-[230px] 2xl:h-[300px]">
-        <HomeTrackScene />
-        {!live && labels.racers.map((name, index) => (
-          <Image
-            key={name}
-            src="/race/blob.svg"
-            alt=""
-            width={52}
-            height={52}
-            loading="lazy"
-            className="absolute size-10 sm:size-13"
-            style={{ left: `${10 + index * 22}%`, bottom: 20 + index * 12, filter: index ? `hue-rotate(${index * 47}deg)` : undefined }}
-          />
-        ))}
-        {live && <RaceVisualizer trackLength={1500} racers={racers} paused={paused} maxFPS={30} className="absolute inset-0 h-full w-full" />}
+      <div className="relative">
+        <div aria-hidden="true" data-moving={moving} className="relative h-[200px] w-full overflow-hidden bg-island-mint sm:h-[260px] 2xl:h-[320px]">
+          <HomeTrackScene />
+          {!live && labels.racers.map((name, index) => (
+            <Image
+              key={name}
+              data-scene-racer
+              src="/race/blob.svg"
+              alt=""
+              width={52}
+              height={52}
+              className="absolute size-10 sm:size-13"
+              style={{ left: `${10 + index * 22}%`, bottom: 20 + index * 12, filter: index ? `hue-rotate(${index * 47}deg)` : undefined }}
+            />
+          ))}
+          {live && <RaceVisualizer trackLength={1500} racers={racers} paused={paused} maxFPS={30} className="absolute inset-0 h-full w-full" />}
+        </div>
+        {pauseControl}
       </div>
     </div>
   );

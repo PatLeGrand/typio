@@ -459,34 +459,10 @@ h2[tabindex="-1"]:focus-visible {
   background: repeating-conic-gradient(var(--track-line) 0 25%, var(--key-ink) 0 50%) 0 0 / 14px 14px;
 }
 
-.home-runner {
-  transition: left 200ms linear;
-}
-
-.home-runner-trail {
-  transition: width 200ms linear;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .home-runner[data-moving="true"] > img {
-    animation: home-runner-stride 340ms ease-in-out infinite alternate;
-  }
-}
-
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
   [data-home-finish]:has([data-finish-panel]:is(:hover, :focus-within)) [data-finish-racer] {
     animation: home-finish-hop 450ms ease-out;
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-runner,
-  .home-runner-trail { transition: none; }
-}
-
-@keyframes home-runner-stride {
-  from { transform: translateY(0) rotate(-4deg); }
-  to { transform: translateY(-3px) rotate(4deg); }
 }
 
 @keyframes home-finish-hop {

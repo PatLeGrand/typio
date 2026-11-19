@@ -1,11 +1,10 @@
 "use client";
 
 import { MediaPlaybackButton } from "./MediaPlaybackButton";
-import { HomeTrackLanes } from "./HomeTrackLanes";
 import { HomeLiveScene } from "./HomeLiveScene";
 import { RaceInputCard } from "@/components/race/RaceInputCard";
 import { HomeTrialInput } from "./HomeTrialInput";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent, type SyntheticEvent } from "react";
 import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -44,7 +43,6 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
   const [userPaused, setUserPaused] = useState(false);
   const paused = userPaused || !activity.inView || activity.hidden;
   const [frame, setFrame] = useState({ progress: DEMO_START, pauseTicks: 0, tick: 0 });
-  const racers = useMemo(() => labels.racers.map((name, index) => ({ name, progress: frame.progress[index] })), [labels.racers, frame.progress]);
   const number = new Intl.NumberFormat(locale);
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
   const result = playableRaceResult(race);
@@ -167,9 +165,14 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
     }} onClick={(event) => {
       if (event.target instanceof Element && event.target.closest("[data-home-typing], [data-home-race-track]") && !event.target.closest("button, a, input, progress")) inputRef.current?.focus();
     }}>
-      <div data-home-race-track className="relative">
-        <HomeTrackLanes racers={racers} moving={!still && !paused && race.phase !== "finished"} locale={locale} />
-        {!still && <MediaPlaybackButton playing={!userPaused} label={userPaused ? labels.resume : labels.pause}
+      <HomeLiveScene
+        labels={labels}
+        progress={frame.progress}
+        still={still}
+        paused={paused}
+        moving={!still && !paused && race.phase !== "finished"}
+        locale={locale}
+        pauseControl={still ? null : <MediaPlaybackButton playing={!userPaused} label={userPaused ? labels.resume : labels.pause}
           onClick={() => {
             if (!userPaused) {
               const next = transitionPlayableRace(raceRef.current, { type: "tick", deltaMs: elapsed() });
@@ -178,8 +181,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
             }
             setUserPaused((value) => !value);
           }} />}
-      </div>
-      <HomeLiveScene labels={labels} progress={frame.progress} still={still} paused={paused} />
+      />
       <div className="relative z-10 mx-auto mt-6 max-w-[960px] px-4 sm:px-8">
         <RaceInputCard data-home-typing>
           {!physicalKeyboard ? <div className={hydrated ? undefined : "md:invisible"}>

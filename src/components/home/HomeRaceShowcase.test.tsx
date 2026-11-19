@@ -22,10 +22,9 @@ const labels = getDictionary("fr").home.raceShowcase;
 const playable = { ...getDictionary("fr").home.playableRace, keyboard: getDictionary("fr").room.race.keyboard, createRace: getDictionary("fr").home.createRace };
 const visible = (inView: boolean) => act(() => intersect([{ isIntersecting: inView }]));
 const DEMO_START = [58, 44, 71, 33];
-/** Coureurs de la piste DOM : position (`left` en %) et état de foulée. */
-const runners = () => Array.from(document.querySelectorAll<HTMLElement>(".home-runner"));
-const progress = () => runners().map((runner) => Number.parseFloat(runner.style.left));
-const moving = () => runners().map((runner) => runner.dataset.moving);
+/** Progression exposée par la légende (texte masqué pour les lecteurs d'écran) et état de la scène. */
+const progress = () => Array.from(document.querySelectorAll<HTMLElement>("li[data-progress]")).map((racer) => Number(racer.dataset.progress));
+const moving = () => document.querySelector<HTMLElement>("[data-moving]")!.dataset.moving;
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -57,22 +56,22 @@ afterEach(() => {
 it("runs the demo only in view and in a visible tab", () => {
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   expect(progress()).toEqual(DEMO_START);
-  expect(moving()).toEqual(["false", "false", "false", "false"]);
+  expect(moving()).toBe("false");
   act(() => vi.advanceTimersByTime(1000));
   expect(progress()).toEqual(DEMO_START);
   visible(true);
-  expect(moving()).toEqual(["true", "true", "true", "true"]);
+  expect(moving()).toBe("true");
   act(() => vi.advanceTimersByTime(200));
   progress().forEach((value, index) => expect(value).toBeGreaterThan(DEMO_START[index]));
   visible(false);
   const offscreen = progress();
   act(() => vi.advanceTimersByTime(1000));
   expect(progress()).toEqual(offscreen);
-  expect(moving()).toEqual(["false", "false", "false", "false"]);
+  expect(moving()).toBe("false");
   visible(true);
   vi.spyOn(document, "hidden", "get").mockReturnValue(true);
   act(() => document.dispatchEvent(new Event("visibilitychange")));
-  expect(moving()).toEqual(["false", "false", "false", "false"]);
+  expect(moving()).toBe("false");
 });
 
 it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps a still race without timers for %s", (mode) => {
@@ -81,9 +80,9 @@ it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps a still ra
   const { container } = render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
   act(() => vi.advanceTimersByTime(200));
-  expect(container.querySelectorAll(".home-runner img")).toHaveLength(4);
+  expect(container.querySelectorAll("[data-scene-racer]")).toHaveLength(4);
   expect(progress()).toEqual(DEMO_START);
-  expect(moving()).toEqual(["false", "false", "false", "false"]);
+  expect(moving()).toBe("false");
   expect(vi.getTimerCount()).toBe(0);
   expect(screen.queryByTestId("scene")).toBeNull();
   expect(importVisualizer).not.toHaveBeenCalled();
@@ -98,21 +97,26 @@ it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps a still ra
   }
 });
 
-it.each(["fr", "en"] as const)("renders the %s track with every racer on the server", (locale) => {
+it.each(["fr", "en"] as const)("renders the %s scene and a readable progress for every racer on the server", (locale) => {
   const dictionary = getDictionary(locale);
   const markup = renderToStaticMarkup(<HomeRaceShowcase labels={dictionary.home.raceShowcase} playable={{ ...dictionary.home.playableRace, keyboard: dictionary.room.race.keyboard }} locale={locale} />);
   const server = document.createElement("div");
   server.innerHTML = markup;
   expect(server.querySelector("[data-home-typing]")).toHaveClass("md:min-h-[204px]");
   expect(server.querySelector("[data-home-typing] > div")).toHaveClass("md:invisible");
-  const track = server.querySelector("[data-home-race-track] > [aria-hidden='true']")!;
-  for (const name of dictionary.home.raceShowcase.racers) expect(track).toHaveTextContent(name);
-  expect(track.querySelectorAll(".home-runner")).toHaveLength(4);
+  const legend = server.querySelector(`ul[aria-label="${dictionary.home.raceShowcase.gridLabel}"]`)!;
+  const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+  dictionary.home.raceShowcase.racers.forEach((name, index) => {
+    expect(legend).toHaveTextContent(name);
+    expect(legend).toHaveTextContent(percent.format(DEMO_START[index] / 100).replace(/\s/g, " "));
+  });
+  expect(legend.closest('[aria-hidden="true"]')).toBeNull();
+  expect(server.querySelectorAll("[aria-hidden='true'] [data-scene-racer]")).toHaveLength(4);
 });
 
 it("draws four decorative racers, the bots recoloured", () => {
   const { container } = render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
-  const blobs = container.querySelectorAll(".home-runner img");
+  const blobs = container.querySelectorAll("[data-scene-racer]");
   expect(blobs).toHaveLength(4);
   blobs.forEach((blob, index) => {
     expect(blob).toHaveAttribute("alt", "");
@@ -129,12 +133,12 @@ it("keeps the user's pause when the showcase re-enters the viewport", () => {
   expect(control.closest('[aria-hidden="true"]')).toBeNull();
   expect(control).toHaveTextContent("");
   fireEvent.click(control);
-  expect(moving()[0]).toBe("false");
+  expect(moving()).toBe("false");
   visible(false);
   visible(true);
-  expect(moving()[0]).toBe("false");
+  expect(moving()).toBe("false");
   fireEvent.click(screen.getByRole("button", { name: labels.resume }));
-  expect(moving()[0]).toBe("true");
+  expect(moving()).toBe("true");
 });
 
 it("starts only in the input, resets the demo and throttles scenery without delaying typing", () => {
@@ -163,7 +167,7 @@ it("focuses the field from the panel and starts even after pausing the demo", ()
   expect(input).toHaveFocus();
   fireEvent.change(input, { target: { value: "L" } });
   expect(input).toHaveValue("L");
-  expect(moving()[0]).toBe("true");
+  expect(moving()).toBe("true");
 });
 
 it("focuses the field from the track, updates its prompt and keeps pause independent", () => {
@@ -279,10 +283,10 @@ it("waits for composition to finish before counting input", () => {
   expect(screen.getByRole("status")).toHaveTextContent("100 % de précision");
 });
 
-it("loads the live scene after load and idle, on the same progress as the lanes, and pauses it offscreen", () => {
+it("loads the live scene after load and idle, on the same progress as the legend, and pauses it offscreen", () => {
   vi.spyOn(document, "readyState", "get").mockReturnValue("loading");
   render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
-  expect(screen.getByRole("list", { name: labels.gridLabel })).toHaveTextContent(labels.racers.join(""));
+  for (const name of labels.racers) expect(screen.getByRole("list", { name: labels.gridLabel })).toHaveTextContent(name);
   visible(true);
   expect(window.requestIdleCallback).not.toHaveBeenCalled();
   act(() => window.dispatchEvent(new Event("load")));

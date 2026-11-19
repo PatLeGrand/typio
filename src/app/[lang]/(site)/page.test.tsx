@@ -13,8 +13,8 @@ vi.mock("next/navigation", async (importOriginal) => ({
 // next/font/google n'est compilé que par Next ; ici on simule sa sortie.
 vi.mock("@/components/home/homeFonts", () => ({ displayFont: { variable: "font-display-mock" } }));
 
-/** Position (`left` en %) des coureurs de la piste de l'accueil. */
-const progress = () => Array.from(document.querySelectorAll<HTMLElement>(".home-runner")).map((runner) => Number.parseFloat(runner.style.left));
+/** Progression des coureurs de l'essai, exposée par la légende de la scène. */
+const progress = () => Array.from(document.querySelectorAll<HTMLElement>("li[data-progress]")).map((racer) => Number(racer.dataset.progress));
 
 import Home from "./page";
 
@@ -154,8 +154,9 @@ describe("Home", () => {
     const { container } = render(await Home(props(lang)));
     vi.useFakeTimers();
     act(() => { vi.advanceTimersByTime(5000); });
-    const track = container.querySelector("[data-home-race-track] > [aria-hidden='true']")!;
-    for (const name of home.raceShowcase.racers) expect(track).toHaveTextContent(name);
+    const legend = within(container).getByRole("list", { name: home.raceShowcase.gridLabel });
+    for (const name of home.raceShowcase.racers) expect(legend).toHaveTextContent(name);
+    expect(container.querySelectorAll("[data-scene-racer]")).toHaveLength(4);
     expect(progress()).toEqual([58, 44, 71, 33]);
   });
 
