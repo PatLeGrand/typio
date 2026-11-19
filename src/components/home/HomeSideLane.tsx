@@ -6,7 +6,7 @@ import Image from "next/image";
  */
 export function HomeSideLane({ runner = true }: { runner?: boolean }) {
   return (
-    <div aria-hidden="true" className="track-surface pointer-events-none absolute inset-y-0 left-3 w-8 border-x-2 border-track-line md:left-8 md:w-14">
+    <div aria-hidden="true" className="track-surface pointer-events-none absolute inset-y-0 left-[max(0.75rem,calc((100%-1280px)/2+0.75rem))] w-8 border-x-2 border-track-line md:left-[max(2rem,calc((100%-1280px)/2+2rem))] md:w-14">
       <span className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-[repeating-linear-gradient(180deg,var(--track-line)_0_10px,transparent_10px_22px)] opacity-60" />
       {runner && <div className="sticky top-[55vh] flex justify-center py-3">
         <Image src="/race/blob.svg" alt="" width={44} height={44} loading="lazy" className="size-7 md:size-11" />

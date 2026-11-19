@@ -24,8 +24,9 @@ export function HomeHero({ home, locale, keyboardLabel }: HomeHeroProps) {
         </h1>
         <div className="flex min-w-0 flex-col gap-5 lg:pb-2">
           <p className="max-w-[34ch] text-pretty text-lg leading-snug text-muted sm:text-xl">{home.hero.description}</p>
-          <div className="min-w-0 max-w-full"><ButtonLink href={`/${locale}/race/settings`} variant="start">{home.createRace}</ButtonLink></div>
-          <div className="max-w-md">
+          <div className="min-w-0 max-w-lg rounded-card border border-border bg-surface p-4 shadow-soft sm:p-5">
+            <ButtonLink href={`/${locale}/race/settings`} variant="start" fullWidth>{home.createRace}</ButtonLink>
+            <div aria-hidden="true" className="my-4 border-t-2 border-dashed border-border" />
             <HomeJoinCodeForm labels={home.joinByCode} locale={locale} />
           </div>
         </div>

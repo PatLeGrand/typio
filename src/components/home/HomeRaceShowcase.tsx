@@ -2,6 +2,7 @@
 
 import { MediaPlaybackButton } from "./MediaPlaybackButton";
 import { HomeTrackLanes } from "./HomeTrackLanes";
+import { HomeLiveScene } from "./HomeLiveScene";
 import { RaceInputCard } from "@/components/race/RaceInputCard";
 import { HomeTrialInput } from "./HomeTrialInput";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent, type SyntheticEvent } from "react";
@@ -178,6 +179,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
             setUserPaused((value) => !value);
           }} />}
       </div>
+      <HomeLiveScene labels={labels} progress={frame.progress} still={still} paused={paused} />
       <div className="relative z-10 mx-auto mt-6 max-w-[960px] px-4 sm:px-8">
         <RaceInputCard data-home-typing>
           {!physicalKeyboard ? <div className={hydrated ? undefined : "md:invisible"}>

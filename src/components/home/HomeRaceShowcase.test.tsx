@@ -4,6 +4,17 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import { HomeRaceShowcase } from "./HomeRaceShowcase";
 
+const { importVisualizer } = vi.hoisted(() => ({ importVisualizer: vi.fn() }));
+vi.mock("next/dynamic", () => ({
+  default: (loader: () => unknown) => (props: { paused: boolean; maxFPS: number; racers: { progress: number }[] }) => {
+    importVisualizer();
+    void loader();
+    return <div data-testid="scene" data-paused={props.paused} data-fps={props.maxFPS} data-progress={JSON.stringify(props.racers.map((racer) => racer.progress))} />;
+  },
+}));
+vi.mock("@/components/race/RaceVisualizer", () => ({ RaceVisualizer: () => null }));
+let idle: IdleRequestCallback;
+
 let intersect: (entries: { isIntersecting: boolean }[]) => void;
 let desktop = true;
 let reducedMotion = false;
@@ -22,6 +33,10 @@ beforeEach(() => {
   reducedMotion = false;
   vi.spyOn(Math, "random").mockReturnValue(0);
   vi.spyOn(document, "hidden", "get").mockReturnValue(false);
+  vi.spyOn(document, "readyState", "get").mockReturnValue("complete");
+  importVisualizer.mockClear();
+  vi.stubGlobal("requestIdleCallback", vi.fn((callback: IdleRequestCallback) => { idle = callback; return 1; }));
+  vi.stubGlobal("cancelIdleCallback", vi.fn());
   vi.stubGlobal("matchMedia", (query: string) => ({
     matches: query.includes("min-width") ? desktop : reducedMotion,
     addEventListener: vi.fn(), removeEventListener: vi.fn(),
@@ -66,10 +81,12 @@ it.each(["mobile", "reduced motion", "mobile reduced motion"])("keeps a still ra
   const { container } = render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
   visible(true);
   act(() => vi.advanceTimersByTime(200));
-  expect(container.querySelectorAll('img[src*="blob.svg"]')).toHaveLength(4);
+  expect(container.querySelectorAll(".home-runner img")).toHaveLength(4);
   expect(progress()).toEqual(DEMO_START);
   expect(moving()).toEqual(["false", "false", "false", "false"]);
   expect(vi.getTimerCount()).toBe(0);
+  expect(screen.queryByTestId("scene")).toBeNull();
+  expect(importVisualizer).not.toHaveBeenCalled();
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
   if (mode.includes("mobile")) {
     expect(screen.queryByRole("textbox")).toBeNull();
@@ -95,7 +112,7 @@ it.each(["fr", "en"] as const)("renders the %s track with every racer on the ser
 
 it("draws four decorative racers, the bots recoloured", () => {
   const { container } = render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
-  const blobs = container.querySelectorAll('img[src*="blob.svg"]');
+  const blobs = container.querySelectorAll(".home-runner img");
   expect(blobs).toHaveLength(4);
   blobs.forEach((blob, index) => {
     expect(blob).toHaveAttribute("alt", "");
@@ -260,4 +277,34 @@ it("waits for composition to finish before counting input", () => {
   act(() => vi.advanceTimersByTime(1000));
   fireEvent.change(input, { target: { value: playable.texts[0] } });
   expect(screen.getByRole("status")).toHaveTextContent("100 % de précision");
+});
+
+it("loads the live scene after load and idle, on the same progress as the lanes, and pauses it offscreen", () => {
+  vi.spyOn(document, "readyState", "get").mockReturnValue("loading");
+  render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
+  expect(screen.getByRole("list", { name: labels.gridLabel })).toHaveTextContent(labels.racers.join(""));
+  visible(true);
+  expect(window.requestIdleCallback).not.toHaveBeenCalled();
+  act(() => window.dispatchEvent(new Event("load")));
+  expect(screen.queryByTestId("scene")).toBeNull();
+  act(() => idle({} as IdleDeadline));
+  const scene = screen.getByTestId("scene");
+  expect(scene.closest('[aria-hidden="true"]')).not.toBeNull();
+  expect(scene).toHaveAttribute("data-fps", "30");
+  act(() => vi.advanceTimersByTime(600));
+  expect(JSON.parse(scene.getAttribute("data-progress")!)).toEqual(progress());
+  const input = screen.getByRole("textbox", { name: playable.inputLabel });
+  fireEvent.change(input, { target: { value: "Le " } });
+  act(() => vi.advanceTimersByTime(100));
+  expect(JSON.parse(screen.getByTestId("scene").getAttribute("data-progress")!)).toEqual(progress());
+  visible(false);
+  expect(screen.getByTestId("scene")).toHaveAttribute("data-paused", "true");
+});
+
+it("cancels pending idle work when the showcase leaves the viewport", () => {
+  render(<HomeRaceShowcase labels={labels} playable={playable} locale="fr" />);
+  visible(true);
+  visible(false);
+  expect(window.cancelIdleCallback).toHaveBeenCalledWith(1);
+  expect(screen.queryByTestId("scene")).toBeNull();
 });
