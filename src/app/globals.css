@@ -491,3 +491,125 @@ h2[tabindex="-1"]:focus-visible {
   0%, 100% { transform: translateY(0); }
   45% { transform: translateY(-12px); }
 }
+
+/* Grand Prix de l’île — fanion, portiques et bande de chronométrage. */
+.race-masthead {
+  display: flex;
+  align-items: center;
+  gap: .22em;
+  font: italic 900 clamp(2rem, 5.2vw, 4.8rem)/.98 var(--font-big-shoulders, system-ui), var(--font-inter, sans-serif), sans-serif;
+  letter-spacing: -.045em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.race-masthead::before {
+  content: "";
+  width: .2em;
+  height: .8em;
+  background: var(--track-accent);
+  transform: skew(-14deg);
+  box-shadow: -.1em 0 var(--background), -.17em 0 var(--track-accent);
+  margin-inline: .17em .05em;
+}
+.race-arena {
+  min-width: 0;
+  overflow: hidden;
+  border: 2px solid var(--screen);
+  border-radius: 1.4rem 1.4rem .55rem .55rem;
+  background: var(--screen);
+  color: var(--screen-text);
+}
+.race-timing-strip, .race-distance {
+  display: flex;
+  align-items: center;
+  gap: clamp(.6rem, 2vw, 1.8rem);
+  padding-inline: clamp(.8rem, 2vw, 1.6rem);
+  font-size: .78rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.race-timing-strip {
+  min-height: 2.4rem;
+  flex-wrap: wrap;
+  row-gap: .2rem;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+}
+.race-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .35rem 1rem .35rem .7rem;
+  clip-path: polygon(0 0,100% 0,calc(100% - .5rem) 100%,0 100%);
+  background: var(--key-yellow);
+  color: var(--key-ink);
+}
+.race-panorama {
+  position: relative;
+  isolation: isolate;
+  height: clamp(250px, 30vh, 340px);
+  background: var(--island-mint);
+}
+.race-panorama::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/race/blob.svg") 22% calc(100% - 18px)/76px auto no-repeat,
+    url("/race/track.svg") center bottom/auto 70px repeat-x,
+    url("/race/meadow.svg") left bottom 30px/auto 100px repeat-x,
+    url("/race/meadow-distant.svg") center bottom 60px/auto 130px repeat-x,
+    url("/race/sun.svg") right 16% top 14%/48px auto no-repeat;
+}
+.dark .race-panorama::before { filter: brightness(.67) saturate(.8); }
+.race-distance { height: 2.2rem; color: var(--key-mint); }
+.race-ruler {
+  position: relative;
+  flex: 1;
+  height: .7rem;
+  background: repeating-linear-gradient(90deg,var(--screen-muted) 0 1px,transparent 1px 2.5%) bottom / 100% 3px no-repeat;
+  border-top: 2px solid var(--screen-muted);
+}
+.race-distance-fill { display: block; height: 5px; margin-top: -3px; background: var(--key-mint); }
+.race-pin {
+  position: absolute;
+  top: -4px;
+  width: 6px;
+  height: 6px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--screen-text);
+  outline: 1px solid var(--screen);
+}
+.race-pin-local { z-index: 1; top: -6px; width: 10px; height: 10px; background: var(--key-yellow); }
+.race-start-signal {
+  position: absolute;
+  right: 4%;
+  top: 10%;
+  padding: .5rem 1.1rem;
+  background: var(--key-yellow);
+  color: var(--key-ink);
+  border: 2px solid var(--key-ink);
+  border-radius: .7rem;
+  text-align: center;
+  transform: rotate(3deg);
+}
+.race-start-signal h2 { font-size: .75rem; font-weight: 750; }
+.race-start-signal p { font: 900 3.75rem/1 var(--font-big-shoulders, system-ui), var(--font-inter, sans-serif), sans-serif; font-variant-numeric: tabular-nums; }
+.race-desk { display: grid; gap: 1rem; padding: clamp(1rem,2vw,1.7rem); background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; }
+.race-desk > button { justify-self: start; }
+.race-desk-title, .race-standings-head, .race-arrival {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  font: 800 clamp(1.5rem, 2.5vw, 2.1rem)/1.1 var(--font-big-shoulders, system-ui), var(--font-inter, sans-serif), sans-serif;
+}
+.race-passage { overflow-wrap: anywhere; white-space: pre-wrap; font-family: var(--font-mono); font-size: clamp(1.1rem,1.6vw,1.4rem); line-height: 1.65; }
+.text-series-correct { color: var(--series-2); }
+.race-standings-head { justify-content: space-between; border-bottom: 2px solid var(--foreground); padding: .35rem .25rem .65rem; }
+.race-checks, .race-arrival::before {
+  width: 3rem;
+  height: 1rem;
+  background: repeating-conic-gradient(var(--foreground) 0 25%,transparent 0 50%) 0 0/1rem 1rem;
+  transform: skew(-12deg);
+}
+.race-arrival { background: var(--key-mint); color: var(--key-ink); padding: 1rem; border-radius: .6rem; }
+.race-arrival::before { content: ""; flex-shrink: 0; background-image: repeating-conic-gradient(var(--key-ink) 0 25%,transparent 0 50%); }

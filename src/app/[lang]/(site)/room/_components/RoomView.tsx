@@ -41,13 +41,11 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
   }
   return (
     <>
-      <div className={immersive ? "-mx-4 md:-mx-8" : undefined}>
-        <div className={`flex flex-wrap items-center justify-between gap-4 ${immersive ? "mx-auto max-w-[1440px] px-4 md:px-8 xl:px-[88px]" : ""}`}>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{room.status === "results" || (room.solo && room.status === "waiting") ? labels.resultsTitle : room.status === "waiting" ? labels.title : labels.raceTitle}</h1>
-          <Button variant="secondary" onClick={onLeave} disabled={leaving}>
-            {labels.leave}
-          </Button>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className={immersive ? "race-masthead" : "text-3xl font-bold tracking-tight text-foreground"}>{room.status === "results" || (room.solo && room.status === "waiting") ? labels.resultsTitle : room.status === "waiting" ? labels.title : raceLabels.circuit}</h1>
+        <Button variant="secondary" onClick={onLeave} disabled={leaving}>
+          {labels.leave}
+        </Button>
       </div>
       {error ? <RoomError code={error} messages={labels.errors} /> : null}
       {!room.solo && !immersive ? <RoomCodeCard code={room.code} labels={labels.code} /> : null}

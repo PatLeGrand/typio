@@ -43,6 +43,12 @@
     "back": "Retour aux paramètres"
   },
   "raceScreen": {
+    "circuit": "Grand Prix de l’île",
+    "live": "En piste",
+    "solo": "Solo",
+    "multiplayer": "Multijoueur",
+    "leadDistance": "Distance en tête de course",
+    "distance": "Distance parcourue",
     "bonuses": {
       "types": {
         "shorten": "−3 mots",

@@ -59,5 +59,6 @@ it("mobile : garde la piste et le message clavier physique", () => {
   const { dict } = show("fr", "racing");
   expect(screen.getByText(dict.room.race.keyboard)).toBeInTheDocument();
   expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-  expect(screen.getByRole("region", { name: dict.raceScreen.leaderboard }).querySelector("canvas")).toBeInTheDocument();
+  expect(document.querySelector(".race-panorama")).toBeInTheDocument();
+  expect(document.querySelector("canvas")).not.toBeInTheDocument();
 });
