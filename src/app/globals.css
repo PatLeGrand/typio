@@ -62,7 +62,10 @@
   --track-shade: #a23b26;
   --track-line: #fffaf2;
   --screen: #1b1724;
+  --screen-surface: #252031;
+  --screen-border: #352e46;
   --screen-text: #f4f1fa;
+  --screen-muted: #b8b1ca;
   --shadow-soft: 0 8px 24px rgba(83, 53, 155, 0.05);
 }
 
@@ -114,7 +117,10 @@
   --track-shade: #4e2018;
   --track-line: #f3e7dd;
   --screen: #0b0a10;
+  --screen-surface: #151220;
+  --screen-border: #262136;
   --screen-text: #f4f1fa;
+  --screen-muted: #afa8c2;
   --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -146,7 +152,10 @@
   --color-track-shade: var(--track-shade);
   --color-track-line: var(--track-line);
   --color-screen: var(--screen);
+  --color-screen-surface: var(--screen-surface);
+  --color-screen-border: var(--screen-border);
   --color-screen-text: var(--screen-text);
+  --color-screen-muted: var(--screen-muted);
   --radius-field: 12px;
   --radius-card: 24px;
   --radius-panel: 32px;

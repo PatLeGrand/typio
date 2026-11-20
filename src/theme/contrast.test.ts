@@ -69,6 +69,13 @@ const pairs: ReadonlyArray<readonly [string, string]> = [
   ["track-line", "track-shade"],
   ["track-line", "accent"],
   ["screen-text", "screen"],
+  ["screen-text", "screen-surface"],
+  ["screen-muted", "screen"],
+  ["screen-muted", "screen-surface"],
+  ["key-yellow", "screen"],
+  ["key-yellow", "screen-surface"],
+  ["key-mint", "screen"],
+  ["key-mint", "screen-surface"],
   // Initiale blanche des avatars générés (H-39).
   ...Array.from({ length: 8 }, (_, i) => ["avatar-foreground", `avatar-${i + 1}`] as const),
 ];

@@ -29,7 +29,7 @@ export default async function GuestPage({ params }: PageProps<"/[lang]/guest">) 
       dictionary={dictionary}
       panel={
         <PromisePanel labels={promise}>
-          <MascotIllustration labels={illustration} />
+          <MascotIllustration labels={illustration} tone="stadium" />
         </PromisePanel>
       }
     >

@@ -51,8 +51,8 @@ export function TextField({
           type={type}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedByIds}
-          className={`h-14 w-full rounded-field border bg-surface text-[15px] text-foreground placeholder:text-muted disabled:cursor-not-allowed disabled:text-muted ${
-            error ? "border-danger" : "border-border"
+          className={`h-14 w-full rounded-field border bg-surface text-[15px] text-foreground placeholder:text-muted transition-[border-color] duration-150 motion-reduce:transition-none disabled:cursor-not-allowed disabled:text-muted ${
+            error ? "border-danger" : "border-border not-disabled:hover:border-muted-strong/60 focus:border-accent-text"
           } ${icon ? "pl-field-icon" : "pl-field"} ${endSlot ? "pr-14" : "pr-field"}`}
           {...props}
         />

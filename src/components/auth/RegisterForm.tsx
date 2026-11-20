@@ -87,7 +87,7 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
         />
       </div>
       <div className="flex flex-col gap-2">
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           <PasswordField
             id={FIELD_IDS.password}
             name={AUTH_FIELDS.password}
@@ -139,7 +139,7 @@ export function RegisterForm({ locale, labels, common }: RegisterFormProps) {
                 href={privacyHref}
                 target="_blank"
                 rel="noopener"
-                className="font-semibold text-accent-text underline-offset-2 hover:underline"
+                className="font-semibold text-accent-text underline decoration-accent-text/40 underline-offset-4 hover:decoration-accent-text"
               >
                 {labels.privacyLink}
                 <span className="sr-only"> {labels.newTab}</span>
