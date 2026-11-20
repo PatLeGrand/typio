@@ -111,6 +111,7 @@
         },
         "azerty": "Clavier AZERTY français",
         "qwerty": "Clavier QWERTY américain",
+        "cmf": "Clavier canadien multilingue",
         "legend": "Fautes par rapport à la touche la plus manquée",
         "levels": [
           "Aucune faute",
@@ -644,7 +645,8 @@
       "chartTitle": "MPM des 50 dernières courses non abandonnées",
       "chartSummary": "{count} courses, de {first} à {last} MPM, en ordre chronologique.",
       "wpm": "MPM",
-      "noChart": "Aucune course non abandonnée à afficher."
+      "noChart": "Aucune course non abandonnée à afficher.",
+      "viewAll": "Ouvrir mes statistiques complètes"
     },
     "security": {
       "unlink": "Délier",
@@ -715,8 +717,163 @@
       "empty": "Aucune course enregistrée. Lance une course pour commencer !",
       "error": "Les statistiques sont indisponibles. Réessaie plus tard."
     },
+    "viewStats": "Mes statistiques",
     "viewFullProfile": "Voir le profil complet",
     "close": "Fermer"
+  },
+  "stats": {
+    "metaTitle": "Mes statistiques",
+    "metaDescription": "Ta progression au clavier : record de vitesse, courbe de MPM, touches ratées cumulées et dernières courses.",
+    "title": "Mes statistiques",
+    "subtitle": "Télémétrie personnelle sur la piste.",
+    "playCta": "Lancer une course",
+    "profileLink": "Profil",
+    "historyLink": "Tout l’historique",
+    "noValue": "—",
+    "periodNav": "Filtrer par période",
+    "periods": {
+      "all": "Tout",
+      "30d": "30 jours",
+      "7d": "7 jours"
+    },
+    "cappedNote": "La heatmap, les séries et les répartitions portent sur tes {count} courses les plus récentes de cette période.",
+    "guest": {
+      "title": "Les invités courent sans chrono enregistré",
+      "description": "En mode invité, tes résultats et tes touches ratées disparaissent à la fin de la session. Crée un compte gratuit pour suivre ta vitesse, tes records et ta progression dans le temps.",
+      "register": "Créer mon compte",
+      "play": "Retourner jouer"
+    },
+    "empty": {
+      "allTitle": "Ta piste est encore vierge",
+      "allDescription": "Termine ta première course pour débloquer ton tableau de chronométrage, ta courbe de progression et ta carte de chaleur des touches.",
+      "periodTitle": "Aucune course sur cette période",
+      "periodDescription": "Tu n’as pas encore couru sur cette fenêtre. Affiche tout ton historique ou relance une partie.",
+      "showAll": "Voir tout l’historique"
+    },
+    "board": {
+      "ariaLabel": "Tableau de chronométrage personnel",
+      "recordLabel": "Record personnel",
+      "recordUnit": "MPM net",
+      "recordGross": "{wpm} MPM brut",
+      "recordAccuracy": "{accuracy} de précision",
+      "viewRecord": "Voir la course record",
+      "averageWpm": "MPM moyen net",
+      "averageGross": "{wpm} brut",
+      "averageAccuracy": "Précision moyenne",
+      "races": "Courses",
+      "racesSplit": "{finished} arrivées · {abandoned} abandons",
+      "wins": "Victoires",
+      "podiums": "{count} podiums",
+      "winRate": "{rate} de victoires",
+      "completionTrack": "Taux d’arrivée",
+      "completionSummary": "{finished} courses terminées sur {total} ({rate})",
+      "trendLabel": "Tendance (5 dernières)",
+      "trendUp": "+{delta} MPM en hausse",
+      "trendDown": "{delta} MPM en baisse",
+      "trendFlat": "Rythme stable",
+      "trendNeedMore": "6 courses pour la tendance"
+    },
+    "progression": {
+      "title": "Progression du MPM",
+      "subtitle": "Les 50 dernières courses non abandonnées, en ordre chronologique.",
+      "noChart": "Aucune course non abandonnée sur cette période.",
+      "netWpm": "MPM net",
+      "grossWpm": "MPM brut",
+      "rollingAvg": "Moyenne mobile (5)",
+      "recordLine": "Record : {wpm} MPM",
+      "toggleGross": "Afficher le MPM brut",
+      "toggleRolling": "Afficher la moyenne mobile",
+      "chartAria": "Progression du MPM sur {count} courses non abandonnées, de {first} à {last} MPM, record à {best} MPM.",
+      "selectPoint": "Course du {date} : {wpm} MPM net, {accuracy} de précision",
+      "inspectHint": "Survole ou sélectionne un point pour inspecter une course.",
+      "selectedRace": "Course sélectionnée",
+      "openRace": "Voir cette course",
+      "tableSummary": "Afficher les données du graphique en tableau",
+      "tableCaption": "Historique des courses du graphique de progression",
+      "columns": {
+        "date": "Date",
+        "net": "MPM net",
+        "gross": "MPM brut",
+        "rolling": "Moy. 5",
+        "accuracy": "Précision"
+      }
+    },
+    "heatmap": {
+      "title": "Carte de chaleur cumulée",
+      "subtitle": "Toutes les touches ratées sur la période, regroupées sur ton clavier.",
+      "layoutBadge": "Clavier : {layout}",
+      "changeLayout": "Changer dans le profil",
+      "totalMissed": {
+        "one": "{count} faute cumulée",
+        "other": "{count} fautes cumulées"
+      },
+      "noErrors": "Aucune touche ratée sur cette période. Frappe impeccable !",
+      "topTitle": "Touches à travailler en priorité",
+      "share": "{percent} des fautes",
+      "practiceCta": "S’entraîner sur la piste"
+    },
+    "breakdowns": {
+      "title": "Analyse de terrain",
+      "subtitle": "Où tu es le plus rapide, et ce qui te fait gagner du temps.",
+      "byTextMode": "Type de texte",
+      "byLanguage": "Langue du texte",
+      "byFormat": "Format de course",
+      "byComplexity": "Complexité",
+      "fastest": "Ton meilleur terrain",
+      "racesCount": {
+        "one": "{count} course",
+        "other": "{count} courses"
+      },
+      "wpmValue": "{wpm} MPM",
+      "modes": {
+        "sentences": "Phrases",
+        "words": "Mots"
+      },
+      "languages": {
+        "fr": "Français",
+        "en": "Anglais"
+      },
+      "formats": {
+        "solo": "Solo",
+        "multiplayer": "Multijoueur"
+      },
+      "complexities": {
+        "easy": "Facile",
+        "medium": "Moyenne",
+        "hard": "Difficile"
+      }
+    },
+    "discipline": {
+      "title": "Régularité et endurance",
+      "errorCostTitle": "Coût des fautes",
+      "errorCostValue": "+{wpm} MPM récupérables",
+      "errorCostHint": "Écart moyen entre ton MPM brut ({gross}) et ton MPM net ({net}).",
+      "consistencyTitle": "Régularité",
+      "consistencyStdDev": "± {value} MPM d’écart-type",
+      "consistencyNeedMore": "Joue au moins 3 courses non abandonnées pour mesurer ta régularité.",
+      "consistencyLevels": {
+        "steady": "Très régulier",
+        "regular": "Régulier",
+        "variable": "Variable"
+      },
+      "winStreakTitle": "Série de victoires",
+      "winStreakBest": "Meilleure : {count}",
+      "finishStreakTitle": "Série d’arrivées",
+      "finishStreakBest": "Meilleure : {count}",
+      "timeTypedTitle": "Temps sur la piste",
+      "totalErrorsHint": "{count} erreurs au total",
+      "durationHoursMinutes": "{hours} h {minutes} min",
+      "durationMinutesSeconds": "{minutes} min {seconds} s",
+      "durationSeconds": "{seconds} s"
+    },
+    "recent": {
+      "title": "Dernières courses",
+      "subtitle": "Clique sur une course pour revoir son classement et ses graphiques.",
+      "caption": "Dernières courses enregistrées",
+      "modeColumn": "Mode",
+      "durationColumn": "Durée",
+      "viewAll": "Voir tout l’historique"
+    }
   },
   "room": {
     "unavailableTitle": "Salle indisponible",

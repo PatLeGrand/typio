@@ -111,6 +111,7 @@
         },
         "azerty": "French AZERTY keyboard",
         "qwerty": "US QWERTY keyboard",
+        "cmf": "Canadian multilingual keyboard",
         "legend": "Errors relative to the most missed key",
         "levels": [
           "No errors",
@@ -644,7 +645,8 @@
       "chartTitle": "WPM of the last 50 non-abandoned races",
       "chartSummary": "{count} races, from {first} to {last} WPM, in chronological order.",
       "wpm": "WPM",
-      "noChart": "No non-abandoned races to display."
+      "noChart": "No non-abandoned races to display.",
+      "viewAll": "Open full statistics"
     },
     "security": {
       "unlink": "Unlink",
@@ -715,8 +717,163 @@
       "empty": "No races recorded yet. Start a race to get going!",
       "error": "Statistics are unavailable. Try again later."
     },
+    "viewStats": "My statistics",
     "viewFullProfile": "View full profile",
     "close": "Close"
+  },
+  "stats": {
+    "metaTitle": "My statistics",
+    "metaDescription": "Your typing progress: speed record, WPM progression chart, cumulative missed keys heatmap and recent races.",
+    "title": "My statistics",
+    "subtitle": "Personal telemetry from the track.",
+    "playCta": "Start a race",
+    "profileLink": "Profile",
+    "historyLink": "Full history",
+    "noValue": "—",
+    "periodNav": "Filter by period",
+    "periods": {
+      "all": "All time",
+      "30d": "30 days",
+      "7d": "7 days"
+    },
+    "cappedNote": "Heatmap, streaks and breakdowns cover your {count} most recent races in this period.",
+    "guest": {
+      "title": "Guests race without saved telemetry",
+      "description": "As a guest, your results and missed keys disappear at the end of your session. Create a free account to track your speed, personal records and long-term progress.",
+      "register": "Create my account",
+      "play": "Back to play"
+    },
+    "empty": {
+      "allTitle": "Your track is still fresh",
+      "allDescription": "Finish your first race to unlock your timing board, WPM progression curve and cumulative key heatmap.",
+      "periodTitle": "No races in this period",
+      "periodDescription": "You haven’t raced in this window yet. Switch back to all time or jump into a new race.",
+      "showAll": "View all time"
+    },
+    "board": {
+      "ariaLabel": "Personal timing board",
+      "recordLabel": "Personal best",
+      "recordUnit": "net WPM",
+      "recordGross": "{wpm} gross WPM",
+      "recordAccuracy": "{accuracy} accuracy",
+      "viewRecord": "Open record race",
+      "averageWpm": "Average net WPM",
+      "averageGross": "{wpm} gross",
+      "averageAccuracy": "Average accuracy",
+      "races": "Races",
+      "racesSplit": "{finished} finished · {abandoned} abandoned",
+      "wins": "Wins",
+      "podiums": "{count} podiums",
+      "winRate": "{rate} win rate",
+      "completionTrack": "Completion rate",
+      "completionSummary": "{finished} finished races out of {total} ({rate})",
+      "trendLabel": "Trend (last 5)",
+      "trendUp": "+{delta} WPM climbing",
+      "trendDown": "{delta} WPM dipping",
+      "trendFlat": "Steady pace",
+      "trendNeedMore": "6 races needed for trend"
+    },
+    "progression": {
+      "title": "WPM progression",
+      "subtitle": "Last 50 non-abandoned races in chronological order.",
+      "noChart": "No non-abandoned races in this period.",
+      "netWpm": "Net WPM",
+      "grossWpm": "Gross WPM",
+      "rollingAvg": "5-race average",
+      "recordLine": "Record: {wpm} WPM",
+      "toggleGross": "Show gross WPM",
+      "toggleRolling": "Show rolling average",
+      "chartAria": "WPM progression across {count} non-abandoned races, from {first} to {last} WPM, peak at {best} WPM.",
+      "selectPoint": "Race on {date}: {wpm} net WPM, {accuracy} accuracy",
+      "inspectHint": "Hover or select a point to inspect a race.",
+      "selectedRace": "Selected race",
+      "openRace": "View this race",
+      "tableSummary": "Show chart data as a table",
+      "tableCaption": "Race history for the progression chart",
+      "columns": {
+        "date": "Date",
+        "net": "Net WPM",
+        "gross": "Gross WPM",
+        "rolling": "5-race avg",
+        "accuracy": "Accuracy"
+      }
+    },
+    "heatmap": {
+      "title": "Cumulative missed keys",
+      "subtitle": "Every missed key across the period, mapped onto your keyboard.",
+      "layoutBadge": "Layout: {layout}",
+      "changeLayout": "Change in profile",
+      "totalMissed": {
+        "one": "{count} missed key",
+        "other": "{count} missed keys"
+      },
+      "noErrors": "No missed keys in this period. Clean typing!",
+      "topTitle": "Top keys to practice",
+      "share": "{percent} of misses",
+      "practiceCta": "Practice on the track"
+    },
+    "breakdowns": {
+      "title": "Track breakdown",
+      "subtitle": "Where you type fastest, and where you can gain speed.",
+      "byTextMode": "Text mode",
+      "byLanguage": "Text language",
+      "byFormat": "Race format",
+      "byComplexity": "Complexity",
+      "fastest": "Your fastest track",
+      "racesCount": {
+        "one": "{count} race",
+        "other": "{count} races"
+      },
+      "wpmValue": "{wpm} WPM",
+      "modes": {
+        "sentences": "Sentences",
+        "words": "Words"
+      },
+      "languages": {
+        "fr": "French",
+        "en": "English"
+      },
+      "formats": {
+        "solo": "Solo",
+        "multiplayer": "Multiplayer"
+      },
+      "complexities": {
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
+      }
+    },
+    "discipline": {
+      "title": "Consistency and endurance",
+      "errorCostTitle": "Error cost",
+      "errorCostValue": "+{wpm} recoverable WPM",
+      "errorCostHint": "Average gap between your gross WPM ({gross}) and net WPM ({net}).",
+      "consistencyTitle": "Consistency",
+      "consistencyStdDev": "± {value} WPM standard deviation",
+      "consistencyNeedMore": "Complete at least 3 non-abandoned races to measure consistency.",
+      "consistencyLevels": {
+        "steady": "Rock steady",
+        "regular": "Consistent",
+        "variable": "Variable"
+      },
+      "winStreakTitle": "Win streak",
+      "winStreakBest": "Best: {count}",
+      "finishStreakTitle": "Finish streak",
+      "finishStreakBest": "Best: {count}",
+      "timeTypedTitle": "Time on track",
+      "totalErrorsHint": "{count} total errors",
+      "durationHoursMinutes": "{hours}h {minutes}m",
+      "durationMinutesSeconds": "{minutes}m {seconds}s",
+      "durationSeconds": "{seconds}s"
+    },
+    "recent": {
+      "title": "Recent races",
+      "subtitle": "Open any race to revisit its standings and charts.",
+      "caption": "Recent recorded races",
+      "modeColumn": "Mode",
+      "durationColumn": "Duration",
+      "viewAll": "View full history"
+    }
   },
   "room": {
     "unavailableTitle": "Room unavailable",

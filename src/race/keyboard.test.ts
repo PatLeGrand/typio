@@ -22,4 +22,12 @@ describe("placeMissedKeys", () => {
     expect(placed.rows.flat().find((key) => key.key === "1")?.count).toBe(4);
     expect(placed.mostMissed[0].key).toBe("1");
   });
+  it("prend en charge la disposition canadienne multilingue (cmf)", () => {
+    const placed = placeMissedKeys({ é: 3, É: 1, ç: 2, à: 1 }, "fr", "cmf");
+    expect(placed.layout).toBe("cmf");
+    expect(placed.rows.flat().find((key) => key.key === "é")?.count).toBe(4);
+    expect(placed.rows.flat().find((key) => key.key === "ç")?.count).toBe(2);
+    expect(placed.rows.flat().find((key) => key.key === "à")?.count).toBe(1);
+    expect(placed.other).toEqual([]);
+  });
 });

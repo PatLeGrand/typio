@@ -13,6 +13,7 @@ export const KNOWN_ROUTES = [
   "play",
   "privacy",
   "profile",
+  "stats",
   "history",
   "history/[raceId]",
   "race",
