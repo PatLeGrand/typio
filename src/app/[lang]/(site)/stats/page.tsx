@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { UserRound } from "lucide-react";
 import { getCurrentUser } from "@/auth/currentUser";
@@ -16,7 +15,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { prefixWithLocale } from "@/i18n/paths";
 import { requireLocale } from "@/i18n/requireLocale";
 import { createDrizzlePersonalStatsRepository } from "@/race/drizzlePersonalStatsRepository";
-import { MAX_DETAILED_RACES, parseStatsPeriod, STATS_PERIODS } from "@/race/personalStats";
+import { MAX_DETAILED_RACES } from "@/race/personalStats";
 
 export async function generateMetadata({
   params,
@@ -33,10 +32,8 @@ export async function generateMetadata({
 
 export default async function StatsPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const locale = requireLocale((await params).lang);
   const user = await getCurrentUser();
@@ -81,11 +78,8 @@ export default async function StatsPage({
     );
   }
 
-  const resolvedSearch = await searchParams;
-  const period = parseStatsPeriod(resolvedSearch.period);
-  const report = await createDrizzlePersonalStatsRepository(getDb()).getPersonalStats(user.id, period);
+  const report = await createDrizzlePersonalStatsRepository(getDb()).getPersonalStats(user.id);
 
-  const statsHref = prefixWithLocale("/stats", locale);
   const integer = new Intl.NumberFormat(locale);
   const chartPoints = report.wpmHistory.map((point) => ({
     id: point.id,
@@ -135,41 +129,14 @@ export default async function StatsPage({
           </div>
         </div>
 
-        {/* Sélecteur de période SSR validé par Zod */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <nav
-            aria-label={stats.periodNav}
-            className="inline-flex flex-wrap items-center gap-1 rounded-field border border-border bg-surface p-1"
-          >
-            {STATS_PERIODS.map((option) => {
-              const active = option === period;
-              const href = option === "all" ? statsHref : `${statsHref}?period=${option}`;
-              return (
-                <Link
-                  key={option}
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  className={`inline-flex min-h-10 items-center rounded-[8px] px-4 text-sm font-semibold transition-colors ${
-                    active
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted hover:bg-accent-soft hover:text-foreground"
-                  }`}
-                >
-                  {stats.periods[option]}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {report.isCapped && (
-            <p className="text-xs text-muted">
-              {stats.cappedNote.replace("{count}", integer.format(MAX_DETAILED_RACES))}
-            </p>
-          )}
-        </div>
+        {report.isCapped && (
+          <p className="text-xs text-muted">
+            {stats.cappedNote.replace("{count}", integer.format(MAX_DETAILED_RACES))}
+          </p>
+        )}
       </header>
 
-      {/* État vide (aucune course au total ou sur la période) */}
+      {/* État vide (aucune course enregistrée) */}
       {report.totals.raceCount === 0 ? (
         <section className="overflow-hidden rounded-panel border border-border bg-surface shadow-soft">
           <div aria-hidden="true" className="track-surface flex h-3 items-center justify-end px-4">
@@ -177,20 +144,15 @@ export default async function StatsPage({
           </div>
           <div className="flex flex-col items-start gap-4 p-6 sm:p-10">
             <h2 className="text-balance font-display text-3xl font-black uppercase tracking-tight text-foreground sm:text-5xl">
-              {period === "all" ? stats.empty.allTitle : stats.empty.periodTitle}
+              {stats.empty.allTitle}
             </h2>
             <p className="max-w-[58ch] text-base leading-relaxed text-muted">
-              {period === "all" ? stats.empty.allDescription : stats.empty.periodDescription}
+              {stats.empty.allDescription}
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <ButtonLink href={prefixWithLocale("/play", locale)} variant="start">
                 {stats.playCta}
               </ButtonLink>
-              {period !== "all" && (
-                <ButtonLink href={statsHref} variant="secondary">
-                  {stats.empty.showAll}
-                </ButtonLink>
-              )}
             </div>
           </div>
         </section>

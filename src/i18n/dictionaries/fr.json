@@ -730,13 +730,7 @@
     "profileLink": "Profil",
     "historyLink": "Tout l’historique",
     "noValue": "—",
-    "periodNav": "Filtrer par période",
-    "periods": {
-      "all": "Tout",
-      "30d": "30 jours",
-      "7d": "7 jours"
-    },
-    "cappedNote": "La heatmap, les séries et les répartitions portent sur tes {count} courses les plus récentes de cette période.",
+    "cappedNote": "La heatmap, les séries et les répartitions portent sur tes {count} courses les plus récentes.",
     "guest": {
       "title": "Les invités courent sans chrono enregistré",
       "description": "En mode invité, tes résultats et tes touches ratées disparaissent à la fin de la session. Crée un compte gratuit pour suivre ta vitesse, tes records et ta progression dans le temps.",
@@ -745,10 +739,7 @@
     },
     "empty": {
       "allTitle": "Ta piste est encore vierge",
-      "allDescription": "Termine ta première course pour débloquer ton tableau de chronométrage, ta courbe de progression et ta carte de chaleur des touches.",
-      "periodTitle": "Aucune course sur cette période",
-      "periodDescription": "Tu n’as pas encore couru sur cette fenêtre. Affiche tout ton historique ou relance une partie.",
-      "showAll": "Voir tout l’historique"
+      "allDescription": "Termine ta première course pour débloquer ton tableau de chronométrage, ta courbe de progression et ta carte de chaleur des touches."
     },
     "board": {
       "ariaLabel": "Tableau de chronométrage personnel",
@@ -776,7 +767,7 @@
     "progression": {
       "title": "Progression du MPM",
       "subtitle": "Les 50 dernières courses non abandonnées, en ordre chronologique.",
-      "noChart": "Aucune course non abandonnée sur cette période.",
+      "noChart": "Aucune course non abandonnée à afficher.",
       "netWpm": "MPM net",
       "grossWpm": "MPM brut",
       "rollingAvg": "Moyenne mobile (5)",
@@ -800,14 +791,14 @@
     },
     "heatmap": {
       "title": "Carte de chaleur cumulée",
-      "subtitle": "Toutes les touches ratées sur la période, regroupées sur ton clavier.",
+      "subtitle": "Toutes tes touches ratées cumulées, regroupées sur ton clavier.",
       "layoutBadge": "Clavier : {layout}",
       "changeLayout": "Changer dans le profil",
       "totalMissed": {
         "one": "{count} faute cumulée",
         "other": "{count} fautes cumulées"
       },
-      "noErrors": "Aucune touche ratée sur cette période. Frappe impeccable !",
+      "noErrors": "Aucune touche ratée pour le moment. Frappe impeccable !",
       "topTitle": "Touches à travailler en priorité",
       "share": "{percent} des fautes",
       "practiceCta": "S’entraîner sur la piste"

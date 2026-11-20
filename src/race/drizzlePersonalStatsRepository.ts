@@ -1,29 +1,23 @@
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { races, raceResults, users } from "@/db/schema";
 import { isKeyboardLayout, type KeyboardLayout } from "@/profile/profileSettings";
 import {
   aggregatePersonalStats,
   MAX_DETAILED_RACES,
-  statsPeriodStart,
   type PersonalRaceRow,
   type PersonalStatsReport,
   type PersonalStatsTotals,
-  type StatsPeriod,
 } from "./personalStats";
 
 export type PersonalStatsPayload = PersonalStatsReport & {
-  period: StatsPeriod;
   keyboardLayout: KeyboardLayout;
 };
 
 export function createDrizzlePersonalStatsRepository(db: PostgresJsDatabase) {
   return {
-    async getPersonalStats(userId: string, period: StatsPeriod): Promise<PersonalStatsPayload> {
-      const since = statsPeriodStart(period);
-      const condition = since
-        ? and(eq(raceResults.userId, userId), gte(raceResults.createdAt, since))
-        : eq(raceResults.userId, userId);
+    async getPersonalStats(userId: string): Promise<PersonalStatsPayload> {
+      const condition = eq(raceResults.userId, userId);
 
       const [totalsRows, detailRows, userRows] = await Promise.all([
         db
@@ -105,7 +99,6 @@ export function createDrizzlePersonalStatsRepository(db: PostgresJsDatabase) {
 
       return {
         ...aggregatePersonalStats(rows, sqlTotals),
-        period,
         keyboardLayout,
       };
     },

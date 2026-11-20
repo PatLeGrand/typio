@@ -1,27 +1,9 @@
-import { z } from "zod";
 import type { RoomConfig, TextComplexity, TextLanguage, TextMode } from "@/realtime/protocol";
-
-export const STATS_PERIODS = ["all", "30d", "7d"] as const;
-export type StatsPeriod = (typeof STATS_PERIODS)[number];
 
 /** Plafond de courses détaillées chargées pour la passe serveur (heatmap, séries, répartitions). */
 export const MAX_DETAILED_RACES = 500;
 export const WPM_HISTORY_LIMIT = 50;
 export const RECENT_RACES_LIMIT = 8;
-
-const statsPeriodSchema = z.enum(STATS_PERIODS).catch("all");
-
-/** Valide le filtre `?period=` (TECH-07) ; toute valeur inconnue revient à « all ». */
-export function parseStatsPeriod(value: unknown): StatsPeriod {
-  return statsPeriodSchema.parse(typeof value === "string" ? value : undefined);
-}
-
-/** Borne de début de période, ou `null` pour tout l'historique. */
-export function statsPeriodStart(period: StatsPeriod, now: Date = new Date()): Date | null {
-  if (period === "all") return null;
-  const days = period === "7d" ? 7 : 30;
-  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-}
 
 export type RaceStatus = "finished" | "unfinished" | "abandoned";
 

@@ -730,13 +730,7 @@
     "profileLink": "Profile",
     "historyLink": "Full history",
     "noValue": "—",
-    "periodNav": "Filter by period",
-    "periods": {
-      "all": "All time",
-      "30d": "30 days",
-      "7d": "7 days"
-    },
-    "cappedNote": "Heatmap, streaks and breakdowns cover your {count} most recent races in this period.",
+    "cappedNote": "Heatmap, streaks and breakdowns cover your {count} most recent races.",
     "guest": {
       "title": "Guests race without saved telemetry",
       "description": "As a guest, your results and missed keys disappear at the end of your session. Create a free account to track your speed, personal records and long-term progress.",
@@ -745,10 +739,7 @@
     },
     "empty": {
       "allTitle": "Your track is still fresh",
-      "allDescription": "Finish your first race to unlock your timing board, WPM progression curve and cumulative key heatmap.",
-      "periodTitle": "No races in this period",
-      "periodDescription": "You haven’t raced in this window yet. Switch back to all time or jump into a new race.",
-      "showAll": "View all time"
+      "allDescription": "Finish your first race to unlock your timing board, WPM progression curve and cumulative key heatmap."
     },
     "board": {
       "ariaLabel": "Personal timing board",
@@ -776,7 +767,7 @@
     "progression": {
       "title": "WPM progression",
       "subtitle": "Last 50 non-abandoned races in chronological order.",
-      "noChart": "No non-abandoned races in this period.",
+      "noChart": "No non-abandoned races to display.",
       "netWpm": "Net WPM",
       "grossWpm": "Gross WPM",
       "rollingAvg": "5-race average",
@@ -800,14 +791,14 @@
     },
     "heatmap": {
       "title": "Cumulative missed keys",
-      "subtitle": "Every missed key across the period, mapped onto your keyboard.",
+      "subtitle": "Every missed key across your races, mapped onto your keyboard.",
       "layoutBadge": "Layout: {layout}",
       "changeLayout": "Change in profile",
       "totalMissed": {
         "one": "{count} missed key",
         "other": "{count} missed keys"
       },
-      "noErrors": "No missed keys in this period. Clean typing!",
+      "noErrors": "No missed keys so far. Clean typing!",
       "topTitle": "Top keys to practice",
       "share": "{percent} of misses",
       "practiceCta": "Practice on the track"

@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   aggregatePersonalStats,
-  parseStatsPeriod,
   RECENT_RACES_LIMIT,
-  statsPeriodStart,
   WPM_HISTORY_LIMIT,
   type PersonalRaceRow,
 } from "./personalStats";
@@ -30,25 +28,6 @@ function makeRow(overrides: Partial<PersonalRaceRow> & { index?: number } = {}):
     ...overrides,
   };
 }
-
-describe("parseStatsPeriod", () => {
-  it("accepte les périodes connues et retombe sur all pour toute entrée invalide", () => {
-    expect(parseStatsPeriod("all")).toBe("all");
-    expect(parseStatsPeriod("30d")).toBe("30d");
-    expect(parseStatsPeriod("7d")).toBe("7d");
-    expect(parseStatsPeriod(undefined)).toBe("all");
-    expect(parseStatsPeriod("365d")).toBe("all");
-    expect(parseStatsPeriod(["7d"])).toBe("all");
-    expect(parseStatsPeriod(42)).toBe("all");
-  });
-
-  it("calcule la date de début pour 7d et 30d et renvoie null pour all", () => {
-    const now = new Date("2026-11-20T12:00:00.000Z");
-    expect(statsPeriodStart("all", now)).toBeNull();
-    expect(statsPeriodStart("7d", now)?.toISOString()).toBe("2026-11-13T12:00:00.000Z");
-    expect(statsPeriodStart("30d", now)?.toISOString()).toBe("2026-10-21T12:00:00.000Z");
-  });
-});
 
 describe("aggregatePersonalStats", () => {
   it("respecte H-26 : les abandons comptent dans le nombre de courses mais sont exclus du meilleur MPM, des moyennes et du graphique", () => {
