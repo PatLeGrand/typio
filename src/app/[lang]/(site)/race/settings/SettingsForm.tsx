@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
 import { RaceRoomSettings } from "@/components/race/RaceRoomSettings";
@@ -47,6 +47,13 @@ export function SettingsForm({
   const [includedError, setIncludedError] = useState<string | null>(null);
   const [excludedError, setExcludedError] = useState<string | null>(null);
   const [errorTrigger, setErrorTrigger] = useState(0);
+
+  // Marge de défilement basse sous `lg` pour qu'aucun contrôle focalisé ne soit masqué par la barre collée (WCAG 2.4.11).
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-race-settings-dock", "");
+    return () => root.removeAttribute("data-race-settings-dock");
+  }, []);
 
   const handleChange = (patch: Partial<RaceSettings>) => {
     setSettings((current) => ({ ...current, ...patch }));
@@ -118,9 +125,9 @@ export function SettingsForm({
         </Button>
       </div>
 
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10 lg:gap-y-5">
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_1fr_auto] lg:items-start lg:gap-x-10 lg:gap-y-5">
         {/* Colonne de gauche : réglages essentiels + « Plus d'options » */}
-        <div className="flex min-w-0 flex-col gap-6 lg:col-start-1 lg:row-start-1 lg:row-span-2">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1 lg:row-span-2">
           <RaceSettingsFields
             value={settings}
             onChange={handleChange}
@@ -131,16 +138,9 @@ export function SettingsForm({
             errorTrigger={errorTrigger}
             showRoomSettings={false}
           />
-
-          <p className="text-xs leading-relaxed text-muted">
-            {dict.footer}
-          </p>
         </div>
 
-        {/* Panneau « stade de nuit » : résumé en une phrase + lancement (collé en bas sous lg) */}
-        <RaceSettingsSummary settings={settings} dict={dict} lang={lang} onLaunch={handleLaunch} />
-
-        {/* Bloc « Avec des amis » : la salle (visibilité, capacité) y est regroupée pour les membres */}
+        {/* Bloc « Avec des amis » : juste après « Plus d'options » sous lg, colonne de droite sur lg+ */}
         <section
           aria-labelledby={inviteHeadingId}
           className="flex min-w-0 flex-col gap-4 rounded-card border border-border bg-surface p-5 shadow-soft sm:p-6 lg:col-start-2 lg:row-start-2"
@@ -172,6 +172,13 @@ export function SettingsForm({
             {inviteAction}
           </div>
         </section>
+
+        <p className="text-xs leading-relaxed text-muted lg:col-start-1 lg:row-start-3">
+          {dict.footer}
+        </p>
+
+        {/* Panneau « stade de nuit » : résumé en une phrase + lancement (barre collée en bas sous lg) */}
+        <RaceSettingsSummary settings={settings} dict={dict} lang={lang} onLaunch={handleLaunch} />
       </div>
     </main>
   );

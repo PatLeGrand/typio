@@ -14,7 +14,7 @@ type RaceSettingsSummaryProps = {
 
 /**
  * Résumé en une phrase et lancement dans l'esprit « stade de nuit » (`--screen*`).
- * Sous `lg`, la barre reste collée en bas de l'écran pour lancer sans parcourir toute la page.
+ * Sous `lg`, barre compacte (≤ 72 px) collée en bas de l'écran pour lancer sans parcourir la page.
  */
 export function RaceSettingsSummary({ settings, dict, lang, onLaunch }: RaceSettingsSummaryProps) {
   const headingId = useId();
@@ -57,29 +57,33 @@ export function RaceSettingsSummary({ settings, dict, lang, onLaunch }: RaceSett
       </svg>
 
       {/* Filet tartan sur la barre mobile collée en bas */}
-      <div aria-hidden="true" className="track-surface relative h-1.5 w-full lg:hidden">
+      <div aria-hidden="true" className="track-surface relative h-1 w-full lg:hidden">
         <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[repeating-linear-gradient(90deg,var(--track-line)_0_10px,transparent_10px_20px)] opacity-75" />
       </div>
 
-      <div className="relative z-10 flex flex-col gap-3 px-4 py-3 sm:px-8 sm:py-3.5 lg:gap-5 lg:px-7 lg:pb-8 lg:pt-7">
-        <div className="flex flex-col gap-2 lg:gap-3">
+      <div className="relative z-10 flex items-center gap-3 px-4 pb-2.5 pt-1.5 sm:px-8 lg:flex-col lg:items-stretch lg:gap-5 lg:px-7 lg:pb-8 lg:pt-7">
+        <div className="sr-only sm:not-sr-only sm:min-w-0 sm:flex-1 lg:flex lg:flex-none lg:flex-col lg:gap-3">
           <h2
             id={headingId}
             className="sr-only text-balance font-display text-3xl font-black leading-[0.92] tracking-[-0.01em] text-screen-text lg:not-sr-only"
           >
             {dict.summary.title}
           </h2>
-          <p className="text-xs font-medium leading-relaxed text-screen-text sm:text-sm lg:rounded-2xl lg:border lg:border-screen-border lg:bg-screen-surface lg:px-4 lg:py-3.5">
+          <p className="truncate text-xs font-medium leading-relaxed text-screen-text sm:text-sm lg:overflow-visible lg:whitespace-normal lg:rounded-2xl lg:border lg:border-screen-border lg:bg-screen-surface lg:px-4 lg:py-3.5">
             {summaryParts.map((part, index) => (
               <Fragment key={index}>
                 {index > 0 ? <span aria-hidden="true" className="mx-1.5 text-key-yellow">·</span> : null}
-                <span className={index === 0 ? "font-semibold" : undefined}>{part}</span>
+                <span className={index === 0 ? "whitespace-nowrap font-semibold" : "whitespace-nowrap"}>{part}</span>
               </Fragment>
             ))}
           </p>
         </div>
 
-        <Button variant="start" fullWidth onClick={onLaunch}>
+        <Button
+          variant="start"
+          onClick={onLaunch}
+          className="w-full shrink-0 max-lg:min-h-11 max-lg:py-2 sm:w-auto lg:w-full"
+        >
           {dict.summary.start}
         </Button>
 

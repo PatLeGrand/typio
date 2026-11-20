@@ -205,7 +205,7 @@ export function RaceAdvancedTextSettings({
             aria-describedby={`${id("included-chars-help")}${includedError ? ` ${id("included-chars-error")}` : ""}`}
             onChange={(event) => onChange({ includedCharacters: event.target.value })}
             onBlur={onIncludedBlur}
-            className={`h-11 w-full scroll-mb-36 rounded-field border bg-surface px-field text-[15px] text-foreground read-only:text-muted-strong lg:scroll-mb-0 ${
+            className={`h-11 w-full rounded-field border bg-surface px-field text-[15px] text-foreground read-only:text-muted-strong ${
               includedError ? "border-danger" : "border-border"
             }`}
           />
@@ -241,7 +241,7 @@ export function RaceAdvancedTextSettings({
           onChange={(event) => onChange({ excludedCharacters: event.target.value })}
           onBlur={onExcludedBlur}
           placeholder={readOnly ? undefined : dict.excludedChars.placeholder}
-          className={`h-11 w-full scroll-mb-36 rounded-field border bg-surface px-field text-[15px] text-foreground read-only:text-muted-strong lg:scroll-mb-0 ${
+          className={`h-11 w-full rounded-field border bg-surface px-field text-[15px] text-foreground read-only:text-muted-strong ${
             excludedError ? "border-danger" : "border-border"
           }`}
         />

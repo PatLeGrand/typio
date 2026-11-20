@@ -132,12 +132,20 @@ export function RaceSettingsFields({
             type="button"
             aria-expanded={advancedOpen}
             aria-controls={id("advanced-panel")}
-            aria-describedby={id("advanced-hint")}
+            aria-describedby={advancedOpen ? undefined : id("advanced-hint")}
             onClick={() => setAdvancedOpen((open) => !open)}
-            className="flex min-h-12 w-full items-center justify-between gap-3 rounded-field border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-accent-soft/50"
+            className="group flex min-h-11 w-full items-center justify-between gap-3 rounded-field py-1 text-left transition-colors"
           >
-            <span className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
-              <span className="text-sm font-bold text-foreground">{dict.advanced.title}</span>
+            <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              <span
+                className={
+                  headingLevel === 3
+                    ? "text-base font-bold text-foreground transition-colors group-hover:text-accent-text"
+                    : "font-display text-[1.65rem] font-black leading-none tracking-[-0.01em] text-foreground transition-colors group-hover:text-accent-text"
+                }
+              >
+                {dict.advanced.title}
+              </span>
               {modifiedLabel ? (
                 <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold tabular-nums text-accent-text">
                   {" "}{modifiedLabel}
@@ -146,11 +154,15 @@ export function RaceSettingsFields({
             </span>
             <ChevronDown
               aria-hidden="true"
-              className={`size-4 shrink-0 text-muted transition-transform duration-150 motion-reduce:transition-none ${advancedOpen ? "rotate-180" : ""}`}
+              className={`size-5 shrink-0 text-muted transition-transform duration-150 group-hover:text-accent-text motion-reduce:transition-none ${advancedOpen ? "rotate-180" : ""}`}
             />
           </button>
         </SectionHeading>
-        <p id={id("advanced-hint")} className="mt-1.5 text-xs text-muted">{dict.advanced.hint}</p>
+        {advancedOpen ? null : (
+          <p id={id("advanced-hint")} className="mt-1 text-sm text-muted">
+            {dict.advanced.hint}
+          </p>
+        )}
 
         {advancedOpen ? (
           <div

@@ -36,28 +36,30 @@ export function RaceRulesSettings({ value, onChange, readOnly, dict, lang, idPre
       <fieldset>
         <legend id={id("time-limit-label")} className="mb-2 text-sm font-semibold text-foreground">{dict.timeLimit.label}</legend>
         <div
-          className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
+          className="flex flex-wrap gap-2"
           role="radiogroup"
           aria-labelledby={id("time-limit-label")}
           aria-describedby={id("time-limit-help")}
         >
           <RadioCard
+            fullWidth={false}
             disabled={readOnly}
             checked={value.timeLimitSeconds === null}
             onChange={() => onChange({ timeLimitSeconds: null })}
             label={dict.timeLimit.none}
-            className="justify-center text-center"
+            className="flex-1 justify-center px-3.5 text-center whitespace-nowrap sm:flex-none"
           />
           {TIME_LIMITS_SECONDS.map((seconds) => (
             <RadioCard
               key={seconds}
+              fullWidth={false}
               disabled={readOnly}
               checked={value.timeLimitSeconds === seconds}
               onChange={() => onChange({ timeLimitSeconds: seconds })}
               label={seconds < 60
                 ? dict.timeLimit.seconds.replace("{seconds}", numberFormat.format(seconds))
                 : dict.timeLimit.minutes.replace("{minutes}", numberFormat.format(seconds / 60))}
-              className="justify-center text-center"
+              className="flex-1 justify-center px-3.5 text-center whitespace-nowrap sm:flex-none"
             />
           ))}
         </div>
