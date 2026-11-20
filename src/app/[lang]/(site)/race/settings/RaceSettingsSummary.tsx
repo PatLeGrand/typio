@@ -69,13 +69,25 @@ export function RaceSettingsSummary({ settings, dict, lang, onLaunch }: RaceSett
           >
             {dict.summary.title}
           </h2>
-          <p className="text-xs font-medium leading-relaxed text-screen-text max-lg:truncate sm:text-sm lg:flex lg:flex-wrap lg:items-baseline lg:gap-y-0.5 lg:rounded-2xl lg:border lg:border-screen-border lg:bg-screen-surface lg:px-4 lg:py-3.5">
-            {summaryParts.map((part, index) => (
-              <span key={index} className="inline whitespace-nowrap lg:inline-flex lg:items-baseline">
-                {index > 0 ? <span aria-hidden="true" className="mx-1.5 text-key-yellow">·</span> : null}
-                <span className={index === 0 ? "font-semibold" : undefined}>{part}</span>
+          <p className="text-xs font-medium leading-relaxed text-screen-text max-lg:truncate sm:text-sm lg:rounded-2xl lg:border lg:border-screen-border lg:bg-screen-surface lg:px-4 lg:py-3.5">
+            {/* Sur grand écran, chaque segment porte son « · » devant lui ; la rangée est décalée de
+                la largeur d'un séparateur dans un conteneur rogné, si bien que le « · » d'un segment
+                qui ouvre une ligne sort du cadre au lieu de commencer la ligne. */}
+            <span className="lg:block lg:overflow-hidden">
+              <span className="lg:-ml-4 lg:flex lg:flex-wrap lg:items-baseline lg:gap-y-0.5">
+                {summaryParts.map((part, index) => (
+                  <span key={index} className="inline whitespace-nowrap lg:inline-flex lg:items-baseline">
+                    <span
+                      aria-hidden="true"
+                      className={`text-key-yellow lg:inline-block lg:w-4 lg:text-center ${index === 0 ? "hidden" : "mx-1.5 lg:mx-0"}`}
+                    >
+                      ·
+                    </span>
+                    <span className={index === 0 ? "font-semibold" : undefined}>{part}</span>
+                  </span>
+                ))}
               </span>
-            ))}
+            </span>
           </p>
         </div>
 
