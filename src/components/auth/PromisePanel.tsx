@@ -16,7 +16,7 @@ export function PromisePanel({ labels, children }: PromisePanelProps) {
     <div className="flex w-full flex-col justify-between gap-8 text-left">
       <div className="flex flex-col items-start gap-4">
         <p className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-screen-muted">
-          <span aria-hidden="true" className="h-0.5 w-7 bg-track" />
+          <span aria-hidden="true" className="h-0.5 w-7 bg-track-accent" />
           {labels.badge}
         </p>
         <h2 className="text-balance font-display text-[clamp(2.75rem,3.8vw,4.25rem)] font-black leading-[0.88] tracking-[-0.01em] text-screen-text">

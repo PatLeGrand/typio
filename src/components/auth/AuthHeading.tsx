@@ -11,7 +11,7 @@ export function AuthHeading({ kicker, title, intro }: AuthHeadingProps) {
   return (
     <div className="flex flex-col items-start gap-3">
       <p className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-        <span aria-hidden="true" className="h-0.5 w-6 bg-track" />
+        <span aria-hidden="true" className="h-0.5 w-6 bg-track-accent" />
         {kicker}
       </p>
       <h1 className="text-balance font-display text-[clamp(2.35rem,9vw,3.35rem)] font-black leading-[0.92] tracking-[-0.01em] text-foreground">

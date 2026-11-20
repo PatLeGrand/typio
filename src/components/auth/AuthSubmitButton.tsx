@@ -32,13 +32,13 @@ export function AuthSubmitButton({ label, enterKeyLabel, pending }: AuthSubmitBu
       }}
       className="relative aria-disabled:cursor-not-allowed aria-disabled:bg-accent-panel aria-disabled:text-muted-strong aria-disabled:hover:opacity-100"
     >
-      <span className="px-10 sm:px-14">{label}</span>
+      <span className="sm:px-14">{label}</span>
       <span
         aria-hidden="true"
-        className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-lg border border-accent-foreground/25 bg-accent-foreground/10 px-2 py-1.5 text-[11px] font-semibold leading-none"
+        className="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-accent-foreground/25 bg-accent-foreground/10 px-2 py-1.5 text-[11px] font-semibold leading-none sm:inline-flex"
       >
         <CornerDownLeft className="size-3.5" />
-        <span className="hidden sm:inline">{enterKeyLabel}</span>
+        <span>{enterKeyLabel}</span>
       </span>
     </Button>
   );

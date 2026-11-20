@@ -24,9 +24,14 @@ type AuthLayoutProps = {
 export function AuthLayout({ locale, dictionary, panel, children }: AuthLayoutProps) {
   return (
     <div
-      className={`${displayFont.variable} relative mx-auto grid min-h-dvh w-full max-w-[1440px] overflow-x-clip px-4 pb-4 pt-5 sm:p-6 lg:grid-cols-2 lg:gap-6`}
+      className={`${displayFont.variable} relative mx-auto grid min-h-dvh w-full max-w-[1440px] overflow-x-clip px-4 pb-4 pt-6 sm:px-6 sm:pb-6 sm:pt-7 lg:grid-cols-2 lg:gap-6 lg:p-6`}
     >
-      <div aria-hidden="true" className="track-surface pointer-events-none absolute inset-x-0 top-0 h-1 lg:hidden" />
+      <div
+        aria-hidden="true"
+        className="track-surface pointer-events-none absolute inset-x-0 top-0 h-3 border-b border-track-accent lg:hidden"
+      >
+        <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[repeating-linear-gradient(90deg,var(--track-line)_0_12px,transparent_12px_24px)] opacity-85" />
+      </div>
       <div className="mx-auto flex w-full min-w-0 max-w-[660px] flex-col">
         <header className="py-2 lg:px-8 lg:pt-6">
           <nav aria-label={dictionary.navigation.main}>

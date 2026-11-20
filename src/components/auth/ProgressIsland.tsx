@@ -35,23 +35,26 @@ export function ProgressIsland({ labels }: ProgressIslandProps) {
           <p className="text-sm leading-snug text-screen-muted">{labels.progressText}</p>
         </div>
 
-        <div aria-hidden="true" className="flex w-full items-center gap-3 py-1">
-          {STEPS.map((step) => (
-            <div key={step} className={`flex items-center gap-3 ${step === 1 ? "" : "flex-1"}`}>
-              {step === 1 ? null : (
-                <span className="h-0.5 flex-1 bg-[repeating-linear-gradient(90deg,var(--track-line)_0_8px,transparent_8px_16px)] opacity-40" />
-              )}
+        <div
+          aria-hidden="true"
+          className="track-surface relative flex w-full items-center overflow-hidden rounded-xl border border-track-accent/60 px-4 py-3"
+        >
+          <span className="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[repeating-linear-gradient(90deg,var(--track-line)_0_10px,transparent_10px_20px)] opacity-80" />
+          <span className="track-checker pointer-events-none absolute inset-y-0 right-0 w-3 opacity-90" />
+          <div className="relative z-10 flex w-full items-center justify-between pr-3">
+            {STEPS.map((step) => (
               <span
+                key={step}
                 className={`inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums ${
                   step === 1
-                    ? "bg-key-yellow text-key-ink"
-                    : "border border-screen-border bg-screen text-screen-muted"
+                    ? "bg-key-yellow text-key-ink shadow-soft"
+                    : "border border-track-line/65 bg-screen text-screen-text"
                 }`}
               >
                 {step}
               </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 

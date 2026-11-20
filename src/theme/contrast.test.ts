@@ -32,6 +32,13 @@ function contrastRatio(a: string, b: string): number {
 }
 
 const MIN_RATIO = 4.5;
+const MIN_GRAPHICAL_RATIO = 3;
+
+// [élément graphique, fond] : repères et filets non textuels (WCAG 1.4.11 >= 3:1).
+const graphicalPairs: ReadonlyArray<readonly [string, string]> = [
+  ["track-accent", "background"],
+  ["track-accent", "screen"],
+];
 
 // [texte, fond] : toutes les paires réellement utilisées par les composants.
 const pairs: ReadonlyArray<readonly [string, string]> = [
@@ -93,6 +100,12 @@ describe("contraste WCAG des tokens", () => {
       expect(tokens[foreground], `--${foreground} manquant`).toBeDefined();
       expect(tokens[background], `--${background} manquant`).toBeDefined();
       expect(contrastRatio(tokens[foreground], tokens[background])).toBeGreaterThanOrEqual(MIN_RATIO);
+    });
+
+    it.each(graphicalPairs)("%s sur %s >= 3", (foreground, background) => {
+      expect(tokens[foreground], `--${foreground} manquant`).toBeDefined();
+      expect(tokens[background], `--${background} manquant`).toBeDefined();
+      expect(contrastRatio(tokens[foreground], tokens[background])).toBeGreaterThanOrEqual(MIN_GRAPHICAL_RATIO);
     });
   });
 

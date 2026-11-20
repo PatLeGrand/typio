@@ -60,6 +60,7 @@
   /* Piste d'athlétisme de l'accueil (DES-04) : tartan, lignes peintes, écran géant. */
   --track: #b4432c;
   --track-shade: #a23b26;
+  --track-accent: #c44d34;
   --track-line: #fffaf2;
   --screen: #1b1724;
   --screen-surface: #252031;
@@ -115,6 +116,7 @@
   /* Stade de nuit : tartan brique sombre, lignes craie atténuées pour ne pas éblouir. */
   --track: #5c271d;
   --track-shade: #4e2018;
+  --track-accent: #e06c53;
   --track-line: #f3e7dd;
   --screen: #0b0a10;
   --screen-surface: #151220;
@@ -150,6 +152,7 @@
   --color-success: var(--success);
   --color-track: var(--track);
   --color-track-shade: var(--track-shade);
+  --color-track-accent: var(--track-accent);
   --color-track-line: var(--track-line);
   --color-screen: var(--screen);
   --color-screen-surface: var(--screen-surface);
