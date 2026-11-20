@@ -449,6 +449,7 @@
     "home": "Back to home"
   },
   "raceSettings": {
+    "kicker": "Starting line",
     "title": "Race settings",
     "subtitle": "A race at your own pace. Pick your rules, then off you go!",
     "reset": "Reset",
@@ -557,10 +558,24 @@
         "impossible": "Impossible"
       }
     },
+    "advanced": {
+      "title": "More options",
+      "hint": "Accents, punctuation, characters, input mode, bonuses",
+      "modified": {
+        "one": "{count} change",
+        "other": "{count} changes"
+      }
+    },
     "footer": "The same rules apply to everyone. The race begins after a countdown.",
     "summary": {
       "title": "Your race, in short",
       "participants": "You + {bots} bots · {total} participants",
+      "noTimeLimit": "No limit",
+      "solo": "Solo",
+      "botsCount": {
+        "one": "You + {count} bot",
+        "other": "You + {count} bots"
+      },
       "tip": "Speed is good. Accuracy moves your Blob forward!",
       "start": "Start race",
       "ready": "You race yourself, alone or against the bots. Ready, set, type!"

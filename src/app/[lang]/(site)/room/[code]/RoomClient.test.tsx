@@ -82,6 +82,7 @@ describe("vue de l'hôte (CONF-12)", () => {
 
     const timeLimit = screen.getByRole("radiogroup", { name: settingsLabels.timeLimit.label });
     for (const radio of within(timeLimit).getAllByRole("radio")) expect(radio).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(settingsLabels.advanced.title) }));
     expect(screen.getByRole("textbox", { name: settingsLabels.excludedChars.label })).not.toHaveAttribute("readonly");
     expect(screen.queryByText(plain(labels.config.hostOnly))).not.toBeInTheDocument();
   });
@@ -119,6 +120,7 @@ describe("vue d'un participant", () => {
     const english = screen.getByRole("radio", { name: settingsLabels.language.en });
     expect(english).toHaveAttribute("aria-checked", "true");
     expect(english).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(settingsLabels.advanced.title) }));
     expect(screen.getByRole("textbox", { name: settingsLabels.excludedChars.label })).toHaveAttribute("readonly");
     expect(screen.getByText(labels.config.hostOnly)).toBeVisible();
   });

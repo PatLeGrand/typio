@@ -25,7 +25,15 @@ function setup(options: { editable?: boolean; config?: RoomConfig; onChange?: Se
   return { onChange, rerender: (config: RoomConfig) => view.rerender(ui(config)) };
 }
 
-const excludedField = () => screen.getByRole("textbox", { name: raceSettings.excludedChars.label });
+function openAdvanced() {
+  const toggle = screen.getByRole("button", { name: new RegExp(raceSettings.advanced.title) });
+  if (toggle.getAttribute("aria-expanded") !== "true") fireEvent.click(toggle);
+}
+
+const excludedField = () => {
+  openAdvanced();
+  return screen.getByRole("textbox", { name: raceSettings.excludedChars.label });
+};
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -40,6 +48,7 @@ describe("RoomConfigPanel, host", () => {
     const { onChange } = setup();
 
     fireEvent.click(screen.getByRole("radio", { name: raceSettings.textMode.words }));
+    openAdvanced();
     fireEvent.click(screen.getByRole("radio", { name: raceSettings.accents.exclude }));
     fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${raceSettings.inputMode.blocking}`) }));
     fireEvent.click(screen.getByRole("button", { name: raceSettings.bots.add }));
@@ -98,6 +107,7 @@ describe("RoomConfigPanel, host", () => {
   it("sends included characters after typing and restores the server's normalized value", async () => {
     const config: RoomConfig = { ...DEFAULT_ROOM_CONFIG, textMode: "words" };
     const { onChange, rerender } = setup({ config });
+    openAdvanced();
     const field = screen.getByRole("textbox", { name: raceSettings.includedChars.label });
     fireEvent.change(field, { target: { value: "B a B" } });
     act(() => void vi.advanceTimersByTime(EXCLUDED_SEND_DELAY_MS));
@@ -179,6 +189,9 @@ describe("RoomConfigPanel, non-host (CONF-12)", () => {
     });
 
     expect(screen.getByRole("radio", { name: raceSettings.language.en })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("combobox", { name: raceSettings.visibility.label })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: raceSettings.capacity.label })).toBeDisabled();
+    openAdvanced();
     for (const radio of screen.getAllByRole("radio")) expect(radio).toBeDisabled();
     expect(excludedField()).toHaveValue("qz");
     expect(excludedField()).toHaveAttribute("readonly");
@@ -192,6 +205,7 @@ describe("RoomConfigPanel, non-host (CONF-12)", () => {
     const { rerender } = setup({ editable: false });
     rerender({ ...DEFAULT_ROOM_CONFIG, textMode: "words", bots: ["intermediate", "intermediate", "intermediate", "intermediate", "intermediate"], inputMode: "blocking" });
 
+    openAdvanced();
     expect(screen.getByRole("radio", { name: raceSettings.textMode.words })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("radio", { name: new RegExp(`^${raceSettings.inputMode.blocking}`) })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByText("5 / 7", { selector: "[aria-live]" })).toBeInTheDocument();

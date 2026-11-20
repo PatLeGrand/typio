@@ -24,25 +24,50 @@ function renderFields(options: { value?: Partial<RaceSettings>; readOnly?: boole
   return onChange;
 }
 
+function openAdvanced(dict = copy) {
+  const toggle = screen.getByRole("button", { name: new RegExp(dict.advanced.title) });
+  if (toggle.getAttribute("aria-expanded") !== "true") fireEvent.click(toggle);
+  return toggle;
+}
+
 describe("RaceSettingsFields (editable)", () => {
   it.each([
-    [copy.textMode.words, { textMode: "words" }],
-    [copy.language.en, { language: "en" }],
-    [copy.accents.exclude, { accents: false }],
-    [copy.inputMode.blocking, { inputMode: "blocking" }],
-    [copy.timeLimit.minutes.replace("{minutes}", "3"), { timeLimitSeconds: 180 }],
-  ])("choosing %s sends %j", (name, patch) => {
+    [copy.textMode.words, { textMode: "words" }, false],
+    [copy.language.en, { language: "en" }, false],
+    [copy.accents.exclude, { accents: false }, true],
+    [copy.inputMode.blocking, { inputMode: "blocking" }, true],
+    [copy.timeLimit.minutes.replace("{minutes}", "3"), { timeLimitSeconds: 180 }, false],
+  ])("choosing %s sends %j", (name, patch, advanced) => {
     const onChange = renderFields({ value: { timeLimitSeconds: 60 } });
+    if (advanced) openAdvanced();
     fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${name}`) }));
     expect(onChange).toHaveBeenCalledWith(patch);
   });
 
-  it("disables inclusion for whole sentences and enables it for words", () => {
+  it("hides inclusion for whole sentences and shows it enabled for words", () => {
     const { rerender } = render(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS }} onChange={vi.fn()} dict={copy} lang="fr" />);
-    expect(screen.getByRole("textbox", { name: copy.includedChars.label })).toBeDisabled();
-    expect(screen.getByText(plain(copy.includedChars.sentencesHelp))).toBeInTheDocument();
+    openAdvanced();
+    expect(screen.queryByRole("textbox", { name: copy.includedChars.label })).toBeNull();
     rerender(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS, textMode: "words" }} onChange={vi.fn()} dict={copy} lang="fr" />);
     expect(screen.getByRole("textbox", { name: copy.includedChars.label })).toBeEnabled();
+    expect(screen.getByText(plain(copy.includedChars.help))).toBeInTheDocument();
+  });
+
+  it("shows only the description of the selected complexity and input mode", () => {
+    const { rerender } = render(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS }} onChange={vi.fn()} dict={copy} lang="fr" />);
+    expect(screen.getByText(plain(copy.complexity.descriptions.medium))).toBeInTheDocument();
+    expect(screen.queryByText(plain(copy.complexity.descriptions.easy))).toBeNull();
+    expect(screen.queryByText(plain(copy.complexity.descriptions.hard))).toBeNull();
+
+    openAdvanced();
+    expect(screen.getByText(plain(copy.inputMode.freeDesc))).toBeInTheDocument();
+    expect(screen.queryByText(plain(copy.inputMode.blockingDesc))).toBeNull();
+
+    rerender(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS, complexity: "hard", inputMode: "blocking" }} onChange={vi.fn()} dict={copy} lang="fr" />);
+    expect(screen.getByText(plain(copy.complexity.descriptions.hard))).toBeInTheDocument();
+    expect(screen.queryByText(plain(copy.complexity.descriptions.medium))).toBeNull();
+    expect(screen.getByText(plain(copy.inputMode.blockingDesc))).toBeInTheDocument();
+    expect(screen.queryByText(plain(copy.inputMode.freeDesc))).toBeNull();
   });
 
   it("sends a numeric word count from the dropdown", () => {
@@ -87,25 +112,28 @@ describe("RaceSettingsFields (editable)", () => {
 
   it("sends the typed excluded characters", () => {
     const onChange = renderFields();
+    openAdvanced();
     fireEvent.change(screen.getByRole("textbox", { name: copy.excludedChars.label }), { target: { value: "@#" } });
     expect(onChange).toHaveBeenCalledWith({ excludedCharacters: "@#" });
   });
 
   it("enables the catch-up bonuses switch", () => {
     renderFields();
+    openAdvanced();
     expect(screen.getByRole("switch", { name: copy.bonuses.label })).toBeEnabled();
   });
 
-  it("shows the excluded characters error linked to the field", () => {
+  it("auto-opens the advanced block and focuses the excluded characters field on error", () => {
     render(
       <RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS }} onChange={vi.fn()} dict={copy} lang="fr" excludedError="oups" />,
     );
     const input = screen.getByRole("textbox", { name: copy.excludedChars.label });
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input).toHaveAccessibleDescription(expect.stringContaining("oups"));
+    expect(input).toHaveFocus();
   });
 
-  it("shows the included characters error linked to the field", () => {
+  it("auto-opens the advanced block and focuses the included characters field on error", () => {
     render(
       <RaceSettingsFields
         value={{ ...DEFAULT_RACE_SETTINGS, textMode: "words" }}
@@ -118,6 +146,75 @@ describe("RaceSettingsFields (editable)", () => {
     const input = screen.getByRole("textbox", { name: copy.includedChars.label });
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input).toHaveAccessibleDescription(expect.stringContaining("oups"));
+    expect(input).toHaveFocus();
+  });
+
+  it("re-opens the collapsed advanced block and moves focus when a character error arrives", () => {
+    const { rerender } = render(
+      <RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS }} onChange={vi.fn()} dict={copy} lang="fr" />,
+    );
+    const toggle = screen.getByRole("button", { name: new RegExp(copy.advanced.title) });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    rerender(
+      <RaceSettingsFields
+        value={{ ...DEFAULT_RACE_SETTINGS, excludedCharacters: "x".repeat(101) }}
+        onChange={vi.fn()}
+        dict={copy}
+        lang="fr"
+        excludedError={copy.excludedChars.error}
+        errorTrigger={1}
+      />,
+    );
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("textbox", { name: copy.excludedChars.label })).toHaveFocus();
+  });
+
+  it("counts modified advanced options with FR/EN plurals and ignores hidden includedCharacters outside words mode", () => {
+    const { rerender, unmount } = render(
+      <RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS }} onChange={vi.fn()} dict={copy} lang="fr" />,
+    );
+    expect(screen.queryByText(/modifié/)).toBeNull();
+
+    rerender(
+      <RaceSettingsFields
+        value={{ ...DEFAULT_RACE_SETTINGS, accents: false, includedCharacters: "ae" }}
+        onChange={vi.fn()}
+        dict={copy}
+        lang="fr"
+      />,
+    );
+    expect(screen.getByText("1 modifié")).toBeInTheDocument();
+
+    rerender(
+      <RaceSettingsFields
+        value={{ ...DEFAULT_RACE_SETTINGS, textMode: "words", accents: false, includedCharacters: "ae" }}
+        onChange={vi.fn()}
+        dict={copy}
+        lang="fr"
+      />,
+    );
+    expect(screen.getByText("2 modifiés")).toBeInTheDocument();
+    unmount();
+
+    const enView = render(
+      <RaceSettingsFields
+        value={{ ...DEFAULT_RACE_SETTINGS, bonuses: true }}
+        onChange={vi.fn()}
+        dict={en.raceSettings}
+        lang="en"
+      />,
+    );
+    expect(screen.getByText("1 change")).toBeInTheDocument();
+    enView.rerender(
+      <RaceSettingsFields
+        value={{ ...DEFAULT_RACE_SETTINGS, bonuses: true, numbers: true }}
+        onChange={vi.fn()}
+        dict={en.raceSettings}
+        lang="en"
+      />,
+    );
+    expect(screen.getByText("2 changes")).toBeInTheDocument();
   });
 
   it("reports the end of typing in the excluded characters field", () => {
@@ -131,6 +228,7 @@ describe("RaceSettingsFields (editable)", () => {
         onExcludedBlur={onExcludedBlur}
       />,
     );
+    openAdvanced();
     fireEvent.blur(screen.getByRole("textbox", { name: copy.excludedChars.label }));
     expect(onExcludedBlur).toHaveBeenCalledTimes(1);
   });
@@ -144,16 +242,19 @@ describe("RaceSettingsFields (editable)", () => {
         lang="en"
       />,
     );
+    openAdvanced(en.raceSettings);
     expect(screen.getByText("2 characters excluded")).toBeInTheDocument();
   });
 });
 
 describe("RaceSettingsFields (read only)", () => {
-  it("shows the values but disables every control", () => {
+  it("shows the values, keeps the disclosure usable, and disables every control", () => {
     const onChange = renderFields({ readOnly: true, value: { language: "en", bots: ["intermediate", "intermediate", "intermediate"], excludedCharacters: "xy" } });
 
     expect(screen.getByRole("radio", { name: copy.language.en })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("radiogroup", { name: copy.timeLimit.label })).toBeInTheDocument();
+    const toggle = openAdvanced();
+    expect(toggle).toBeEnabled();
     for (const radio of screen.getAllByRole("radio")) expect(radio).toBeDisabled();
     expect(screen.getByRole("button", { name: copy.bots.add })).toBeDisabled();
     expect(screen.getByRole("button", { name: copy.bots.remove.replace("{number}", "1") })).toBeDisabled();

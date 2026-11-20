@@ -243,6 +243,10 @@ h2[tabindex="-1"]:focus-visible {
   outline-offset: 3px;
 }
 
+.bg-screen .button-start:focus-visible {
+  outline-color: var(--key-yellow);
+}
+
 .button-start .button-label {
   display: block;
   overflow-wrap: break-word;
