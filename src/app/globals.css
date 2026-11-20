@@ -182,6 +182,12 @@
   }
 }
 
+@media (max-width: 1023.98px) {
+  html[data-race-settings-dock] {
+    scroll-padding-bottom: 5.5rem;
+  }
+}
+
 :focus-visible {
   outline: 2px solid var(--accent-text);
   outline-offset: 2px;
@@ -241,6 +247,10 @@ h2[tabindex="-1"]:focus-visible {
 .button-start:focus-visible {
   outline-color: var(--foreground);
   outline-offset: 3px;
+}
+
+.bg-screen .button-start:focus-visible {
+  outline-color: var(--key-yellow);
 }
 
 .button-start .button-label {

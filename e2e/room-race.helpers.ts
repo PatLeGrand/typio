@@ -37,9 +37,11 @@ export async function runRoomRace(
       .getByRole("radio", { name: settings.textMode.words, exact: true }).click();
     await page.getByRole("radiogroup", { name: settings.complexity.label, exact: true })
       .getByRole("radio", { name: settings.complexity.easy }).click();
+    await page.getByRole("combobox", { name: settings.length.label, exact: true }).selectOption("10");
+    const advanced = page.getByRole("button", { name: new RegExp(`^${settings.advanced.title}`) });
+    if (await advanced.getAttribute("aria-expanded") !== "true") await advanced.click();
     await page.getByRole("radiogroup", { name: settings.accents.label, exact: true })
       .getByRole("radio", { name: settings.accents.exclude, exact: true }).click();
-    await page.getByRole("combobox", { name: settings.length.label, exact: true }).selectOption("10");
     for (const option of ["punctuation", "numbers", "uppercase"] as const) {
       const toggle = page.getByRole("switch", { name: settings[option].label, exact: true });
       if (await toggle.getAttribute("aria-checked") === "true") await toggle.click();

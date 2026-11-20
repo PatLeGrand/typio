@@ -7,6 +7,7 @@ type RadioCardProps = Omit<ComponentPropsWithoutRef<"button">, "onChange"> & {
   label: ReactNode;
   description?: ReactNode;
   layout?: "horizontal" | "vertical";
+  fullWidth?: boolean;
 };
 
 export function RadioCard({
@@ -15,6 +16,7 @@ export function RadioCard({
   label,
   description,
   layout = "horizontal",
+  fullWidth = true,
   className = "",
   ...props
 }: RadioCardProps) {
@@ -45,7 +47,7 @@ export function RadioCard({
         ${checked
           ? "border-2 border-accent-text bg-accent-soft text-accent-text"
           : "border border-border bg-surface text-foreground hover:bg-accent-soft/50"}
-        rounded-field w-full
+        rounded-field ${fullWidth ? "w-full" : ""}
         ${className}
       `}
       {...props}

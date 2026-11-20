@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/auth/currentUser";
+import { displayFont } from "@/components/home/homeFonts";
 import { requireLocale } from "@/i18n/requireLocale";
 import { getDictionary } from "@/i18n/dictionaries";
 import { DEFAULT_RACE_SETTINGS, deserializeRaceSettings } from "@/race/config";
@@ -29,5 +30,13 @@ export default async function RaceSettingsPage({ params, searchParams }: {
     : user.kind === "guest"
       ? { kind: "guest" }
       : { kind: "member", userId: user.id, roomErrors: dict.room.errors };
-  return <SettingsForm lang={locale} dict={dict.raceSettings} initialSettings={initialSettings} invite={invite} />;
+  return (
+    <SettingsForm
+      lang={locale}
+      dict={dict.raceSettings}
+      initialSettings={initialSettings}
+      invite={invite}
+      displayFontClassName={displayFont.variable}
+    />
+  );
 }

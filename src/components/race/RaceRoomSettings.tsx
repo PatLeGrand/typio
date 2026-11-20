@@ -1,4 +1,3 @@
-import { DoorOpen } from "lucide-react";
 import { SelectField } from "@/components/SelectField";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { RaceSettings } from "@/race/config";
@@ -14,10 +13,12 @@ type RaceRoomSettingsProps = {
   /** Préfixe d'identifiants issu du `useId` de `RaceSettingsFields`. */
   idPrefix: string;
   headingLevel: 2 | 3;
+  /** Mise en page compacte sur une colonne (dans le bloc « Avec des amis » du panneau de droite). */
+  compact?: boolean;
 };
 
 /** Section « salle » des réglages de course (SALLE-03, SALLE-05). */
-export function RaceRoomSettings({ value, onChange, readOnly, dict, lang, idPrefix, headingLevel }: RaceRoomSettingsProps) {
+export function RaceRoomSettings({ value, onChange, readOnly, dict, lang, idPrefix, headingLevel, compact = false }: RaceRoomSettingsProps) {
   const SectionHeading = headingLevel === 3 ? "h3" : "h2";
   const id = (name: string) => `${idPrefix}-${name}`;
   const numberFormat = new Intl.NumberFormat(lang);
@@ -27,19 +28,24 @@ export function RaceRoomSettings({ value, onChange, readOnly, dict, lang, idPref
   });
 
   return (
-    <section className="bg-surface border border-border rounded-[24px] p-4 sm:p-8">
-      <div className="flex flex-wrap items-center gap-4 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-accent-soft text-accent-text flex items-center justify-center">
-          <DoorOpen className="w-6 h-6" aria-hidden="true" />
-        </div>
-        <div>
-          <SectionHeading className="text-xl font-bold text-foreground">{dict.roomSection.title}</SectionHeading>
-          <p className="text-sm text-muted">{dict.roomSection.subtitle}</p>
-        </div>
+    <section className={compact ? "flex flex-col gap-3" : "flex flex-col gap-4 border-t border-border/80 pt-6"}>
+      <div>
+        <SectionHeading
+          className={
+            compact
+              ? "text-sm font-bold text-foreground"
+              : headingLevel === 3
+                ? "text-base font-bold text-foreground"
+                : "font-display text-[1.65rem] font-black leading-none tracking-[-0.01em] text-foreground"
+          }
+        >
+          {dict.roomSection.title}
+        </SectionHeading>
+        {compact ? null : <p className="mt-1 text-sm text-muted">{dict.roomSection.subtitle}</p>}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-        <div className="flex flex-col gap-2">
+      <div className={compact ? "flex flex-col gap-3.5" : "grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2"}>
+        <div className="flex flex-col gap-1.5">
           <SelectField
             label={dict.visibility.label}
             value={value.visibility}
@@ -48,9 +54,9 @@ export function RaceRoomSettings({ value, onChange, readOnly, dict, lang, idPref
             onChange={(event) => onChange({ visibility: event.target.value as RoomVisibility })}
             aria-describedby={id("visibility-help")}
           />
-          <p id={id("visibility-help")} className="text-xs text-muted">{dict.visibility.help}</p>
+          <p id={id("visibility-help")} className="text-xs leading-relaxed text-muted">{dict.visibility.help}</p>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <SelectField
             label={dict.capacity.label}
             value={String(value.capacity)}
@@ -59,7 +65,7 @@ export function RaceRoomSettings({ value, onChange, readOnly, dict, lang, idPref
             onChange={(event) => onChange({ capacity: Number(event.target.value) })}
             aria-describedby={id("capacity-help")}
           />
-          <p id={id("capacity-help")} className="text-xs text-muted">{dict.capacity.help}</p>
+          <p id={id("capacity-help")} className="text-xs leading-relaxed text-muted">{dict.capacity.help}</p>
         </div>
       </div>
     </section>

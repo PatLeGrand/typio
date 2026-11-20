@@ -9,6 +9,7 @@ import fr from "@/i18n/dictionaries/fr.json";
 const mocks = vi.hoisted(() => ({ getCurrentUser: vi.fn<() => Promise<CurrentUser | null>>() }));
 
 vi.mock("@/auth/currentUser", () => ({ getCurrentUser: mocks.getCurrentUser }));
+vi.mock("@/components/home/homeFonts", () => ({ displayFont: { variable: "font-display-mock" } }));
 vi.mock("@/realtime/useRoom", () => ({ useRoom: () => makeUseRoom() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
@@ -58,9 +59,11 @@ describe("race settings page", () => {
     expect(screen.getByRole("button", { name: /Lancer la course/ })).toBeEnabled();
   });
 
-  it("member: invite enabled", async () => {
+  it("member: invite enabled and room settings visible", async () => {
     mocks.getCurrentUser.mockResolvedValue(user);
     await renderPage(undefined);
     expect(screen.getByRole("button", { name: copy.invite.button })).toBeEnabled();
+    expect(screen.getByRole("combobox", { name: copy.visibility.label })).toBeEnabled();
+    expect(screen.getByRole("combobox", { name: copy.capacity.label })).toBeEnabled();
   });
 });

@@ -11,7 +11,17 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+function openAdvanced(dict = fr.raceSettings) {
+  const toggle = screen.getByRole("button", { name: new RegExp(dict.advanced.title) });
+  if (toggle.getAttribute("aria-expanded") !== "true") fireEvent.click(toggle);
+  return toggle;
+}
+
 describe("SettingsForm", () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+  });
+
   it("announces the default timer and supports arrow-key selection", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
     const timeLimit = screen.getByRole("radiogroup", { name: fr.raceSettings.timeLimit.label });
@@ -22,6 +32,7 @@ describe("SettingsForm", () => {
     fireEvent.keyDown(phrases, { key: "ArrowRight" });
     expect(screen.getByRole("radio", { name: "Mots" })).toHaveFocus();
     expect(screen.getByRole("radio", { name: "Mots" })).toHaveAttribute("aria-checked", "true");
+    openAdvanced();
     expect(screen.getByRole("switch", { name: fr.raceSettings.bonuses.label })).toBeEnabled();
   });
 
@@ -49,7 +60,7 @@ describe("SettingsForm", () => {
     const timeLimit = screen.getByRole("radiogroup", { name: fr.raceSettings.timeLimit.label });
     fireEvent.click(within(timeLimit).getByRole("radio", { name: "2 min" }));
     fireEvent.click(within(timeLimit).getByRole("radio", { name: fr.raceSettings.timeLimit.none }));
-    expect(within(screen.getByRole("complementary")).getByText(fr.raceSettings.timeLimit.noneShort)).toBeInTheDocument();
+    expect(within(screen.getByRole("complementary")).getByText(fr.raceSettings.summary.noTimeLimit)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.summary.start }));
     const config = new URLSearchParams(mockPush.mock.calls[0][0].split("?")[1]).get("config");
     expect(JSON.parse(config ?? "{}")).toMatchObject({ timeLimitSeconds: null });
@@ -62,15 +73,41 @@ describe("SettingsForm", () => {
     expect(screen.queryByRole("link")).toBeNull();
   });
 
-  it("blocks excessive exclusions", () => {
+  it("blocks excessive exclusions, re-opens the collapsed advanced block, and focuses the field", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    const toggle = openAdvanced();
     fireEvent.change(screen.getByRole("textbox", { name: fr.raceSettings.excludedChars.label }), { target: { value: "x".repeat(101) } });
+    // Replie le bloc avant de lancer pour vérifier qu'il se rouvre sur l'erreur.
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
     fireEvent.click(screen.getByRole("button", { name: fr.raceSettings.summary.start }));
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("alert")).toHaveTextContent(fr.raceSettings.excludedChars.error);
+    expect(screen.getByRole("textbox", { name: fr.raceSettings.excludedChars.label })).toHaveFocus();
     expect(mockPush).not.toHaveBeenCalled();
   });
-  beforeEach(() => {
-    mockPush.mockClear();
+
+  it("keeps includedCharacters in state when switching away from words mode and back", () => {
+    render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    fireEvent.click(screen.getByRole("radio", { name: fr.raceSettings.textMode.words }));
+    openAdvanced();
+    fireEvent.change(screen.getByRole("textbox", { name: fr.raceSettings.includedChars.label }), { target: { value: "ae" } });
+
+    fireEvent.click(screen.getByRole("radio", { name: fr.raceSettings.textMode.sentences }));
+    expect(screen.queryByRole("textbox", { name: fr.raceSettings.includedChars.label })).toBeNull();
+
+    fireEvent.click(screen.getByRole("radio", { name: fr.raceSettings.textMode.words }));
+    expect(screen.getByRole("textbox", { name: fr.raceSettings.includedChars.label })).toHaveValue("ae");
+  });
+
+  it("shows room settings only when inviting friends is available (member)", () => {
+    const { rerender } = render(<SettingsForm lang="fr" dict={fr.raceSettings} invite={{ kind: "anonymous" }} />);
+    expect(screen.queryByRole("combobox", { name: fr.raceSettings.visibility.label })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: fr.raceSettings.capacity.label })).toBeNull();
+
+    rerender(<SettingsForm lang="fr" dict={fr.raceSettings} invite={{ kind: "guest" }} />);
+    expect(screen.queryByRole("combobox", { name: fr.raceSettings.visibility.label })).toBeNull();
   });
 
   it("affiche la page dans la langue demandée (français ou anglais)", () => {
@@ -105,6 +142,7 @@ describe("SettingsForm", () => {
 
   it("accepte des exclusions vides et redirige avec la bonne URL", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    openAdvanced();
 
     // Laisse les caractères exclus vides
     const excludeInput = screen.getByPlaceholderText("@ # %");
@@ -130,6 +168,7 @@ describe("SettingsForm", () => {
 describe("SettingsForm accessibility and plurals", () => {
   it("links the excluded characters field to its count, help and error", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    openAdvanced();
     const field = screen.getByRole("textbox", { name: fr.raceSettings.excludedChars.label });
     expect(field).toHaveAccessibleDescription(`0 caractère exclu ${fr.raceSettings.excludedChars.help}`);
     fireEvent.change(field, { target: { value: "x".repeat(101) } });
@@ -139,6 +178,7 @@ describe("SettingsForm accessibility and plurals", () => {
 
   it("uses the singular and plural forms of the excluded characters count in French and English", () => {
     const { unmount } = render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    openAdvanced(fr.raceSettings);
     const frField = screen.getByRole("textbox", { name: fr.raceSettings.excludedChars.label });
     fireEvent.change(frField, { target: { value: "@" } });
     expect(screen.getByText("1 caractère exclu")).toBeInTheDocument();
@@ -147,6 +187,7 @@ describe("SettingsForm accessibility and plurals", () => {
     unmount();
 
     render(<SettingsForm lang="en" dict={en.raceSettings} />);
+    openAdvanced(en.raceSettings);
     const enField = screen.getByRole("textbox", { name: en.raceSettings.excludedChars.label });
     expect(screen.getByText("0 characters excluded")).toBeInTheDocument();
     fireEvent.change(enField, { target: { value: "@" } });
@@ -158,6 +199,7 @@ describe("SettingsForm accessibility and plurals", () => {
   it("describes the time limit group and the bonuses switch by their help text", () => {
     render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
     expect(screen.getByRole("radiogroup", { name: fr.raceSettings.timeLimit.label })).toHaveAccessibleDescription(fr.raceSettings.timeLimit.help);
+    openAdvanced();
     expect(screen.getByRole("switch", { name: fr.raceSettings.bonuses.label })).toHaveAccessibleDescription(fr.raceSettings.bonuses.help);
   });
 

@@ -449,6 +449,7 @@
     "home": "Retour à l'accueil"
   },
   "raceSettings": {
+    "kicker": "Ligne de départ",
     "title": "Paramètres de course",
     "subtitle": "Un parcours à ton rythme. Choisis tes règles, puis à tes touches !",
     "reset": "Réinitialiser",
@@ -557,10 +558,24 @@
         "impossible": "Impossible"
       }
     },
+    "advanced": {
+      "title": "Plus d’options",
+      "hint": "Accents, ponctuation, caractères, mode de saisie, bonus",
+      "modified": {
+        "one": "{count} modifié",
+        "other": "{count} modifiés"
+      }
+    },
     "footer": "Les mêmes règles s'appliquent à tous les participants. Le départ sera donné après un compte à rebours.",
     "summary": {
       "title": "Ta course, en bref",
       "participants": "Toi + {bots} bots · {total} participants",
+      "noTimeLimit": "Sans limite",
+      "solo": "Solo",
+      "botsCount": {
+        "one": "Toi + {count} bot",
+        "other": "Toi + {count} bots"
+      },
       "tip": "La vitesse, c'est bien. La précision fait avancer ton Blob !",
       "start": "Lancer la course",
       "ready": "Tu cours toi-même, seul ou contre les bots. À tes touches, prêt, pars !"
