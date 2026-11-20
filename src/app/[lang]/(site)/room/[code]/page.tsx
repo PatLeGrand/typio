@@ -1,3 +1,4 @@
+import { displayFont } from "@/components/home/homeFonts";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/auth/currentUser";
@@ -28,7 +29,7 @@ export default async function RoomPage({ params, searchParams }: RoomPageProps) 
   const dict = getDictionary(locale);
 
   return (
-    <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-8 md:px-8 md:py-12 xl:px-[88px] has-[.room-race-screen]:max-w-none has-[.room-race-screen]:xl:px-8">
+    <main className={`${displayFont.variable} mx-auto w-full max-w-[1440px] flex-1 px-4 py-8 md:px-8 md:py-12 xl:px-[88px] has-[.room-race-screen]:py-5 has-[.room-race-screen]:xl:px-10`}>
       <div className="max-w-4xl has-[.room-race-screen]:max-w-none">
         <RoomClient
           code={normalizeRoomCode(code)}

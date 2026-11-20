@@ -43,6 +43,12 @@
     "back": "Back to settings"
   },
   "raceScreen": {
+    "circuit": "Island Grand Prix",
+    "live": "On track",
+    "solo": "Solo",
+    "multiplayer": "Multiplayer",
+    "leadDistance": "Leader’s distance",
+    "distance": "Distance covered",
     "bonuses": {
       "types": {
         "shorten": "−3 words",

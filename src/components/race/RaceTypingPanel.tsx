@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent, type RefObject, type SyntheticEvent } from "react";
-import { CircleCheck, Delete, Keyboard, Sparkles } from "lucide-react";
+import { CornerDownLeft, Delete, Keyboard, Sparkles } from "lucide-react";
 import type { Dictionary } from "@/i18n/dictionaries";
 
 type Props = {
@@ -65,9 +65,9 @@ export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, te
   return (
     <section className={embedded ? "flex min-w-0 flex-col gap-4" : "mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 py-8 sm:px-8"}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+        <div className="race-desk-title">
           <Keyboard aria-hidden="true" className="size-5 text-accent-text" />
-          <h2 className="text-lg font-extrabold">{labels.title}</h2>
+          <h2>{labels.title}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs font-bold tabular-nums text-muted">
           <span>{number.format(correctChars)} / {number.format(text.length)} {labels.characters}</span>
@@ -77,18 +77,18 @@ export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, te
         </div>
       </div>
 
-      <p role="status" aria-live="polite" aria-atomic="true" className="text-sm font-bold text-accent-text">{bonusMessage}</p>
+      <p role="status" aria-live="polite" aria-atomic="true" className="text-sm font-bold text-accent-text empty:absolute">{bonusMessage}</p>
 
-      <p id={TEXT_ID} className={embedded ? "break-words whitespace-pre-wrap font-mono text-base leading-relaxed" : "break-words rounded-card border border-border bg-surface px-4 py-5 font-mono text-lg leading-relaxed sm:px-6 sm:text-2xl"}>
+      <p id={TEXT_ID} className={embedded ? "race-passage" : "break-words rounded-card border border-border bg-surface px-4 py-5 font-mono text-lg leading-relaxed sm:px-6 sm:text-2xl"}>
         {Array.from(text).map((char, index) => {
           const entered = typed[index];
           const tone =
             entered === undefined
               ? index === typed.length
-                ? "text-foreground underline decoration-accent-text decoration-2 underline-offset-4"
+                ? "rounded-sm bg-accent-panel text-foreground underline decoration-accent-text decoration-2 underline-offset-4"
                 : "text-muted"
               : entered === char
-                ? "text-success"
+                ? "text-series-correct"
                 : "bg-danger/15 text-danger underline decoration-danger";
           return <span key={index} className={`${tone}${fog && index >= fogStart ? " blur-sm" : ""}`}>{char}</span>;
         })}
@@ -116,13 +116,15 @@ export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, te
           onDrop={(event) => event.preventDefault()}
           aria-label={labels.inputLabel}
           aria-describedby={TEXT_ID}
+          name="race-input"
+          placeholder={labels.inputLabel}
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
-          className="min-h-14 w-full rounded-card border-2 border-accent bg-surface px-5 pr-12 font-mono text-lg outline-none focus-visible:outline-2"
+          className="min-h-14 w-full rounded-field border border-muted bg-background px-5 pr-12 font-mono text-lg placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-text"
         />
-        <CircleCheck aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-accent-text" />
+        <CornerDownLeft aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-accent-text" />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
