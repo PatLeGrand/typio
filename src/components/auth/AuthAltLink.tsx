@@ -11,9 +11,13 @@ type AuthAltLinkProps = {
 /** Ligne centrée « question + lien » sous un formulaire d'authentification. */
 export function AuthAltLink({ prompt, linkLabel, href }: AuthAltLinkProps) {
   return (
-    <p className="text-center text-[13px] text-muted">
+    <p className="text-center text-sm text-muted">
       {prompt}{" "}
-      <Link href={href} className="road-link-inline inline-flex min-h-11 items-center font-semibold text-accent-text">
+      <Link
+        href={href}
+        style={{ backgroundPositionY: "calc(50% + 0.7em)" }}
+        className="road-link-inline inline-flex min-h-11 items-center rounded-field font-semibold text-accent-text"
+      >
         {linkLabel}
       </Link>
     </p>

@@ -32,6 +32,13 @@ function contrastRatio(a: string, b: string): number {
 }
 
 const MIN_RATIO = 4.5;
+const MIN_GRAPHICAL_RATIO = 3;
+
+// [élément graphique, fond] : repères et filets non textuels (WCAG 1.4.11 >= 3:1).
+const graphicalPairs: ReadonlyArray<readonly [string, string]> = [
+  ["track-accent", "background"],
+  ["track-accent", "screen"],
+];
 
 // [texte, fond] : toutes les paires réellement utilisées par les composants.
 const pairs: ReadonlyArray<readonly [string, string]> = [
@@ -64,6 +71,18 @@ const pairs: ReadonlyArray<readonly [string, string]> = [
   // Panneau d'inscription (ProgressIsland) : textes posés directement sur l'île et la colline.
   ["foreground", "island-sand"],
   ["foreground", "island-mint"],
+  // Piste de l'accueil (DES-04) : textes peints sur le tartan, le couloir du joueur et l'écran géant.
+  ["track-line", "track"],
+  ["track-line", "track-shade"],
+  ["track-line", "accent"],
+  ["screen-text", "screen"],
+  ["screen-text", "screen-surface"],
+  ["screen-muted", "screen"],
+  ["screen-muted", "screen-surface"],
+  ["key-yellow", "screen"],
+  ["key-yellow", "screen-surface"],
+  ["key-mint", "screen"],
+  ["key-mint", "screen-surface"],
   // Initiale blanche des avatars générés (H-39).
   ...Array.from({ length: 8 }, (_, i) => ["avatar-foreground", `avatar-${i + 1}`] as const),
 ];
@@ -81,6 +100,12 @@ describe("contraste WCAG des tokens", () => {
       expect(tokens[foreground], `--${foreground} manquant`).toBeDefined();
       expect(tokens[background], `--${background} manquant`).toBeDefined();
       expect(contrastRatio(tokens[foreground], tokens[background])).toBeGreaterThanOrEqual(MIN_RATIO);
+    });
+
+    it.each(graphicalPairs)("%s sur %s >= 3", (foreground, background) => {
+      expect(tokens[foreground], `--${foreground} manquant`).toBeDefined();
+      expect(tokens[background], `--${background} manquant`).toBeDefined();
+      expect(contrastRatio(tokens[foreground], tokens[background])).toBeGreaterThanOrEqual(MIN_GRAPHICAL_RATIO);
     });
   });
 

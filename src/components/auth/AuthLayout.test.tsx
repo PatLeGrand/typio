@@ -4,6 +4,7 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { AuthLayout } from "./AuthLayout";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/fr/login" }));
+vi.mock("@/components/home/homeFonts", () => ({ displayFont: { variable: "font-display-mock" } }));
 
 describe("AuthLayout", () => {
   it.each(["fr", "en"] as const)("rend en-tête, contenu, panneau et pied de page traduits (%s)", (locale) => {
@@ -44,7 +45,7 @@ describe("AuthLayout", () => {
       </AuthLayout>,
     );
 
-    expect(screen.getByRole("complementary", { hidden: true })).toHaveClass("hidden", "lg:flex", "lg:sticky", "bg-accent-panel", "rounded-panel");
+    expect(screen.getByRole("complementary", { hidden: true })).toHaveClass("hidden", "lg:flex", "lg:sticky", "bg-screen", "rounded-panel");
     expect(container.firstElementChild).toHaveClass("lg:grid-cols-2");
     expect(container.querySelector(".max-w-\\[660px\\]")).not.toBeNull();
   });

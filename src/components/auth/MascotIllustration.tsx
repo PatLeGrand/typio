@@ -5,6 +5,8 @@ import type { Dictionary } from "@/i18n/dictionaries";
 
 type MascotIllustrationProps = {
   labels: Dictionary["illustration"];
+  /** `panel` pour les surfaces claires/violettes (ex. 404), `stadium` pour le panneau sombre « stade de nuit ». */
+  tone?: "panel" | "stadium";
 };
 
 // La scène est dessinée sur 600 x 420 px (maquette à 1440 px, origine au centre du halo) puis
@@ -36,14 +38,19 @@ const keyClasses =
  * touches volantes, la bulle d'encouragement et la touche « espace ». Entièrement `aria-hidden` :
  * rien ici n'est nécessaire à la compréhension de la page.
  */
-export function MascotIllustration({ labels }: MascotIllustrationProps) {
+export function MascotIllustration({ labels, tone = "panel" }: MascotIllustrationProps) {
+  const isStadium = tone === "stadium";
+
   return (
     <div
       aria-hidden="true"
-      className="relative w-full max-w-[600px]"
+      className={`relative w-full ${isStadium ? "max-w-[440px]" : "max-w-[600px]"}`}
       style={{ aspectRatio: `${STAGE_WIDTH} / ${STAGE_HEIGHT}`, containerType: "inline-size" }}
     >
-      <div className="absolute rounded-[50%] bg-accent/15" style={placed(300, 210, 444, 376)} />
+      <div
+        className={`absolute rounded-[50%] ${isStadium ? "border border-screen-border bg-screen-surface" : "bg-accent/15"}`}
+        style={placed(300, 210, 444, 376)}
+      />
       {/* Image décorative : alt vide. Son cadre dépasse la scène, le poulpe en reste le cœur. */}
       <Image
         src="/images/mascotte-poulpe.png"
@@ -68,10 +75,12 @@ export function MascotIllustration({ labels }: MascotIllustrationProps) {
         {"Z"}
       </div>
       <div
-        className="absolute flex items-center justify-center gap-[3%] rounded-full bg-surface font-bold text-foreground shadow-soft"
+        className={`absolute flex items-center justify-center gap-[3%] rounded-full font-bold shadow-soft ${
+          isStadium ? "border border-screen-border bg-screen-surface text-screen-text" : "bg-surface text-foreground"
+        }`}
         style={{ ...placed(461, 32, 131, 40, 10), fontSize: fontSize(14) }}
       >
-        <Star className="size-[1.15em] shrink-0" />
+        <Star className={`size-[1.15em] shrink-0 ${isStadium ? "text-key-yellow" : ""}`} />
         {labels.praise}
       </div>
       <div
@@ -80,7 +89,7 @@ export function MascotIllustration({ labels }: MascotIllustrationProps) {
       >
         {labels.spaceKey}
       </div>
-      <Sparkles className="absolute text-accent-text" style={placed(565, 331, 32, 32)} />
+      <Sparkles className={`absolute ${isStadium ? "text-key-yellow/80" : "text-accent-text"}`} style={placed(565, 331, 32, 32)} />
     </div>
   );
 }

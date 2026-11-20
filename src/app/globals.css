@@ -57,6 +57,16 @@
   /* Ajout hors maquette : la maquette n'a pas d'état d'erreur. */
   --danger: #b42318;
   --success: #059669;
+  /* Piste d'athlétisme de l'accueil (DES-04) : tartan, lignes peintes, écran géant. */
+  --track: #b4432c;
+  --track-shade: #a23b26;
+  --track-accent: #c44d34;
+  --track-line: #fffaf2;
+  --screen: #1b1724;
+  --screen-surface: #252031;
+  --screen-border: #352e46;
+  --screen-text: #f4f1fa;
+  --screen-muted: #b8b1ca;
   --shadow-soft: 0 8px 24px rgba(83, 53, 155, 0.05);
 }
 
@@ -103,6 +113,16 @@
   --island-mint: #1e3633;
   --danger: #ff9b8a;
   --success: #34d399;
+  /* Stade de nuit : tartan brique sombre, lignes craie atténuées pour ne pas éblouir. */
+  --track: #5c271d;
+  --track-shade: #4e2018;
+  --track-accent: #e06c53;
+  --track-line: #f3e7dd;
+  --screen: #0b0a10;
+  --screen-surface: #151220;
+  --screen-border: #262136;
+  --screen-text: #f4f1fa;
+  --screen-muted: #afa8c2;
   --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -130,10 +150,21 @@
   --color-island-mint: var(--island-mint);
   --color-danger: var(--danger);
   --color-success: var(--success);
+  --color-track: var(--track);
+  --color-track-shade: var(--track-shade);
+  --color-track-accent: var(--track-accent);
+  --color-track-line: var(--track-line);
+  --color-screen: var(--screen);
+  --color-screen-surface: var(--screen-surface);
+  --color-screen-border: var(--screen-border);
+  --color-screen-text: var(--screen-text);
+  --color-screen-muted: var(--screen-muted);
   --radius-field: 12px;
   --radius-card: 24px;
   --radius-panel: 32px;
   /* `--font-inter` est posée sur <body> par next/font (src/app/[lang]/layout.tsx). */
+  /* Police de titre de l'accueil, posée par next/font sur la page (src/components/home/homeFonts.ts). */
+  --font-display: var(--font-big-shoulders), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -410,23 +441,43 @@ h2[tabindex="-1"]:focus-visible {
   .road-link-inline { animation: none; }
 }
 
+/* Contenu de l'accueil décalé à droite du couloir latéral (HomeSideLane). */
+.home-lane-content {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-left: 3.75rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .home-lane-content {
+    padding-left: 8rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Revêtement granuleux du tartan : deux trames de points décalées, sans image. */
+.track-surface {
+  background-color: var(--track);
+  background-image:
+    radial-gradient(rgb(0 0 0 / 0.09) 1px, transparent 1.3px),
+    radial-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1.3px);
+  background-size: 7px 7px, 11px 11px;
+  background-position: 0 0, 3px 5px;
+}
+
+.track-checker {
+  background: repeating-conic-gradient(var(--track-line) 0 25%, var(--key-ink) 0 50%) 0 0 / 14px 14px;
+}
+
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
   [data-home-finish]:has([data-finish-panel]:is(:hover, :focus-within)) [data-finish-racer] {
     animation: home-finish-hop 450ms ease-out;
-  }
-
-  [data-home-finish]:has([data-finish-panel]:is(:hover, :focus-within)) [data-track-flag] {
-    animation: home-finish-wave 450ms ease-in-out;
   }
 }
 
 @keyframes home-finish-hop {
   0%, 100% { transform: translateY(0); }
   45% { transform: translateY(-12px); }
-}
-
-@keyframes home-finish-wave {
-  0%, 100% { transform: rotate(0); }
-  35% { transform: rotate(-12deg); }
-  70% { transform: rotate(6deg); }
 }

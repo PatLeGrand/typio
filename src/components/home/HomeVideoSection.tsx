@@ -1,33 +1,35 @@
 import type { Dictionary } from "@/i18n/dictionaries";
 import { InteractiveVideo } from "./InteractiveVideo";
+
 type HomeVideoSectionProps = {
   home: Dictionary["home"];
 };
 
+/** L'écran géant du stade : un cadre sombre dans les deux thèmes, comme un vrai écran éteint autour de l'image. */
 export function HomeVideoSection({ home }: HomeVideoSectionProps) {
   return (
-    <section id="video" className="relative z-10 scroll-mt-24 py-16 pl-16 pr-6 md:scroll-mt-0 md:px-8 md:py-24" aria-labelledby="video-title">
-      <div className="relative mx-auto max-w-[1120px] md:pl-40">
-        <span data-track-point aria-hidden="true" className="absolute -top-8 left-20" />
-        <span data-track-point aria-hidden="true" className="absolute -bottom-8 left-20" />
-        <div className="flex min-w-0 flex-col gap-8 md:ml-auto md:max-w-[806px]">
-          <div className="flex max-w-prose flex-col gap-4">
-            <h2 id="video-title" className="text-balance text-3xl font-medium leading-[1.16] tracking-tight text-foreground sm:text-[42px]">
-              {home.video.title}
-            </h2>
-            <p className="text-base leading-[1.65] text-muted sm:text-lg">{home.video.description}</p>
+    <section id="video" className="scroll-mt-24 pb-20 md:pb-28" aria-labelledby="video-title">
+      <div className="home-lane-content grid gap-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:items-start lg:gap-12">
+        <div className="flex max-w-prose flex-col gap-4 lg:sticky lg:top-32">
+          <h2 id="video-title" className="text-balance font-display text-[clamp(2.25rem,5vw,3.75rem)] font-black leading-[0.92] text-foreground">
+            {home.video.title}
+          </h2>
+          <p className="text-lg leading-relaxed text-muted">{home.video.description}</p>
+        </div>
+        <div className="min-w-0">
+          <div className="rounded-[28px] bg-screen p-2 shadow-[0_18px_40px_-24px_rgb(0_0_0/0.55)] sm:p-3">
+            <InteractiveVideo
+              ariaLabel={home.media.videoLabel}
+              fallbackText={home.media.videoDescription}
+              playLabel={home.media.videoPlay}
+              pauseLabel={home.media.videoPause}
+              details={home.media.videoDetails}
+              src="/videos/typio-intro.mp4"
+            />
           </div>
-          <div className="w-full">
-            <div className="overflow-hidden rounded-[28px] border border-border bg-accent-panel p-2 shadow-sm sm:p-3">
-              <InteractiveVideo
-                ariaLabel={home.media.videoLabel}
-                fallbackText={home.media.videoDescription}
-                playLabel={home.media.videoPlay}
-                pauseLabel={home.media.videoPause}
-                details={home.media.videoDetails}
-                src="/videos/typio-intro.mp4"
-              />
-            </div>
+          <div aria-hidden="true" className="mx-auto flex w-2/3 justify-between px-6">
+            <span className="h-6 w-2.5 bg-screen sm:h-10" />
+            <span className="h-6 w-2.5 bg-screen sm:h-10" />
           </div>
         </div>
       </div>

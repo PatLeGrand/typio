@@ -1,21 +1,23 @@
-import { Sparkles } from "lucide-react";
-import { Badge } from "../Badge";
-
 type AuthHeadingProps = {
-  /** Texte traduit du badge (affiché en majuscules). */
+  /** Surtitre traduit (affiché en majuscules). */
   kicker: string;
   /** Titre de la page : c'est le `h1`. */
   title: string;
   intro?: string;
 };
 
-/** Badge, titre et introduction en tête de chaque page d'authentification. */
+/** Surtitre sobre souligné d'une touche de tartan, titre en Big Shoulders et introduction éventuelle. */
 export function AuthHeading({ kicker, title, intro }: AuthHeadingProps) {
   return (
-    <div className="flex flex-col items-start gap-3.5">
-      <Badge icon={<Sparkles />}>{kicker}</Badge>
-      <h1 className="text-[32px] font-bold leading-[1.15] text-foreground sm:text-[38px]">{title}</h1>
-      {intro && <p className="text-base leading-[1.55] text-muted">{intro}</p>}
+    <div className="flex flex-col items-start gap-3">
+      <p className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+        <span aria-hidden="true" className="h-0.5 w-6 bg-track-accent" />
+        {kicker}
+      </p>
+      <h1 className="text-balance font-display text-[clamp(2.35rem,9vw,3.35rem)] font-black leading-[0.92] tracking-[-0.01em] text-foreground">
+        {title}
+      </h1>
+      {intro && <p className="max-w-[42ch] text-pretty text-[15px] leading-relaxed text-muted">{intro}</p>}
     </div>
   );
 }

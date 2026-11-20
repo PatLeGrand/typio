@@ -35,19 +35,19 @@ const PROVIDERS: { name: OAuthProviderName; icon: ReactNode }[] = [
 export function OAuthButtons({ locale, labels, enabledProviders }: OAuthButtonsProps) {
   return (
     <div className="flex flex-col gap-2">
-      <div role="group" aria-label={labels.groupLabel} className="grid grid-cols-2 gap-3">
+      <div role="group" aria-label={labels.groupLabel} className="grid grid-cols-2 gap-2.5 sm:gap-3">
         {PROVIDERS.map(({ name, icon }) =>
           enabledProviders.includes(name) ? (
             <a
               key={name}
               href={`/api/auth/${name}?locale=${locale}`}
-              className={buttonClasses("secondary", false, "")}
+              className={buttonClasses("secondary", false, "min-w-0 px-3 sm:px-5")}
             >
               {icon}
               <span>{labels[name]}</span>
             </a>
           ) : (
-            <Button key={name} variant="secondary" disabled className="flex-wrap gap-y-1">
+            <Button key={name} variant="secondary" disabled className="min-w-0 flex-wrap gap-y-1 px-3 py-2.5 sm:px-5">
               {icon}
               <span>{labels[name]}</span>
               {/* Espace voulu : il sépare les mots du nom accessible sans rien afficher. */}
