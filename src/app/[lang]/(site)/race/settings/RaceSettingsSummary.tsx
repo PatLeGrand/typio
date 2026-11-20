@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
-import { Settings2 } from "lucide-react";
+import { useId } from "react";
 import { Button } from "@/components/Button";
 import type { RaceSettings } from "@/race/config";
+import { formatPlural } from "@/race/format";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 
@@ -10,116 +10,100 @@ type RaceSettingsSummaryProps = {
   dict: Dictionary["raceSettings"];
   lang: Locale;
   onLaunch: () => void;
-  /** Bouton « Inviter des amis » ou message d'indisponibilité, selon qui regarde la page. */
-  inviteAction: ReactNode;
 };
 
-/** Récapitulatif illustré des réglages, avec les actions de lancement et d'invitation. */
-export function RaceSettingsSummary({ settings, dict, lang, onLaunch, inviteAction }: RaceSettingsSummaryProps) {
+/**
+ * Résumé en une phrase et lancement dans l'esprit « stade de nuit » (`--screen*`).
+ * Sous `lg`, barre compacte (≤ 72 px) collée en bas de l'écran pour lancer sans parcourir la page.
+ */
+export function RaceSettingsSummary({ settings, dict, lang, onLaunch }: RaceSettingsSummaryProps) {
+  const headingId = useId();
   const numberFormat = new Intl.NumberFormat(lang);
 
+  const timeLimitLabel = settings.timeLimitSeconds === null
+    ? dict.summary.noTimeLimit
+    : settings.timeLimitSeconds < 60
+      ? dict.timeLimit.seconds.replace("{seconds}", numberFormat.format(settings.timeLimitSeconds))
+      : dict.timeLimit.minutes.replace("{minutes}", numberFormat.format(settings.timeLimitSeconds / 60));
+
+  const botsLabel = settings.bots.length === 0
+    ? dict.summary.solo
+    : formatPlural(lang, settings.bots.length, dict.summary.botsCount).replace("{count}", numberFormat.format(settings.bots.length));
+
+  const summaryParts = [
+    settings.textMode === "sentences" ? dict.textMode.sentences : dict.textMode.words,
+    settings.language === "fr" ? dict.language.fr : dict.language.en,
+    dict.complexity[settings.complexity],
+    dict.length.words.replace("{count}", numberFormat.format(settings.length)),
+    timeLimitLabel,
+    botsLabel,
+  ];
+
   return (
-  <aside className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-10">
-    <div className="bg-surface border border-border rounded-[24px] overflow-hidden flex flex-col shadow-soft">
-      {/* Illustration Header */}
-      <div className="h-[180px] bg-island-mint relative overflow-hidden flex flex-col items-center justify-end">
-        <div className="absolute top-6 left-6 text-left">
-          <h2 className="text-[22px] font-extrabold text-foreground">{dict.summary.title}</h2>
-        </div>
+    <aside
+      aria-labelledby={headingId}
+      className="sticky bottom-0 z-20 -mx-4 border-t border-screen-border bg-screen text-screen-text shadow-[0_-8px_24px_rgba(0,0,0,0.22)] sm:-mx-8 lg:relative lg:bottom-auto lg:col-start-2 lg:row-start-1 lg:mx-0 lg:overflow-hidden lg:rounded-panel lg:border-t-0 lg:shadow-soft lg:ring-1 lg:ring-inset lg:ring-screen-border"
+    >
+      {/* Lignes de virage discrètes du stade de nuit */}
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 380 340"
+        fill="none"
+        preserveAspectRatio="xMaxYMin slice"
+        className="pointer-events-none absolute inset-0 hidden size-full lg:block"
+      >
+        <path d="M270 -20C270 86 322 142 396 142" stroke="var(--screen-border)" strokeWidth="1.5" opacity="0.9" />
+        <path d="M226 -20C226 112 292 184 396 184" stroke="var(--screen-border)" strokeWidth="1.5" opacity="0.55" />
+      </svg>
 
-        {/* Hills mockup */}
-        <div className="absolute bottom-0 w-[120%] h-20 bg-key-mint/60 rounded-t-[100%] translate-y-4 -translate-x-10"></div>
-        <div className="absolute bottom-0 w-[110%] h-16 bg-key-mint rounded-t-[100%] translate-y-2 translate-x-4"></div>
-        <div className="absolute bottom-0 w-full h-4 bg-island-sand"></div>
-
-        {/* Blobs mockup */}
-        <div className="relative z-10 flex items-end gap-2 mb-4">
-           <div className="w-14 h-14 bg-accent-text rounded-t-full relative flex items-center justify-center">
-              <div className="flex gap-2 -mt-2">
-                 <div className="w-2 h-2 bg-accent-foreground rounded-full"></div>
-                 <div className="w-2 h-2 bg-accent-foreground rounded-full"></div>
-              </div>
-           </div>
-        </div>
+      {/* Filet tartan sur la barre mobile collée en bas */}
+      <div aria-hidden="true" className="track-surface relative h-1 w-full lg:hidden">
+        <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[repeating-linear-gradient(90deg,var(--track-line)_0_10px,transparent_10px_20px)] opacity-75" />
       </div>
 
-      {/* Card Body */}
-      <div className="p-8 pb-6 flex-1 flex flex-col">
-        <p className="text-sm text-muted mb-6">
-          {dict.summary.participants.replace("{bots}", settings.bots.length.toString()).replace("{total}", (settings.bots.length + 1).toString())}
-        </p>
-
-        <ul className="flex flex-col gap-3 text-sm mb-8">
-          <li className="flex justify-between border-b border-border pb-3">
-            <span className="text-muted">{dict.textMode.label}</span>
-            <span className="font-semibold">{settings.textMode === "sentences" ? dict.textMode.sentences : dict.textMode.words}</span>
-          </li>
-          <li className="flex justify-between border-b border-border pb-3">
-            <span className="text-muted">{dict.language.label}</span>
-            <span className="font-semibold">{settings.language === "fr" ? dict.language.fr : dict.language.en}</span>
-          </li>
-          <li className="flex justify-between border-b border-border pb-3">
-            <span className="text-muted">{dict.accents.label}</span>
-            <span className="font-semibold">{settings.accents ? dict.accents.include : dict.accents.exclude}</span>
-          </li>
-          <li className="flex justify-between border-b border-border pb-3">
-            <span className="text-muted">{dict.complexity.label}</span>
-            <span className="font-semibold">{dict.complexity[settings.complexity]}</span>
-          </li>
-          {(["punctuation", "numbers", "uppercase"] as const).map((option) => (
-            <li key={option} className="flex justify-between border-b border-border pb-3">
-              <span className="text-muted">{dict[option].label}</span>
-              <span className="font-semibold">{settings[option] ? dict.accents.include : dict.accents.exclude}</span>
-            </li>
-          ))}
-          <li className="flex justify-between border-b border-border pb-3">
-            <span className="text-muted">{dict.length.label}</span>
-            <span className="font-semibold">{dict.length.words.replace("{count}", numberFormat.format(settings.length))}</span>
-          </li>
-          <li className="flex justify-between border-b border-border pb-3">
-            <span className="text-muted">{dict.excludedChars.label}</span>
-            <span className="font-semibold">{settings.excludedCharacters || dict.excludedChars.none}</span>
-          </li>
-          <li className="flex justify-between border-b border-border pb-3">
-            <span className="text-muted">{dict.timeLimit.label}</span>
-            <span className="font-semibold">{settings.timeLimitSeconds === null ? dict.timeLimit.noneShort : settings.timeLimitSeconds < 60 ? dict.timeLimit.seconds.replace("{seconds}", numberFormat.format(settings.timeLimitSeconds)) : dict.timeLimit.minutes.replace("{minutes}", numberFormat.format(settings.timeLimitSeconds / 60))}</span>
-          </li>
-          <li className="flex justify-between border-b border-border pb-3">
-            <span className="text-muted">{dict.inputMode.label}</span>
-            <span className="font-semibold">{settings.inputMode === "free" ? dict.inputMode.free : dict.inputMode.blocking}</span>
-          </li>
-          <li className="flex justify-between border-b border-border pb-3">
-            <span className="text-muted">{dict.bots.label}</span>
-            <span className="font-semibold">{settings.bots.length} · {settings.bots.map((level) => dict.bots.levels[level]).join(", ")}</span>
-          </li>
-          <li className="flex justify-between pb-1">
-            <span className="text-muted">{dict.bonuses.label}</span>
-            <span className="font-semibold">{settings.bonuses ? dict.bonuses.on : dict.bonuses.off}</span>
-          </li>
-        </ul>
-
-        <div className="bg-accent-soft rounded-[12px] p-4 flex gap-3 mb-6">
-          <div className="text-accent-text mt-0.5">
-             <Settings2 className="w-5 h-5" />
-          </div>
-          <p className="text-[13px] text-accent-text font-medium leading-relaxed">
-            {dict.summary.tip}
+      <div className="relative z-10 flex items-center gap-3 px-4 pb-2.5 pt-1.5 sm:px-8 lg:flex-col lg:items-stretch lg:gap-5 lg:px-7 lg:pb-8 lg:pt-7">
+        <div className="sr-only sm:not-sr-only sm:min-w-0 sm:flex-1 lg:flex lg:flex-none lg:flex-col lg:gap-3">
+          <h2
+            id={headingId}
+            className="sr-only text-balance font-display text-3xl font-black leading-[0.92] tracking-[-0.01em] text-screen-text lg:not-sr-only"
+          >
+            {dict.summary.title}
+          </h2>
+          <p className="text-xs font-medium leading-relaxed text-screen-text max-lg:truncate sm:text-sm lg:flex lg:flex-wrap lg:items-baseline lg:gap-y-0.5 lg:rounded-2xl lg:border lg:border-screen-border lg:bg-screen-surface lg:px-4 lg:py-3.5">
+            {summaryParts.map((part, index) => (
+              <span key={index} className="inline whitespace-nowrap lg:inline-flex lg:items-baseline">
+                {index > 0 ? <span aria-hidden="true" className="mx-1.5 text-key-yellow">·</span> : null}
+                <span className={index === 0 ? "font-semibold" : undefined}>{part}</span>
+              </span>
+            ))}
           </p>
         </div>
 
-        <Button variant="start" fullWidth className="mt-auto" onClick={onLaunch}>
+        <Button
+          variant="start"
+          onClick={onLaunch}
+          className="w-full shrink-0 max-lg:min-h-11 max-lg:py-2 sm:w-auto lg:w-full"
+        >
           {dict.summary.start}
         </Button>
-        <p className="text-center text-xs text-muted mt-4">
+
+        <p className="hidden text-center text-xs leading-relaxed text-screen-muted lg:block">
           {dict.summary.ready}
         </p>
-        <div className="mt-6 border-t border-border pt-6 flex flex-col gap-3">
-          <h3 className="text-balance text-lg font-semibold text-foreground">{dict.invite.title}</h3>
-          <p className="text-sm text-muted-strong">{dict.invite.description}</p>
-          {inviteAction}
-        </div>
+
+        <p className="hidden border-t border-screen-border pt-4 text-xs leading-relaxed text-screen-muted lg:block">
+          {dict.summary.tip}
+        </p>
       </div>
-    </div>
-  </aside>
+
+      {/* Bande de piste tartan avec damier d'arrivée sur grand écran */}
+      <div
+        aria-hidden="true"
+        className="track-surface pointer-events-none relative hidden h-3 border-t border-track-line/35 lg:block"
+      >
+        <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-[repeating-linear-gradient(90deg,var(--track-line)_0_12px,transparent_12px_24px)] opacity-75" />
+        <span className="track-checker absolute inset-y-0 right-0 w-3.5 opacity-90" />
+      </div>
+    </aside>
   );
 }

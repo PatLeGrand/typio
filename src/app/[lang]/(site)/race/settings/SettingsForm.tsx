@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
+import { RotateCcw } from "lucide-react";
+import { RaceRoomSettings } from "@/components/race/RaceRoomSettings";
 import { RaceSettingsFields } from "@/components/race/RaceSettingsFields";
 import { Button } from "@/components/Button";
 import { DEFAULT_RACE_SETTINGS, serializeRaceSettings } from "@/race/config";
@@ -26,14 +28,32 @@ interface SettingsFormProps {
   initialSettings?: RaceSettings;
   /** Par défaut anonyme : aucune connexion à la salle n'est ouverte. */
   invite?: InviteAccess;
+  /** Classe portant `--font-big-shoulders` (fournie par `page.tsx` via `next/font`). */
+  displayFontClassName?: string;
 }
 
-export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "anonymous" } }: SettingsFormProps) {
+export function SettingsForm({
+  lang,
+  dict,
+  initialSettings,
+  invite = { kind: "anonymous" },
+  displayFontClassName = "",
+}: SettingsFormProps) {
   const router = useRouter();
+  const inviteHeadingId = useId();
+  const roomIdPrefix = useId();
 
   const [settings, setSettings] = useState<RaceSettings>({ ...(initialSettings ?? DEFAULT_RACE_SETTINGS) });
   const [includedError, setIncludedError] = useState<string | null>(null);
   const [excludedError, setExcludedError] = useState<string | null>(null);
+  const [errorTrigger, setErrorTrigger] = useState(0);
+
+  // Marge de défilement basse sous `lg` pour qu'aucun contrôle focalisé ne soit masqué par la barre collée (WCAG 2.4.11).
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-race-settings-dock", "");
+    return () => root.removeAttribute("data-race-settings-dock");
+  }, []);
 
   const handleChange = (patch: Partial<RaceSettings>) => {
     setSettings((current) => ({ ...current, ...patch }));
@@ -51,11 +71,13 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
   const validate = (): boolean => {
     if (settings.includedCharacters.length > MAX_EXCLUDED_INPUT_LENGTH) {
       setIncludedError(dict.includedChars.error);
+      setErrorTrigger((count) => count + 1);
       return false;
     }
     setIncludedError(null);
     if (settings.excludedCharacters.length > MAX_EXCLUDED_INPUT_LENGTH) {
       setExcludedError(dict.excludedChars.error);
+      setErrorTrigger((count) => count + 1);
       return false;
     }
     setExcludedError(null);
@@ -82,47 +104,82 @@ export function SettingsForm({ lang, dict, initialSettings, invite = { kind: "an
     );
 
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-10 text-foreground sm:px-8">
+    <main className={`${displayFontClassName} mx-auto w-full max-w-[1200px] flex-1 overflow-x-clip px-4 pb-10 pt-6 text-foreground sm:px-8 sm:pt-10`}>
+      {/* En-tête de page dans le vocabulaire « stade » */}
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 border-b border-border/80 pb-6 sm:flex-row sm:items-end">
+        <div className="flex min-w-0 flex-col items-start gap-2.5">
+          <p className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+            <span aria-hidden="true" className="h-0.5 w-6 bg-track-accent" />
+            {dict.kicker}
+          </p>
+          <h1 className="text-balance font-display text-[clamp(2.5rem,8vw,3.75rem)] font-black leading-[0.9] tracking-[-0.01em] text-foreground">
+            {dict.title}
+          </h1>
+          <p className="max-w-[54ch] text-pretty text-[15px] leading-relaxed text-muted">
+            {dict.subtitle}
+          </p>
+        </div>
+        <Button variant="secondary" className="shrink-0 bg-surface" onClick={handleReset}>
+          <RotateCcw aria-hidden="true" className="size-4 shrink-0" />
+          {dict.reset}
+        </Button>
+      </div>
 
-        {/* PAGE HEADER */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start justify-between mb-8">
-          <div>
-            <h1 className="text-[40px] font-extrabold text-foreground leading-tight tracking-tight mb-2">
-              {dict.title}
-            </h1>
-            <p className="text-muted text-lg">
-              {dict.subtitle}
-            </p>
-          </div>
-          <Button variant="secondary" className="bg-surface" onClick={handleReset}>
-            {dict.reset}
-          </Button>
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_1fr_auto] lg:items-start lg:gap-x-10 lg:gap-y-5">
+        {/* Colonne de gauche : réglages essentiels + « Plus d'options » */}
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1 lg:row-span-2">
+          <RaceSettingsFields
+            value={settings}
+            onChange={handleChange}
+            dict={dict}
+            lang={lang}
+            excludedError={excludedError}
+            includedError={includedError}
+            errorTrigger={errorTrigger}
+            showRoomSettings={false}
+          />
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-
-          {/* LEFT COLUMN: SETTINGS */}
-          <div className="min-w-0 w-full flex-1 flex flex-col gap-6">
-
-            <RaceSettingsFields
-              value={settings}
-              onChange={handleChange}
-              dict={dict}
-              lang={lang}
-              excludedError={excludedError}
-              includedError={includedError}
-            />
-
-            <p className="text-center text-sm text-muted mt-4">
-              {dict.footer}
-            </p>
-
+        {/* Bloc « Avec des amis » : juste après « Plus d'options » sous lg, colonne de droite sur lg+ */}
+        <section
+          aria-labelledby={inviteHeadingId}
+          className="flex min-w-0 flex-col gap-4 rounded-card border border-border bg-surface p-5 shadow-soft sm:p-6 lg:col-start-2 lg:row-start-2"
+        >
+          <div className="flex flex-col gap-1">
+            <h2
+              id={inviteHeadingId}
+              className="text-balance font-display text-2xl font-black leading-none tracking-[-0.01em] text-foreground"
+            >
+              {dict.invite.title}
+            </h2>
+            <p className="text-sm leading-relaxed text-muted-strong">{dict.invite.description}</p>
           </div>
+          {invite.kind === "member" ? (
+            <div className="border-t border-border/80 pt-4">
+              <RaceRoomSettings
+                value={settings}
+                onChange={handleChange}
+                readOnly={false}
+                dict={dict}
+                lang={lang}
+                idPrefix={roomIdPrefix}
+                headingLevel={3}
+                compact
+              />
+            </div>
+          ) : null}
+          <div className={`flex flex-col gap-3 ${invite.kind === "member" ? "border-t border-border/80 pt-4" : ""}`}>
+            {inviteAction}
+          </div>
+        </section>
 
-          {/* RIGHT COLUMN: RECAP CARD */}
-          <RaceSettingsSummary settings={settings} dict={dict} lang={lang} onLaunch={handleLaunch} inviteAction={inviteAction} />
+        <p className="text-xs leading-relaxed text-muted lg:col-start-1 lg:row-start-3">
+          {dict.footer}
+        </p>
 
-        </div>
+        {/* Panneau « stade de nuit » : résumé en une phrase + lancement (barre collée en bas sous lg) */}
+        <RaceSettingsSummary settings={settings} dict={dict} lang={lang} onLaunch={handleLaunch} />
+      </div>
     </main>
   );
 }

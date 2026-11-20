@@ -13,16 +13,16 @@ export function Switch({ checked, onChange, className = "", ...props }: SwitchPr
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`
-        relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text focus-visible:ring-offset-2
-        ${checked ? "bg-accent" : "bg-border"}
+        relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-text focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60
+        ${checked ? "border-accent bg-accent dark:border-accent-text" : "border-muted bg-surface"}
         ${className}
       `}
       {...props}
     >
       <span
         className={`
-          pointer-events-none inline-block h-6 w-6 rounded-full bg-accent-foreground shadow-lg ring-0 transition-transform
-          ${checked ? "translate-x-5" : "translate-x-0"}
+          pointer-events-none inline-block size-5 rounded-full shadow-sm ring-0 transition-transform motion-reduce:transition-none
+          ${checked ? "translate-x-[22px] bg-accent-foreground" : "translate-x-0.5 bg-muted"}
         `}
       />
     </button>

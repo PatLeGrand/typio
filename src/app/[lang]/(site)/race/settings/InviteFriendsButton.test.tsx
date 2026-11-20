@@ -88,6 +88,7 @@ describe.each(["fr", "en"] as const)("Inviter des amis, membre (%s)", (locale) =
     mocks.useRoom.mockImplementation(() => makeUseRoom({ create }));
     const { raceSettings } = renderMember(locale);
 
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(raceSettings.advanced.title) }));
     fireEvent.change(screen.getByRole("textbox", { name: raceSettings.excludedChars.label }), {
       target: { value: "a".repeat(101) },
     });

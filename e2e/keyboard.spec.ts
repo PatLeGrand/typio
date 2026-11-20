@@ -131,6 +131,13 @@ test.describe("parcours clavier d’un membre", () => {
     await expect(sentences).not.toBeChecked();
     await expectVisibleFocus(page);
 
+    const advanced = page.getByRole("button", { name: new RegExp(`^${settings.advanced.title}`) });
+    await tabTo(page, advanced);
+    if (await advanced.getAttribute("aria-expanded") !== "true") {
+      await page.keyboard.press("Enter");
+      await expect(advanced).toHaveAttribute("aria-expanded", "true");
+    }
+
     const punctuation = page.getByRole("switch", { name: settings.punctuation.label, exact: true });
     await tabTo(page, punctuation);
     const wasChecked = await punctuation.getAttribute("aria-checked");
