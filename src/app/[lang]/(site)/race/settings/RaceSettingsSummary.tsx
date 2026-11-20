@@ -1,4 +1,4 @@
-import { Fragment, useId } from "react";
+import { useId } from "react";
 import { Button } from "@/components/Button";
 import type { RaceSettings } from "@/race/config";
 import { formatPlural } from "@/race/format";
@@ -69,12 +69,12 @@ export function RaceSettingsSummary({ settings, dict, lang, onLaunch }: RaceSett
           >
             {dict.summary.title}
           </h2>
-          <p className="truncate text-xs font-medium leading-relaxed text-screen-text sm:text-sm lg:overflow-visible lg:whitespace-normal lg:rounded-2xl lg:border lg:border-screen-border lg:bg-screen-surface lg:px-4 lg:py-3.5">
+          <p className="text-xs font-medium leading-relaxed text-screen-text max-lg:truncate sm:text-sm lg:flex lg:flex-wrap lg:items-baseline lg:gap-y-0.5 lg:rounded-2xl lg:border lg:border-screen-border lg:bg-screen-surface lg:px-4 lg:py-3.5">
             {summaryParts.map((part, index) => (
-              <Fragment key={index}>
+              <span key={index} className="inline whitespace-nowrap lg:inline-flex lg:items-baseline">
                 {index > 0 ? <span aria-hidden="true" className="mx-1.5 text-key-yellow">·</span> : null}
-                <span className={index === 0 ? "whitespace-nowrap font-semibold" : "whitespace-nowrap"}>{part}</span>
-              </Fragment>
+                <span className={index === 0 ? "font-semibold" : undefined}>{part}</span>
+              </span>
             ))}
           </p>
         </div>
