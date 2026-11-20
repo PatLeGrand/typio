@@ -1,12 +1,10 @@
 "use client";
 
 import { MediaPlaybackButton } from "./MediaPlaybackButton";
-import { HomeTrackScene } from "./HomeTrackScene";
+import { HomeLiveScene } from "./HomeLiveScene";
 import { RaceInputCard } from "@/components/race/RaceInputCard";
 import { HomeTrialInput } from "./HomeTrialInput";
-import dynamic from "next/dynamic";
-import Image from "next/image";
-import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ChangeEvent, type SyntheticEvent } from "react";
 import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
 import type { Dictionary } from "@/i18n/dictionaries";
@@ -15,12 +13,9 @@ import { usePhysicalKeyboard } from "@/components/race/usePhysicalKeyboard";
 import { getReducedMotionSnapshot, subscribeToReducedMotion } from "@/theme/reducedMotion";
 import { createPlayableRace, playableRaceProgress, playableRaceResult, transitionPlayableRace } from "./playableRace";
 
-const RaceVisualizer = memo(dynamic(
-  () => import("@/components/race/RaceVisualizer").then((module) => module.RaceVisualizer),
-  { ssr: false },
-));
-
 const SPEEDS = [1.14, 1.2, 1.16, 1.17];
+/** La démo s'ouvre en pleine course : c'est aussi l'image fixe du mobile et du mouvement réduit (PERF-01). */
+const DEMO_START = [58, 44, 71, 33];
 const serverMotionSnapshot = () => true;
 const subscribeHydration = () => () => {};
 const hydrationSnapshot = () => true;
@@ -45,13 +40,9 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
   const hydrated = useSyncExternalStore(subscribeHydration, hydrationSnapshot, serverHydrationSnapshot);
   const still = reducedMotion || !physicalKeyboard;
   const [activity, setActivity] = useState({ inView: false, hidden: true });
-  const [ready, setReady] = useState(false);
   const [userPaused, setUserPaused] = useState(false);
   const paused = userPaused || !activity.inView || activity.hidden;
-  const [frame, setFrame] = useState({ progress: [0, 0, 0, 0], pauseTicks: 0, tick: 0 });
-  const racers = useMemo(() => labels.racers.map((name, index) => ({
-    id: `demo-${index}`, name, progress: frame.progress[index], isLocal: index === 0, hue: index * 47,
-  })), [labels.racers, frame.progress]);
+  const [frame, setFrame] = useState({ progress: DEMO_START, pauseTicks: 0, tick: 0 });
   const number = new Intl.NumberFormat(locale);
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
   const result = playableRaceResult(race);
@@ -127,27 +118,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
   }, []);
 
   useEffect(() => {
-    if (ready || still || paused) return;
-    let idle: number | undefined;
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    const schedule = () => {
-      if ("requestIdleCallback" in window) {
-        idle = window.requestIdleCallback(() => setReady(true));
-      } else {
-        timeout = setTimeout(() => setReady(true), 200);
-      }
-    };
-    if (document.readyState === "complete") schedule();
-    else window.addEventListener("load", schedule, { once: true });
-    return () => {
-      window.removeEventListener("load", schedule);
-      if (idle !== undefined) window.cancelIdleCallback(idle);
-      clearTimeout(timeout);
-    };
-  }, [ready, still, paused]);
-
-  useEffect(() => {
-    if (!ready || still || paused || race.phase !== "waiting") return;
+    if (still || paused || race.phase !== "waiting") return;
     const timer = setInterval(() => {
       // Five ticks leave a short pause at the finish before the next race.
       setFrame(({ progress, pauseTicks, tick }) => {
@@ -164,7 +135,7 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
       });
     }, 200);
     return () => clearInterval(timer);
-  }, [ready, still, paused, race.phase]);
+  }, [still, paused, race.phase]);
 
   useEffect(() => {
     if (paused || !physicalKeyboard || race.phase !== "racing") return;
@@ -194,55 +165,24 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
     }} onClick={(event) => {
       if (event.target instanceof Element && event.target.closest("[data-home-typing], [data-home-race-track]") && !event.target.closest("button, a, input, progress")) inputRef.current?.focus();
     }}>
-      <div className="relative">
-        <div data-home-race-track aria-hidden="true" className="relative h-[230px] w-full overflow-hidden bg-island-mint sm:h-[260px] 2xl:h-[340px]">
-          <Image
-            src={`/home/race-showcase-${locale}-light.webp`}
-            alt=""
-            fetchPriority="high"
-            width={756}
-            height={518}
-            sizes="100vw"
-            className="block h-full w-full object-cover md:hidden dark:hidden"
-          />
-          <Image
-            src={`/home/race-showcase-${locale}-dark.webp`}
-            alt=""
-            fetchPriority="high"
-            width={756}
-            height={518}
-            sizes="100vw"
-            className="hidden h-full w-full object-cover md:hidden dark:block dark:md:hidden"
-          />
-          <HomeTrackScene className="hidden md:block" />
-          {(still || !ready) && labels.racers.map((name, index) => <Image key={name}
-            src="/race/blob.svg" alt="" aria-hidden="true" width={52} height={52}
-            className="absolute hidden md:block"
-            style={{ left: `${18 + index * 20}%`, bottom: 24 + index * 14, filter: `hue-rotate(${index * 47}deg)` }}
-          />)}
-          {ready && !still && <RaceVisualizer
-            trackLength={1500}
-            racers={racers}
-            paused={paused}
-            maxFPS={30}
-            className="absolute inset-0 h-full w-full"
-          />}
-        </div>
-      </div>
-      {!still && <div className="pointer-events-none absolute inset-x-0 top-0 h-[210px] sm:h-[240px] 2xl:h-[320px]">
-        <div className="pointer-events-auto">
-          <MediaPlaybackButton playing={!userPaused} label={userPaused ? labels.resume : labels.pause}
-            onClick={() => {
-              if (!userPaused) {
-                const next = transitionPlayableRace(raceRef.current, { type: "tick", deltaMs: elapsed() });
-                raceRef.current = next;
-                setRace(next);
-              }
-              setUserPaused((value) => !value);
-            }} />
-        </div>
-      </div>}
-      <div className="relative z-10 mx-auto -mt-5 max-w-[960px] px-4 sm:px-8">
+      <HomeLiveScene
+        labels={labels}
+        progress={frame.progress}
+        still={still}
+        paused={paused}
+        moving={!still && !paused && race.phase !== "finished"}
+        locale={locale}
+        pauseControl={still ? null : <MediaPlaybackButton playing={!userPaused} label={userPaused ? labels.resume : labels.pause}
+          onClick={() => {
+            if (!userPaused) {
+              const next = transitionPlayableRace(raceRef.current, { type: "tick", deltaMs: elapsed() });
+              raceRef.current = next;
+              setRace(next);
+            }
+            setUserPaused((value) => !value);
+          }} />}
+      />
+      <div className="relative z-10 mx-auto mt-6 max-w-[960px] px-4 sm:px-8">
         <RaceInputCard data-home-typing>
           {!physicalKeyboard ? <div className={hydrated ? undefined : "md:invisible"}>
             <p className="max-w-prose text-sm text-muted">{playable.keyboard}</p>

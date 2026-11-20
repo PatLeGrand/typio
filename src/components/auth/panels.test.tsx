@@ -52,10 +52,10 @@ describe("ProgressIsland", () => {
     expect(screen.getByText("1").closest('[aria-hidden="true"]')).not.toBeNull();
   });
 
-  it("utilise les tokens de l'île (sable et menthe)", () => {
+  it("utilise les tokens du panneau stade de nuit", () => {
     const { container } = render(<ProgressIsland labels={getDictionary("fr").island} />);
-    expect(container.querySelector(".bg-island-sand")).not.toBeNull();
-    expect(container.querySelector(".bg-island-mint")).not.toBeNull();
+    expect(container.querySelector(".bg-screen-surface")).not.toBeNull();
+    expect(container.querySelector(".bg-key-yellow")).not.toBeNull();
   });
 });
 
@@ -71,7 +71,7 @@ describe("PromisePanel", () => {
     expect(screen.getByText(promise.badge)).toHaveClass("uppercase");
     const heading = screen.getByRole("heading", { level: 2 });
     expect(heading).toHaveTextContent(`${promise.titleLine1}${promise.titleLine2}`);
-    expect(screen.getByText(promise.titleLine2)).toHaveClass("text-accent-text");
+    expect(screen.getByText(promise.titleLine2)).toHaveClass("text-key-yellow");
     expect(screen.getByText(promise.description)).toBeInTheDocument();
     expect(screen.getByText(promise.tipTitle)).toBeInTheDocument();
     expect(screen.getByText(plain(promise.tipText))).toBeInTheDocument();

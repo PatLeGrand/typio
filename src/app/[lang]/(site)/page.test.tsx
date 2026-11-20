@@ -3,16 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
 
-const mocks = vi.hoisted(() => ({ visualizer: vi.fn(), getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>() }));
+const mocks = vi.hoisted(() => ({ getCurrentUserForDisplay: vi.fn<() => Promise<CurrentUser | null>>() }));
 vi.mock("@/auth/currentUser", () => ({ getCurrentUserForDisplay: mocks.getCurrentUserForDisplay }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock("@/components/race/RaceVisualizer", () => ({
-  RaceVisualizer: (props: unknown) => { mocks.visualizer(props); return <div data-testid="visualizer" />; },
-}));
+// next/font/google n'est compilé que par Next ; ici on simule sa sortie.
+vi.mock("@/components/home/homeFonts", () => ({ displayFont: { variable: "font-display-mock" } }));
+
+/** Progression des coureurs de l'essai, exposée par la légende de la scène. */
+const progress = () => Array.from(document.querySelectorAll<HTMLElement>("li[data-progress]")).map((racer) => Number(racer.dataset.progress));
 
 import Home from "./page";
 
@@ -30,7 +32,6 @@ const member: CurrentUser = {
 
 beforeEach(() => {
   mocks.getCurrentUserForDisplay.mockResolvedValue(null);
-  mocks.visualizer.mockClear();
   vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
   vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
@@ -99,10 +100,9 @@ describe("Home", () => {
     }
     const finish = screen.getByRole("region", { name: home.cta.title });
     const panel = finish.querySelector<HTMLElement>("[data-finish-panel]")!;
-    const veil = finish.querySelector("[data-finish-veil]")!;
-    expect(veil).toHaveAttribute("aria-hidden", "true");
-    expect(veil.parentElement).toHaveAttribute("aria-hidden", "true");
-    expect(veil.parentElement).not.toContainElement(panel);
+    const finishLine = finish.querySelector(".track-checker")!;
+    expect(finishLine.closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(finishLine.closest('[aria-hidden="true"]')).not.toContainElement(panel);
     expect(panel).toContainElement(within(finish).getByRole("link", { name: home.signUp }));
     expect(within(finish).getByRole("link", { name: home.signUp })).toHaveClass("button-key", "min-h-14", "text-base");
     expect(panel).toContainElement(within(finish).getByRole("link", { name: home.signIn }));
@@ -149,20 +149,18 @@ describe("Home", () => {
     expect(screen.getByRole("link", { name: footer.privacy })).toHaveAttribute("href", "/fr/privacy");
   });
 
-  it.each(["fr", "en"] as const)("garde les images localisées sans visualiseur en mouvement réduit (%s)", async (lang) => {
+  it.each(["fr", "en"] as const)("garde une piste figée en pleine course en mouvement réduit (%s)", async (lang) => {
+    const { home } = getDictionary(lang);
     const { container } = render(await Home(props(lang)));
     vi.useFakeTimers();
     act(() => { vi.advanceTimersByTime(5000); });
-    const images = container.querySelectorAll("figure img");
-    expect(images).toHaveLength(6);
-    for (const [index, theme] of ["light", "dark"].entries()) {
-      expect(images[index].getAttribute("src")).toContain(encodeURIComponent(`/home/race-showcase-${lang}-${theme}.webp`));
-    }
-    expect(screen.queryByTestId("visualizer")).toBeNull();
-    expect(mocks.visualizer).not.toHaveBeenCalled();
+    const legend = within(container).getByRole("list", { name: home.raceShowcase.gridLabel });
+    for (const name of home.raceShowcase.racers) expect(legend).toHaveTextContent(name);
+    expect(container.querySelectorAll("[data-scene-racer]")).toHaveLength(4);
+    expect(progress()).toEqual([58, 44, 71, 33]);
   });
 
-  it("anime une course serrée avec dépassements et conserve le visualiseur à la manche suivante", async () => {
+  it("anime une course serrée avec dépassements, puis relance une manche depuis le départ", async () => {
     vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("min-width"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
     let enterView: (visible?: boolean) => void = () => {};
     vi.stubGlobal("IntersectionObserver", class {
@@ -173,14 +171,13 @@ describe("Home", () => {
       disconnect() {}
     });
     render(await Home(props("fr")));
-    act(() => { enterView(); });
-    const initialVisualizer = await screen.findByTestId("visualizer");
-    const progress = () => (mocks.visualizer.mock.lastCall?.[0] as { racers: { progress: number }[] }).racers.map((racer) => racer.progress);
-    expect(progress()).toEqual([0, 0, 0, 0]);
-    expect(mocks.visualizer.mock.lastCall?.[0]).toMatchObject({ trackLength: 1500 });
     vi.useFakeTimers();
-    act(() => { enterView(false); });
     act(() => { enterView(); });
+    // La démo s'ouvre en pleine course : on termine cette manche, puis on observe une manche complète.
+    expect(progress()).toEqual([58, 44, 71, 33]);
+    for (let opening = 0; Math.max(...progress()) < 100 && opening < 10000; opening += 200) act(() => { vi.advanceTimersByTime(200); });
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(progress()).toEqual([0, 0, 0, 0]);
     let elapsed = 0;
     const leaders = new Set<number>();
     while (Math.max(...progress()) < 100 && elapsed < 20000) {
@@ -201,7 +198,6 @@ describe("Home", () => {
     expect(leaders.size).toBeGreaterThan(1);
     act(() => { vi.advanceTimersByTime(1000); });
     expect(progress()).toEqual([0, 0, 0, 0]);
-    expect(screen.getByTestId("visualizer")).toBe(initialVisualizer);
   });
 
   it("répond par une 404 pour une locale inconnue", async () => {

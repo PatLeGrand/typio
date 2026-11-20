@@ -40,18 +40,18 @@ export default async function LoginPage({ params, searchParams }: PageProps<"/[l
       dictionary={dictionary}
       panel={
         <PromisePanel labels={promise}>
-          <MascotIllustration labels={illustration} />
+          <MascotIllustration labels={illustration} tone="stadium" />
         </PromisePanel>
       }
     >
-      <div className="flex flex-col gap-7">
+      <div className="flex flex-col gap-6">
         <AuthHeading kicker={auth.kicker} title={login.title} />
         {notice ? <FormAlert>{login.oauthErrors[notice]}</FormAlert> : null}
         <OAuthButtons locale={locale} labels={oauth} enabledProviders={getEnabledProviders()} />
         <AuthDivider>{login.divider}</AuthDivider>
         <LoginForm locale={locale} labels={login} common={auth} />
-        <AuthDivider>{login.guestDivider}</AuthDivider>
-        <div className="-mt-3 flex flex-col items-center gap-2">
+        <div className="flex flex-col gap-4">
+          <AuthDivider>{login.guestDivider}</AuthDivider>
           <ButtonLink href={`/${locale}/guest`} variant="secondary" fullWidth>
             <UserRound aria-hidden="true" className="size-5" />
             {login.guestButton}

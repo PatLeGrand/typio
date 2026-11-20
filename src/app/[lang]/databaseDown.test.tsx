@@ -18,6 +18,7 @@ vi.mock("@/auth/deps", () => ({
 }));
 vi.mock("@/auth/actions", () => ({ logout: vi.fn(), login: vi.fn(), register: vi.fn(), continueAsGuest: vi.fn() }));
 vi.mock("@/auth/schedulePurge", () => ({ schedulePurge: vi.fn() }));
+vi.mock("@/components/home/homeFonts", () => ({ displayFont: { variable: "font-display-mock" } }));
 vi.mock("@/components/race/RaceVisualizer", () => ({ RaceVisualizer: () => <div data-testid="visualizer" /> }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
