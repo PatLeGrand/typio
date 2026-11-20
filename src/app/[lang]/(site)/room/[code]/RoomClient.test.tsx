@@ -70,7 +70,7 @@ describe("titre de la salle", () => {
 
     for (const status of ["countdown", "racing", "results"] as const) {
       setRoom(makeUseRoom({ room: { ...hostRoom, status } }), () => view.rerender(view.ui()));
-      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(status === "results" ? view.labels.resultsTitle : view.labels.raceTitle);
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(status === "results" ? view.labels.resultsTitle : getDictionary(locale).raceScreen.circuit);
     }
   });
 });

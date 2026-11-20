@@ -26,6 +26,7 @@ interface RaceVisualizerProps {
   trackLength?: number;
   paused?: boolean;
   maxFPS?: number;
+  circuitLocale?: string;
   /** Classes du conteneur ; par défaut une boîte de 350 px avec bordure (bac à sable). */
   className?: string;
 }
@@ -69,8 +70,8 @@ const EDGE_MARGIN = 70; // px entre le Blob et le bord de l'écran
 // Couleurs de la scène par thème (DES-05, A11Y-01). Les décors sont des SVG clairs : en thème sombre on
 // assombrit le fond et on teinte (multiplie) chaque calque.
 const SCENE_COLORS = {
-  light: { background: 0xdcf2fa, layers: { cloud: 0xffffff, "meadow-distant": 0xffffff, meadow: 0xffffff, track: 0xffffff } },
-  dark: { background: 0x15122b, layers: { cloud: 0x6f7396, "meadow-distant": 0x4c5a7a, meadow: 0x48607a, track: 0x6a6480 } },
+  light: { background: 0xdcf2fa, sun: 0xffda70, layers: { cloud: 0xffffff, "meadow-distant": 0xffffff, meadow: 0xffffff, track: 0xffffff } },
+  dark: { background: 0x15122b, sun: 0xbce9da, layers: { cloud: 0x6f7396, "meadow-distant": 0x4c5a7a, meadow: 0x48607a, track: 0x6a6480 } },
 } as const;
 type LayerAlias = keyof (typeof SCENE_COLORS)["light"]["layers"];
 
@@ -79,12 +80,16 @@ export function RaceVisualizer({
   trackLength = 5000,
   paused = false,
   maxFPS = 0,
+  circuitLocale,
   className = "relative h-[350px] w-full overflow-hidden rounded-xl border border-border shadow-inner",
 }: RaceVisualizerProps) {
   const reducedMotionRef = useRef(false);
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => { reducedMotionRef.current = query.matches; };
+    const sync = () => {
+      reducedMotionRef.current = query.matches;
+      syncPlaybackRef.current?.();
+    };
     sync();
     query.addEventListener("change", sync);
     return () => query.removeEventListener("change", sync);
@@ -126,6 +131,7 @@ export function RaceVisualizer({
     let isMounted = true;
     const app = new PIXI.Application();
     const layers: Layer[] = [];
+    const sun = circuitLocale ? new PIXI.Graphics() : null;
     const views = new Map<string, RacerView>();
     // Textures des photos chargées par cette scène : libérées au démontage.
     const photoTextures: PIXI.Texture[] = [];
@@ -139,11 +145,13 @@ export function RaceVisualizer({
     const applyTheme = (isDark: boolean) => {
       const colors = SCENE_COLORS[isDark ? "dark" : "light"];
       app.renderer.background.color = colors.background;
+      if (sun) sun.tint = colors.sun;
       for (const { alias, sprite } of layers) sprite.tint = colors.layers[alias];
       if (!app.ticker.started) app.render();
     };
 
     const layoutLayers = () => {
+      sun?.position.set(app.screen.width * .78, app.screen.height * .24);
       for (const { sprite, yOffset } of layers) {
         sprite.width = app.screen.width;
         sprite.y = app.screen.height - sprite.texture.height - yOffset;
@@ -275,6 +283,7 @@ export function RaceVisualizer({
         app.destroy(true, { children: true });
         return;
       }
+      app.canvas.setAttribute("aria-hidden", "true");
       host.appendChild(app.canvas);
 
       const assets = {
@@ -298,6 +307,11 @@ export function RaceVisualizer({
         app.stage.addChild(sprite);
         layers.push({ alias, sprite, speed, yOffset });
       };
+      if (sun) {
+        sun.circle(0, 0, 39).fill(0xffffff);
+        for (const y of [6, 15, 24, 33]) sun.rect(-40, y, 80, 3).cut();
+        app.stage.addChild(sun);
+      }
       addLayer("cloud", 0.1, 300);
       addLayer("meadow-distant", 0.2, 100);
       addLayer("meadow", 0.5, 50);
@@ -309,6 +323,43 @@ export function RaceVisualizer({
       const world = new PIXI.Container();
       world.sortableChildren = true; // les coureurs du bas passent devant
       app.stage.addChild(world);
+
+      // Les portiques sont des touches de clavier plantées aux quarts du circuit.
+      const gates = new PIXI.Container();
+      const paint = circuitLocale ? new PIXI.Graphics() : null;
+      if (paint && circuitLocale) {
+        app.stage.addChildAt(paint, app.stage.getChildIndex(world));
+        app.stage.addChildAt(gates, app.stage.getChildIndex(world));
+        const css = getComputedStyle(host);
+        const ink = css.getPropertyValue("--key-ink").trim();
+        for (let x = -2000; x <= trackLengthRef.current + 2000; x += 80) {
+          paint.moveTo(x, -56).lineTo(x + 46, -56)
+            .moveTo(x, -17).lineTo(x + 60, -17)
+            .moveTo(x, -5).lineTo(x - 3, 0);
+        }
+        paint.stroke({ color: ink, width: 2, alpha: .32 });
+        const colors = ["--key-yellow", "--key-mint", "--key-coral", "--key-mint", "--key-yellow"];
+        const percent = new Intl.NumberFormat(circuitLocale, { style: "percent" });
+        colors.forEach((token, index) => {
+          const gate = new PIXI.Container();
+          const face = css.getPropertyValue(token).trim();
+          const sign = new PIXI.Graphics()
+            .rect(-3, -148, 6, 148).fill(ink)
+            .roundRect(-36, -184, 72, 45, 8).fill(ink)
+            .roundRect(-33, -183, 66, 36, 6).fill(face);
+          for (let cell = 0; cell < 12; cell++) {
+            sign.rect(-30 + cell * 5, -145 + cell % 2 * 3, 5, 3).fill(face);
+          }
+          const label = new PIXI.Text({ text: percent.format(index / 4), style: {
+            fontFamily: "sans-serif", fontWeight: "900", fontSize: 18, fill: ink,
+          } });
+          label.anchor.set(0.5);
+          label.y = -165;
+          gate.scale.set(0.85);
+          gate.addChild(sign, label);
+          gates.addChild(gate);
+        });
+      }
 
       const blobTexture = PIXI.Assets.get<PIXI.Texture>("blob");
       const updateScene = (dt: number) => {
@@ -347,7 +398,7 @@ export function RaceVisualizer({
             ? raw
             : localX + Math.max(-maxBehind, Math.min(maxAhead, raw - localRaw));
           const view = views.get(racer.id)!;
-          if (newViews.has(racer.id)) view.x = target;
+          if (newViews.has(racer.id) || reducedMotion) view.x = target;
 
           view.bonus.text = racer.bonusLabel ?? "";
 
@@ -400,7 +451,7 @@ export function RaceVisualizer({
         const local = list.find((r) => r.isLocal) ?? list[0];
         const localView = local ? views.get(local.id) : undefined;
         if (localView) {
-          if (!cameraReady) {
+          if (!cameraReady || reducedMotion) {
             cameraX = localView.x;
             cameraReady = true;
           }
@@ -409,6 +460,11 @@ export function RaceVisualizer({
 
         for (const { sprite, speed } of layers) sprite.tilePosition.x = -cameraX * speed;
         world.x = -cameraX + app.screen.width * CAMERA_ANCHOR;
+        if (paint) {
+          paint.position.set(world.x, app.screen.height);
+          gates.position.set(world.x, app.screen.height - 52);
+          gates.children.forEach((gate, index) => { gate.x = length * index / 4; });
+        }
       };
       const drawScene = () => {
         updateScene(1 / 60);
@@ -424,7 +480,7 @@ export function RaceVisualizer({
       });
       syncPlaybackRef.current = () => {
         app.ticker.maxFPS = playbackRef.current.maxFPS;
-        if (playbackRef.current.paused) {
+        if (playbackRef.current.paused || reducedMotionRef.current) {
           drawScene();
           app.ticker.stop();
         } else {
@@ -448,7 +504,7 @@ export function RaceVisualizer({
       for (const texture of hueTextures.values()) texture.destroy(true);
       hueTextures.clear();
     };
-  }, []);
+  }, [circuitLocale]);
 
   return (
     <div className={className}>

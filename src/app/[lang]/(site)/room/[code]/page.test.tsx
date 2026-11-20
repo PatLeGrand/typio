@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   roomClient: vi.fn(),
 }));
 
+vi.mock("@/components/home/homeFonts", () => ({ displayFont: { variable: "font-display-mock" } }));
 vi.mock("@/auth/currentUser", () => ({ getCurrentUser: mocks.getCurrentUser }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("./RoomClient", () => ({
