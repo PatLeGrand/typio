@@ -195,6 +195,7 @@ function readComplexity(config: Partial<RoomConfig> | null): TextComplexity {
 export function aggregatePersonalStats(
   rowsNewestFirst: readonly PersonalRaceRow[],
   sqlTotals?: PersonalStatsTotals,
+  bestRaceOverride?: BestRaceSummary | null,
 ): PersonalStatsReport {
   let finishedCount = 0;
   let unfinishedCount = 0;
@@ -392,7 +393,7 @@ export function aggregatePersonalStats(
 
   return {
     totals,
-    bestRace,
+    bestRace: bestRaceOverride !== undefined ? bestRaceOverride : bestRace,
     wpmHistory,
     trend,
     consistency,

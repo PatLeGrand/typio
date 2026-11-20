@@ -283,7 +283,10 @@ export function StatsBreakdowns({
                 {formatTotalTime(totals.totalDurationMs, integer, disciplineLabels)}
               </dd>
               <dd className="text-xs tabular-nums text-muted">
-                {disciplineLabels.totalErrorsHint.replace("{count}", integer.format(totals.totalErrors))}
+                {formatPlural(locale, totals.totalErrors, disciplineLabels.totalErrorsHint).replace(
+                  "{count}",
+                  integer.format(totals.totalErrors),
+                )}
               </dd>
             </div>
           </dl>

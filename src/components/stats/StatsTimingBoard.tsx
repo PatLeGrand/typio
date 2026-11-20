@@ -3,6 +3,7 @@ import { ArrowDownRight, ArrowUpRight, Minus, Trophy } from "lucide-react";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { Locale } from "@/i18n/config";
 import { prefixWithLocale } from "@/i18n/paths";
+import { formatPlural } from "@/race/format";
 import type { BestRaceSummary, PersonalStatsTotals, TrendSummary } from "@/race/personalStats";
 
 type Props = {
@@ -25,6 +26,19 @@ export function StatsTimingBoard({ totals, bestRace, trend, locale, labels, noVa
   const completionPct = Math.round(completionRatio * 100);
   const winRate = totals.multiplayerRaces > 0 ? totals.wins / totals.multiplayerRaces : null;
   const historyHref = prefixWithLocale("/history", locale);
+  const raceSplitParts = [
+    formatPlural(locale, totals.finishedCount, labels.finishedCount).replace("{count}", integer.format(totals.finishedCount)),
+    ...(totals.unfinishedCount > 0
+      ? [
+          formatPlural(locale, totals.unfinishedCount, labels.unfinishedCount).replace(
+            "{count}",
+            integer.format(totals.unfinishedCount),
+          ),
+        ]
+      : []),
+    formatPlural(locale, totals.abandonedCount, labels.abandonedCount).replace("{count}", integer.format(totals.abandonedCount)),
+  ];
+  const podiumsLabel = formatPlural(locale, totals.podiums, labels.podiums).replace("{count}", integer.format(totals.podiums));
 
   return (
     <section
@@ -143,9 +157,7 @@ export function StatsTimingBoard({ totals, bestRace, trend, locale, labels, noVa
               {integer.format(totals.raceCount)}
             </dd>
             <dd className="mt-2 text-xs tabular-nums text-screen-muted">
-              {labels.racesSplit
-                .replace("{finished}", integer.format(totals.finishedCount))
-                .replace("{abandoned}", integer.format(totals.abandonedCount))}
+              {raceSplitParts.join(" · ")}
             </dd>
           </div>
 
@@ -156,8 +168,8 @@ export function StatsTimingBoard({ totals, bestRace, trend, locale, labels, noVa
             </dd>
             <dd className="mt-2 text-xs tabular-nums text-screen-muted">
               {winRate !== null
-                ? `${labels.winRate.replace("{rate}", percentWhole.format(winRate))} · ${labels.podiums.replace("{count}", integer.format(totals.podiums))}`
-                : labels.podiums.replace("{count}", integer.format(totals.podiums))}
+                ? `${labels.winRate.replace("{rate}", percentWhole.format(winRate))} · ${podiumsLabel}`
+                : podiumsLabel}
             </dd>
           </div>
         </dl>

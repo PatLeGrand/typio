@@ -752,9 +752,23 @@
       "averageGross": "{wpm} brut",
       "averageAccuracy": "Précision moyenne",
       "races": "Courses",
-      "racesSplit": "{finished} arrivées · {abandoned} abandons",
+      "finishedCount": {
+        "one": "{count} arrivée",
+        "other": "{count} arrivées"
+      },
+      "unfinishedCount": {
+        "one": "{count} non arrivée",
+        "other": "{count} non arrivées"
+      },
+      "abandonedCount": {
+        "one": "{count} abandon",
+        "other": "{count} abandons"
+      },
       "wins": "Victoires",
-      "podiums": "{count} podiums",
+      "podiums": {
+        "one": "{count} podium",
+        "other": "{count} podiums"
+      },
       "winRate": "{rate} de victoires",
       "completionTrack": "Taux d’arrivée",
       "completionSummary": "{finished} courses terminées sur {total} ({rate})",
@@ -771,7 +785,7 @@
       "netWpm": "MPM net",
       "grossWpm": "MPM brut",
       "rollingAvg": "Moyenne mobile (5)",
-      "recordLine": "Record : {wpm} MPM",
+      "recordLine": "Meilleur sur la courbe : {wpm} MPM",
       "toggleGross": "Afficher le MPM brut",
       "toggleRolling": "Afficher la moyenne mobile",
       "chartAria": "Progression du MPM sur {count} courses non abandonnées, de {first} à {last} MPM, record à {best} MPM.",
@@ -852,7 +866,10 @@
       "finishStreakTitle": "Série d’arrivées",
       "finishStreakBest": "Meilleure : {count}",
       "timeTypedTitle": "Temps sur la piste",
-      "totalErrorsHint": "{count} erreurs au total",
+      "totalErrorsHint": {
+        "one": "{count} erreur au total",
+        "other": "{count} erreurs au total"
+      },
       "durationHoursMinutes": "{hours} h {minutes} min",
       "durationMinutesSeconds": "{minutes} min {seconds} s",
       "durationSeconds": "{seconds} s"

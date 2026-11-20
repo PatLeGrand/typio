@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { races, raceResults, users } from "@/db/schema";
 import { isKeyboardLayout, type KeyboardLayout } from "@/profile/profileSettings";
@@ -19,7 +19,7 @@ export function createDrizzlePersonalStatsRepository(db: PostgresJsDatabase) {
     async getPersonalStats(userId: string): Promise<PersonalStatsPayload> {
       const condition = eq(raceResults.userId, userId);
 
-      const [totalsRows, detailRows, userRows] = await Promise.all([
+      const [totalsRows, detailRows, bestRaceRows, userRows] = await Promise.all([
         db
           .select({
             raceCount: sql<number>`count(*)`.mapWith(Number),
@@ -70,6 +70,19 @@ export function createDrizzlePersonalStatsRepository(db: PostgresJsDatabase) {
           .where(condition)
           .orderBy(desc(raceResults.createdAt), desc(raceResults.id))
           .limit(MAX_DETAILED_RACES),
+        db
+          .select({
+            raceId: raceResults.raceId,
+            wpm: raceResults.wpm,
+            grossWpm: raceResults.grossWpm,
+            accuracy: raceResults.accuracy,
+            endedAt: races.endedAt,
+          })
+          .from(raceResults)
+          .innerJoin(races, eq(raceResults.raceId, races.id))
+          .where(and(condition, ne(raceResults.status, "abandoned")))
+          .orderBy(desc(raceResults.wpm), desc(raceResults.createdAt), desc(raceResults.id))
+          .limit(1),
         db.select({ keyboardLayout: users.keyboardLayout }).from(users).where(eq(users.id, userId)),
       ]);
 
@@ -98,7 +111,7 @@ export function createDrizzlePersonalStatsRepository(db: PostgresJsDatabase) {
       const keyboardLayout: KeyboardLayout = isKeyboardLayout(rawLayout) ? rawLayout : "qwerty";
 
       return {
-        ...aggregatePersonalStats(rows, sqlTotals),
+        ...aggregatePersonalStats(rows, sqlTotals, bestRaceRows[0] ?? null),
         keyboardLayout,
       };
     },

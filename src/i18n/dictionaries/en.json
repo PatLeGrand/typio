@@ -752,9 +752,23 @@
       "averageGross": "{wpm} gross",
       "averageAccuracy": "Average accuracy",
       "races": "Races",
-      "racesSplit": "{finished} finished · {abandoned} abandoned",
+      "finishedCount": {
+        "one": "{count} finished",
+        "other": "{count} finished"
+      },
+      "unfinishedCount": {
+        "one": "{count} unfinished",
+        "other": "{count} unfinished"
+      },
+      "abandonedCount": {
+        "one": "{count} abandoned",
+        "other": "{count} abandoned"
+      },
       "wins": "Wins",
-      "podiums": "{count} podiums",
+      "podiums": {
+        "one": "{count} podium",
+        "other": "{count} podiums"
+      },
       "winRate": "{rate} win rate",
       "completionTrack": "Completion rate",
       "completionSummary": "{finished} finished races out of {total} ({rate})",
@@ -771,7 +785,7 @@
       "netWpm": "Net WPM",
       "grossWpm": "Gross WPM",
       "rollingAvg": "5-race average",
-      "recordLine": "Record: {wpm} WPM",
+      "recordLine": "Chart peak: {wpm} WPM",
       "toggleGross": "Show gross WPM",
       "toggleRolling": "Show rolling average",
       "chartAria": "WPM progression across {count} non-abandoned races, from {first} to {last} WPM, peak at {best} WPM.",
@@ -852,7 +866,10 @@
       "finishStreakTitle": "Finish streak",
       "finishStreakBest": "Best: {count}",
       "timeTypedTitle": "Time on track",
-      "totalErrorsHint": "{count} total errors",
+      "totalErrorsHint": {
+        "one": "{count} total error",
+        "other": "{count} total errors"
+      },
       "durationHoursMinutes": "{hours}h {minutes}m",
       "durationMinutesSeconds": "{minutes}m {seconds}s",
       "durationSeconds": "{seconds}s"

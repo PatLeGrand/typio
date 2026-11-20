@@ -163,4 +163,40 @@ describe("aggregatePersonalStats", () => {
     expect(report.breakdowns.byFormat.find((b) => b.key === "solo")?.raceCount).toBe(20);
     expect(report.breakdowns.byFormat.find((b) => b.key === "multiplayer")?.raceCount).toBe(40);
   });
+
+  it("conserve les totaux SQL et la course record globale quand les lignes détaillées sont plafonnées (isCapped)", () => {
+    const rows = [
+      makeRow({ index: 0, wpm: 72, grossWpm: 76, accuracy: 96 }),
+      makeRow({ index: 1, wpm: 68, grossWpm: 72, accuracy: 95 }),
+    ];
+    const sqlTotals = {
+      raceCount: 620,
+      finishedCount: 600,
+      unfinishedCount: 10,
+      abandonedCount: 10,
+      wins: 120,
+      podiums: 280,
+      multiplayerRaces: 500,
+      bestWpm: 112.5,
+      averageWpm: 78.4,
+      averageGrossWpm: 83.2,
+      averageAccuracy: 97.1,
+      totalDurationMs: 28_000_000,
+      totalErrors: 1_540,
+    };
+    const globalBest = {
+      raceId: "race-old-record",
+      wpm: 112.5,
+      grossWpm: 115,
+      accuracy: 99.2,
+      endedAt: new Date("2026-06-15T10:00:00.000Z"),
+    };
+
+    const report = aggregatePersonalStats(rows, sqlTotals, globalBest);
+
+    expect(report.isCapped).toBe(true);
+    expect(report.totals).toEqual(sqlTotals);
+    expect(report.bestRace).toEqual(globalBest);
+    expect(report.errorCostWpm).toBeCloseTo(4.8, 5);
+  });
 });
