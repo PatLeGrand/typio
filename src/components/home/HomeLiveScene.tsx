@@ -58,7 +58,7 @@ export function HomeLiveScene({ labels, progress, still, paused, moving, locale,
   const live = ready && !still;
 
   return (
-    <div data-home-race-track className="race-arena shadow-soft">
+    <div data-home-race-track className="race-arena">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2.5 text-xs sm:px-6">
         <p className="flex items-center gap-2.5 font-display text-sm font-bold uppercase tracking-[0.12em]">
           <span aria-hidden="true" className="size-2.5 rounded-full bg-key-coral" />
