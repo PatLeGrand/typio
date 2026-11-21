@@ -10,6 +10,7 @@ const STORAGE_KEY = "typio:music";
 const RACE_SELECTOR = ".room-race-screen";
 const FADE_MS = 600;
 const DOCKED_QUERY = "(min-width: 768px)";
+const FOOTER_GAP = 12;
 
 type Props = { labels: Dictionary["music"] };
 
@@ -176,6 +177,40 @@ export function MusicPlayer({ labels }: Props) {
     };
   }, [loaded, widgetHeight, track]);
 
+  // À partir de md : le lecteur (fixe, à 72 % de la hauteur) remonte au-dessus du pied de page
+  // quand celui-ci entre dans la fenêtre. La variable est posée directement, sans re-rendu au défilement.
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!loaded || !section || !track) return;
+    const docked = window.matchMedia(DOCKED_QUERY);
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const footer = document.querySelector("footer");
+      let lift = 0;
+      if (docked.matches && footer) {
+        const bottom = window.innerHeight * 0.72 + section.offsetHeight / 2;
+        lift = Math.max(0, bottom + FOOTER_GAP - footer.getBoundingClientRect().top);
+      }
+      section.style.setProperty("--music-footer-lift", `${Math.round(lift)}px`);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    schedule();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    const observer = new ResizeObserver(schedule);
+    observer.observe(document.body);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+      section.style.removeProperty("--music-footer-lift");
+    };
+  }, [loaded, track, pathname]);
+
   const open = !((prefs.collapsed && !welcoming) || racing);
   useEffect(() => {
     if (!open) return;
@@ -215,7 +250,7 @@ export function MusicPlayer({ labels }: Props) {
       ref={sectionRef}
       aria-label={labels.label}
       style={lift}
-      className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground md:top-[72%] md:bottom-auto md:-translate-y-1/2 ${loaded ? "" : "invisible"}`}
+      className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground md:top-[72%] md:bottom-auto md:[translate:0_calc(-50%-var(--music-footer-lift,0px))] md:transition-[translate] md:duration-150 motion-reduce:transition-none ${loaded ? "" : "invisible"}`}
       onKeyDown={(event) => {
         setActivity((count) => count + 1);
         if (event.key !== "Escape" || collapsed) return;
