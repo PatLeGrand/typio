@@ -213,8 +213,8 @@ export function SettingsForm({
         <div className="grid grid-cols-[minmax(0,1fr)_380px] gap-x-10">
           <div className="col-start-2 -mx-2 -translate-y-full overflow-hidden px-2 pb-3 pt-2">
             <div
-              className={`transition-transform duration-300 ease-out motion-reduce:transition-none ${
-                showFloatingLaunch ? "pointer-events-auto translate-y-0" : "pointer-events-none translate-y-[calc(100%+1.5rem)]"
+              className={`transition-[translate,visibility] duration-300 ease-out motion-reduce:transition-none ${
+                showFloatingLaunch ? "pointer-events-auto visible translate-y-0" : "pointer-events-none invisible translate-y-[150%]"
               }`}
             >
               <Button
