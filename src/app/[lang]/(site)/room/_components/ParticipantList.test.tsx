@@ -32,11 +32,15 @@ describe("ParticipantList", () => {
     const aliceImg = items[0]?.querySelector("img");
     expect(aliceImg).not.toBeNull();
     expect(aliceImg?.getAttribute("src")).toBe(blobSvgDataUrl(customStyle));
+    expect(aliceImg).toHaveAttribute("alt", "");
+    expect(aliceImg).toHaveAttribute("aria-hidden", "true");
     expect(items[0]).toHaveTextContent("Alice");
 
     const bobImg = items[1]?.querySelector("img");
     expect(bobImg).not.toBeNull();
     expect(bobImg?.getAttribute("src")).toBe(blobSvgDataUrl(DEFAULT_BLOB_STYLE));
+    expect(bobImg).toHaveAttribute("alt", "");
+    expect(bobImg).toHaveAttribute("aria-hidden", "true");
     expect(items[1]).toHaveTextContent("Bob");
   });
 
@@ -58,6 +62,8 @@ describe("ParticipantList", () => {
     expect(bot1Img?.getAttribute("src")).toBe(
       blobSvgDataUrl({ color: BLOB_COLORS[1 % BLOB_COLORS.length], glasses: "none", hat: "none" }),
     );
+    expect(bot1Img).toHaveAttribute("alt", "");
+    expect(bot1Img).toHaveAttribute("aria-hidden", "true");
     expect(bot1).toHaveTextContent(raceLabels.bot);
     expect(bot1).toHaveTextContent(raceLabels.botLevels.beginner);
 
@@ -66,11 +72,13 @@ describe("ParticipantList", () => {
     expect(bot2Img?.getAttribute("src")).toBe(
       blobSvgDataUrl({ color: BLOB_COLORS[2 % BLOB_COLORS.length], glasses: "none", hat: "none" }),
     );
+    expect(bot2Img).toHaveAttribute("alt", "");
+    expect(bot2Img).toHaveAttribute("aria-hidden", "true");
     expect(bot2).toHaveTextContent(raceLabels.bot);
     expect(bot2).toHaveTextContent(raceLabels.botLevels.expert);
   });
 
-  it("affiche les badges (HÔTE, TOI, INVITÉ), le rôle et l'état déconnecté", () => {
+  it("affiche les badges (HÔTE, TOI, INVITÉ), le rôle et l'état déconnecté, sans bouton d'expulsion si onKick est omis", () => {
     const room = makeRoom([
       makeParticipant(ME, { displayName: "Alice", role: "runner", connected: true }),
       makeParticipant(OTHER, { displayName: "Bob", kind: "guest", role: "spectator", connected: false }),
@@ -92,19 +100,25 @@ describe("ParticipantList", () => {
     expect(bob).not.toHaveTextContent(labels.host);
     expect(bob).not.toHaveTextContent(labels.you);
     expect(bob?.querySelector("img")?.className).toContain("opacity-60");
+    expect(screen.queryByRole("button", { name: labels.kick })).not.toBeInTheDocument();
   });
 
-  it("gère le flux de confirmation et d'annulation d'expulsion pour l'hôte (SALLE-07)", async () => {
-    const onKick = vi.fn(async () => undefined);
-    const room = makeRoom([
-      makeParticipant(ME, { displayName: "Alice" }),
-      makeParticipant(OTHER, { displayName: "Bob" }),
-    ]);
+  it("gère le flux de confirmation et d'annulation d'expulsion pour l'hôte, sans bouton sur soi-même ni sur les bots (SALLE-07)", async () => {
+    let resolveKick!: () => void;
+    const onKick = vi.fn(() => new Promise<void>((resolve) => { resolveKick = resolve; }));
+    const room = makeRoom(
+      [
+        makeParticipant(ME, { displayName: "Alice" }),
+        makeParticipant(OTHER, { displayName: "Bob" }),
+      ],
+      { config: { ...DEFAULT_ROOM_CONFIG, bots: ["beginner"] } },
+    );
 
     render(<ParticipantList room={room} currentUserId={ME} labels={labels} raceLabels={raceLabels} onKick={onKick} />);
 
-    const [alice, bob] = screen.getAllByRole("listitem");
+    const [alice, bob, bot] = screen.getAllByRole("listitem");
     expect(within(alice!).queryByRole("button", { name: labels.kick })).not.toBeInTheDocument();
+    expect(within(bot!).queryByRole("button", { name: labels.kick })).not.toBeInTheDocument();
 
     const kickBtn = within(bob!).getByRole("button", { name: labels.kick });
     fireEvent.click(kickBtn);
@@ -120,9 +134,15 @@ describe("ParticipantList", () => {
 
     fireEvent.click(within(bob!).getByRole("button", { name: labels.kick }));
     const groupAgain = within(bob!).getByRole("group");
-    fireEvent.click(within(groupAgain).getByRole("button", { name: labels.kickYes }));
+    const yesBtn = within(groupAgain).getByRole("button", { name: labels.kickYes });
+    const cancelBtn = within(groupAgain).getByRole("button", { name: labels.kickCancel });
+    fireEvent.click(yesBtn);
 
-    await waitFor(() => expect(onKick).toHaveBeenCalledWith(OTHER));
+    expect(yesBtn).toBeDisabled();
+    expect(cancelBtn).toBeDisabled();
+    expect(onKick).toHaveBeenCalledWith(OTHER);
+
+    resolveKick();
     await waitFor(() => expect(within(bob!).queryByRole("group")).not.toBeInTheDocument());
   });
 });

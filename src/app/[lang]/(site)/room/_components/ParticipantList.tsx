@@ -53,7 +53,7 @@ export function ParticipantList({ room, currentUserId, labels, raceLabels, onKic
         {room.participants.map((participant) => (
           <li
             key={participant.userId}
-            className="flex flex-col items-center gap-2 rounded-field border border-border p-4 text-center"
+            className="flex min-w-0 flex-col items-center gap-2 rounded-field border border-border p-4 text-center"
           >
             <BlobPreview
               style={participant.blobStyle ?? DEFAULT_BLOB_STYLE}
@@ -79,20 +79,44 @@ export function ParticipantList({ room, currentUserId, labels, raceLabels, onKic
                   aria-label={labels.kickConfirm.replace("{name}", participant.displayName)}
                   className="mt-auto flex w-full flex-col items-center gap-2 pt-1"
                 >
-                  <p className="text-sm text-foreground">{labels.kickConfirm.replace("{name}", participant.displayName)}</p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <Button disabled={pending} onClick={() => void kick(participant.userId)}>{labels.kickYes}</Button>
-                    <Button variant="secondary" onClick={() => setConfirming(null)}>{labels.kickCancel}</Button>
+                  <p className="max-w-full break-words text-sm text-foreground">
+                    {labels.kickConfirm.replace("{name}", participant.displayName)}
+                  </p>
+                  <div className="flex w-full flex-wrap justify-center gap-2">
+                    <Button
+                      disabled={pending}
+                      className="min-h-10 w-full max-w-full px-3 py-2 text-sm"
+                      onClick={() => void kick(participant.userId)}
+                    >
+                      {labels.kickYes}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={pending}
+                      className="min-h-10 w-full max-w-full px-3 py-2 text-sm"
+                      onClick={() => setConfirming(null)}
+                    >
+                      {labels.kickCancel}
+                    </Button>
                   </div>
                 </div>
               ) : (
-                <Button variant="secondary" className="mt-auto" onClick={() => setConfirming(participant.userId)}>{labels.kick}</Button>
+                <Button
+                  variant="secondary"
+                  className="mt-auto min-h-10 w-full max-w-full px-3 py-2 text-sm"
+                  onClick={() => setConfirming(participant.userId)}
+                >
+                  {labels.kick}
+                </Button>
               )
             ) : null}
           </li>
         ))}
         {room.config.bots.map((level, index) => (
-          <li key={`bot-${index}`} className="flex flex-col items-center gap-2 rounded-field border border-border p-4 text-center">
+          <li
+            key={`bot-${index}`}
+            className="flex min-w-0 flex-col items-center gap-2 rounded-field border border-border p-4 text-center"
+          >
             {/* Le bot n'a pas encore de nom (tiré au départ) : blob coloré selon sa place. */}
             <BlobPreview
               style={{
