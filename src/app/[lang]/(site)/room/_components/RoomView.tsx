@@ -33,6 +33,7 @@ type RoomViewProps = {
 export function RoomView({ room, userId, labels, settingsLabels, lang, error, leaving, onLeave, onConfigChange, raceLabels, session }: RoomViewProps) {
   const [pending, setPending] = useState(false);
   const immersive = room.status === "countdown" || room.status === "racing";
+  const isResults = room.status === "results" || (room.solo && room.status === "waiting");
   const humans = room.participants.filter((p) => p.role === "runner").length;
   const enoughRunners = humans > 0 && humans + room.config.bots.length >= 2;
   async function startRace() {
@@ -42,7 +43,7 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className={immersive ? "race-masthead" : "text-3xl font-bold tracking-tight text-foreground"}>{room.status === "results" || (room.solo && room.status === "waiting") ? labels.resultsTitle : room.status === "waiting" ? labels.title : raceLabels.circuit}</h1>
+        <h1 className={immersive || isResults ? "race-masthead text-foreground" : "text-3xl font-bold tracking-tight text-foreground"}>{isResults ? labels.resultsTitle : room.status === "waiting" ? labels.title : raceLabels.circuit}</h1>
         <Button variant="secondary" onClick={onLeave} disabled={leaving}>
           {labels.leave}
         </Button>
