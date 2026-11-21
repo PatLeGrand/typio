@@ -87,7 +87,7 @@ describe("proxy : adresses inconnues", () => {
     expect(proxy(request("/en/nexiste-pas")).cookies.get("NEXT_LOCALE")?.value).toBe("en");
   });
 
-  it.each(["/fr", "/fr/", "/en/login", "/fr/history/abc", "/fr/room/ABCDEF", "/en/invite/tok", "/fr/race/settings"])(
+  it.each(["/fr", "/fr/", "/en/login", "/fr/profile/blob", "/en/profile/blob", "/fr/history/abc", "/fr/room/ABCDEF", "/en/invite/tok", "/fr/race/settings"])(
     "laisse passer la route connue %s",
     (path) => {
       const response = proxy(request(path));

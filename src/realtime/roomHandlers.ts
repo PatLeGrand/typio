@@ -7,6 +7,7 @@
  * l'utilisateur à la fois. L'identité vient uniquement de `socket.data.user`.
  */
 
+import type { BlobStyle } from "@/race/blobStyle";
 import type { Socket } from "socket.io";
 import type { SentenceCorpus } from "@/race/textGenerator";
 import type { RateLimiter } from "@/auth/rateLimit";
@@ -52,6 +53,7 @@ export interface RoomHandlerDeps {
   /** Échecs de `room:join` par IP et utilisateur (énumération des codes de salle). */
   joinFailures: RateLimiter;
   raceInputs: RateLimiter;
+  loadBlobStyle?: (userId: string) => Promise<BlobStyle>;
   loadCorpus?: () => Promise<SentenceCorpus>;
   syncRace: (code: string) => void;
   /** Liste des salles publiques (JOIN-02). */
@@ -89,6 +91,8 @@ export function registerRoomHandlers(
   const { store, now, timers, sockets, joinFailures } = deps;
   const graceMs = deps.graceMs ?? RECONNECT_GRACE_MS;
   const user = socket.data.user;
+  // Un socket peut survivre à une modification du profil entre deux courses.
+  const roomUser = async () => ({ ...user, blobStyle: await deps.loadBlobStyle?.(user.id) });
   const joinFailureKeys = [`user:${user.id}`];
   if (socket.data.ip && socket.data.ip !== "unknown") joinFailureKeys.push(`ip:${socket.data.ip}`);
   const joinLimited = () => joinFailureKeys.some((key) => joinFailures.isLimited(key));
@@ -236,7 +240,7 @@ export function registerRoomHandlers(
       const corpus = await deps.loadCorpus?.();
       const previousCode = store.roomOf(user.id);
       const previousState = previousCode ? store.get(previousCode) : null;
-      const res = await store.startSolo(user, payload.config, now().getTime(), corpus);
+      const res = await store.startSolo(await roomUser(), payload.config, now().getTime(), corpus);
       // La réservation sérialisée a pu remplacer une autre course du même utilisateur.
       for (const s of userSockets()) {
         const previous = s.data.roomCode;
@@ -270,7 +274,7 @@ export function registerRoomHandlers(
       const payload = parseCreatePayload(payloadInput);
       if (!payload) return failure("INVALID_PAYLOAD");
 
-      const res = await store.create(user, payload.config, payload.role, now().getTime());
+      const res = await store.create(await roomUser(), payload.config, payload.role, now().getTime());
       if (!res.ok) return failure(res.error);
 
       const { state } = res;
@@ -293,7 +297,7 @@ export function registerRoomHandlers(
       if (payload === "INVALID_CODE") recordJoinFailure();
       if (payload === "INVALID_PAYLOAD" || payload === "INVALID_CODE") return failure(payload);
 
-      const res = await limitedJoin(() => store.join(user, payload.code, payload.role, now().getTime()), "INVALID_CODE");
+      const res = await limitedJoin(async () => store.join(await roomUser(), payload.code, payload.role, now().getTime()), "INVALID_CODE");
       if (!res.ok) {
         // `ROOM_NOT_FOUND` compte comme échec, avec `INVALID_CODE`, ainsi qu'`INVITE_REQUIRED` qui
         // confirme qu'un code existe (SALLE-03, SALLE-10). `ROOM_FULL` et `ALREADY_IN_ROOM` ne
@@ -326,7 +330,7 @@ export function registerRoomHandlers(
         return failure("INVALID_PAYLOAD");
       }
 
-      const res = await limitedJoin(() => store.joinInvite(user, payload.token, payload.role, socket.data.ip, now().getTime()), "INVITE_INVALID");
+      const res = await limitedJoin(async () => store.joinInvite(await roomUser(), payload.token, payload.role, socket.data.ip, now().getTime()), "INVITE_INVALID");
       if (!res.ok) {
         return failure(res.error);
       }
@@ -399,7 +403,7 @@ export function registerRoomHandlers(
       const code = store.quickJoinCode(user.id);
       if (code === null) return failure("NO_ROOM_AVAILABLE");
 
-      const res = await store.join(user, code, "runner", now().getTime());
+      const res = await store.join(await roomUser(), code, "runner", now().getTime());
       if (!res.ok) return failure(res.error);
 
       const { state } = res;

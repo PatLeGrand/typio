@@ -64,6 +64,13 @@
       "when": 1793786321278,
       "tag": "0008_ancient_silhouette",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795227267707,
+      "tag": "0009_account_blob_style",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { getCurrentUser } from "@/auth/currentUser";
 import { getDb } from "@/db/shared";
 import { users, oauthAccounts } from "@/db/schema";
@@ -9,12 +9,16 @@ import { getDictionary } from "@/i18n/dictionaries";
 import { prefixWithLocale } from "@/i18n/paths";
 import { requireLocale } from "@/i18n/requireLocale";
 import { ButtonLink } from "@/components/ButtonLink";
+import { Card } from "@/components/Card";
+import { BlobPreview } from "@/components/race/BlobPreview";
 import { isKeyboardLayout } from "@/profile/profileSettings";
+import { getBlobStyle } from "@/profile/blobStyleRepository";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { createDrizzleProfileStatsRepository } from "@/race/drizzleProfileStatsRepository";
 import { ProfileForm } from "./ProfileForm";
 import { ProfileSecurityPanel } from "./ProfileSecurityPanel";
 import { AvatarForm } from "./AvatarForm";
+import { formatBlobPreviewLabel } from "./blobPreviewLabel";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const locale = requireLocale((await params).lang);
@@ -45,9 +49,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
   const dictionary = getDictionary(locale);
   const { profile } = dictionary;
   const repository = createDrizzleProfileStatsRepository(getDb());
-  const statistics = currentUser.kind === "member"
-    ? await Promise.all([repository.getUserStats(currentUser.id), repository.getWpmHistory(currentUser.id)])
-    : null;
+  const [statistics, initialBlobStyle] = await Promise.all([
+    currentUser.kind === "member"
+      ? Promise.all([repository.getUserStats(currentUser.id), repository.getWpmHistory(currentUser.id)])
+      : Promise.resolve(null),
+    getBlobStyle(currentUser.id),
+  ]);
 
   return (
     <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 md:px-8 md:py-12">
@@ -81,6 +88,37 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
 
         {currentUser.kind === "member" && <AvatarForm userId={currentUser.id} displayName={currentUser.displayName}
           version={dbUser.avatarVersion} labels={profile.avatar} />}
+
+        <Card className="p-6 md:p-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="shrink-0 flex flex-col items-center justify-center rounded-card border border-border bg-island-mint px-4 py-3">
+                <BlobPreview
+                  style={initialBlobStyle}
+                  size={72}
+                  label={formatBlobPreviewLabel(profile.blob.preview, initialBlobStyle, profile.blob)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h2 className="text-xl font-bold text-foreground">{profile.blob.title}</h2>
+                <p className="text-sm text-muted">{profile.blob.description}</p>
+                <p className="text-xs font-medium text-muted">
+                  {profile.blob.colors[initialBlobStyle.color]}
+                  {" · "}
+                  {profile.blob.glasses[initialBlobStyle.glasses]}
+                  {" · "}
+                  {profile.blob.hats[initialBlobStyle.hat]}
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <ButtonLink href={prefixWithLocale("/profile/blob", locale)} variant="secondary">
+                <Sparkles aria-hidden="true" className="w-4 h-4" />
+                {profile.blob.customize}
+              </ButtonLink>
+            </div>
+          </div>
+        </Card>
 
         {currentUser.isDemo && <p role="status">{profile.demoReadOnly}</p>}
         <ProfileForm 

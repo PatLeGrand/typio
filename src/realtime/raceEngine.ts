@@ -1,3 +1,4 @@
+import type { BlobStyle } from "@/race/blobStyle";
 import { botCorrectChars, botFinishMs, botKeystrokesAt, botProgressAt, botWpmSeries, planBot, replanBot, BOT_FOG_SLOWDOWN_FACTOR, type BotPlan } from "@/race/bots";
 import { applyTextEdits, crossedCheckpoints, resolveCheckpoint, type BonusAward, type TextEdit } from "@/race/bonuses";
 import { RACE_SAFETY_LIMIT_SECONDS, getEffectiveTimeLimitSeconds } from "@/race/config";
@@ -33,6 +34,7 @@ export interface RaceRunner {
   userKind?: "member" | "guest";
   /** Version de la photo de profil d'un humain (H-38) ; absent pour un bot. */
   avatarVersion?: number | null;
+  blobStyle?: BlobStyle;
   plan?: BotPlan;
   level?: BotLevel;
 }
@@ -103,7 +105,10 @@ export function startRace(
       timeLimitMs: getEffectiveTimeLimitSeconds(room.config) * 1000,
       endedAt: null,
       runners: [
-        ...humans.map((p) => ({ ...runner(p.userId, p.displayName, "human", p.connected), userKind: p.kind, avatarVersion: p.avatarVersion })),
+        ...humans.map((p) => ({
+          ...runner(p.userId, p.displayName, "human", p.connected),
+          userKind: p.kind, avatarVersion: p.avatarVersion, blobStyle: p.blobStyle,
+        })),
         ...room.config.bots.map((level, index) => ({
           ...runner(`bot-${index}`, names[index % names.length], "bot", true),
           level,
@@ -259,6 +264,7 @@ export function raceSnapshot(race: RaceState, now: number) {
     runners: current.runners.map((r) => {
       const text = applyTextEdits(current.text, r.edits);
       return {
+        ...(r.blobStyle && { blobStyle: r.blobStyle }),
         id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), avatarVersion: r.kind === "human" ? r.avatarVersion ?? null : null, status: r.status, connected: r.connected,
         position: r.position, progress: r.position / text.length,
         edits: r.edits, fogUntil: r.fogUntil, textLength: text.length,
@@ -278,6 +284,7 @@ export function raceResults(race: RaceState) {
     const timeMs = elapsed(race, r, endedAt);
     const text = applyTextEdits(race.text, r.edits);
     return {
+      ...(r.blobStyle && { blobStyle: r.blobStyle }),
       id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), avatarVersion: r.kind === "human" ? r.avatarVersion ?? null : null,
       status: r.status === "finished" ? "finished" as const : r.status === "abandoned" ? "abandoned" as const : "unfinished" as const,
       position: r.position, progress: r.position / text.length,

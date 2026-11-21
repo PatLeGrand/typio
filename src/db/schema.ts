@@ -40,6 +40,7 @@ export const users = pgTable(
     username: text("username"),
     displayName: text("display_name").notNull(),
     avatarVersion: integer("avatar_version"),
+    blobStyle: jsonb("blob_style"),
     passwordHash: text("password_hash"),
     keyboardLayout: text("keyboard_layout").notNull().default("qwerty"),
     locale: text("locale").notNull().default("fr"),

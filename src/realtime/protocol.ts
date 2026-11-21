@@ -8,6 +8,7 @@
  * passe par un `parse*` ci-dessous avant usage.
  */
 
+import type { BlobStyle } from "@/race/blobStyle";
 import { z } from "zod";
 import type { raceSnapshot, raceResults } from "./raceEngine";
 import type { Keystrokes } from "@/race/metrics";
@@ -117,6 +118,8 @@ export interface Participant {
   kind: "member" | "guest";
   /** Version de la photo de profil lue à la connexion (H-38, H-40), ou `null` sans photo. */
   avatarVersion: number | null;
+  /** Style validé du compte ; absent pour les anciens états/clients. */
+  blobStyle?: BlobStyle;
   role: ParticipantRole;
   /** Faux pendant le délai de grâce qui suit une déconnexion (ancien SALLE-13). */
   connected: boolean;
