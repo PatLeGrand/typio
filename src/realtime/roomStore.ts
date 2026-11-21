@@ -1,3 +1,4 @@
+import type { BlobStyle } from "@/race/blobStyle";
 import type { SentenceCorpus } from "@/race/textGenerator";
 import { randomBytes } from "node:crypto";
 import { generateToken, hashToken } from "@/auth/token";
@@ -26,6 +27,7 @@ export interface UserContext {
   displayName: string;
   kind: "member" | "guest";
   avatarVersion?: number | null;
+  blobStyle?: BlobStyle;
 }
 
 function cloneState(state: RoomState): RoomState {
@@ -162,8 +164,12 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       if (room.race) saveRace(room, setRunnerConnected(room.race, user.id, true, now));
       existingParticipant.connected = true;
       existingParticipant.avatarVersion = user.avatarVersion ?? null;
+      if (user.blobStyle) existingParticipant.blobStyle = user.blobStyle;
       const runner = room.race?.runners.find((r) => r.id === user.id && r.kind === "human");
-      if (runner) runner.avatarVersion = existingParticipant.avatarVersion;
+      if (runner) {
+        runner.avatarVersion = existingParticipant.avatarVersion;
+        runner.blobStyle = existingParticipant.blobStyle;
+      }
       return { ok: true, state: cloneState(room) };
     }
 
@@ -191,6 +197,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       displayName: user.displayName,
       kind: user.kind,
       avatarVersion: user.avatarVersion ?? null,
+      blobStyle: user.blobStyle,
       role,
       connected: true,
       joinedAt: now,
@@ -260,6 +267,7 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
             displayName: user.displayName,
             kind: user.kind,
             avatarVersion: user.avatarVersion ?? null,
+            blobStyle: user.blobStyle,
             role,
             connected: true,
             joinedAt: now,

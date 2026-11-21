@@ -10,11 +10,13 @@ import { prefixWithLocale } from "@/i18n/paths";
 import { requireLocale } from "@/i18n/requireLocale";
 import { ButtonLink } from "@/components/ButtonLink";
 import { isKeyboardLayout } from "@/profile/profileSettings";
+import { getBlobStyle } from "@/profile/blobStyleRepository";
 import { ProfileStats } from "@/components/profile/ProfileStats";
 import { createDrizzleProfileStatsRepository } from "@/race/drizzleProfileStatsRepository";
 import { ProfileForm } from "./ProfileForm";
 import { ProfileSecurityPanel } from "./ProfileSecurityPanel";
 import { AvatarForm } from "./AvatarForm";
+import { BlobCustomizer } from "./BlobCustomizer";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const locale = requireLocale((await params).lang);
@@ -45,9 +47,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
   const dictionary = getDictionary(locale);
   const { profile } = dictionary;
   const repository = createDrizzleProfileStatsRepository(getDb());
-  const statistics = currentUser.kind === "member"
-    ? await Promise.all([repository.getUserStats(currentUser.id), repository.getWpmHistory(currentUser.id)])
-    : null;
+  const [statistics, initialBlobStyle] = await Promise.all([
+    currentUser.kind === "member"
+      ? Promise.all([repository.getUserStats(currentUser.id), repository.getWpmHistory(currentUser.id)])
+      : Promise.resolve(null),
+    getBlobStyle(currentUser.id),
+  ]);
 
   return (
     <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 md:px-8 md:py-12">
@@ -81,6 +86,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
 
         {currentUser.kind === "member" && <AvatarForm userId={currentUser.id} displayName={currentUser.displayName}
           version={dbUser.avatarVersion} labels={profile.avatar} />}
+
+        <BlobCustomizer initialStyle={initialBlobStyle} isDemo={Boolean(currentUser.isDemo)} labels={profile.blob} />
 
         {currentUser.isDemo && <p role="status">{profile.demoReadOnly}</p>}
         <ProfileForm 

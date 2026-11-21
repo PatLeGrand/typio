@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { DEFAULT_BLOB_STYLE, type BlobStyle } from "@/race/blobStyle";
 import { TEST_CORPUS } from "@/test/corpus";
 import { describe, expect, it, vi } from "vitest";
 import { EMPTY_CORPUS, type SentenceCorpus } from "@/race/textGenerator";
@@ -13,7 +14,8 @@ import type { RealtimeServer } from "./server";
 import type { Ack } from "./protocol";
 
 /** Frontières Socket.IO et minuteurs simulées ; store et moteur réels. */
-async function setup(loadCorpus?: () => Promise<SentenceCorpus>, initialRoom = true) {
+async function setup(loadCorpus?: () => Promise<SentenceCorpus>, initialRoom = true,
+  loadBlobStyle?: (id: string) => Promise<BlobStyle>) {
   let time = 1000;
   let codeIndex = 0;
   const store = createRoomStore({ corpus: TEST_CORPUS, now: () => time, generateSeed: () => 42,
@@ -45,7 +47,7 @@ async function setup(loadCorpus?: () => Promise<SentenceCorpus>, initialRoom = t
     } as unknown as RealtimeSocket;
     sockets.add(socket);
     registerRoomHandlers(io, socket, {
-      now: () => new Date(time), store: persistentStore, sockets, timers, raceInputs, joinFailures, loadCorpus,
+      now: () => new Date(time), store: persistentStore, sockets, timers, raceInputs, joinFailures, loadCorpus, loadBlobStyle,
       syncRace(code) {
         const snapshot = store.snapshot(code);
         if (snapshot) io.to(code).emit("race:state", snapshot);
@@ -76,6 +78,86 @@ async function setup(loadCorpus?: () => Promise<SentenceCorpus>, initialRoom = t
 }
 
 describe("frontière client des courses (COURSE-06)", () => {
+  it("diffuse le style du compte en solo et pour chaque humain en multijoueur", async () => {
+    const guestStyle: BlobStyle = { color: "coral", glasses: "round", hat: "cap" };
+    const load = vi.fn(async (id: string) => id === "visitor" ? guestStyle : DEFAULT_BLOB_STYLE);
+    const { host, client, store, at } = await setup(undefined, false, load);
+    const guest = client("visitor", "guest");
+    await host.command("solo:start", { config: { bots: ["expert"] } });
+    const solo = store.snapshot("ABCDEF")!;
+    expect(solo.runners[0]).toMatchObject({ id: "host", blobStyle: DEFAULT_BLOB_STYLE });
+    expect(solo.runners[1]).not.toHaveProperty("blobStyle");
+    await host.command("room:leave");
+
+    await host.command("room:create");
+    await guest.command("room:join", { code: "BCDEFG", role: "runner", blobStyle: { color: "forged" } });
+    await host.command("race:start");
+    const runners = store.snapshot("BCDEFG")!.runners;
+    expect(load.mock.calls).toEqual([["host"], ["host"], ["visitor"]]);
+    expect(runners).toMatchObject([
+      { id: "host", blobStyle: DEFAULT_BLOB_STYLE },
+      { id: "visitor", blobStyle: guestStyle },
+    ]);
+    guest.disconnect();
+    const returning = client("visitor", "guest");
+    expect(returning.received).toContainEqual({
+      event: "race:state", payload: expect.objectContaining({ runners }),
+    });
+    expect(store.get("BCDEFG")?.participants).toEqual(expect.arrayContaining([
+      expect.objectContaining({ userId: "visitor", blobStyle: guestStyle }),
+    ]));
+    at(6000);
+    await returning.command("race:abandon");
+    await host.command("race:abandon");
+    returning.disconnect();
+    expect(client("visitor", "guest").received).toContainEqual({
+      event: "race:results", payload: expect.arrayContaining([
+        expect.objectContaining({ id: "host", blobStyle: DEFAULT_BLOB_STYLE }),
+        expect.objectContaining({ id: "visitor", blobStyle: guestStyle }),
+      ]),
+    });
+  });
+
+  it.each(["member", "guest"] as const)("relit le style en solo pour un %s et le conserve à la reconnexion", async (kind) => {
+    let style: BlobStyle = { color: "mint", glasses: "shades", hat: "beanie" };
+    const load = vi.fn(async () => style);
+    const { client, store } = await setup(undefined, false, load);
+    const player = client("player", kind);
+    expect(await player.command("solo:start")).toMatchObject({ ok: true });
+    expect(store.snapshot("ABCDEF")?.runners[0].blobStyle).toEqual(style);
+    player.disconnect();
+    const returning = client("player", kind);
+    expect(returning.received).toContainEqual({
+      event: "race:state", payload: expect.objectContaining({ runners: [expect.objectContaining({ blobStyle: style })] }),
+    });
+    style = { color: "berry", glasses: "star", hat: "crown" };
+    expect(await returning.command("solo:start")).toMatchObject({ ok: true });
+    expect(store.snapshot("BCDEFG")?.runners[0].blobStyle).toEqual(style);
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["invite", "quickJoin"] as const)("charge aussi le style des invités via %s", async (path) => {
+    const style: BlobStyle = { color: "lavender", glasses: "round", hat: "crown" };
+    const load = vi.fn(async () => style);
+    const { host, client, store } = await setup(undefined, false, load);
+    await host.command("room:create", { config: { visibility: "public" } });
+    const guest = client("visitor", "guest");
+    let result: Ack;
+    if (path === "invite") {
+      const invite = store.createInvite("host", "ABCDEF");
+      if (!invite.ok) throw new Error("Expected invite");
+      result = await guest.command("room:joinInvite", { token: invite.token, role: "runner" });
+    } else {
+      result = await guest.command("room:quickJoin");
+    }
+    expect(result).toMatchObject({ ok: true });
+    await host.command("race:start");
+    expect(store.snapshot("ABCDEF")?.runners).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "visitor", blobStyle: style }),
+    ]));
+    expect(load).toHaveBeenCalledWith("visitor");
+  });
+
   it("solo:start validates, allows guests and prevents all outside entry paths", async () => {
     const { client, guest, store, broadcasts } = await setup(undefined, false);
     const solo = client("solo-guest", "guest");

@@ -4,6 +4,7 @@
  * l'instancient avec un faux dépôt de sessions, sans base ni variables d'environnement.
  */
 
+import type { BlobStyle } from "@/race/blobStyle";
 import type { SentenceCorpus } from "@/race/textGenerator";
 import type { RaceRepository } from "@/race/raceRepository";
 import { createServer, type Server as HttpServer } from "node:http";
@@ -40,6 +41,7 @@ export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, 
 
 export interface RealtimeServerOptions {
   corpus?: SentenceCorpus;
+  loadBlobStyle?: (userId: string) => Promise<BlobStyle>;
   loadCorpus?: () => Promise<SentenceCorpus>;
   sessions: SessionRepository;
   raceRepository?: RaceRepository;
@@ -232,6 +234,7 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       joinFailures,
       raceInputs,
       loadCorpus: options.loadCorpus,
+      loadBlobStyle: options.loadBlobStyle,
       syncRace,
       lobbyList: () => store.lobby(),
       lobbyChanged,

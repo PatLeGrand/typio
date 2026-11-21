@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import * as PIXI from "pixi.js";
 import { useIsDarkTheme } from "@/theme/useIsDarkTheme";
 import { AVATAR_COLOR_COUNT, avatarColorIndex, avatarColorVar, avatarInitial } from "@/components/avatar";
+import { blobStyleKey, type BlobStyle } from "@/race/blobStyle";
+import { BLOB_SVG_HEIGHT, BLOB_SVG_WIDTH, blobSvgDataUrl } from "@/race/blobSvg";
 
 export interface Racer {
   id: string;
@@ -12,6 +14,8 @@ export interface Racer {
   isLocal?: boolean;
   /** Rotation de teinte du Blob en degrés (0 = bleu d'origine), pour distinguer les coureurs. */
   hue?: number;
+  /** Style personnalisé du Blob de course (couleur, lunettes, couvre-chef). */
+  blobStyle?: BlobStyle;
   bonusLabel?: string;
   /** Graine de la couleur de l'avatar généré (H-39) ; `id` par défaut, le nom pour un bot. */
   seed?: string;
@@ -35,8 +39,13 @@ interface RaceVisualizerProps {
 interface RacerView {
   container: PIXI.Container;
   body: PIXI.Container;
+  sprite: PIXI.Sprite;
+  label: PIXI.Text;
+  avatar: PIXI.Container;
   shadow: PIXI.Graphics;
   bonus: PIXI.Text;
+  styleKey: string | null;
+  labelIndex: number;
   x: number; // position affichée (lissée), en px de piste
   vx: number; // vitesse affichée, en px/s
   phase: number; // phase du cycle de saut
@@ -136,6 +145,8 @@ export function RaceVisualizer({
     // Textures des photos chargées par cette scène : libérées au démontage.
     const photoTextures: PIXI.Texture[] = [];
     const hueTextures = new Map<number, PIXI.Texture>();
+    const styleTextures = new Map<string, PIXI.Texture>();
+    const pendingStyleLoads = new Map<string, Array<(texture: PIXI.Texture) => void>>();
     let avatarPalette: { colors: string[]; foreground: string } | null = null;
     let cameraX = 0;
     let cameraReady = false;
@@ -215,33 +226,101 @@ export function RaceVisualizer({
       return node;
     };
 
+    const getDefaultTexture = (racer: Racer, blobTexture: PIXI.Texture): PIXI.Texture => {
+      if (!racer.hue) return blobTexture;
+      const cached = hueTextures.get(racer.hue);
+      if (cached) return cached;
+      const source = new PIXI.Sprite(blobTexture);
+      const hueFilter = new PIXI.ColorMatrixFilter();
+      hueFilter.hue(racer.hue, false);
+      hueFilter.resolution = app.renderer.resolution;
+      source.filters = [hueFilter];
+      const texture = app.renderer.generateTexture({
+        target: source,
+        frame: new PIXI.Rectangle(0, 0, blobTexture.width, blobTexture.height),
+        resolution: app.renderer.resolution,
+        antialias: true,
+      });
+      hueTextures.set(racer.hue, texture);
+      source.destroy();
+      hueFilter.destroy();
+      return texture;
+    };
+
+    const loadStyleTexture = (style: BlobStyle, onReady: (texture: PIXI.Texture) => void) => {
+      const key = blobStyleKey(style);
+      const cached = styleTextures.get(key);
+      if (cached) {
+        onReady(cached);
+        return;
+      }
+      const listeners = pendingStyleLoads.get(key);
+      if (listeners) {
+        listeners.push(onReady);
+        return;
+      }
+      pendingStyleLoads.set(key, [onReady]);
+      const image = new Image();
+      image.onload = () => {
+        const callbacks = pendingStyleLoads.get(key) ?? [];
+        pendingStyleLoads.delete(key);
+        if (!isMounted) return;
+        const dpr = window.devicePixelRatio || 1;
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(BLOB_SVG_WIDTH * dpr);
+        canvas.height = Math.ceil(BLOB_SVG_HEIGHT * dpr);
+        const context = canvas.getContext("2d");
+        if (!context) return;
+        context.scale(dpr, dpr);
+        context.drawImage(image, 0, 0, BLOB_SVG_WIDTH, BLOB_SVG_HEIGHT);
+        const texture = PIXI.Texture.from(canvas);
+        styleTextures.set(key, texture);
+        for (const callback of callbacks) callback(texture);
+        if (!app.ticker.started) app.render();
+      };
+      image.onerror = () => {
+        pendingStyleLoads.delete(key);
+      };
+      image.src = blobSvgDataUrl(style);
+    };
+
+    const positionLabels = (view: Pick<RacerView, "label" | "avatar" | "bonus" | "labelIndex">, blobHeight: number) => {
+      view.label.y = -blobHeight - 4 - Math.min(view.labelIndex, 3) * LABEL_STAGGER;
+      view.avatar.y = view.label.y - view.label.height / 2;
+      view.bonus.y = -blobHeight - 28;
+    };
+
+    const applyRacerStyle = (view: RacerView, racer: Racer, blobTexture: PIXI.Texture) => {
+      const nextKey = racer.blobStyle ? blobStyleKey(racer.blobStyle) : null;
+      if (view.styleKey === nextKey) return;
+      view.styleKey = nextKey;
+
+      if (!racer.blobStyle) {
+        const fallback = getDefaultTexture(racer, blobTexture);
+        view.sprite.texture = fallback;
+        view.sprite.width = blobTexture.width;
+        view.sprite.height = blobTexture.height;
+        positionLabels(view, blobTexture.height);
+        return;
+      }
+
+      const targetKey = nextKey;
+      const blobHeight = racer.blobStyle.hat !== "none" ? BLOB_SVG_HEIGHT : blobTexture.height;
+      positionLabels(view, blobHeight);
+      loadStyleTexture(racer.blobStyle, (texture) => {
+        if (!isMounted || view.sprite.destroyed || view.styleKey !== targetKey) return;
+        view.sprite.texture = texture;
+        view.sprite.width = BLOB_SVG_WIDTH;
+        view.sprite.height = BLOB_SVG_HEIGHT;
+      });
+    };
+
     const createView = (racer: Racer, blobTexture: PIXI.Texture, startX: number, world: PIXI.Container, labelIndex: number): RacerView => {
       const container = new PIXI.Container();
       const shadow = new PIXI.Graphics().ellipse(0, 0, 34, 8).fill({ color: 0x000000, alpha: 0.18 });
       const body = new PIXI.Container();
-      let texture = blobTexture;
-      if (racer.hue) {
-        const cached = hueTextures.get(racer.hue);
-        if (cached) {
-          texture = cached;
-        } else {
-          const source = new PIXI.Sprite(blobTexture);
-          const hueFilter = new PIXI.ColorMatrixFilter();
-          hueFilter.hue(racer.hue, false);
-          hueFilter.resolution = app.renderer.resolution;
-          source.filters = [hueFilter];
-          texture = app.renderer.generateTexture({
-            target: source,
-            frame: new PIXI.Rectangle(0, 0, blobTexture.width, blobTexture.height),
-            resolution: app.renderer.resolution,
-            antialias: true,
-          });
-          hueTextures.set(racer.hue, texture);
-          source.destroy();
-          hueFilter.destroy();
-        }
-      }
-      const sprite = new PIXI.Sprite(texture);
+      const initialTexture = racer.blobStyle ? blobTexture : getDefaultTexture(racer, blobTexture);
+      const sprite = new PIXI.Sprite(initialTexture);
       sprite.anchor.set(0.5, 1); // pivot aux pieds : squash & stretch au sol
       body.addChild(sprite);
 
@@ -250,12 +329,10 @@ export function RaceVisualizer({
         style: { fontFamily: "sans-serif", fontSize: 13, fontWeight: "700", fill: 0xffffff, stroke: { color: 0x293c49, width: 4 } },
       });
       label.anchor.set(0.5, 1);
-      label.y = -blobTexture.height - 4 - Math.min(labelIndex, 3) * LABEL_STAGGER;
       body.addChild(label);
 
       const avatar = createAvatar(racer);
       avatar.x = -label.width / 2 - AVATAR_SIZE / 2 - 4;
-      avatar.y = label.y - label.height / 2;
       body.addChild(avatar);
 
       const bonus = new PIXI.Text({
@@ -263,10 +340,27 @@ export function RaceVisualizer({
         style: { fontFamily: "sans-serif", fontSize: 14, fontWeight: "700", fill: 0xffffff, stroke: { color: 0x293c49, width: 4 } },
       });
       bonus.anchor.set(0.5, 1);
-      bonus.y = -blobTexture.height - 28;
       container.addChild(shadow, body, bonus);
       world.addChild(container);
-      return { container, body, shadow, bonus, labelHalfWidth: label.width / 2 + AVATAR_SIZE + 6, x: startX, vx: 0, phase: 0, intensity: 0 };
+      const view: RacerView = {
+        container,
+        body,
+        sprite,
+        label,
+        avatar,
+        shadow,
+        bonus,
+        styleKey: null,
+        labelIndex,
+        labelHalfWidth: label.width / 2 + AVATAR_SIZE + 6,
+        x: startX,
+        vx: 0,
+        phase: 0,
+        intensity: 0,
+      };
+      positionLabels(view, blobTexture.height);
+      if (racer.blobStyle) applyRacerStyle(view, racer, blobTexture);
+      return view;
     };
 
     const init = async () => {
@@ -368,8 +462,9 @@ export function RaceVisualizer({
         const list = racersRef.current;
         const length = trackLengthRef.current;
         const groundBottom = Math.max(0, app.screen.height - 34);
-        // Garde une marge pour les étiquettes étagées, le saut, le stretch et le balancement.
-        const groundTop = Math.min(groundBottom, Math.max((blobTexture.height + AVATAR_SIZE + 8 + Math.min(Math.max(0, list.length - 1), 3) * LABEL_STAGGER) * 1.08 + HOP_HEIGHT + AVATAR_SIZE,
+        // Garde une marge pour les étiquettes étagées, les chapeaux, le saut, le stretch et le balancement.
+        const maxBlobHeight = list.some((r) => r.blobStyle && r.blobStyle.hat !== "none") ? BLOB_SVG_HEIGHT : blobTexture.height;
+        const groundTop = Math.min(groundBottom, Math.max((maxBlobHeight + AVATAR_SIZE + 8 + Math.min(Math.max(0, list.length - 1), 3) * LABEL_STAGGER) * 1.08 + HOP_HEIGHT + AVATAR_SIZE,
           app.screen.height - PIXI.Assets.get<PIXI.Texture>("track").height));
         const laneGap = Math.min(14, (groundBottom - groundTop) / Math.max(1, list.length - 1));
 
@@ -398,6 +493,7 @@ export function RaceVisualizer({
             ? raw
             : localX + Math.max(-maxBehind, Math.min(maxAhead, raw - localRaw));
           const view = views.get(racer.id)!;
+          applyRacerStyle(view, racer, blobTexture);
           if (newViews.has(racer.id) || reducedMotion) view.x = target;
 
           view.bonus.text = racer.bonusLabel ?? "";
@@ -503,6 +599,9 @@ export function RaceVisualizer({
       photoTextures.length = 0;
       for (const texture of hueTextures.values()) texture.destroy(true);
       hueTextures.clear();
+      for (const texture of styleTextures.values()) texture.destroy(true);
+      styleTextures.clear();
+      pendingStyleLoads.clear();
     };
   }, [circuitLocale]);
 

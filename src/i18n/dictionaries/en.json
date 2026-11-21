@@ -653,6 +653,47 @@
         "UNKNOWN": "The photo could not be changed. Try again."
       }
     },
+    "blob": {
+      "title": "My race blob",
+      "description": "Customize the character that races for you on the track, separate from your profile photo.",
+      "preview": "Preview of your race blob: {color} color, {glasses} glasses, {hat} headwear.",
+      "colorLegend": "Color",
+      "glassesLegend": "Glasses",
+      "hatLegend": "Headwear",
+      "colors": {
+        "sky": "Sky blue",
+        "mint": "Mint",
+        "coral": "Coral",
+        "sun": "Sunshine",
+        "lavender": "Lavender",
+        "berry": "Berry"
+      },
+      "glasses": {
+        "none": "None",
+        "round": "Round",
+        "shades": "Sunglasses",
+        "star": "Star"
+      },
+      "hats": {
+        "none": "None",
+        "cap": "Cap",
+        "beanie": "Beanie",
+        "crown": "Crown"
+      },
+      "save": "Save blob",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "reset": "Default style",
+      "noChanges": "No changes to save.",
+      "saved": "Your race blob has been saved.",
+      "errors": {
+        "INVALID_STYLE": "This style is not valid. Choose from the available options.",
+        "DEMO_READ_ONLY": "The demo account blob cannot be changed.",
+        "UNAUTHORIZED": "Your session has expired. Sign in again to customize your blob.",
+        "RATE_LIMITED": "Too many attempts. Try again later.",
+        "UNKNOWN": "Could not save your blob. Try again."
+      }
+    },
     "stats": {
       "title": "Personal statistics",
       "empty": "No races recorded yet.",
