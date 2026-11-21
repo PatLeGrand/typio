@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { isFirstVisit, nextTrackIndex, playbackVolume, readMusicPreferences, type MusicPreferences } from "./playerLogic";
 import { playlist } from "./playlist";
@@ -10,6 +10,7 @@ const STORAGE_KEY = "typio:music";
 const RACE_SELECTOR = ".room-race-screen";
 const FADE_MS = 600;
 const WELCOME_MS = 4000;
+const DOCKED_QUERY = "(min-width: 768px)";
 
 type Props = { labels: Dictionary["music"] };
 
@@ -28,6 +29,7 @@ export function MusicPlayer({ labels }: Props) {
   const pathname = usePathname();
   const audioRef = useRef<HTMLAudioElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
+  const panelId = useId();
   const [prefs, setPrefs] = useState<MusicPreferences>({ volume: 0.5, muted: false, collapsed: true });
   const [loaded, setLoaded] = useState(false);
   // Accueil de la première visite : lecteur déplié 4 s, en pause tant qu'on le survole ou le focalise.
@@ -180,6 +182,21 @@ export function MusicPlayer({ labels }: Props) {
     };
   }, [loaded, widgetHeight, track]);
 
+  const open = !((prefs.collapsed && !welcoming) || racing);
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!window.matchMedia(DOCKED_QUERY).matches) return;
+      if (sectionRef.current?.contains(event.target as Node)) return;
+      setWelcoming(false);
+      updatePrefs({ collapsed: true });
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+    // updatePrefs lit les préférences courantes : on la relie à l'état ouvert.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefs]);
+
   if (!track) return null;
 
   const lift: CSSProperties | undefined =
@@ -191,7 +208,13 @@ export function MusicPlayer({ labels }: Props) {
       ref={sectionRef}
       aria-label={labels.label}
       style={lift}
-      className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground ${loaded ? "" : "invisible"}`}
+      className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground md:top-[60%] md:right-0 md:bottom-auto md:max-w-[calc(100vw-1rem)] md:-translate-y-1/2 md:transition-[translate] md:duration-300 motion-reduce:transition-none ${collapsed ? "md:translate-x-[calc(100%-2rem)] md:hover:translate-x-[calc(100%-2.5rem)]" : "md:translate-x-0"} ${loaded ? "" : "invisible"}`}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape" || collapsed) return;
+        setWelcoming(false);
+        updatePrefs({ collapsed: true });
+        sectionRef.current?.querySelector<HTMLElement>("[data-music-toggle]")?.focus();
+      }}
       onPointerEnter={() => setHolding(true)}
       onPointerLeave={() => setHolding(false)}
       onFocus={() => setHolding(true)}
@@ -215,12 +238,13 @@ export function MusicPlayer({ labels }: Props) {
           setFailed(true);
         }}
       />
-      <div className="flex max-w-full items-center rounded-full border-2 border-border bg-surface/90 p-1.5 shadow-soft">
+      <div className="flex max-w-full items-center rounded-full border-2 border-border bg-surface/90 p-1.5 shadow-soft md:flex-row-reverse md:rounded-l-2xl md:rounded-r-none md:border-r-0 md:p-0">
         <button
           type="button"
           data-music-toggle
-          className={controlClass}
+          className={`${controlClass} md:h-16 md:w-8 md:rounded-none md:rounded-l-2xl md:border-0`}
           aria-expanded={!collapsed}
+          aria-controls={panelId}
           aria-label={collapsed ? labels.expand : labels.collapse}
           disabled={racing}
           onClick={() => {
@@ -238,8 +262,12 @@ export function MusicPlayer({ labels }: Props) {
             ))}
           </span>
         </button>
-        <div className={`grid min-w-0 transition-[grid-template-columns,visibility] duration-300 motion-reduce:transition-none ${collapsed ? "invisible grid-cols-[0fr]" : "grid-cols-[1fr]"}`}>
-          <div className="-m-1 flex min-w-0 items-center gap-2 overflow-hidden p-1 pl-3">
+        <div
+          id={panelId}
+          inert={collapsed}
+          className={`grid min-w-0 transition-[grid-template-columns,visibility] duration-300 motion-reduce:transition-none md:transition-none ${collapsed ? "invisible grid-cols-[0fr] md:visible md:grid-cols-[1fr]" : "grid-cols-[1fr]"}`}
+        >
+          <div className="-m-1 flex min-w-0 items-center gap-2 overflow-hidden p-1 pl-3 md:pr-2">
             <button type="button" className={controlClass} aria-label={labels.previous} onClick={() => skip(-1, playing)}>
               <Icon><path d="M6 6h2v12H6zM20 6v12L9.5 12z" /></Icon>
             </button>
@@ -287,7 +315,7 @@ export function MusicPlayer({ labels }: Props) {
         </div>
       </div>
       {collapsed ? null : (
-        <div className="mt-2 max-w-72 rounded-2xl border border-border bg-surface/90 px-3 py-2 text-xs text-muted-strong shadow-soft">
+        <div className="mt-2 max-w-72 rounded-2xl md:absolute md:top-full md:right-8 md:w-72 border border-border bg-surface/90 px-3 py-2 text-xs text-muted-strong shadow-soft">
           <p className="sm:hidden">
             <span className="font-semibold text-foreground">{track.title}</span> — {track.artist}
           </p>

@@ -625,3 +625,7 @@ h2[tabindex="-1"]:focus-visible {
 
 /* Le lecteur de musique (fixe, en bas à droite) pose --music-reserve : le pied de page reste dégagé. */
 body { padding-bottom: var(--music-reserve, 0px); }
+
+@media (min-width: 768px) {
+  body { padding-bottom: 0; }
+}
