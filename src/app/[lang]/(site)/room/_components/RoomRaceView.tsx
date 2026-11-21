@@ -292,7 +292,24 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
             <span className="flex items-center gap-2"><ScanLine size={16} aria-hidden="true" /><span className="max-sm:sr-only">{raceLabels.results.columns.accuracy} </span>{percent.format(runner.accuracy / 100)}</span></>}
         </div>
         <div className="race-panorama">
-          {physicalKeyboard && <RaceVisualizer circuitLocale={lang} className="absolute inset-0" racers={race.runners.map((r, index) => ({ id: r.id, name: `${r.name}${formatBotSuffix(r.kind === "bot", r.level, labels.bot, raceLabels.botLevels)}`, progress: r.progress * 100, isLocal: r.id === userId, seed: runnerAvatar(r).seed, avatarName: r.name, avatarUrl: avatarUrl(r.kind === "human" ? r.id : undefined, r.avatarVersion), hue: index * 47, bonusLabel: racerBonusLabel(race.bonusEvents, r.id, serverTime, raceLabels.bonuses) }))} />}
+          {physicalKeyboard && (
+            <RaceVisualizer
+              circuitLocale={lang}
+              className="absolute inset-0"
+              racers={race.runners.map((r, index) => ({
+                id: r.id,
+                name: `${r.name}${formatBotSuffix(r.kind === "bot", r.level, labels.bot, raceLabels.botLevels)}`,
+                progress: r.progress * 100,
+                isLocal: r.id === userId,
+                blobStyle: r.blobStyle,
+                seed: runnerAvatar(r).seed,
+                avatarName: r.name,
+                avatarUrl: avatarUrl(r.kind === "human" ? r.id : undefined, r.avatarVersion),
+                hue: index * 47,
+                bonusLabel: racerBonusLabel(race.bonusEvents, r.id, serverTime, raceLabels.bonuses),
+              }))}
+            />
+          )}
           {room.status === "countdown" && <div className="race-start-signal">
             <h2>{raceLabels.headline.countdown}</h2>
             <p aria-live="assertive" aria-atomic="true">{number.format(countdown)}</p>

@@ -5,6 +5,7 @@
  */
 
 import { createDrizzleSessionRepository } from "@/auth/drizzleSessionRepository";
+import { getBlobStyle } from "@/profile/blobStyleRepository";
 import { createDatabaseClient } from "@/db/client";
 import { createDrizzleRaceRepository } from "@/race/drizzleRaceRepository";
 import { createDrizzleTextCorpusRepository } from "@/race/drizzleTextCorpusRepository";
@@ -23,6 +24,7 @@ const roomMembershipRepository = createDrizzleRoomMembershipRepository(db);
 await roomMembershipRepository.clear();
 const { io, httpServer } = createRealtimeServer({
   roomMembershipRepository,
+  loadBlobStyle: (userId) => getBlobStyle(userId, db),
   loadCorpus: createDrizzleTextCorpusRepository(() => db).load,
   sessions: createDrizzleSessionRepository(db),
   raceRepository: createDrizzleRaceRepository(db),

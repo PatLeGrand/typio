@@ -655,6 +655,49 @@
         "UNKNOWN": "La photo n’a pas pu être modifiée. Réessaie."
       }
     },
+    "blob": {
+      "title": "Mon blob de course",
+      "description": "Personnalise le personnage qui court pour toi sur la piste, indépendamment de ta photo de profil.",
+      "customize": "Personnaliser mon blob",
+      "backToProfile": "Retour au profil",
+      "preview": "Aperçu de ton blob de course : couleur {color}, lunettes {glasses}, couvre-chef {hat}.",
+      "colorLegend": "Couleur",
+      "glassesLegend": "Lunettes",
+      "hatLegend": "Couvre-chef",
+      "colors": {
+        "sky": "Bleu ciel",
+        "mint": "Menthe",
+        "coral": "Corail",
+        "sun": "Soleil",
+        "lavender": "Lavande",
+        "berry": "Framboise"
+      },
+      "glasses": {
+        "none": "Aucune",
+        "round": "Rondes",
+        "shades": "Solaires",
+        "star": "Étoiles"
+      },
+      "hats": {
+        "none": "Aucun",
+        "cap": "Casquette",
+        "beanie": "Bonnet",
+        "crown": "Couronne"
+      },
+      "save": "Enregistrer le blob",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "reset": "Style par défaut",
+      "noChanges": "Aucun changement à enregistrer.",
+      "saved": "Ton blob de course est enregistré.",
+      "errors": {
+        "INVALID_STYLE": "Ce style n’est pas valide. Choisis parmi les options proposées.",
+        "DEMO_READ_ONLY": "Le blob du compte de démonstration ne peut pas être modifié.",
+        "UNAUTHORIZED": "Ta session a expiré. Reconnecte-toi pour personnaliser ton blob.",
+        "RATE_LIMITED": "Trop de tentatives. Réessaie plus tard.",
+        "UNKNOWN": "Impossible d’enregistrer ton blob. Réessaie."
+      }
+    },
     "stats": {
       "title": "Statistiques personnelles",
       "empty": "Aucune course enregistrée pour le moment.",
