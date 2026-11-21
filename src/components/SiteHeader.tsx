@@ -3,7 +3,7 @@
 import { useState, useEffect, useId, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, CornerDownLeft, Menu, X } from "lucide-react";
+import { ChevronDown, CornerDownLeft, LogOut, Menu, X } from "lucide-react";
 import { logout } from "@/auth/actions";
 import { AUTH_FIELDS, type CurrentUser } from "@/auth/types";
 import type { Locale } from "@/i18n/config";
@@ -108,7 +108,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
     </>
   );
 
-  const memberActions = user ? (
+  const memberActions = (inBar: boolean) => user ? (
     <>
       {user.kind === "guest" ? (
         <ButtonLink href={`/${locale}/register`} variant="ghost">
@@ -117,9 +117,20 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
       ) : null}
       <form action={logout}>
         <input type="hidden" name={AUTH_FIELDS.locale} value={locale} />
-        <Button type="submit" variant="ghost">
-          {dictionary.header.signOut}
-        </Button>
+        {inBar && isScrolled ? (
+          <button
+            type="submit"
+            aria-label={dictionary.header.signOut}
+            title={dictionary.header.signOut}
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted transition-colors duration-300 hover:text-foreground motion-reduce:transition-none"
+          >
+            <LogOut aria-hidden="true" className="size-[18px]" />
+          </button>
+        ) : (
+          <Button type="submit" variant="ghost">
+            {dictionary.header.signOut}
+          </Button>
+        )}
       </form>
     </>
   ) : null;
@@ -158,7 +169,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
           {user ? (
             <div className="flex min-w-0 items-center justify-end gap-2">
               <div className="hidden sm:block">{profile}</div>
-              <div className="hidden items-center gap-2 xl:flex">{memberActions}</div>
+              <div className="hidden items-center gap-2 xl:flex">{memberActions(true)}</div>
             </div>
           ) : (
             <div className="hidden items-center justify-end gap-2 lg:flex">
@@ -201,7 +212,7 @@ export function SiteHeader({ locale, dictionary, user }: SiteHeaderProps) {
             {user ? (
               <>
                 <div className="sm:hidden">{profile}</div>
-                {memberActions}
+                {memberActions(false)}
               </>
             ) : (
               <>
