@@ -41,6 +41,7 @@ interface RacerView {
   vx: number; // vitesse affichée, en px/s
   phase: number; // phase du cycle de saut
   labelHalfWidth: number; // encombrement à gauche du nom et de son avatar
+  labelRightHalfWidth: number; // encombrement à droite du nom
   intensity: number; // 0 (à l'arrêt) → 1 (pleine vitesse), lissée
 }
 
@@ -266,7 +267,7 @@ export function RaceVisualizer({
       bonus.y = -blobTexture.height - 28;
       container.addChild(shadow, body, bonus);
       world.addChild(container);
-      return { container, body, shadow, bonus, labelHalfWidth: label.width / 2 + AVATAR_SIZE + 6, x: startX, vx: 0, phase: 0, intensity: 0 };
+      return { container, body, shadow, bonus, labelHalfWidth: label.width / 2 + AVATAR_SIZE + 6, labelRightHalfWidth: label.width / 2 + 6, x: startX, vx: 0, phase: 0, intensity: 0 };
     };
 
     const init = async () => {
@@ -385,12 +386,14 @@ export function RaceVisualizer({
             newViews.add(racer.id);
           }
         });
-        // Le nom et l’avatar débordent du corps ; réserver aussi le retard de caméra.
+        // Le nom et l’avatar débordent du corps ; réserver aussi le retard de caméra des deux côtés.
         const labelHalfWidth = Math.max(0, ...list.map((racer) => views.get(racer.id)!.labelHalfWidth));
-        const leftMargin = Math.min(app.screen.width * CAMERA_ANCHOR * 0.8,
-          Math.max(EDGE_MARGIN, labelHalfWidth + MAX_SPEED / CAMERA_RATE));
-        const maxAhead = Math.max(0, app.screen.width * (1 - CAMERA_ANCHOR) - EDGE_MARGIN);
-        const maxBehind = Math.max(0, app.screen.width * CAMERA_ANCHOR - leftMargin);
+        const labelRightHalfWidth = Math.max(0, ...list.map((racer) => views.get(racer.id)!.labelRightHalfWidth));
+        const anchorX = Math.min(app.screen.width * 0.5, Math.max(app.screen.width * CAMERA_ANCHOR, labelHalfWidth + 12));
+        const leftMargin = Math.max(EDGE_MARGIN, labelHalfWidth + MAX_SPEED / CAMERA_RATE);
+        const rightMargin = Math.max(EDGE_MARGIN, labelRightHalfWidth + MAX_SPEED / CAMERA_RATE);
+        const maxAhead = Math.max(0, app.screen.width - anchorX - rightMargin);
+        const maxBehind = Math.max(0, anchorX - leftMargin);
 
         list.forEach((racer, index) => {
           const raw = (racer.progress / 100) * length;
@@ -459,7 +462,7 @@ export function RaceVisualizer({
         }
 
         for (const { sprite, speed } of layers) sprite.tilePosition.x = -cameraX * speed;
-        world.x = -cameraX + app.screen.width * CAMERA_ANCHOR;
+        world.x = -cameraX + anchorX;
         if (paint) {
           paint.position.set(world.x, app.screen.height);
           gates.position.set(world.x, app.screen.height - 52);

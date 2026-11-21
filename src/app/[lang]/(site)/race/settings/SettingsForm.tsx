@@ -125,9 +125,9 @@ export function SettingsForm({
         </Button>
       </div>
 
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_1fr_auto] lg:items-start lg:gap-x-10 lg:gap-y-5">
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10 lg:gap-y-5">
         {/* Colonne de gauche : réglages essentiels + « Plus d'options » */}
-        <div className="min-w-0 lg:col-start-1 lg:row-start-1 lg:row-span-2">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           <RaceSettingsFields
             value={settings}
             onChange={handleChange}
@@ -140,45 +140,48 @@ export function SettingsForm({
           />
         </div>
 
-        {/* Bloc « Avec des amis » : juste après « Plus d'options » sous lg, colonne de droite sur lg+ */}
-        <section
-          aria-labelledby={inviteHeadingId}
-          className="flex min-w-0 flex-col gap-4 rounded-card border border-border bg-surface p-5 shadow-soft sm:p-6 lg:col-start-2 lg:row-start-2"
-        >
-          <div className="flex flex-col gap-1">
-            <h2
-              id={inviteHeadingId}
-              className="text-balance font-display text-2xl font-black leading-none tracking-[-0.01em] text-foreground"
-            >
-              {dict.invite.title}
-            </h2>
-            <p className="text-sm leading-relaxed text-muted-strong">{dict.invite.description}</p>
-          </div>
-          {invite.kind === "member" ? (
-            <div className="border-t border-border/80 pt-4">
-              <RaceRoomSettings
-                value={settings}
-                onChange={handleChange}
-                readOnly={false}
-                dict={dict}
-                lang={lang}
-                idPrefix={roomIdPrefix}
-                headingLevel={3}
-                compact
-              />
-            </div>
-          ) : null}
-          <div className={`flex flex-col gap-3 ${invite.kind === "member" ? "border-t border-border/80 pt-4" : ""}`}>
-            {inviteAction}
-          </div>
-        </section>
-
-        <p className="text-xs leading-relaxed text-muted lg:col-start-1 lg:row-start-3">
+        <p className="order-3 text-xs leading-relaxed text-muted lg:order-none lg:col-start-1 lg:row-start-2">
           {dict.footer}
         </p>
 
-        {/* Panneau « stade de nuit » : résumé en une phrase + lancement (barre collée en bas sous lg) */}
-        <RaceSettingsSummary settings={settings} dict={dict} lang={lang} onLaunch={handleLaunch} />
+        {/* Colonne de droite : collante sur ordinateur sous l'en-tête ; `contents` sous lg pour garder la barre en bas */}
+        <div className="contents lg:sticky lg:top-[calc(var(--site-header-height,6rem)+1rem)] lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:-mx-2 lg:flex lg:max-h-[calc(100dvh-var(--site-header-height,6rem)-2rem)] lg:flex-col lg:gap-5 lg:overflow-y-auto lg:px-2 lg:pb-2">
+          {/* Panneau « stade de nuit » : résumé en une phrase + lancement (barre collée en bas sous lg) */}
+          <RaceSettingsSummary settings={settings} dict={dict} lang={lang} onLaunch={handleLaunch} />
+
+          {/* Bloc « Avec des amis » : juste après « Plus d'options » sous lg, sous le lancement sur lg+ */}
+          <section
+            aria-labelledby={inviteHeadingId}
+            className="order-2 flex min-w-0 shrink-0 flex-col gap-4 rounded-card border border-border bg-surface p-5 shadow-soft sm:p-6 lg:order-none"
+          >
+            <div className="flex flex-col gap-1">
+              <h2
+                id={inviteHeadingId}
+                className="text-balance font-display text-2xl font-black leading-none tracking-[-0.01em] text-foreground"
+              >
+                {dict.invite.title}
+              </h2>
+              <p className="text-sm leading-relaxed text-muted-strong">{dict.invite.description}</p>
+            </div>
+            {invite.kind === "member" ? (
+              <div className="border-t border-border/80 pt-4">
+                <RaceRoomSettings
+                  value={settings}
+                  onChange={handleChange}
+                  readOnly={false}
+                  dict={dict}
+                  lang={lang}
+                  idPrefix={roomIdPrefix}
+                  headingLevel={3}
+                  compact
+                />
+              </div>
+            ) : null}
+            <div className={`flex flex-col gap-3 ${invite.kind === "member" ? "border-t border-border/80 pt-4" : ""}`}>
+              {inviteAction}
+            </div>
+          </section>
+        </div>
       </div>
     </main>
   );

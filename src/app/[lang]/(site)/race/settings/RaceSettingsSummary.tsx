@@ -42,7 +42,7 @@ export function RaceSettingsSummary({ settings, dict, lang, onLaunch }: RaceSett
   return (
     <aside
       aria-labelledby={headingId}
-      className="sticky bottom-0 z-20 -mx-4 border-t border-screen-border bg-screen text-screen-text shadow-[0_-8px_24px_rgba(0,0,0,0.22)] sm:-mx-8 lg:relative lg:bottom-auto lg:col-start-2 lg:row-start-1 lg:mx-0 lg:overflow-hidden lg:rounded-panel lg:border-t-0 lg:shadow-soft lg:ring-1 lg:ring-inset lg:ring-screen-border"
+      className="order-4 sticky bottom-0 z-20 -mx-4 border-t border-screen-border bg-screen text-screen-text shadow-[0_-8px_24px_rgba(0,0,0,0.22)] sm:-mx-8 lg:order-none lg:relative lg:bottom-auto lg:mx-0 lg:shrink-0 lg:overflow-hidden lg:rounded-panel lg:border-t-0 lg:shadow-soft lg:ring-1 lg:ring-inset lg:ring-screen-border"
     >
       {/* Lignes de virage discrètes du stade de nuit */}
       <svg
