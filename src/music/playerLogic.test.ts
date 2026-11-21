@@ -11,15 +11,17 @@ it("boucle la liste, atténue le volume et récupère les préférences valides"
   expect(playbackVolume(0.8, false)).toBe(0.8);
   expect(playbackVolume(0, true)).toBe(0);
 
-  const defaults = { volume: 0.5, muted: false, collapsed: true };
+  const defaults = { volume: 0.5, muted: false, collapsed: true, paused: false };
   expect(readMusicPreferences(() => null)).toEqual(defaults);
   expect(readMusicPreferences(() => "{")).toEqual(defaults);
   expect(readMusicPreferences(() => "null")).toEqual(defaults);
   expect(readMusicPreferences(() => { throw new Error("stockage bloqué"); })).toEqual(defaults);
-  expect(readMusicPreferences(() => '{"volume":2,"muted":"true","collapsed":false}'))
+  expect(readMusicPreferences(() => '{"volume":2,"muted":"true","collapsed":false,"paused":"yes"}'))
     .toEqual({ ...defaults, collapsed: false });
   expect(readMusicPreferences(() => '{"volume":0,"muted":true,"collapsed":false}'))
-    .toEqual({ volume: 0, muted: true, collapsed: false });
+    .toEqual({ volume: 0, muted: true, collapsed: false, paused: false });
+  expect(readMusicPreferences(() => '{"volume":0,"muted":true,"collapsed":false,"paused":true}'))
+    .toEqual({ volume: 0, muted: true, collapsed: false, paused: true });
 });
 
 it("n'accueille qu'à la première visite, jamais si le stockage est bloqué", () => {
