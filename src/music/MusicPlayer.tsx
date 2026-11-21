@@ -238,7 +238,7 @@ export function MusicPlayer({ labels }: Props) {
           setFailed(true);
         }}
       />
-      <div className="flex max-w-full items-center rounded-full border-2 border-border bg-surface/90 p-1.5 shadow-soft md:flex-row-reverse md:rounded-l-2xl md:rounded-r-none md:border-r-0 md:p-0">
+      <div className="flex max-w-full items-center rounded-full border-2 border-border bg-surface/90 p-1.5 shadow-soft md:rounded-l-2xl md:rounded-r-none md:border-r-0 md:p-0">
         <button
           type="button"
           data-music-toggle
