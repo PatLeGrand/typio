@@ -31,12 +31,21 @@ function ConnectedActiveRoomWidget({ userId, locale, labels, pathname }: Props &
   const reserveSpace = useCallback((node: HTMLDivElement | null) => {
     const panel = node?.firstElementChild;
     if (!node || !panel || typeof ResizeObserver === "undefined") return;
+    const root = document.documentElement;
     // Placé après le footer : ses liens restent accessibles au défilement maximal.
-    const observer = new ResizeObserver(() => {
-      node.style.height = `${panel.getBoundingClientRect().height + 32}px`;
-    });
+    // Expose aussi la hauteur réservée pour que les contrôles flottants restent au-dessus (DES-06).
+    const measure = () => {
+      const reserved = `${panel.getBoundingClientRect().height + 32}px`;
+      node.style.height = reserved;
+      root.style.setProperty("--active-room-widget-height", reserved);
+    };
+    const observer = new ResizeObserver(measure);
+    measure();
     observer.observe(panel);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--active-room-widget-height");
+    };
   }, []);
   if (!room || room.status === "closed" || pathname === roomPath(locale, room.code)) return null;
   const racing = room.status === "countdown" || room.status === "racing";

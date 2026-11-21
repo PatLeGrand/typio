@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
+import { DEFAULT_ROOM_CONFIG, type InputMode } from "@/realtime/protocol";
 import { makeParticipant, makeRoom, makeUseRoom, ME } from "@/test/roomFixtures";
 import { RoomView } from "./RoomView";
 
@@ -11,9 +12,9 @@ vi.mock("@/components/race/RaceVisualizer", () => ({ RaceVisualizer: () => <canv
 
 beforeEach(() => { keyboard.available = true; });
 
-function show(locale: "fr" | "en", status: "countdown" | "racing", solo = false) {
+function show(locale: "fr" | "en", status: "countdown" | "racing", solo = false, inputMode: InputMode = DEFAULT_ROOM_CONFIG.inputMode) {
   const dict = getDictionary(locale);
-  const room = makeRoom([makeParticipant(ME)], { status, solo });
+  const room = makeRoom([makeParticipant(ME)], { status, solo, config: { ...DEFAULT_ROOM_CONFIG, inputMode } });
   const abandonRace = vi.fn(async () => ({ ok: true as const, data: undefined }));
   const session = makeUseRoom({ room, abandonRace, raceReceivedAt: Date.now(), race: {
     status, serverNow: 1000, startAt: 4000, text: "Bonjour la piste", finishDeadline: 16000, bonusEvents: [],
@@ -61,4 +62,17 @@ it("mobile : garde la piste et le message clavier physique", () => {
   expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   expect(document.querySelector(".race-panorama")).toBeInTheDocument();
   expect(document.querySelector("canvas")).not.toBeInTheDocument();
+});
+
+it("en mode libre, le compteur affiche les caractères saisis et atteint la longueur du texte avec une faute", () => {
+  const { dict } = show("fr", "racing", true, "free");
+  const input = screen.getByRole("textbox", { name: dict.raceScreen.typing.inputLabel });
+  const text = "Bonjour la piste";
+  const typed = "X" + text.slice(1);
+  fireEvent.change(input, { target: { value: typed } });
+  expect(input).toHaveValue(typed);
+  expect(screen.getByText(`${text.length} / ${text.length} ${dict.raceScreen.typing.characters}`)).toBeInTheDocument();
+  expect(screen.getByText(dict.raceScreen.typing.freeHint)).toBeInTheDocument();
+  fireEvent.change(input, { target: { value: typed.slice(0, -1) } });
+  expect(input).toHaveValue(typed);
 });
