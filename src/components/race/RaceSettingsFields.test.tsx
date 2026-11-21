@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import en from "@/i18n/dictionaries/en.json";
 import fr from "@/i18n/dictionaries/fr.json";
@@ -255,7 +255,12 @@ describe("RaceSettingsFields (read only)", () => {
     expect(screen.getByRole("radiogroup", { name: copy.timeLimit.label })).toBeInTheDocument();
     const toggle = openAdvanced();
     expect(toggle).toBeEnabled();
-    for (const radio of screen.getAllByRole("radio")) expect(radio).toBeDisabled();
+    const keySoundsGroup = screen.getByRole("radiogroup", { name: copy.keySounds.label });
+    const keySoundsRadios = new Set(within(keySoundsGroup).getAllByRole("radio"));
+    for (const radio of keySoundsRadios) expect(radio).toBeEnabled();
+    for (const radio of screen.getAllByRole("radio").filter((r) => !keySoundsRadios.has(r))) {
+      expect(radio).toBeDisabled();
+    }
     expect(screen.getByRole("button", { name: copy.bots.add })).toBeDisabled();
     expect(screen.getByRole("button", { name: copy.bots.remove.replace("{number}", "1") })).toBeDisabled();
     expect(screen.getByText(`3 / ${MAX_BOTS}`, { selector: "[aria-live]" })).toBeInTheDocument();

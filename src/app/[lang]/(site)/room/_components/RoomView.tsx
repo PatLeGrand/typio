@@ -52,6 +52,9 @@ export function RoomView({ room, userId, labels, settingsLabels, blobLabels, lan
             {isResults ? labels.resultsTitle : room.status === "waiting" ? labels.title : raceLabels.circuit}
           </h1>
           <div className="flex flex-wrap items-center gap-3">
+            <Button variant="secondary" onClick={onLeave} disabled={leaving}>
+              {labels.leave}
+            </Button>
             {isWaitingLobby && isHost ? (
               <Button
                 variant="start"
@@ -62,9 +65,6 @@ export function RoomView({ room, userId, labels, settingsLabels, blobLabels, lan
                 {labels.race.start}
               </Button>
             ) : null}
-            <Button variant="secondary" onClick={onLeave} disabled={leaving}>
-              {labels.leave}
-            </Button>
           </div>
         </div>
         {isWaitingLobby && isHost && !enoughRunners ? (
