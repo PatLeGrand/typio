@@ -7,11 +7,11 @@ import { Button } from "@/components/Button";
 import { ButtonLink } from "@/components/ButtonLink";
 import { formatBotSuffix } from "@/components/race/formatRacerName";
 import { playerBonusMessage, racerBonusLabel } from "@/components/race/bonusAnnouncements";
-import { Flag, FlagTriangleRight, Gauge, Keyboard, ScanLine } from "lucide-react";
+import { Flag, FlagTriangleRight, Gauge, Keyboard, ScanLine, Trophy } from "lucide-react";
 import { RaceTypingPanel } from "@/components/race/RaceTypingPanel";
 import { RaceVisualizer } from "@/components/race/RaceVisualizer";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { formatClock } from "@/race/format";
+import { formatClock, formatOrdinal } from "@/race/format";
 import { serializeRaceSettings } from "@/race/config";
 import { applyTextEdits } from "@/race/bonuses";
 import { applyTypedInput, countCorrectChars } from "@/race/metrics";
@@ -115,22 +115,158 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
   }
 
   if (room.status === "results" || (room.solo && room.status === "waiting")) {
+    const localResult = results?.find((row) => row.id === userId && row.kind === "human");
+    const hasPersonalBest = records.includes(userId);
+    const integer = new Intl.NumberFormat(lang);
+    const percentDetailed = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 1 });
+    const seconds = new Intl.NumberFormat(lang, { style: "unit", unit: "second", maximumFractionDigits: 1 });
+    const endTone =
+      endReason === "completed"
+        ? "bg-key-mint text-key-ink"
+        : endReason === "abandoned"
+          ? "bg-key-coral text-key-ink"
+          : "bg-key-yellow text-key-ink";
+
+    const actionsBar = (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-surface px-4 py-3.5 shadow-soft sm:px-6">
+        {room.hostId === userId ? (
+          <div className="flex flex-wrap items-center gap-3">
+            {room.solo ? (
+              <>
+                <Button variant="start" disabled={pending || connection !== "connected"} onClick={() => void command(replaySolo)}>
+                  {labels.soloReplay}
+                </Button>
+                <ButtonLink variant="secondary" href={`/${lang}/race/settings?${serializeRaceSettings(room.config)}`}>
+                  {labels.soloSettings}
+                </ButtonLink>
+              </>
+            ) : (
+              <>
+                <Button variant="start" disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>
+                  {labels.restart}
+                </Button>
+                <Button variant="secondary" disabled={pending || connection !== "connected"} onClick={() => void command(closeRoom)}>
+                  {labels.close}
+                </Button>
+              </>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm font-medium text-muted">{labels.stay}</p>
+        )}
+      </div>
+    );
+
     return (
-      <section className="flex flex-col gap-4" aria-label={raceLabels.results.tableTitle}>
-        <div role="status"><h2 ref={finishRef} tabIndex={-1} className={endReason ? "race-arrival" : "px-card text-2xl font-bold"}>{endReason ? raceLabels.headline[endReason] : raceLabels.results.tableTitle}</h2></div>
-        {records.includes(userId) && <p role="status" className="px-card">{raceLabels.results.newPersonalBest}</p>}
+      <section className="flex min-w-0 flex-col gap-5" aria-label={raceLabels.results.tableTitle}>
+        {/* Bandeau de fin de course + chiffres clés personnels */}
+        <div className="min-w-0 overflow-hidden rounded-panel border-2 border-screen bg-screen text-screen-text shadow-soft">
+          <div aria-hidden="true" className="track-surface flex h-2.5 items-center justify-between px-4 sm:px-6">
+            <span className="track-checker h-full w-16" />
+            <span className="track-checker h-full w-16" />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
+            <div role="status" className="flex min-w-0 flex-wrap items-center gap-3">
+              <span
+                aria-hidden="true"
+                className={`inline-flex size-9 shrink-0 items-center justify-center rounded-xl ${endTone}`}
+              >
+                <Flag className="size-5" />
+              </span>
+              <h2
+                ref={finishRef}
+                tabIndex={-1}
+                className="min-w-0 text-balance font-display text-3xl font-black italic uppercase leading-none tracking-tight text-screen-text sm:text-4xl"
+              >
+                {endReason ? raceLabels.headline[endReason] : raceLabels.results.tableTitle}
+              </h2>
+            </div>
+
+            {hasPersonalBest && (
+              <p
+                role="status"
+                className="inline-flex items-center gap-2 rounded-full bg-key-yellow px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider text-key-ink"
+              >
+                <Trophy aria-hidden="true" className="size-4 shrink-0" />
+                <span>{raceLabels.results.newPersonalBest}</span>
+              </p>
+            )}
+          </div>
+
+          {localResult && (
+            <dl
+              aria-label={raceLabels.results.yourResult}
+              className="grid grid-cols-2 gap-px border-t border-screen-border bg-screen-border sm:grid-cols-4"
+            >
+              <div className="flex min-w-0 flex-col justify-between bg-screen-surface p-4 sm:p-5">
+                <dt className="text-xs font-bold uppercase tracking-wider text-screen-muted">
+                  {raceLabels.results.columns.rank}
+                </dt>
+                <dd className="mt-1.5 font-display text-4xl font-black leading-none tabular-nums text-screen-text sm:text-5xl">
+                  {formatOrdinal(lang, localResult.rank, raceLabels.ordinal)}
+                </dd>
+                <dd className="mt-1.5 text-xs font-semibold text-screen-muted">
+                  {raceLabels.results.statuses[localResult.status]}
+                </dd>
+              </div>
+
+              <div className="flex min-w-0 flex-col justify-between bg-screen-surface p-4 sm:p-5">
+                <dt className="text-xs font-bold uppercase tracking-wider text-screen-muted">
+                  {raceLabels.results.columns.wpm}
+                </dt>
+                <dd className="mt-1.5 font-display text-4xl font-black leading-none tabular-nums text-key-yellow sm:text-5xl">
+                  {number.format(localResult.wpm)}
+                </dd>
+                <dd className="mt-1.5 text-xs tabular-nums text-screen-muted">
+                  {labels.grossWpm} · {number.format(localResult.grossWpm)}
+                </dd>
+              </div>
+
+              <div className="flex min-w-0 flex-col justify-between bg-screen-surface p-4 sm:p-5">
+                <dt className="text-xs font-bold uppercase tracking-wider text-screen-muted">
+                  {raceLabels.results.columns.accuracy}
+                </dt>
+                <dd className="mt-1.5 font-display text-4xl font-black leading-none tabular-nums text-key-mint sm:text-5xl">
+                  {percentDetailed.format(localResult.accuracy / 100)}
+                </dd>
+                <dd className="mt-1.5 text-xs tabular-nums text-screen-muted">
+                  {labels.errors} · {integer.format(localResult.errors)}
+                </dd>
+              </div>
+
+              <div className="flex min-w-0 flex-col justify-between bg-screen-surface p-4 sm:p-5">
+                <dt className="text-xs font-bold uppercase tracking-wider text-screen-muted">
+                  {raceLabels.results.columns.time}
+                </dt>
+                <dd className="mt-1.5 font-display text-4xl font-black leading-none tabular-nums text-screen-text sm:text-5xl">
+                  {seconds.format(localResult.timeMs / 1000)}
+                </dd>
+                <dd className="mt-1.5 text-xs tabular-nums text-screen-muted">
+                  {raceLabels.results.columns.bonuses} · {integer.format(localResult.bonusesReceived ?? 0)}
+                </dd>
+              </div>
+            </dl>
+          )}
+        </div>
+
         {results ? (
-          <RoomRaceResultsContent results={results} self={self} records={records} userId={userId} lang={lang} labels={labels} raceLabels={raceLabels} />
-        ) : room.status === "results" ? <p role="status">{labels.loading}</p> : null}
-        {room.hostId === userId ? <div className="flex flex-wrap gap-3">
-          {room.solo ? <>
-            <Button variant="start" disabled={pending || connection !== "connected"} onClick={() => void command(replaySolo)}>{labels.soloReplay}</Button>
-            <ButtonLink variant="secondary" href={`/${lang}/race/settings?${serializeRaceSettings(room.config)}`}>{labels.soloSettings}</ButtonLink>
-          </> : <>
-            <Button variant="start" disabled={pending || connection !== "connected"} onClick={() => void command(restartRace)}>{labels.restart}</Button>
-            <Button variant="secondary" disabled={pending || connection !== "connected"} onClick={() => void command(closeRoom)}>{labels.close}</Button>
-          </>}
-        </div> : <p>{labels.stay}</p>}
+          <RoomRaceResultsContent
+            results={results}
+            self={self}
+            records={records}
+            userId={userId}
+            lang={lang}
+            labels={labels}
+            raceLabels={raceLabels}
+            actions={actionsBar}
+          />
+        ) : (
+          <>
+            {room.status === "results" ? <p role="status">{labels.loading}</p> : null}
+            {actionsBar}
+          </>
+        )}
       </section>
     );
   }
