@@ -37,6 +37,8 @@ export function computeAccuracy({ total, correct }: Keystrokes): number {
 }
 
 export interface TypedInputResult {
+  /** Caractère attendu si le plafond de fautes bloque encore la saisie. */
+  wordCapKey?: string;
   /** Nouvelle saisie : identique à l'ancienne quand elle est refusée. */
   typed: string;
   keystrokes: Keystrokes;
@@ -74,6 +76,7 @@ export function applyTypedInput(
   let total = keystrokes.total;
   let correct = keystrokes.correct;
   let typed = previous;
+  let wordCapKey: string | undefined;
   let wordErrors = free ? previous.length - wordStart -
     countCorrectChars(previous.slice(wordStart), text.slice(wordStart, previous.length)) : 0;
   for (let offset = previous.length; offset < next.length; offset += 1) {
@@ -88,18 +91,22 @@ export function applyTypedInput(
       const start = /[\uDC00-\uDFFF]/u.test(text[index]) ? index - 1 : index;
       const expected = String.fromCodePoint(text.codePointAt(start)!);
       misses[expected] = (misses[expected] ?? 0) + 1;
+      if (free && text[index] !== " ") {
+        if (wordErrors >= MAX_FREE_WORD_ERRORS) {
+          wordCapKey = expected;
+          continue;
+        }
+        wordErrors += 1;
+      }
     }
     if (free) {
       if (text[index] === " ") wordErrors = 0;
-      else if (!matches) {
-        if (wordErrors >= MAX_FREE_WORD_ERRORS) continue;
-        wordErrors += 1;
-      }
+      wordCapKey = undefined;
       typed += char;
     }
   }
   const counted = { total, correct };
 
   if (inputMode === "blocking" && !text.startsWith(bounded)) return { typed: previous, keystrokes: counted, missedKeys: misses };
-  return { typed: free ? typed : bounded, keystrokes: counted, missedKeys: misses };
+  return { wordCapKey, typed: free ? typed : bounded, keystrokes: counted, missedKeys: misses };
 }

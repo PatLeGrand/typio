@@ -94,6 +94,7 @@
       "characters": "characters",
       "inputLabel": "Type the text here",
       "hint": "Every correct character moves your Blob forward.",
+      "wordCapHint": "Two mistakes in this word. Type",
       "freeHint": "Every character that goes in moves your Blob forward. You can only correct the current word.",
       "fix": "to fix",
       "autoValidate": "Ends automatically at the last character"

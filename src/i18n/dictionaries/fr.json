@@ -94,6 +94,7 @@
       "characters": "caractères",
       "inputLabel": "Tape le texte ici",
       "hint": "Chaque caractère correct fait avancer ton Blob.",
+      "wordCapHint": "Deux fautes dans ce mot. Tape",
       "freeHint": "Chaque caractère inséré fait avancer ton Blob. Tu peux corriger le mot en cours.",
       "fix": "pour corriger",
       "autoValidate": "Fin automatique au dernier caractère"

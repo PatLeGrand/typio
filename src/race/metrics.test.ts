@@ -87,6 +87,15 @@ describe("applyTypedInput", () => {
     expect(result).toEqual({ typed: "abcX", keystrokes: { total: 5, correct: 3 }, missedKeys: { " ": 1, d: 1 } });
   });
 
+  it("signale le plafond seulement si une frappe reste refusée en mode libre", () => {
+    const apply = (next: string, mode: "free" | "blocking" = "free") =>
+      applyTypedInput("", next, "abcd", mode, NO_KEYSTROKES);
+    expect(apply("xx").wordCapKey).toBeUndefined();
+    expect(apply("xxx")).toMatchObject({ typed: "xx", wordCapKey: "c" });
+    expect(apply("xxxc").wordCapKey).toBeUndefined();
+    expect(apply("x", "blocking").wordCapKey).toBeUndefined();
+  });
+
   it("compte la troisième faute sans l'insérer et libère une place à l'effacement", () => {
     const capped = type("abcd efgh", ["x z"]);
     expect(capped).toEqual({ typed: "x ", keystrokes: { total: 3, correct: 0 }, missedKeys: { a: 1, b: 1, c: 1 } });

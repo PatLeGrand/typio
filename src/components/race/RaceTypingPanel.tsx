@@ -14,6 +14,7 @@ type Props = {
   text: string;
   typed: string;
   inputMode: InputMode;
+  wordCapKey?: string;
   fog?: boolean;
   bonusMessage?: string;
   onChange: (value: string) => void;
@@ -22,7 +23,7 @@ type Props = {
 const TEXT_ID = "race-text";
 
 /** Texte à taper (caractères colorés selon la frappe) et champ de saisie, sans copier-coller (COURSE-04). */
-export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, text, typed, inputMode, fog = false, bonusMessage = "", onChange }: Props) {
+export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, text, typed, inputMode, wordCapKey, fog = false, bonusMessage = "", onChange }: Props) {
   const localInputRef = useRef<HTMLInputElement>(null);
   const inputRef = focusRef ?? localInputRef;
   // Pendant une composition (touche morte « ^ » puis « e », IME), la valeur brute est affichée
@@ -97,6 +98,23 @@ export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, te
         })}
       </p>
 
+      {inputMode === "free" && (
+        <div className="grid items-center">
+          <p className={`col-start-1 row-start-1 flex items-center gap-2 text-xs text-muted ${wordCapKey ? "invisible" : ""}`}>
+            <Sparkles aria-hidden="true" className="size-4 shrink-0 text-accent-text" />
+            {labels.freeHint}
+          </p>
+          <div role="status" aria-atomic="true" className="pointer-events-none col-start-1 row-start-1 justify-self-start">
+            <p className={`flex items-center gap-2 rounded-field bg-key-mint px-3 py-1.5 text-sm font-bold text-key-ink ${wordCapKey ? "word-cap-notice" : "invisible"}`}>
+              {labels.wordCapHint}{" "}
+              <kbd className="min-h-7 min-w-7 rounded-md border border-b-[3px] border-key-ink bg-key-yellow px-1.5 text-center font-mono text-base">
+                {wordCapKey}
+              </kbd>
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="relative">
         <input
           ref={inputRef}
@@ -131,10 +149,10 @@ export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, te
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
-        <p className="flex items-center gap-2">
+        {inputMode === "blocking" && <p className="flex items-center gap-2">
           <Sparkles aria-hidden="true" className="size-4 text-accent-text" />
-          {inputMode === "free" ? labels.freeHint : labels.hint}
-        </p>
+          {labels.hint}
+        </p>}
         <p className="flex items-center gap-2">
           <kbd className="inline-flex items-center rounded-md border border-border px-1.5 py-0.5"><Delete aria-hidden="true" className="size-3.5" /></kbd>
           {labels.fix}

@@ -130,8 +130,8 @@ export function applyInput(race: RaceState, userId: string, ops: readonly string
   let updated = { ...runner };
   for (const op of ops) {
     const next = op === "\b" ? updated.typed.slice(0, -1) : updated.typed + op;
-    const input = applyTypedInput(updated.typed, next, text, race.config.inputMode, updated.keystrokes, updated.missedKeys);
-    updated = { ...updated, ...input, inputCount: updated.inputCount + 1, lastActivityAt: now, status: "typing" };
+    const { typed, keystrokes, missedKeys } = applyTypedInput(updated.typed, next, text, race.config.inputMode, updated.keystrokes, updated.missedKeys);
+    updated = { ...updated, typed, keystrokes, missedKeys, inputCount: updated.inputCount + 1, lastActivityAt: now, status: "typing" };
     updated.position = race.config.inputMode === "free" ? updated.typed.length : countCorrectChars(updated.typed, text);
     if (updated.position === text.length) {
       updated.status = "finished";
