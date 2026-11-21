@@ -15,6 +15,7 @@ import { formatClock, formatOrdinal } from "@/race/format";
 import { serializeRaceSettings } from "@/race/config";
 import { applyTextEdits } from "@/race/bonuses";
 import { applyTypedInput, type TypedInputResult } from "@/race/metrics";
+import { playKeySound } from "@/race/keySounds";
 import { createRaceInputBuffer, raceInputOps } from "@/realtime/raceInput";
 import { getSocket } from "@/realtime/client";
 import type { RoomState } from "@/realtime/protocol";
@@ -114,10 +115,19 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
     if (!race || !active || connection !== "connected" || pending || race.status !== "racing" || room.status !== "racing" || input.typed.length === text.length) return;
     const ops = raceInputOps(input.typed, value);
     let next = input;
+    let outcome: "hit" | "miss" | null = null;
     for (const op of ops) {
       const typed = op === "\b" ? next.typed.slice(0, -1) : next.typed + op;
-      next = applyTypedInput(next.typed, typed, text, room.config.inputMode, next.keystrokes);
+      const step = applyTypedInput(next.typed, typed, text, room.config.inputMode, next.keystrokes);
+      if (step.keystrokes.total > next.keystrokes.total) {
+        const hit = step.keystrokes.correct > next.keystrokes.correct;
+        if (!hit || outcome === null) outcome = hit ? "hit" : "miss";
+      }
+      next = step;
       if (next.typed.length === text.length) break;
+    }
+    if (outcome !== null) {
+      playKeySound(outcome);
     }
     setInput(next);
     buffer.push(ops);

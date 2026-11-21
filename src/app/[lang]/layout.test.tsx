@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
@@ -72,5 +74,21 @@ describe("generateMetadata", () => {
     await expect(
       generateMetadata({ params: Promise.resolve({ lang: "de" }) } as Parameters<typeof generateMetadata>[0]),
     ).rejects.toMatchObject({ digest: expect.stringContaining("404") });
+  });
+});
+
+describe("icône d'onglet (favicon SVG)", () => {
+  it("remplace favicon.ico par un icon.svg en T mauve gras (#7043d9)", () => {
+    const appDir = join(process.cwd(), "src/app");
+    const iconSvgPath = join(appDir, "icon.svg");
+    const faviconIcoPath = join(appDir, "favicon.ico");
+
+    expect(existsSync(faviconIcoPath)).toBe(false);
+    expect(existsSync(iconSvgPath)).toBe(true);
+
+    const svg = readFileSync(iconSvgPath, "utf8");
+    expect(svg).toMatch(/<svg[^>]*viewBox="0 0 64 64"/);
+    expect(svg).toContain("#7043d9");
+    expect(svg).toContain("<path");
   });
 });

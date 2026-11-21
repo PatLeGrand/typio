@@ -634,6 +634,17 @@
     "capacity": {
       "label": "Capacité",
       "help": "Coureurs et bots ; les spectateurs ne comptent pas."
+    },
+    "keySounds": {
+      "label": "Sons des touches",
+      "help": "Un son différent pour chaque frappe réussie ou ratée pendant la course.",
+      "sets": {
+        "mechanical": "Mécanique",
+        "typewriter": "Machine à écrire",
+        "retro": "Arcade rétro",
+        "soft": "Bulle douce",
+        "none": "Silencieux"
+      }
     }
   },
   "profile": {
@@ -800,6 +811,15 @@
         "qwerty": "QWERTY",
         "azerty": "AZERTY",
         "cmf": "Canadien multilingue"
+      },
+      "keySounds": "Sons des touches en course",
+      "keySoundsHelp": "Joue un son différent sur chaque touche réussie ou ratée.",
+      "keySoundSets": {
+        "mechanical": "Mécanique",
+        "typewriter": "Machine à écrire",
+        "retro": "Arcade rétro",
+        "soft": "Bulle douce",
+        "none": "Silencieux"
       },
       "language": "Langue de l'interface",
       "title": "Préférences"
@@ -1039,7 +1059,10 @@
       "kick": "Expulser",
       "kickConfirm": "Expulser {name} ? Cette personne ne pourra plus revenir.",
       "kickYes": "Oui, expulser",
-      "kickCancel": "Annuler"
+      "kickCancel": "Annuler",
+      "customizeBlob": "Modifier mon blob",
+      "customizeBlobHint": "Personnalise ton blob avant le départ !",
+      "closeBlobModal": "Fermer la personnalisation du blob"
     },
     "config": {
       "title": "Configuration",

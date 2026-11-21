@@ -20,6 +20,8 @@ type RoomViewProps = {
   labels: Dictionary["room"];
   /** Textes des réglages de course, partagés avec la page de paramètres. */
   settingsLabels: Dictionary["raceSettings"];
+  /** Textes de personnalisation du blob pour la popup du salon. */
+  blobLabels?: Dictionary["profile"]["blob"];
   lang: string;
   /** Dernier refus ou échec, affiché traduit. */
   error: ClientRoomErrorCode | null;
@@ -30,10 +32,12 @@ type RoomViewProps = {
   onConfigChange: (patch: RoomConfigPatch) => Promise<unknown>;
 };
 
-export function RoomView({ room, userId, labels, settingsLabels, lang, error, leaving, onLeave, onConfigChange, raceLabels, session }: RoomViewProps) {
+export function RoomView({ room, userId, labels, settingsLabels, blobLabels, lang, error, leaving, onLeave, onConfigChange, raceLabels, session }: RoomViewProps) {
   const [pending, setPending] = useState(false);
   const immersive = room.status === "countdown" || room.status === "racing";
   const isResults = room.status === "results" || (room.solo && room.status === "waiting");
+  const isWaitingLobby = room.status === "waiting" && !room.solo;
+  const isHost = room.hostId === userId;
   const humans = room.participants.filter((p) => p.role === "runner").length;
   const enoughRunners = humans > 0 && humans + room.config.bots.length >= 2;
   async function startRace() {
@@ -42,25 +46,50 @@ export function RoomView({ room, userId, labels, settingsLabels, lang, error, le
   }
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className={immersive || isResults ? "race-masthead text-foreground" : "text-3xl font-bold tracking-tight text-foreground"}>{isResults ? labels.resultsTitle : room.status === "waiting" ? labels.title : raceLabels.circuit}</h1>
-        <Button variant="secondary" onClick={onLeave} disabled={leaving}>
-          {labels.leave}
-        </Button>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className={immersive || isResults ? "race-masthead text-foreground" : "text-3xl font-bold tracking-tight text-foreground"}>
+            {isResults ? labels.resultsTitle : room.status === "waiting" ? labels.title : raceLabels.circuit}
+          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            {isWaitingLobby && isHost ? (
+              <Button
+                variant="start"
+                disabled={pending || !enoughRunners || session.connection !== "connected"}
+                aria-describedby={!enoughRunners ? "race-start-reason" : undefined}
+                onClick={() => void startRace()}
+              >
+                {labels.race.start}
+              </Button>
+            ) : null}
+            <Button variant="secondary" onClick={onLeave} disabled={leaving}>
+              {labels.leave}
+            </Button>
+          </div>
+        </div>
+        {isWaitingLobby && isHost && !enoughRunners ? (
+          <p id="race-start-reason" className="text-sm text-muted-strong sm:text-right">
+            {labels.errors.NOT_ENOUGH_RUNNERS}
+          </p>
+        ) : null}
       </div>
       {error ? <RoomError code={error} messages={labels.errors} /> : null}
       {!room.solo && !immersive ? <RoomCodeCard code={room.code} labels={labels.code} /> : null}
-      {room.status === "waiting" && !room.solo ? <div className="flex flex-col gap-6">
-        <ParticipantList room={room} currentUserId={userId} labels={labels.participants} raceLabels={raceLabels} onKick={room.hostId === userId ? session.kick : undefined} />
-        {room.hostId === userId ? <div className="flex flex-col items-start gap-2">
-          <Button variant="start" disabled={pending || !enoughRunners || session.connection !== "connected"} aria-describedby={!enoughRunners ? "race-start-reason" : undefined} onClick={() => void startRace()}>{labels.race.start}</Button>
-          {!enoughRunners ? <p id="race-start-reason">{labels.errors.NOT_ENOUGH_RUNNERS}</p> : null}
-        </div> : null}
-        {room.hostId === userId ? <InvitePanel invites={session.invites} lang={lang} labels={labels.invites} errors={labels.errors} onCreate={session.createInvite} /> : null}
+      {isWaitingLobby ? <div className="flex flex-col gap-6">
+        <ParticipantList
+          room={room}
+          currentUserId={userId}
+          labels={labels.participants}
+          raceLabels={raceLabels}
+          blobLabels={blobLabels}
+          onBlobSaved={() => void session.refreshProfile()}
+          onKick={isHost ? session.kick : undefined}
+        />
+        {isHost ? <InvitePanel invites={session.invites} lang={lang} labels={labels.invites} errors={labels.errors} onCreate={session.createInvite} /> : null}
         <RoomConfigPanel
           config={room.config}
           runnerCount={humans}
-          editable={room.hostId === userId}
+          editable={isHost}
           lang={lang}
           labels={labels.config}
           settingsLabels={settingsLabels}

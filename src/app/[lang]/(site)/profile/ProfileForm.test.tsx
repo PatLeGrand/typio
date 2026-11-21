@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CurrentUser } from "@/auth/types";
 import { getDictionary } from "@/i18n/dictionaries";
 import type { ProfileUpdateResult } from "@/profile/profileSettings";
+import * as keySounds from "@/race/keySounds";
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
@@ -95,7 +96,25 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
     expect(screen.getByRole("radio", { name: profile.settings.layouts.qwerty })).toBeChecked();
     expect(screen.getByRole("radio", { name: dictionary.language.names[locale] })).toBeChecked();
     expect(screen.getByRole("group", { name: profile.settings.layout })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: profile.settings.keySounds })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: profile.settings.language })).toBeInTheDocument();
+  });
+
+  it("permet de changer le set de sons de touches dans Préférences avec sauvegarde locale et aperçu immédiat", () => {
+    window.localStorage.removeItem(keySounds.KEY_SOUND_STORAGE_KEY);
+    const previewSpy = vi.spyOn(keySounds, "playKeySoundPreview");
+    const dictionary = renderForm(locale);
+    const { profile } = dictionary;
+
+    openTab(profile.tabs.preferences);
+    expect(screen.getByRole("radio", { name: profile.settings.keySoundSets.mechanical })).toBeChecked();
+
+    fireEvent.click(screen.getByRole("radio", { name: profile.settings.keySoundSets.typewriter }));
+    expect(screen.getByRole("radio", { name: profile.settings.keySoundSets.typewriter })).toBeChecked();
+    expect(window.localStorage.getItem(keySounds.KEY_SOUND_STORAGE_KEY)).toBe("typewriter");
+    expect(previewSpy).toHaveBeenCalledWith("typewriter");
+
+    previewSpy.mockRestore();
   });
 
   it("gère la navigation clavier WAI-ARIA (ArrowRight, ArrowLeft, Home, End) et l'attribut hidden des panneaux", () => {

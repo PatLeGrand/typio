@@ -193,6 +193,41 @@ describe("roomStore", () => {
     expect(store.snapshot(code)?.runners.find((r) => r.id === member.id)?.avatarVersion).toBe(avatarVersion ?? null);
   });
 
+  it("updateParticipantProfile: met à jour le blobStyle et l'avatarVersion du participant et du coureur en course", () => {
+    const now = 100;
+    store = createRoomStore({ corpus: TEST_CORPUS, now: () => now, generateSeed: () => 42 });
+    const initialStyle = { color: "sky", expression: "smile", glasses: "none", hat: "none", accessory: "none" } as const;
+    const newStyle = { color: "coral", expression: "cool", glasses: "shades", hat: "crown", accessory: "cape" } as const;
+
+    const created = store.create({ ...member, blobStyle: initialStyle, avatarVersion: 1 }, {}, "runner", now);
+    if (!created.ok) throw new Error("failed to create");
+    const code = created.state.code;
+    expect(store.join(member2, code, "runner", now).ok).toBe(true);
+
+    expect(store.updateParticipantProfile(member.id, "ZZZZZZ", { blobStyle: newStyle })).toEqual({
+      ok: false,
+      error: "ROOM_NOT_FOUND",
+    });
+    expect(store.updateParticipantProfile("unknown", code, { blobStyle: newStyle })).toEqual({
+      ok: false,
+      error: "NOT_IN_ROOM",
+    });
+
+    expect(store.start(member.id, code).ok).toBe(true);
+
+    const updated = store.updateParticipantProfile(member.id, code, { blobStyle: newStyle, avatarVersion: 3 });
+    expect(updated.ok).toBe(true);
+    if (!updated.ok) return;
+
+    const p = updated.state.participants.find((part) => part.userId === member.id);
+    expect(p?.blobStyle).toEqual(newStyle);
+    expect(p?.avatarVersion).toBe(3);
+
+    const runner = store.snapshot(code)?.runners.find((r) => r.id === member.id);
+    expect(runner?.blobStyle).toEqual(newStyle);
+    expect(runner?.avatarVersion).toBe(3);
+  });
+
   it("AC-7: Seul l'hôte peut modifier la configuration", () => {
     const createRes = store.create(member, {}, "runner", 100);
     if (!createRes.ok) throw new Error();

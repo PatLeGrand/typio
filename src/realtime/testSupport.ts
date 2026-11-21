@@ -3,6 +3,7 @@
  * Socket.IO authentifiés contre un serveur lancé sur un port libre.
  */
 
+import type { BlobStyle } from "@/race/blobStyle";
 import { TEST_CORPUS } from "@/test/corpus";
 import type { AddressInfo } from "node:net";
 import { io as connect, type Socket } from "socket.io-client";
@@ -74,7 +75,13 @@ export function createFakeSessions(gate: { current: Promise<void> | null } = { c
 }
 
 /** Serveur sur un port libre ; `client(token)` ouvre une connexion avec le cookie de session. */
-export async function startTestServer(options: { graceMs?: number; revalidateMs?: number; now?: () => Date; generateSeed?: () => number } = {}) {
+export async function startTestServer(options: {
+  graceMs?: number;
+  revalidateMs?: number;
+  now?: () => Date;
+  generateSeed?: () => number;
+  loadBlobStyle?: (userId: string) => Promise<BlobStyle>;
+} = {}) {
   const gate: { current: Promise<void> | null } = { current: null };
   let releaseGate = () => {};
   const sessions = createFakeSessions(gate);
@@ -86,6 +93,7 @@ export async function startTestServer(options: { graceMs?: number; revalidateMs?
     now: options.now,
     generateSeed: options.generateSeed,
     revalidateMs: options.revalidateMs,
+    loadBlobStyle: options.loadBlobStyle,
   });
   await new Promise<void>((resolve) => httpServer.listen(0, "127.0.0.1", resolve));
   const { port } = httpServer.address() as AddressInfo;
