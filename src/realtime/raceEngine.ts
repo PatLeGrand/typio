@@ -1,4 +1,4 @@
-import { botFinishMs, botKeystrokesAt, botProgressAt, botWpmSeries, planBot, replanBot, BOT_FOG_SLOWDOWN_FACTOR, type BotPlan } from "@/race/bots";
+import { botCorrectChars, botFinishMs, botKeystrokesAt, botProgressAt, botWpmSeries, planBot, replanBot, BOT_FOG_SLOWDOWN_FACTOR, type BotPlan } from "@/race/bots";
 import { applyTextEdits, crossedCheckpoints, resolveCheckpoint, type BonusAward, type TextEdit } from "@/race/bonuses";
 import { RACE_SAFETY_LIMIT_SECONDS, getEffectiveTimeLimitSeconds } from "@/race/config";
 import { COUNTDOWN_MS } from "@/race/lifecycle";
@@ -132,8 +132,8 @@ export function applyInput(race: RaceState, userId: string, ops: readonly string
     const next = op === "\b" ? updated.typed.slice(0, -1) : updated.typed + op;
     const input = applyTypedInput(updated.typed, next, text, race.config.inputMode, updated.keystrokes, updated.missedKeys);
     updated = { ...updated, ...input, inputCount: updated.inputCount + 1, lastActivityAt: now, status: "typing" };
-    updated.position = countCorrectChars(updated.typed, text);
-    if (updated.typed === text) {
+    updated.position = race.config.inputMode === "free" ? updated.typed.length : countCorrectChars(updated.typed, text);
+    if (updated.position === text.length) {
       updated.status = "finished";
       updated.finishedAt = now;
       break;
@@ -179,8 +179,9 @@ export function tickRace(race: RaceState, now: number): RaceState {
         Math.floor(elapsed(race, r, now) / 1000) + 1);
       if (r.wpmSeries.length >= count) return r;
       const wpmSeries = [...r.wpmSeries];
+      const correctChars = runnerCorrectChars(r, race.config.inputMode, applyTextEdits(race.text, r.edits));
       while (wpmSeries.length < count) {
-        wpmSeries.push(computeWpm(r.position, wpmSeries.length * 1000));
+        wpmSeries.push(computeWpm(correctChars, wpmSeries.length * 1000));
       }
       return { ...r, wpmSeries };
     }
@@ -243,6 +244,11 @@ function elapsed(race: RaceState, runner: RaceRunner, now: number): number {
     raceDeadline(race, now)) - race.startAt);
 }
 
+function runnerCorrectChars(runner: RaceRunner, inputMode: RoomConfig["inputMode"], text: string): number {
+  if (runner.plan) return botCorrectChars(runner.plan, runner.position);
+  return inputMode === "free" ? countCorrectChars(runner.typed, text) : runner.position;
+}
+
 export function raceSnapshot(race: RaceState, now: number) {
   const current = tickRace(race, now);
   return {
@@ -250,12 +256,16 @@ export function raceSnapshot(race: RaceState, now: number) {
     finishDeadline: current.config.timeLimitSeconds === null && current.runners.some((runner) => runner.finishedAt !== null)
       ? raceDeadline(current, now) : null,
     bonusEvents: current.bonusEvents.filter((event) => event.at >= now - 10_000),
-    runners: current.runners.map((r) => ({
-      id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), avatarVersion: r.kind === "human" ? r.avatarVersion ?? null : null, status: r.status, connected: r.connected,
-      position: r.position, progress: r.position / applyTextEdits(current.text, r.edits).length,
-      edits: r.edits, fogUntil: r.fogUntil, textLength: applyTextEdits(current.text, r.edits).length,
-      wpm: computeWpm(r.position, elapsed(current, r, now)), accuracy: computeAccuracy(r.keystrokes),
-    })),
+    runners: current.runners.map((r) => {
+      const text = applyTextEdits(current.text, r.edits);
+      return {
+        id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), avatarVersion: r.kind === "human" ? r.avatarVersion ?? null : null, status: r.status, connected: r.connected,
+        position: r.position, progress: r.position / text.length,
+        edits: r.edits, fogUntil: r.fogUntil, textLength: text.length,
+        wpm: computeWpm(runnerCorrectChars(r, current.config.inputMode, text), elapsed(current, r, now)),
+        accuracy: computeAccuracy(r.keystrokes),
+      };
+    }),
   };
 }
 
@@ -266,13 +276,14 @@ export function raceResults(race: RaceState) {
   const order = { finished: 0, unfinished: 1, abandoned: 2 };
   return race.runners.map((r) => {
     const timeMs = elapsed(race, r, endedAt);
+    const text = applyTextEdits(race.text, r.edits);
     return {
       id: r.id, name: r.name, kind: r.kind, ...(r.kind === "bot" ? { level: r.level } : {}), avatarVersion: r.kind === "human" ? r.avatarVersion ?? null : null,
       status: r.status === "finished" ? "finished" as const : r.status === "abandoned" ? "abandoned" as const : "unfinished" as const,
-      position: r.position, progress: r.position / applyTextEdits(race.text, r.edits).length,
+      position: r.position, progress: r.position / text.length,
       bonusesReceived: r.bonusesReceived,
       bonusTypes: race.bonusEvents.filter((event) => event.recipientId === r.id).map((event) => event.type),
-      wpm: computeWpm(r.position, timeMs), grossWpm: computeWpm(r.keystrokes.total, timeMs),
+      wpm: computeWpm(runnerCorrectChars(r, race.config.inputMode, text), timeMs), grossWpm: computeWpm(r.keystrokes.total, timeMs),
       wpmSeries: r.kind === "bot" && r.plan ? botWpmSeries(r.plan, timeMs) : r.wpmSeries,
       accuracy: computeAccuracy(r.keystrokes), errors: r.keystrokes.total - r.keystrokes.correct, timeMs,
     };

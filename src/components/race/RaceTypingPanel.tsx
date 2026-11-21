@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type ChangeEvent, type RefObject, type SyntheticEvent } from "react";
 import { CornerDownLeft, Delete, Keyboard, Sparkles } from "lucide-react";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { countCorrectChars } from "@/race/metrics";
+import type { InputMode } from "@/realtime/protocol";
 
 type Props = {
   locale?: string;
@@ -11,7 +13,7 @@ type Props = {
   labels: Dictionary["raceScreen"]["typing"];
   text: string;
   typed: string;
-  correctChars: number;
+  inputMode: InputMode;
   fog?: boolean;
   bonusMessage?: string;
   onChange: (value: string) => void;
@@ -20,7 +22,7 @@ type Props = {
 const TEXT_ID = "race-text";
 
 /** Texte à taper (caractères colorés selon la frappe) et champ de saisie, sans copier-coller (COURSE-04). */
-export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, text, typed, correctChars, fog = false, bonusMessage = "", onChange }: Props) {
+export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, text, typed, inputMode, fog = false, bonusMessage = "", onChange }: Props) {
   const localInputRef = useRef<HTMLInputElement>(null);
   const inputRef = focusRef ?? localInputRef;
   // Pendant une composition (touche morte « ^ » puis « e », IME), la valeur brute est affichée
@@ -60,7 +62,8 @@ export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, te
   const wordEnd = text.indexOf(" ", typed.length);
   const fogStart = wordEnd < 0 ? text.length : wordEnd + 1;
   const number = new Intl.NumberFormat(locale);
-  const done = text.length === 0 ? 0 : (correctChars / text.length) * 100;
+  const progressChars = inputMode === "free" ? typed.length : countCorrectChars(typed, text);
+  const done = text.length === 0 ? 0 : (progressChars / text.length) * 100;
 
   return (
     <section className={embedded ? "flex min-w-0 flex-col gap-4" : "mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 py-8 sm:px-8"}>
@@ -70,7 +73,7 @@ export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, te
           <h2>{labels.title}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-3 text-xs font-bold tabular-nums text-muted">
-          <span>{number.format(correctChars)} / {number.format(text.length)} {labels.characters}</span>
+          <span>{number.format(progressChars)} / {number.format(text.length)} {labels.characters}</span>
           <span className="h-2 w-28 overflow-hidden rounded-full bg-accent-soft" aria-hidden="true">
             <span className="block h-full rounded-full bg-accent" style={{ width: `${done}%` }} />
           </span>
@@ -130,7 +133,7 @@ export function RaceTypingPanel({ focusRef, locale, embedded = false, labels, te
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
         <p className="flex items-center gap-2">
           <Sparkles aria-hidden="true" className="size-4 text-accent-text" />
-          {labels.hint}
+          {inputMode === "free" ? labels.freeHint : labels.hint}
         </p>
         <p className="flex items-center gap-2">
           <kbd className="inline-flex items-center rounded-md border border-border px-1.5 py-0.5"><Delete aria-hidden="true" className="size-3.5" /></kbd>

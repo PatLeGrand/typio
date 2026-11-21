@@ -19,7 +19,6 @@ export function createPlayableRace(text: string): PlayableRace {
       ...plan,
       keyframes: plan.keyframes.map((frame) => ({ ...frame, timeMs: frame.timeMs * scale })),
       mistakeTimesMs: plan.mistakeTimesMs.map((time) => time * scale),
-      extraCorrectTimesMs: plan.extraCorrectTimesMs.map((time) => time * scale),
     };
   });
   return { phase: "waiting", text, typed: "", keystrokes: NO_KEYSTROKES, elapsedMs: 0, bots };
@@ -37,11 +36,11 @@ export function transitionPlayableRace(state: PlayableRace, event: Event): Playa
   };
   if (event.type === "tick" || current.phase === "finished" || (!event.value && current.phase === "waiting")) return current;
   const { typed, keystrokes } = applyTypedInput(current.typed, event.value, current.text, "free", current.keystrokes);
-  return { ...current, typed, keystrokes, phase: typed === current.text ? "finished" : "racing" };
+  return { ...current, typed, keystrokes, phase: typed.length === current.text.length ? "finished" : "racing" };
 }
 
 export function playableRaceProgress(state: PlayableRace): number[] {
-  return [countCorrectChars(state.typed, state.text), ...state.bots.map((bot) => botProgressAt(bot, state.elapsedMs))]
+  return [state.typed.length, ...state.bots.map((bot) => botProgressAt(bot, state.elapsedMs))]
     .map((chars) => state.text.length ? chars / state.text.length * 100 : 0);
 }
 

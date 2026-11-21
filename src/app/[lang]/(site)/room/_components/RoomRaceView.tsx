@@ -14,7 +14,7 @@ import type { Dictionary } from "@/i18n/dictionaries";
 import { formatClock, formatOrdinal } from "@/race/format";
 import { serializeRaceSettings } from "@/race/config";
 import { applyTextEdits } from "@/race/bonuses";
-import { applyTypedInput, countCorrectChars } from "@/race/metrics";
+import { applyTypedInput } from "@/race/metrics";
 import { createRaceInputBuffer, raceInputOps } from "@/realtime/raceInput";
 import { getSocket } from "@/realtime/client";
 import type { RoomState } from "@/realtime/protocol";
@@ -103,12 +103,13 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
   }
 
   function change(value: string) {
-    if (!race || !active || connection !== "connected" || pending || race.status !== "racing" || room.status !== "racing" || input.typed === text) return;
+    if (!race || !active || connection !== "connected" || pending || race.status !== "racing" || room.status !== "racing" || input.typed.length === text.length) return;
     const ops = raceInputOps(input.typed, value);
     let next = input;
     for (const op of ops) {
       const typed = op === "\b" ? next.typed.slice(0, -1) : next.typed + op;
       next = applyTypedInput(next.typed, typed, text, room.config.inputMode, next.keystrokes);
+      if (next.typed.length === text.length) break;
     }
     setInput(next);
     buffer.push(ops);
@@ -309,7 +310,7 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
             {labels.finishCountdown.replace("{time}", formatClock(Math.max(0, race.finishDeadline - serverTime), "ceil"))}
           </p>}
           {room.status === "racing" && active ? <>
-            {physicalKeyboard ? connection === "connected" ? <RaceTypingPanel embedded focusRef={typingRef} fog={(runner?.fogUntil ?? 0) > serverTime} bonusMessage={playerBonusMessage(race.bonusEvents, userId, serverTime, raceLabels.bonuses, race.runners)} locale={lang} labels={raceLabels.typing} text={text} typed={input.typed} correctChars={countCorrectChars(input.typed, text)} onChange={change} /> : <p role="status">{labels.reconnecting}</p> : <p className="flex items-center gap-3 font-semibold"><Keyboard className="shrink-0 text-accent-text" aria-hidden="true" />{labels.keyboard}</p>}
+            {physicalKeyboard ? connection === "connected" ? <RaceTypingPanel embedded focusRef={typingRef} fog={(runner?.fogUntil ?? 0) > serverTime} bonusMessage={playerBonusMessage(race.bonusEvents, userId, serverTime, raceLabels.bonuses, race.runners)} locale={lang} labels={raceLabels.typing} text={text} typed={input.typed} inputMode={room.config.inputMode} onChange={change} /> : <p role="status">{labels.reconnecting}</p> : <p className="flex items-center gap-3 font-semibold"><Keyboard className="shrink-0 text-accent-text" aria-hidden="true" />{labels.keyboard}</p>}
             {confirmAbandon ? <div role="group" aria-label={labels.confirmAbandon} className="flex flex-wrap items-center gap-3">
               <p>{labels.confirmAbandon}</p>
               <Button disabled={pending || connection !== "connected"} onClick={() => { buffer.clear(); void command(abandonRace).then(() => setConfirmAbandon(false)); }}>{labels.confirm}</Button>

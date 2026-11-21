@@ -94,6 +94,7 @@
       "characters": "characters",
       "inputLabel": "Type the text here",
       "hint": "Every correct character moves your Blob forward.",
+      "freeHint": "Every character that goes in moves your Blob forward. You can only correct the current word.",
       "fix": "to fix",
       "autoValidate": "Ends automatically at the last character"
     },
@@ -211,7 +212,7 @@
       "promptFocused": "Your turn: start typing.",
       "racing": "Go go go!",
       "inputLabel": "Copy the sentence to race",
-      "hint": "Use Backspace to correct. Escape to leave.",
+      "hint": "Use Backspace to correct the current word. Escape to leave.",
       "wpm": "WPM",
       "accuracy": "Accuracy",
       "place": "Place",
@@ -266,7 +267,7 @@
         },
         {
           "title": "Take the lead",
-          "description": "Aim for accuracy as well as speed: only correct characters move you forward."
+          "description": "Type quickly and accurately to reach the finish line first."
         }
       ]
     },
@@ -542,7 +543,7 @@
     "inputMode": {
       "label": "Input mode",
       "free": "Free",
-      "freeDesc": "Keep going even after an error. Only correct keys move you forward.",
+      "freeDesc": "You can keep typing after a mistake (up to 2 per word). Once you pass a word, you can no longer correct it. Mistakes count toward your accuracy.",
       "blocking": "Blocking",
       "blockingDesc": "Correct each error before you can type the next character."
     },

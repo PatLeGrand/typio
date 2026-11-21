@@ -78,6 +78,21 @@ describe("applyTypedInput", () => {
     expect(result.typed).toBe("axcd");
     expect(result.keystrokes).toEqual({ total: 4, correct: 3 });
     expect(countCorrectChars(result.typed, "abcd")).toBe(3);
+    expect(computeWpm(countCorrectChars(result.typed, "abcd"), 12_000)).toBe(3);
+    expect(computeAccuracy(result.keystrokes)).toBe(75);
+  });
+
+  it("verrouille le mot et son espace même si la frappe à cet endroit est fausse", () => {
+    const result = type("abc def", ["abcX", "abc", "a", "abc ", "abcXz", "abcX"]);
+    expect(result).toEqual({ typed: "abcX", keystrokes: { total: 5, correct: 3 }, missedKeys: { " ": 1, d: 1 } });
+  });
+
+  it("compte la troisième faute sans l'insérer et libère une place à l'effacement", () => {
+    const capped = type("abcd efgh", ["x z"]);
+    expect(capped).toEqual({ typed: "x ", keystrokes: { total: 3, correct: 0 }, missedKeys: { a: 1, b: 1, c: 1 } });
+    const result = type("abcd efgh", ["xyz", "x", "xbydXzz", "xbydXzzgh"]);
+    expect(result.typed).toBe("xbydXzzgh");
+    expect(result.keystrokes).toEqual({ total: 11, correct: 4 });
   });
 
   it("mode bloquant : le caractère faux n'entre pas mais compte comme une frappe fausse", () => {
@@ -88,7 +103,7 @@ describe("applyTypedInput", () => {
   });
 
   it("mode bloquant : effacer reste possible", () => {
-    const result = type("abc", ["a", "ab", "a"], "blocking");
+    const result = type("a b", ["a", "a ", "a"], "blocking");
     expect(result.typed).toBe("a");
     expect(result.keystrokes).toEqual({ total: 2, correct: 2 });
   });

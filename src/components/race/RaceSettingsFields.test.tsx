@@ -35,7 +35,7 @@ describe("RaceSettingsFields (editable)", () => {
     [copy.textMode.words, { textMode: "words" }, false],
     [copy.language.en, { language: "en" }, false],
     [copy.accents.exclude, { accents: false }, true],
-    [copy.inputMode.blocking, { inputMode: "blocking" }, true],
+    [copy.inputMode.free, { inputMode: "free" }, true],
     [copy.timeLimit.minutes.replace("{minutes}", "3"), { timeLimitSeconds: 180 }, false],
   ])("choosing %s sends %j", (name, patch, advanced) => {
     const onChange = renderFields({ value: { timeLimitSeconds: 60 } });
@@ -60,14 +60,14 @@ describe("RaceSettingsFields (editable)", () => {
     expect(screen.queryByText(plain(copy.complexity.descriptions.hard))).toBeNull();
 
     openAdvanced();
-    expect(screen.getByText(plain(copy.inputMode.freeDesc))).toBeInTheDocument();
-    expect(screen.queryByText(plain(copy.inputMode.blockingDesc))).toBeNull();
-
-    rerender(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS, complexity: "hard", inputMode: "blocking" }} onChange={vi.fn()} dict={copy} lang="fr" />);
-    expect(screen.getByText(plain(copy.complexity.descriptions.hard))).toBeInTheDocument();
-    expect(screen.queryByText(plain(copy.complexity.descriptions.medium))).toBeNull();
     expect(screen.getByText(plain(copy.inputMode.blockingDesc))).toBeInTheDocument();
     expect(screen.queryByText(plain(copy.inputMode.freeDesc))).toBeNull();
+
+    rerender(<RaceSettingsFields value={{ ...DEFAULT_RACE_SETTINGS, complexity: "hard", inputMode: "free" }} onChange={vi.fn()} dict={copy} lang="fr" />);
+    expect(screen.getByText(plain(copy.complexity.descriptions.hard))).toBeInTheDocument();
+    expect(screen.queryByText(plain(copy.complexity.descriptions.medium))).toBeNull();
+    expect(screen.getByText(plain(copy.inputMode.freeDesc))).toBeInTheDocument();
+    expect(screen.queryByText(plain(copy.inputMode.blockingDesc))).toBeNull();
   });
 
   it("sends a numeric word count from the dropdown", () => {
