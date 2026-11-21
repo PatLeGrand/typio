@@ -120,9 +120,8 @@ export function ParticipantList({ room, currentUserId, labels, raceLabels, onKic
             {/* Le bot n'a pas encore de nom (tiré au départ) : blob coloré selon sa place. */}
             <BlobPreview
               style={{
+                ...DEFAULT_BLOB_STYLE,
                 color: BLOB_COLORS[(index + 1) % BLOB_COLORS.length],
-                glasses: "none",
-                hat: "none",
               }}
               size={56}
               className="shrink-0"

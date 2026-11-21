@@ -79,7 +79,7 @@ async function setup(loadCorpus?: () => Promise<SentenceCorpus>, initialRoom = t
 
 describe("frontière client des courses (COURSE-06)", () => {
   it("diffuse le style du compte en solo et pour chaque humain en multijoueur", async () => {
-    const guestStyle: BlobStyle = { color: "coral", glasses: "round", hat: "cap" };
+    const guestStyle: BlobStyle = { color: "coral", expression: "wink", glasses: "round", hat: "cap", accessory: "scarf" };
     const load = vi.fn(async (id: string) => id === "visitor" ? guestStyle : DEFAULT_BLOB_STYLE);
     const { host, client, store, at } = await setup(undefined, false, load);
     const guest = client("visitor", "guest");
@@ -119,7 +119,7 @@ describe("frontière client des courses (COURSE-06)", () => {
   });
 
   it.each(["member", "guest"] as const)("relit le style en solo pour un %s et le conserve à la reconnexion", async (kind) => {
-    let style: BlobStyle = { color: "mint", glasses: "shades", hat: "beanie" };
+    let style: BlobStyle = { color: "mint", expression: "smile", glasses: "shades", hat: "beanie", accessory: "none" };
     const load = vi.fn(async () => style);
     const { client, store } = await setup(undefined, false, load);
     const player = client("player", kind);
@@ -130,14 +130,14 @@ describe("frontière client des courses (COURSE-06)", () => {
     expect(returning.received).toContainEqual({
       event: "race:state", payload: expect.objectContaining({ runners: [expect.objectContaining({ blobStyle: style })] }),
     });
-    style = { color: "berry", glasses: "star", hat: "crown" };
+    style = { color: "berry", expression: "cool", glasses: "star", hat: "crown", accessory: "wings" };
     expect(await returning.command("solo:start")).toMatchObject({ ok: true });
     expect(store.snapshot("BCDEFG")?.runners[0].blobStyle).toEqual(style);
     expect(load).toHaveBeenCalledTimes(2);
   });
 
   it.each(["invite", "quickJoin"] as const)("charge aussi le style des invités via %s", async (path) => {
-    const style: BlobStyle = { color: "lavender", glasses: "round", hat: "crown" };
+    const style: BlobStyle = { color: "lavender", expression: "cat", glasses: "round", hat: "crown", accessory: "bowtie" };
     const load = vi.fn(async () => style);
     const { host, client, store } = await setup(undefined, false, load);
     await host.command("room:create", { config: { visibility: "public" } });

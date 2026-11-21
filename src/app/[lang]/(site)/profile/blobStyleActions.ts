@@ -33,10 +33,14 @@ export async function updateBlobStyle(formData: FormData): Promise<BlobStyleSave
       return { ok: false, code: "RATE_LIMITED" };
     }
 
+    const rawExpression = formData.get("expression");
+    const rawAccessory = formData.get("accessory");
     const style = parseBlobStyle({
       color: formData.get("color"),
+      expression: rawExpression === null ? undefined : rawExpression,
       glasses: formData.get("glasses"),
       hat: formData.get("hat"),
+      accessory: rawAccessory === null ? undefined : rawAccessory,
     });
     if (!style) return { ok: false, code: "INVALID_STYLE" };
 

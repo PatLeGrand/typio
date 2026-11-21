@@ -660,30 +660,65 @@
       "description": "Personnalise le personnage qui court pour toi sur la piste, indépendamment de ta photo de profil.",
       "customize": "Personnaliser mon blob",
       "backToProfile": "Retour au profil",
-      "preview": "Aperçu de ton blob de course : couleur {color}, lunettes {glasses}, couvre-chef {hat}.",
+      "preview": "Aperçu de ton blob de course : couleur {color}, expression {expression}, lunettes {glasses}, couvre-chef {hat}, accessoire {accessory}.",
       "colorLegend": "Couleur",
+      "expressionLegend": "Expression",
       "glassesLegend": "Lunettes",
       "hatLegend": "Couvre-chef",
+      "accessoryLegend": "Accessoire",
       "colors": {
         "sky": "Bleu ciel",
         "mint": "Menthe",
         "coral": "Corail",
         "sun": "Soleil",
         "lavender": "Lavande",
-        "berry": "Framboise"
+        "berry": "Framboise",
+        "tangerine": "Mandarine",
+        "lime": "Citron vert",
+        "indigo": "Indigo",
+        "peach": "Pêche",
+        "slate": "Ardoise",
+        "cream": "Crème"
+      },
+      "expressions": {
+        "smile": "Sourire",
+        "wink": "Clin d’œil",
+        "determined": "Déterminé",
+        "surprised": "Surpris",
+        "cat": "Chat",
+        "cool": "Cool"
       },
       "glasses": {
         "none": "Aucune",
         "round": "Rondes",
         "shades": "Solaires",
-        "star": "Étoiles"
+        "star": "Étoiles",
+        "heart": "Cœurs",
+        "pixel": "Pixel",
+        "monocle": "Monocle",
+        "visor": "Visière"
       },
       "hats": {
         "none": "Aucun",
         "cap": "Casquette",
         "beanie": "Bonnet",
-        "crown": "Couronne"
+        "crown": "Couronne",
+        "tophat": "Haut-de-forme",
+        "headphones": "Casque",
+        "beret": "Béret",
+        "party": "Fête"
       },
+      "accessories": {
+        "none": "Aucun",
+        "bowtie": "Nœud papillon",
+        "scarf": "Écharpe",
+        "blush": "Joues roses",
+        "mustache": "Moustache",
+        "cape": "Cape",
+        "wings": "Ailes",
+        "bandaid": "Pansement"
+      },
+      "randomize": "Aléatoire",
       "save": "Enregistrer le blob",
       "saving": "Enregistrement…",
       "cancel": "Annuler",

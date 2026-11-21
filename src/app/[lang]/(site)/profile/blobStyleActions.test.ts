@@ -30,11 +30,19 @@ const member: CurrentUser = {
 let now = 0;
 let limiters = createAuthLimiters(() => now);
 
-function styleForm(color = "coral", glasses = "shades", hat = "cap") {
+function styleForm(
+  color = "coral",
+  glasses = "shades",
+  hat = "cap",
+  expression = "smile",
+  accessory = "none",
+) {
   const formData = new FormData();
   formData.set("color", color);
+  formData.set("expression", expression);
   formData.set("glasses", glasses);
   formData.set("hat", hat);
+  formData.set("accessory", accessory);
   formData.set("userId", "spoofed-user");
   return formData;
 }
@@ -71,12 +79,17 @@ describe("updateBlobStyle", () => {
   });
 
   it("enregistre le style validé pour l'utilisateur de la session et revalide les pages profil et blob", async () => {
-    const result = await updateBlobStyle(styleForm("mint", "round", "crown"));
-    expect(result).toEqual({ ok: true, style: { color: "mint", glasses: "round", hat: "crown" } });
+    const result = await updateBlobStyle(styleForm("mint", "round", "crown", "determined", "cape"));
+    expect(result).toEqual({
+      ok: true,
+      style: { color: "mint", expression: "determined", glasses: "round", hat: "crown", accessory: "cape" },
+    });
     expect(mocks.saveBlobStyle).toHaveBeenCalledWith(member.id, {
       color: "mint",
+      expression: "determined",
       glasses: "round",
       hat: "crown",
+      accessory: "cape",
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/fr/profile");
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/fr/profile/blob");

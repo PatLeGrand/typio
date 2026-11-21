@@ -46,7 +46,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getCurrentUser.mockResolvedValue(member);
   mockDbRows([{ id: member.id }]);
-  mocks.getBlobStyle.mockResolvedValue({ color: "coral", glasses: "shades", hat: "cap" });
+  mocks.getBlobStyle.mockResolvedValue({
+    color: "coral",
+    expression: "smile",
+    glasses: "shades",
+    hat: "cap",
+    accessory: "none",
+  });
 });
 
 describe("ProfileBlobPage", () => {
