@@ -103,7 +103,7 @@ describe("applyTypedInput", () => {
   });
 
   it("mode bloquant : effacer reste possible", () => {
-    const result = type("a b", ["a", "a ", "a"], "blocking");
+    const result = type("abc", ["a", "ab", "a"], "blocking");
     expect(result.typed).toBe("a");
     expect(result.keystrokes).toEqual({ total: 2, correct: 2 });
   });

@@ -212,7 +212,7 @@
       "promptFocused": "Your turn: start typing.",
       "racing": "Go go go!",
       "inputLabel": "Copy the sentence to race",
-      "hint": "Use Backspace to correct the current word. Escape to leave.",
+      "hint": "Use Backspace to correct. Escape to leave.",
       "wpm": "WPM",
       "accuracy": "Accuracy",
       "place": "Place",
@@ -267,7 +267,7 @@
         },
         {
           "title": "Take the lead",
-          "description": "Type quickly and accurately to reach the finish line first."
+          "description": "Aim for accuracy as well as speed: only correct characters move you forward."
         }
       ]
     },
