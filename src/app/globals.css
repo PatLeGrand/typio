@@ -614,12 +614,11 @@ h2[tabindex="-1"]:focus-visible {
 .race-arrival { background: var(--key-mint); color: var(--key-ink); padding: 1rem; border-radius: .6rem; }
 .race-arrival::before { content: ""; flex-shrink: 0; background-image: repeating-conic-gradient(var(--key-ink) 0 25%,transparent 0 50%); }
 
-/* Egaliseur du mini lecteur de musique (src/music/MusicPlayer.tsx). */
-.music-bar { height: 40%; }
+/* Points rebondissants du bouton replié du lecteur de musique (src/music/MusicPlayer.tsx). */
 @media (prefers-reduced-motion: no-preference) {
-  .music-bar-active { animation: music-bar 0.9s ease-in-out infinite alternate; }
+  .music-dot-active { animation: music-dot 0.7s ease-in-out infinite alternate; }
 }
-@keyframes music-bar {
-  from { height: 25%; }
-  to { height: 100%; }
+@keyframes music-dot {
+  from { transform: translateY(2px); }
+  to { transform: translateY(-3px); }
 }

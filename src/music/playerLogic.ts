@@ -32,3 +32,13 @@ export function readMusicPreferences(read: () => string | null): MusicPreference
     return defaults;
   }
 }
+
+/** Première visite : le stockage répond, mais aucune préférence n'y est encore mémorisée. */
+export function isFirstVisit(read: () => string | null): boolean {
+  try {
+    return read() === null;
+  } catch {
+    // Stockage bloqué : impossible de mémoriser l'accueil, on ne le rejoue pas à chaque page.
+    return false;
+  }
+}

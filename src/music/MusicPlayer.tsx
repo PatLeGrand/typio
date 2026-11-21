@@ -3,12 +3,13 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { nextTrackIndex, playbackVolume, readMusicPreferences, type MusicPreferences } from "./playerLogic";
+import { isFirstVisit, nextTrackIndex, playbackVolume, readMusicPreferences, type MusicPreferences } from "./playerLogic";
 import { playlist } from "./playlist";
 
 const STORAGE_KEY = "typio:music";
 const RACE_SELECTOR = ".room-race-screen";
 const FADE_MS = 600;
+const WELCOME_MS = 4000;
 
 type Props = { labels: Dictionary["music"] };
 
@@ -21,13 +22,16 @@ function Icon({ children }: { children: ReactNode }) {
 }
 
 const controlClass =
-  "inline-flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-border bg-surface text-accent-text hover:bg-accent-soft disabled:opacity-50";
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-border bg-transparent text-accent-text hover:bg-accent-soft disabled:opacity-50";
 
 export function MusicPlayer({ labels }: Props) {
   const pathname = usePathname();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [prefs, setPrefs] = useState<MusicPreferences>({ volume: 0.5, muted: false, collapsed: true });
   const [loaded, setLoaded] = useState(false);
+  // Accueil de la première visite : lecteur déplié 4 s, en pause tant qu'on le survole ou le focalise.
+  const [welcoming, setWelcoming] = useState(false);
+  const [holding, setHolding] = useState(false);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -38,16 +42,27 @@ export function MusicPlayer({ labels }: Props) {
 
   // Préférences : lues après le montage (le rendu serveur ne connaît pas localStorage).
   useEffect(() => {
-    const stored = readMusicPreferences(() => {
-      try {
-        return window.localStorage.getItem(STORAGE_KEY);
-      } catch {
-        return null;
-      }
-    });
+    const read = () => window.localStorage.getItem(STORAGE_KEY);
+    const stored = readMusicPreferences(read);
     setPrefs(stored);
+    if (isFirstVisit(read)) {
+      setWelcoming(true);
+      try {
+        // Mémorise que l'accueil a eu lieu, même si l'onglet se ferme avant la fin des 4 s.
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+      } catch {
+        // Sans stockage, l'accueil se rejouerait : on s'en passe.
+        setWelcoming(false);
+      }
+    }
     setLoaded(true);
   }, []);
+
+  useEffect(() => {
+    if (!welcoming || holding) return;
+    const timer = window.setTimeout(() => setWelcoming(false), WELCOME_MS);
+    return () => window.clearTimeout(timer);
+  }, [welcoming, holding]);
 
   function updatePrefs(patch: Partial<MusicPreferences>) {
     const next = { ...prefs, ...patch };
@@ -147,13 +162,23 @@ export function MusicPlayer({ labels }: Props) {
 
   const lift: CSSProperties | undefined =
     widgetHeight > 0 ? ({ "--music-lift": `${widgetHeight + 16}px` } as CSSProperties) : undefined;
-  const collapsed = prefs.collapsed || racing;
+  const collapsed = (prefs.collapsed && !welcoming) || racing;
 
   return (
     <section
       aria-label={labels.label}
       style={lift}
-      className={`fixed bottom-4 left-4 z-30 max-w-[calc(100vw-2rem)] text-foreground max-[860px]:bottom-[calc(1rem+var(--music-lift,0px))] ${loaded ? "" : "invisible"}`}
+      className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground ${loaded ? "" : "invisible"}`}
+      onPointerEnter={() => setHolding(true)}
+      onPointerLeave={() => setHolding(false)}
+      onFocus={() => setHolding(true)}
+      onBlur={() => setHolding(false)}
+      onClick={(event) => {
+        // Toute commande utilisée pendant l'accueil garde le lecteur ouvert (le bouton de repli décide seul).
+        if (!welcoming || (event.target as Element).closest("[data-music-toggle]")) return;
+        setWelcoming(false);
+        updatePrefs({ collapsed: false });
+      }}
     >
       <audio
         ref={audioRef}
@@ -167,27 +192,31 @@ export function MusicPlayer({ labels }: Props) {
           setFailed(true);
         }}
       />
-      <div className="flex items-center gap-2 rounded-full border-2 border-border bg-surface p-1.5 shadow-soft">
+      <div className="flex max-w-full items-center rounded-full border-2 border-border bg-surface/90 p-1.5 shadow-soft">
         <button
           type="button"
+          data-music-toggle
           className={controlClass}
           aria-expanded={!collapsed}
           aria-label={collapsed ? labels.expand : labels.collapse}
           disabled={racing}
-          onClick={() => updatePrefs({ collapsed: !prefs.collapsed })}
+          onClick={() => {
+            setWelcoming(false);
+            updatePrefs({ collapsed: !collapsed });
+          }}
         >
-          <span aria-hidden="true" className="flex h-4 items-end gap-0.5">
-            {[0, 1, 2].map((bar) => (
+          <span aria-hidden="true" className="flex items-center gap-1">
+            {[0, 1, 2].map((dot) => (
               <span
-                key={bar}
-                className={`music-bar w-1 rounded-sm bg-accent ${playing ? "music-bar-active" : ""}`}
-                style={{ animationDelay: `${bar * 0.2}s` }}
+                key={dot}
+                className={`size-1.5 rounded-full bg-accent-text ${playing ? "music-dot-active" : ""}`}
+                style={{ animationDelay: `${dot * 0.15}s` }}
               />
             ))}
           </span>
         </button>
-        {collapsed ? null : (
-          <>
+        <div className={`grid min-w-0 transition-[grid-template-columns,visibility] duration-300 motion-reduce:transition-none ${collapsed ? "invisible grid-cols-[0fr]" : "grid-cols-[1fr]"}`}>
+          <div className="-m-1 flex min-w-0 items-center gap-2 overflow-hidden p-1 pl-3">
             <button type="button" className={controlClass} aria-label={labels.previous} onClick={() => skip(-1, playing)}>
               <Icon><path d="M6 6h2v12H6zM20 6v12L9.5 12z" /></Icon>
             </button>
@@ -231,11 +260,11 @@ export function MusicPlayer({ labels }: Props) {
               onChange={(event) => updatePrefs({ volume: event.currentTarget.valueAsNumber })}
               className="mr-2 h-2 w-16 shrink accent-accent sm:w-24"
             />
-          </>
-        )}
+          </div>
+        </div>
       </div>
       {collapsed ? null : (
-        <div className="mt-2 max-w-72 rounded-2xl border border-border bg-surface px-3 py-2 text-xs text-muted-strong shadow-soft">
+        <div className="mt-2 max-w-72 rounded-2xl border border-border bg-surface/90 px-3 py-2 text-xs text-muted-strong shadow-soft">
           <p className="sm:hidden">
             <span className="font-semibold text-foreground">{track.title}</span> — {track.artist}
           </p>
