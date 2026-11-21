@@ -1,7 +1,20 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { RadioCard } from "@/components/race/RadioCard";
 import { Switch } from "@/components/race/Switch";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { RaceSettings } from "@/race/config";
+import {
+  DEFAULT_KEY_SOUND_SET,
+  KEY_SOUND_CHANGE_EVENT,
+  KEY_SOUND_SETS,
+  KEY_SOUND_STORAGE_KEY,
+  playKeySoundPreview,
+  readKeySoundSet,
+  writeKeySoundSet,
+  type KeySoundSet,
+} from "@/race/keySounds";
 import { TIME_LIMITS_SECONDS } from "@/realtime/protocol";
 
 type RaceRulesSettingsProps = {
@@ -20,6 +33,23 @@ export function RaceRulesSettings({ value, onChange, readOnly, dict, lang, idPre
   const SectionHeading = headingLevel === 3 ? "h3" : "h2";
   const id = (name: string) => `${idPrefix}-${name}`;
   const numberFormat = new Intl.NumberFormat(lang);
+  const [keySoundSet, setKeySoundSet] = useState<KeySoundSet>(DEFAULT_KEY_SOUND_SET);
+
+  useEffect(() => {
+    const syncKeySoundSet = () => setKeySoundSet(readKeySoundSet());
+    syncKeySoundSet();
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === KEY_SOUND_STORAGE_KEY) {
+        syncKeySoundSet();
+      }
+    };
+    window.addEventListener(KEY_SOUND_CHANGE_EVENT, syncKeySoundSet);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(KEY_SOUND_CHANGE_EVENT, syncKeySoundSet);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   return (
     <section className="flex flex-col gap-4 border-t border-border/80 pt-6">
@@ -64,6 +94,34 @@ export function RaceRulesSettings({ value, onChange, readOnly, dict, lang, idPre
           ))}
         </div>
         <p id={id("time-limit-help")} className="mt-2 text-xs leading-relaxed text-muted">{dict.timeLimit.help}</p>
+      </fieldset>
+
+      {/* Sons des touches (préférence personnelle locale, modifiable par chaque joueur même en lecture seule) */}
+      <fieldset>
+        <legend id={id("key-sounds-label")} className="mb-2 text-sm font-semibold text-foreground">{dict.keySounds.label}</legend>
+        <div
+          className="flex flex-wrap gap-2"
+          role="radiogroup"
+          aria-labelledby={id("key-sounds-label")}
+          aria-describedby={id("key-sounds-help")}
+        >
+          {KEY_SOUND_SETS.map((set) => (
+            <RadioCard
+              key={set}
+              fullWidth={false}
+              disabled={false}
+              checked={keySoundSet === set}
+              onChange={() => {
+                setKeySoundSet(set);
+                writeKeySoundSet(set);
+                playKeySoundPreview(set);
+              }}
+              label={dict.keySounds.sets[set]}
+              className="flex-1 justify-center px-3.5 text-center whitespace-nowrap sm:flex-none"
+            />
+          ))}
+        </div>
+        <p id={id("key-sounds-help")} className="mt-2 text-xs leading-relaxed text-muted">{dict.keySounds.help}</p>
       </fieldset>
     </section>
   );

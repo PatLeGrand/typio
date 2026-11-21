@@ -228,6 +228,8 @@ export interface ClientToServerEvents {
   "lobby:subscribe": (payload: unknown, ack: (res: Ack) => void) => void;
   "lobby:unsubscribe": (payload: unknown, ack: (res: Ack) => void) => void;
   "room:updateConfig": (patch: unknown, ack: (res: Ack) => void) => void;
+  /** Recharge le style du blob du participant depuis la base et diffuse l'état de la salle. */
+  "room:refreshProfile": (payload: unknown, ack: (res: Ack) => void) => void;
   "race:start": (payload: unknown, ack: (res: Ack) => void) => void;
   "race:input": (payload: unknown) => void;
   "race:abandon": (payload: unknown, ack: (res: Ack) => void) => void;

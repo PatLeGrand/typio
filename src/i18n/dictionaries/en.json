@@ -634,6 +634,17 @@
     "capacity": {
       "label": "Capacity",
       "help": "Runners and bots; spectators don't count."
+    },
+    "keySounds": {
+      "label": "Key sounds",
+      "help": "A distinct sound for each correct or missed keystroke during the race.",
+      "sets": {
+        "mechanical": "Mechanical",
+        "typewriter": "Typewriter",
+        "retro": "Retro arcade",
+        "soft": "Soft bubble",
+        "none": "Muted"
+      }
     }
   },
   "profile": {
@@ -800,6 +811,15 @@
         "qwerty": "QWERTY",
         "azerty": "AZERTY",
         "cmf": "Canadian multilingual"
+      },
+      "keySounds": "Race key sounds",
+      "keySoundsHelp": "Plays a distinct sound on every correct or missed keystroke.",
+      "keySoundSets": {
+        "mechanical": "Mechanical",
+        "typewriter": "Typewriter",
+        "retro": "Retro arcade",
+        "soft": "Soft bubble",
+        "none": "Muted"
       },
       "language": "Interface language",
       "title": "Preferences"
@@ -1039,7 +1059,10 @@
       "kick": "Remove",
       "kickConfirm": "Remove {name}? They will not be able to come back.",
       "kickYes": "Yes, remove",
-      "kickCancel": "Cancel"
+      "kickCancel": "Cancel",
+      "customizeBlob": "Customize my blob",
+      "customizeBlobHint": "Customize your blob before the start!",
+      "closeBlobModal": "Close blob customization"
     },
     "config": {
       "title": "Settings",

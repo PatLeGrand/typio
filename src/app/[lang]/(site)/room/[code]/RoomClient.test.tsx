@@ -28,11 +28,21 @@ function setRoom(next: UseRoom, rerender?: () => void): void {
 
 function renderRoom(options: { locale?: "fr" | "en"; userId?: string; code?: string; role?: "runner" | "spectator" } = {}) {
   const { locale = "fr", userId = ME, code = "ABC234", role = "runner" } = options;
-  const { room: labels, raceSettings: settingsLabels, raceScreen: raceLabels } = getDictionary(locale);
+  const { room: labels, raceSettings: settingsLabels, raceScreen: raceLabels, profile } = getDictionary(locale);
+  const blobLabels = profile.blob;
   const ui = () => (
-    <RoomClient code={code} role={role} locale={locale} userId={userId} labels={labels} settingsLabels={settingsLabels} raceLabels={raceLabels} />
+    <RoomClient
+      code={code}
+      role={role}
+      locale={locale}
+      userId={userId}
+      labels={labels}
+      settingsLabels={settingsLabels}
+      raceLabels={raceLabels}
+      blobLabels={blobLabels}
+    />
   );
-  return { ...render(ui()), ui, labels, settingsLabels };
+  return { ...render(ui()), ui, labels, settingsLabels, blobLabels };
 }
 
 const hostRoom = makeRoom([makeParticipant(ME), makeParticipant(OTHER, { role: "spectator", connected: false })]);
@@ -104,10 +114,13 @@ describe("vue de l'hôte (CONF-12)", () => {
     ]);
   });
 
-  it("propose le lancement à l’hôte sans ajout manuel de joueur", () => {
+  it("propose le lancement à l’hôte en haut à côté du bouton Quitter sans ajout manuel de joueur", () => {
     current = makeUseRoom({ room: hostRoom });
-    renderRoom();
-    expect(screen.getByRole("button", { name: getDictionary("fr").room.race.start })).toBeInTheDocument();
+    const { labels } = renderRoom();
+    const startBtn = screen.getByRole("button", { name: labels.race.start });
+    const leaveBtn = screen.getByRole("button", { name: labels.leave });
+    expect(startBtn).toBeInTheDocument();
+    expect(startBtn.parentElement).toBe(leaveBtn.parentElement);
     expect(screen.getByRole("button", { name: getDictionary("fr").raceSettings.bots.add })).toBeInTheDocument();
   });
 });

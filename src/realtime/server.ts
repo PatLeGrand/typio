@@ -14,7 +14,7 @@ import { authenticateHandshake, isAllowedOrigin } from "./auth";
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from "./protocol";
 import { createRateLimiter, getClientIp, ipRateLimitKey } from "@/auth/rateLimit";
 import { createGraceTimers, type GraceTimers } from "./graceTimers";
-import { LOBBY_ROOM, registerRoomHandlers } from "./roomHandlers";
+import { LOBBY_ROOM, registerRoomHandlers, type ProfileRefreshState } from "./roomHandlers";
 import { createRoomStore } from "./roomStore";
 import { createPersistentRoomStore } from "./persistentRoomStore";
 import { createMemoryRoomMembershipRepository, type RoomMembershipRepository } from "./roomMembershipRepository";
@@ -33,6 +33,9 @@ export const MAX_MESSAGE_BYTES = 8_192;
  * borne l'énumération des codes de salle (H-5).
  */
 export const JOIN_FAILURE_LIMIT = { limit: 10, windowMs: 60_000 } as const;
+
+/** Rechargements immédiats de profil (`room:refreshProfile`) tolérés par utilisateur par fenêtre d'1 s avant regroupement différé. */
+export const PROFILE_REFRESH_LIMIT = { limit: 3, windowMs: 1_000 } as const;
 
 /** Intervalle minimal entre deux diffusions de l'explorateur (JOIN-02, PERF-02). */
 export const LOBBY_BROADCAST_MS = 500;
@@ -128,6 +131,8 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
   const joinFailures = createRateLimiter({ ...JOIN_FAILURE_LIMIT, now: () => now().getTime() });
 
   const raceInputs = createRateLimiter({ limit: 12, windowMs: 1000, now: () => now().getTime(), onFull: "refuse" });
+  const profileRefreshes = createRateLimiter({ ...PROFILE_REFRESH_LIMIT, now: () => now().getTime(), onFull: "refuse" });
+  const profileRefreshStates = new Map<string, ProfileRefreshState>();
   // Un seul intervalle par salle ; les frappes ne déclenchent pas de diffusion supplémentaire.
   const raceIntervals = new Map<string, ReturnType<typeof setInterval>>();
   const publishedStatus = new Map<string, string>();
@@ -209,6 +214,11 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
   httpServer.on("close", () => {
     for (const timer of raceIntervals.values()) clearInterval(timer);
     raceIntervals.clear();
+    for (const state of profileRefreshStates.values()) {
+      state.dirty = false;
+      if (state.timer !== null) clearTimeout(state.timer);
+    }
+    profileRefreshStates.clear();
     if (lobbyTimer !== null) clearTimeout(lobbyTimer);
     lobbyTimer = null;
     timers.close();
@@ -233,6 +243,8 @@ export function createRealtimeServer(options: RealtimeServerOptions): RealtimeSe
       sockets: userSockets,
       joinFailures,
       raceInputs,
+      profileRefreshes,
+      profileRefreshStates,
       loadCorpus: options.loadCorpus,
       loadBlobStyle: options.loadBlobStyle,
       syncRace,

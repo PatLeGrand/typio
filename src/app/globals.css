@@ -678,6 +678,54 @@ h2[tabindex="-1"]:focus-visible {
   to { transform: translateY(-3px); }
 }
 
+/* Appel visuel sur le blob du joueur courant dans la salle d'attente (ParticipantList / RoomBlobModal). */
+@media (prefers-reduced-motion: no-preference) {
+  .room-blob-attention {
+    animation: room-blob-bounce 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+  }
+  .room-blob-halo {
+    animation: room-blob-pulse 2.2s ease-in-out infinite;
+  }
+  .room-blob-sparkle {
+    animation: room-blob-sparkle-wiggle 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes room-blob-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-5px) scale(1.05, 0.96);
+  }
+  60% {
+    transform: translateY(-3px) scale(0.98, 1.03);
+  }
+}
+
+@keyframes room-blob-pulse {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.9;
+  }
+}
+
+@keyframes room-blob-sparkle-wiggle {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-12deg) scale(1.12);
+  }
+  75% {
+    transform: rotate(12deg) scale(1.08);
+  }
+}
+
 /* Le lecteur de musique (fixe, en bas à droite) pose --music-reserve : le pied de page reste dégagé. */
 body { padding-bottom: var(--music-reserve, 0px); }
 

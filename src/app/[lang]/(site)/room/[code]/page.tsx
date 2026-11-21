@@ -39,6 +39,7 @@ export default async function RoomPage({ params, searchParams }: RoomPageProps) 
           labels={dict.room}
           settingsLabels={dict.raceSettings}
           raceLabels={dict.raceScreen}
+          blobLabels={dict.profile.blob}
         />
       </div>
     </main>

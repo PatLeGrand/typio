@@ -52,6 +52,7 @@ export function makeUseRoom(overrides: Partial<UseRoom> = {}): UseRoom {
     subscribeLobby: () => undefined,
     unsubscribeLobby: () => undefined,
     updateConfig: async () => ({ ok: true, data: undefined }),
+    refreshProfile: async () => ({ ok: true, data: undefined }),
     startRace: async () => ({ ok: true, data: undefined }),
     abandonRace: async () => ({ ok: true, data: undefined }),
     restartRace: async () => ({ ok: true, data: undefined }),

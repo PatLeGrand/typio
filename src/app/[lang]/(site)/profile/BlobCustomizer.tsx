@@ -27,9 +27,10 @@ type BlobCustomizerProps = {
   isDemo?: boolean;
   labels: Dictionary["profile"]["blob"];
   showHeader?: boolean;
+  onSaved?: (style: BlobStyle) => void;
 };
 
-export function BlobCustomizer({ initialStyle, isDemo = false, labels, showHeader = true }: BlobCustomizerProps) {
+export function BlobCustomizer({ initialStyle, isDemo = false, labels, showHeader = true, onSaved }: BlobCustomizerProps) {
   const [savedStyle, setSavedStyle] = useState<BlobStyle>(initialStyle);
   const [style, setStyle] = useState<BlobStyle>(initialStyle);
   const [isPending, startTransition] = useTransition();
@@ -90,6 +91,7 @@ export function BlobCustomizer({ initialStyle, isDemo = false, labels, showHeade
           setSavedStyle(result.style);
           setStyle(result.style);
           setSaved(true);
+          onSaved?.(result.style);
         } else {
           setErrorCode(result.code);
         }
