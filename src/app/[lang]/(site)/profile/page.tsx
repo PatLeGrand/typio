@@ -62,9 +62,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
             </p>
           </div>
           <div className="shrink-0 flex flex-wrap gap-2">
-            {currentUser.kind === "member" && <ButtonLink href={prefixWithLocale("/history", locale)} variant="secondary">
-              {dictionary.history.title}
-            </ButtonLink>}
+            {currentUser.kind === "member" && <>
+              <ButtonLink href={prefixWithLocale("/stats", locale)} variant="secondary">
+                {dictionary.stats.title}
+              </ButtonLink>
+              <ButtonLink href={prefixWithLocale("/history", locale)} variant="secondary">
+                {dictionary.history.title}
+              </ButtonLink>
+            </>}
             <ButtonLink href={prefixWithLocale("/play", locale)} variant="secondary">
               <ArrowLeft aria-hidden="true" className="w-4 h-4" />
               {profile.backToCourses}
