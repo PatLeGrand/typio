@@ -58,6 +58,7 @@ describe("page /room/[code]", () => {
       labels: getDictionary(lang).room,
       settingsLabels: getDictionary(lang).raceSettings,
       raceLabels: getDictionary(lang).raceScreen,
+      blobLabels: getDictionary(lang).profile.blob,
     });
   });
 

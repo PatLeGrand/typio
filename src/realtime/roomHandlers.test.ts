@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from "vitest";
+import { DEFAULT_BLOB_STYLE, type BlobStyle } from "@/race/blobStyle";
 import type { Ack, JoinPayload, ParticipantRole, RoomState } from "./protocol";
+import { PROFILE_REFRESH_LIMIT } from "./server";
 import { startTestServer, waitForConnection, type TestClient } from "./testSupport";
 
 type TestServer = Awaited<ReturnType<typeof startTestServer>>;
@@ -238,6 +240,95 @@ describe("roomHandlers (lot 2)", () => {
     const socketA = await open(server, server.sessions.signIn("member").token);
     expect(await updateConfig(socketA, { language: "en" })).toEqual({ ok: false, error: "NOT_IN_ROOM" });
     expect(await leave(socketA)).toEqual({ ok: false, error: "NOT_IN_ROOM" });
+  });
+
+  it("room:refreshProfile: valide la charge utile, recharge le blobStyle et diffuse room:state à la salle", async () => {
+    const server = await start();
+    const { userA, socketA, socketB } = await roomWithTwo(server);
+
+    // Charge utile non vide refusée (TECH-07)
+    expect(
+      await emitAck<Ack>((ack) => socketA.emit("room:refreshProfile", { blobStyle: { color: "coral" } }, ack)),
+    ).toEqual({ ok: false, error: "INVALID_PAYLOAD" });
+
+    // Hors salle : NOT_IN_ROOM
+    const socketC = await open(server, server.sessions.signIn("member").token);
+    expect(await emitAck<Ack>((ack) => socketC.emit("room:refreshProfile", {}, ack))).toEqual({
+      ok: false,
+      error: "NOT_IN_ROOM",
+    });
+
+    // Dans la salle : diffuse room:state aux participants
+    const stateForA = waitForState(socketA, (s) => s.participants.length === 2);
+    const stateForB = waitForState(socketB, (s) => s.participants.length === 2);
+    expect(await emitAck<Ack>((ack) => socketA.emit("room:refreshProfile", {}, ack))).toEqual({ ok: true });
+
+    const [receivedA, receivedB] = await Promise.all([stateForA, stateForB]);
+    expect(participant(receivedA, userA.userId)).toBeDefined();
+    expect(receivedA).toEqual(receivedB);
+  });
+
+  it("room:refreshProfile: regroupe une rafale de 10 appels, respecte le quota de la fenêtre et réessaie en cas d'erreur temporaire lors du rafraîchissement différé", async () => {
+    let time = Date.now();
+    let loadCalls = 0;
+    let failNextLoad = false;
+    let currentStyle: BlobStyle = { ...DEFAULT_BLOB_STYLE, color: "coral", hat: "none" };
+    const server = await startTestServer({
+      now: () => new Date(time),
+      loadBlobStyle: async () => {
+        loadCalls += 1;
+        if (failNextLoad) {
+          failNextLoad = false;
+          throw new Error("temporary db failure");
+        }
+        return currentStyle;
+      },
+    });
+    servers.push(server);
+
+    const { userA, socketA, socketB } = await roomWithTwo(server);
+    loadCalls = 0; // on ne compte que les appels déclenchés par room:refreshProfile
+
+    // 1re partie de la rafale : épuise le quota immédiat avec un style intermédiaire ("coral")
+    for (let i = 0; i < PROFILE_REFRESH_LIMIT.limit; i += 1) {
+      expect(await emitAck<Ack>((ack) => socketA.emit("room:refreshProfile", {}, ack))).toEqual({ ok: true });
+    }
+    expect(loadCalls).toBe(PROFILE_REFRESH_LIMIT.limit);
+
+    // 2e partie de la rafale (7 appels simultanés pendant la même fenêtre, avec évolution jusqu'au 10e style final)
+    const finalStateForB = waitForState(
+      socketB,
+      (s) =>
+        participant(s, userA.userId)?.blobStyle?.color === "mint" &&
+        participant(s, userA.userId)?.blobStyle?.hat === "crown",
+    );
+    const remaining = 10 - PROFILE_REFRESH_LIMIT.limit;
+    const acks = await Promise.all(
+      Array.from({ length: remaining }, (_, index) => {
+        currentStyle =
+          index === remaining - 1
+            ? { ...DEFAULT_BLOB_STYLE, color: "mint", hat: "crown" }
+            : { ...DEFAULT_BLOB_STYLE, color: "sun", hat: "cap" };
+        return emitAck<Ack>((ack) => socketA.emit("room:refreshProfile", {}, ack));
+      }),
+    );
+    expect(acks.every((ack) => ack.ok)).toBe(true);
+
+    // Tant que la fenêtre d'1 s n'est pas écoulée, le minuteur différé respecte le plafond de 3 lectures
+    await pause(150);
+    expect(loadCalls).toBe(PROFILE_REFRESH_LIMIT.limit);
+
+    // La fenêtre avance : le 1er essai différé échoue temporairement puis le réessai automatique diffuse le dernier style
+    failNextLoad = true;
+    time += PROFILE_REFRESH_LIMIT.windowMs + 1;
+
+    const updated = await finalStateForB;
+    expect(participant(updated, userA.userId)?.blobStyle).toEqual({
+      ...DEFAULT_BLOB_STYLE,
+      color: "mint",
+      hat: "crown",
+    });
+    expect(loadCalls).toBe(PROFILE_REFRESH_LIMIT.limit + 2);
   });
 
   it("ALREADY_IN_ROOM: un membre déjà dans une salle ne peut pas en créer une autre", async () => {

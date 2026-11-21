@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -27,6 +27,16 @@ import type { Dictionary } from "@/i18n/dictionaries";
 import { prefixWithLocale } from "@/i18n/paths";
 import { profileErrorMessage } from "@/profile/profileErrors";
 import { KEYBOARD_LAYOUTS, type KeyboardLayout, type ProfileErrorCode } from "@/profile/profileSettings";
+import {
+  DEFAULT_KEY_SOUND_SET,
+  KEY_SOUND_CHANGE_EVENT,
+  KEY_SOUND_SETS,
+  KEY_SOUND_STORAGE_KEY,
+  playKeySoundPreview,
+  readKeySoundSet,
+  writeKeySoundSet,
+  type KeySoundSet,
+} from "@/race/keySounds";
 import { updateProfile } from "./actions";
 import { ChoiceRadio } from "./ChoiceRadio";
 
@@ -75,10 +85,27 @@ export function ProfileForm({
   const [displayName, setDisplayName] = useState(user.displayName);
   const [nameTouched, setNameTouched] = useState(false);
   const [keyboardLayout, setKeyboardLayout] = useState<KeyboardLayout>(dbUser.keyboardLayout);
+  const [keySoundSet, setKeySoundSet] = useState<KeySoundSet>(DEFAULT_KEY_SOUND_SET);
   const [formLocale, setFormLocale] = useState<Locale>(locale);
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [errorCode, setErrorCode] = useState<ProfileErrorCode | null>(null);
+
+  useEffect(() => {
+    const syncKeySoundSet = () => setKeySoundSet(readKeySoundSet());
+    syncKeySoundSet();
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === KEY_SOUND_STORAGE_KEY) {
+        syncKeySoundSet();
+      }
+    };
+    window.addEventListener(KEY_SOUND_CHANGE_EVENT, syncKeySoundSet);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(KEY_SOUND_CHANGE_EVENT, syncKeySoundSet);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   const profileTabHasChanges = displayName.trim() !== user.displayName;
   const preferencesTabHasChanges = keyboardLayout !== dbUser.keyboardLayout || formLocale !== locale;
@@ -413,6 +440,29 @@ export function ProfileForm({
               </div>
               <p className="text-xs text-muted">{profile.settings.layoutHelp}</p>
             </fieldset>
+
+            <div className="grid grid-cols-1 gap-8 border-t border-border pt-8">
+              <fieldset className="flex flex-col gap-3">
+                <legend className="text-sm font-semibold text-foreground mb-3">{profile.settings.keySounds}</legend>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {KEY_SOUND_SETS.map((set) => (
+                    <ChoiceRadio
+                      key={set}
+                      name="keySoundSet"
+                      value={set}
+                      label={profile.settings.keySoundSets[set]}
+                      checked={keySoundSet === set}
+                      onChange={() => {
+                        setKeySoundSet(set);
+                        writeKeySoundSet(set);
+                        playKeySoundPreview(set);
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-muted">{profile.settings.keySoundsHelp}</p>
+              </fieldset>
+            </div>
 
             <div className="grid grid-cols-1 gap-8 border-t border-border pt-8">
               <fieldset className="flex flex-col gap-3">

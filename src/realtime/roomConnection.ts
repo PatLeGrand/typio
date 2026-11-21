@@ -112,6 +112,7 @@ export interface RoomConnection {
   /** Hôte : expulse un participant ou un spectateur (SALLE-07). */
   kick(userId: string): Promise<ActionResult>;
   updateConfig(patch: RoomConfigPatch): Promise<ActionResult>;
+  refreshProfile(): Promise<ActionResult>;
   startRace(): Promise<ActionResult>;
   abandonRace(): Promise<ActionResult>;
   restartRace(): Promise<ActionResult>;
@@ -406,6 +407,9 @@ export function createRoomConnection(getSocket: () => RoomSocket | null): RoomCo
     updateConfig(patch) {
       return requestVoidAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("room:updateConfig", patch, ack));
     },
+
+    refreshProfile: () =>
+      requestVoidAck((target, ack) => target.timeout(ACK_TIMEOUT_MS).emit("room:refreshProfile", {}, ack)),
 
     leave() {
       return new Promise((resolve) => {

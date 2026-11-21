@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import { DEFAULT_ROOM_CONFIG, type InputMode } from "@/realtime/protocol";
+import * as keySounds from "@/race/keySounds";
 import { makeParticipant, makeRoom, makeUseRoom, ME } from "@/test/roomFixtures";
 import { RoomView } from "./RoomView";
 
@@ -75,4 +76,23 @@ it("en mode libre, le compteur affiche les caractères saisis et atteint la long
   expect(screen.getByText(dict.raceScreen.typing.freeHint)).toBeInTheDocument();
   fireEvent.change(input, { target: { value: typed.slice(0, -1) } });
   expect(input).toHaveValue(typed);
+});
+
+it("joue le son 'hit' sur une frappe réussie et 'miss' sur une frappe ratée", () => {
+  const playSpy = vi.spyOn(keySounds, "playKeySound");
+  const { dict } = show("fr", "racing", true, "blocking");
+  const input = screen.getByRole("textbox", { name: dict.raceScreen.typing.inputLabel });
+
+  fireEvent.change(input, { target: { value: "B" } });
+  expect(playSpy).toHaveBeenCalledWith("hit");
+
+  playSpy.mockClear();
+  fireEvent.change(input, { target: { value: "Bx" } });
+  expect(playSpy).toHaveBeenCalledWith("miss");
+
+  playSpy.mockClear();
+  fireEvent.change(input, { target: { value: "" } });
+  expect(playSpy).not.toHaveBeenCalled();
+
+  playSpy.mockRestore();
 });

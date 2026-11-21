@@ -399,6 +399,30 @@ export function createRoomStore(options: RoomStoreOptions = {}) {
       return { ok: true, state: cloneState(room) };
     },
 
+    updateParticipantProfile(
+      userId: string,
+      code: string,
+      profile: { blobStyle?: BlobStyle; avatarVersion?: number | null },
+    ): RoomResult {
+      const room = rooms.get(code);
+      if (!room) return { ok: false, error: "ROOM_NOT_FOUND" };
+
+      const p = room.participants.find((part) => part.userId === userId);
+      if (!p) return { ok: false, error: "NOT_IN_ROOM" };
+
+      const runner = room.race?.runners.find((r) => r.id === userId && r.kind === "human");
+      if (profile.blobStyle !== undefined) {
+        p.blobStyle = profile.blobStyle;
+        if (runner) runner.blobStyle = profile.blobStyle;
+      }
+      if (profile.avatarVersion !== undefined) {
+        p.avatarVersion = profile.avatarVersion;
+        if (runner) runner.avatarVersion = profile.avatarVersion;
+      }
+
+      return { ok: true, state: cloneState(room) };
+    },
+
     leave(userId: string, code: string): RoomResult {
       return removeParticipant(code, userId);
     },

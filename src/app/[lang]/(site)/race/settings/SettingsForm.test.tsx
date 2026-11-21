@@ -4,6 +4,7 @@ import { SettingsForm } from "./SettingsForm";
 import en from "@/i18n/dictionaries/en.json";
 import fr from "@/i18n/dictionaries/fr.json";
 import { DEFAULT_RACE_SETTINGS, serializeRaceSettings } from "@/race/config";
+import * as keySounds from "@/race/keySounds";
 import type { TimeLimitSeconds } from "@/realtime/protocol";
 
 const mockPush = vi.fn();
@@ -162,6 +163,24 @@ describe("SettingsForm", () => {
     });
 
     expect(mockPush).toHaveBeenCalledWith(`/fr/race?${expectedConfig}`);
+  });
+
+  it("permet de choisir le set de sons de touches, le persiste et joue un aperçu", () => {
+    window.localStorage.removeItem(keySounds.KEY_SOUND_STORAGE_KEY);
+    const previewSpy = vi.spyOn(keySounds, "playKeySoundPreview");
+
+    render(<SettingsForm lang="fr" dict={fr.raceSettings} />);
+    const keySoundsGroup = screen.getByRole("radiogroup", { name: fr.raceSettings.keySounds.label });
+    expect(within(keySoundsGroup).getByRole("radio", { name: fr.raceSettings.keySounds.sets.mechanical })).toHaveAttribute("aria-checked", "true");
+
+    const retroRadio = within(keySoundsGroup).getByRole("radio", { name: fr.raceSettings.keySounds.sets.retro });
+    fireEvent.click(retroRadio);
+
+    expect(retroRadio).toHaveAttribute("aria-checked", "true");
+    expect(window.localStorage.getItem(keySounds.KEY_SOUND_STORAGE_KEY)).toBe("retro");
+    expect(previewSpy).toHaveBeenCalledWith("retro");
+
+    previewSpy.mockRestore();
   });
 });
 

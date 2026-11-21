@@ -25,13 +25,14 @@ type RoomClientProps = {
   labels: Dictionary["room"];
   settingsLabels: Dictionary["raceSettings"];
   raceLabels: Dictionary["raceScreen"];
+  blobLabels?: Dictionary["profile"]["blob"];
 };
 
 /**
  * Salle d'attente (SALLE-01, SALLE-05, COURSE-05, CONF-12, ancien SALLE-13, SALLE-08). Rejoint la salle de l'URL une
  * seule fois par montage (D6) ; quitter la page sans « Quitter » ne quitte pas la salle (D7).
  */
-export function RoomClient({ code, role, locale, userId, labels, settingsLabels, raceLabels }: RoomClientProps) {
+export function RoomClient({ code, role, locale, userId, labels, settingsLabels, raceLabels, blobLabels }: RoomClientProps) {
   const router = useRouter();
   const refresh = router.refresh;
   const session = useRoom(userId);
@@ -144,6 +145,7 @@ export function RoomClient({ code, role, locale, userId, labels, settingsLabels,
           userId={userId}
           labels={labels}
           settingsLabels={settingsLabels}
+          blobLabels={blobLabels}
           lang={locale}
           error={error}
           leaving={leaving}

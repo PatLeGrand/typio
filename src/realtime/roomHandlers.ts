@@ -41,6 +41,16 @@ export type RealtimeSocket = Socket<
   SocketData
 >;
 
+/** Délai du rafraîchissement différé lorsqu'une rafale de `room:refreshProfile` est regroupée. */
+export const PROFILE_REFRESH_COALESCE_MS = 100;
+
+export interface ProfileRefreshState {
+  inFlight: boolean;
+  dirty: boolean;
+  retries: number;
+  timer: ReturnType<typeof setTimeout> | null;
+}
+
 export interface RoomHandlerDeps {
   now: () => Date;
   store: ReturnType<typeof createPersistentRoomStore>;
@@ -53,6 +63,10 @@ export interface RoomHandlerDeps {
   /** Échecs de `room:join` par IP et utilisateur (énumération des codes de salle). */
   joinFailures: RateLimiter;
   raceInputs: RateLimiter;
+  /** Rechargements de profil (`room:refreshProfile`) par utilisateur : borne les lectures PostgreSQL et les diffusions. */
+  profileRefreshes?: RateLimiter;
+  /** État de regroupement et minuteurs de rafraîchissement différé par utilisateur. */
+  profileRefreshStates?: Map<string, ProfileRefreshState>;
   loadBlobStyle?: (userId: string) => Promise<BlobStyle>;
   loadCorpus?: () => Promise<SentenceCorpus>;
   syncRace: (code: string) => void;
@@ -91,6 +105,29 @@ export function registerRoomHandlers(
   const { store, now, timers, sockets, joinFailures } = deps;
   const graceMs = deps.graceMs ?? RECONNECT_GRACE_MS;
   const user = socket.data.user;
+  const profileRefreshStates = deps.profileRefreshStates ?? new Map<string, ProfileRefreshState>();
+
+  function getProfileRefreshState(userId: string): ProfileRefreshState {
+    let state = profileRefreshStates.get(userId);
+    if (!state) {
+      state = { inFlight: false, dirty: false, retries: 0, timer: null };
+      profileRefreshStates.set(userId, state);
+    }
+    return state;
+  }
+
+  function cancelProfileRefresh(userId: string): void {
+    const state = profileRefreshStates.get(userId);
+    if (!state) return;
+    state.dirty = false;
+    if (state.timer !== null) {
+      clearTimeout(state.timer);
+      state.timer = null;
+    }
+    if (!state.inFlight) {
+      profileRefreshStates.delete(userId);
+    }
+  }
   // Un socket peut survivre à une modification du profil entre deux courses.
   const roomUser = async () => ({ ...user, blobStyle: await deps.loadBlobStyle?.(user.id) });
   const joinFailureKeys = [`user:${user.id}`];
@@ -170,10 +207,12 @@ export function registerRoomHandlers(
    * « hors salle ».
    */
   const publishDeparture = (code: string, state: RoomState): void => {
+    cancelProfileRefresh(user.id);
     if (state.status === "closed") {
       broadcast(state);
       for (const participant of state.participants) {
         timers.cancel(participant.userId);
+        cancelProfileRefresh(participant.userId);
         for (const s of sockets.of(participant.userId)) {
           void s.leave(code);
           s.data.roomCode = null;
@@ -377,6 +416,7 @@ export function registerRoomHandlers(
       if (!res.ok) return failure(res.error);
 
       timers.cancel(payload.userId);
+      cancelProfileRefresh(payload.userId);
       const { state } = res;
       return {
         reply: { ok: true },
@@ -459,6 +499,93 @@ export function registerRoomHandlers(
     });
   });
 
+  function scheduleTrailingProfileRefresh(): void {
+    const state = getProfileRefreshState(user.id);
+    if (state.timer !== null || state.inFlight) return;
+    if (!store.roomOf(user.id)) {
+      cancelProfileRefresh(user.id);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      state.timer = null;
+      if (!state.dirty || state.inFlight) return;
+      if (!store.roomOf(user.id)) {
+        cancelProfileRefresh(user.id);
+        return;
+      }
+      if (deps.profileRefreshes && !deps.profileRefreshes.consume(user.id)) {
+        scheduleTrailingProfileRefresh();
+        return;
+      }
+      state.dirty = false;
+      state.inFlight = true;
+      try {
+        const blobStyle = await deps.loadBlobStyle?.(user.id);
+        state.retries = 0;
+        const currentCode = store.roomOf(user.id);
+        if (!currentCode) return;
+        const res = store.updateParticipantProfile(user.id, currentCode, { blobStyle });
+        if (res.ok) broadcast(res.state);
+      } catch (e) {
+        console.error("[realtime] deferred profile refresh failed:", describeError(e));
+        if (state.retries < 3) {
+          state.retries += 1;
+          state.dirty = true;
+        }
+      } finally {
+        state.inFlight = false;
+        if (state.dirty) {
+          scheduleTrailingProfileRefresh();
+        } else if (state.timer === null) {
+          profileRefreshStates.delete(user.id);
+        }
+      }
+    }, PROFILE_REFRESH_COALESCE_MS);
+    timer.unref?.();
+    state.timer = timer;
+  }
+
+  socket.on("room:refreshProfile", (payloadInput, ack) => {
+    respond(ack, async () => {
+      if (!parseRaceCommand(payloadInput)) return failure("INVALID_PAYLOAD");
+
+      const code = store.roomOf(user.id);
+      if (!code) return failure("NOT_IN_ROOM");
+
+      const state = getProfileRefreshState(user.id);
+      state.retries = 0;
+      if (state.inFlight || (deps.profileRefreshes && !deps.profileRefreshes.consume(user.id))) {
+        state.dirty = true;
+        scheduleTrailingProfileRefresh();
+        return { reply: { ok: true } };
+      }
+
+      if (state.timer !== null) {
+        clearTimeout(state.timer);
+        state.timer = null;
+      }
+      state.dirty = false;
+      state.inFlight = true;
+      try {
+        const blobStyle = await deps.loadBlobStyle?.(user.id);
+        state.retries = 0;
+        const currentCode = store.roomOf(user.id);
+        if (!currentCode) return failure("NOT_IN_ROOM");
+        const res = store.updateParticipantProfile(user.id, currentCode, { blobStyle });
+        if (!res.ok) return failure(res.error);
+
+        return { reply: { ok: true }, publish: () => broadcast(res.state) };
+      } finally {
+        state.inFlight = false;
+        if (state.dirty) {
+          scheduleTrailingProfileRefresh();
+        } else if (state.timer === null) {
+          profileRefreshStates.delete(user.id);
+        }
+      }
+    });
+  });
+
   for (const event of ["race:start", "race:abandon", "room:restart", "room:close"] as const) {
     socket.on(event, async (payload, ack) => {
       if (typeof ack !== "function") return;
@@ -489,6 +616,7 @@ export function registerRoomHandlers(
             if (res.state.status === "closed") {
               for (const p of res.state.participants) {
                 timers.cancel(p.userId);
+                cancelProfileRefresh(p.userId);
                 for (const s of sockets.of(p.userId)) {
                   void s.leave(code);
                   s.data.roomCode = null;

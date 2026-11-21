@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDictionary } from "@/i18n/dictionaries";
 import { DEFAULT_ROOM_CONFIG, type RoomConfig, type RoomConfigPatch } from "@/realtime/protocol";
@@ -192,7 +192,12 @@ describe("RoomConfigPanel, non-host (CONF-12)", () => {
     expect(screen.getByRole("combobox", { name: raceSettings.visibility.label })).toBeDisabled();
     expect(screen.getByRole("combobox", { name: raceSettings.capacity.label })).toBeDisabled();
     openAdvanced();
-    for (const radio of screen.getAllByRole("radio")) expect(radio).toBeDisabled();
+    const keySoundsGroup = screen.getByRole("radiogroup", { name: raceSettings.keySounds.label });
+    const keySoundRadios = new Set(within(keySoundsGroup).getAllByRole("radio"));
+    for (const radio of keySoundRadios) expect(radio).toBeEnabled();
+    for (const radio of screen.getAllByRole("radio")) {
+      if (!keySoundRadios.has(radio)) expect(radio).toBeDisabled();
+    }
     expect(excludedField()).toHaveValue("qz");
     expect(excludedField()).toHaveAttribute("readonly");
     expect(screen.getByText(roomLabels.config.hostOnly)).toBeVisible();

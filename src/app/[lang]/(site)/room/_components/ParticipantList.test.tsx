@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { BlobStyleSaveResult } from "@/app/[lang]/(site)/profile/blobStyleActions";
 import { getDictionary } from "@/i18n/dictionaries";
 import { BLOB_COLORS, DEFAULT_BLOB_STYLE, type BlobStyle } from "@/race/blobStyle";
 import { blobSvgDataUrl } from "@/race/blobSvg";
@@ -8,9 +9,30 @@ import { plain } from "@/test/text";
 import { makeParticipant, makeRoom, ME, OTHER } from "@/test/roomFixtures";
 import { ParticipantList } from "./ParticipantList";
 
+const mocks = vi.hoisted(() => ({
+  updateBlobStyle: vi.fn<(formData: FormData) => Promise<BlobStyleSaveResult>>(),
+}));
+
+vi.mock("@/app/[lang]/(site)/profile/blobStyleActions", () => mocks);
+
 const dict = getDictionary("fr");
 const labels = dict.room.participants;
 const raceLabels = dict.raceScreen;
+const blobLabels = dict.profile.blob;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.updateBlobStyle.mockImplementation(async (formData) => ({
+    ok: true,
+    style: {
+      color: formData.get("color") as BlobStyle["color"],
+      expression: formData.get("expression") as BlobStyle["expression"],
+      glasses: formData.get("glasses") as BlobStyle["glasses"],
+      hat: formData.get("hat") as BlobStyle["hat"],
+      accessory: formData.get("accessory") as BlobStyle["accessory"],
+    },
+  }));
+});
 
 describe("ParticipantList", () => {
   it("affiche les blobs des joueurs humains (style personnalisé et repli sur DEFAULT_BLOB_STYLE)", () => {
@@ -150,5 +172,54 @@ describe("ParticipantList", () => {
 
     resolveKick();
     await waitFor(() => expect(within(bob!).queryByRole("group")).not.toBeInTheDocument());
+  });
+
+  it("met en valeur le blob du joueur courant avec une animation et ouvre la popup de personnalisation du blob", async () => {
+    const onBlobSaved = vi.fn();
+    const room = makeRoom([
+      makeParticipant(ME, { displayName: "Alice" }),
+      makeParticipant(OTHER, { displayName: "Bob" }),
+    ]);
+
+    render(
+      <ParticipantList
+        room={room}
+        currentUserId={ME}
+        labels={labels}
+        raceLabels={raceLabels}
+        blobLabels={blobLabels}
+        onBlobSaved={onBlobSaved}
+      />,
+    );
+
+    const [alice, bob] = screen.getAllByRole("listitem");
+    expect(alice?.querySelector(".room-blob-attention")).not.toBeNull();
+    expect(bob?.querySelector(".room-blob-attention")).toBeNull();
+
+    const avatarBtn = within(alice!).getByRole("button", { name: labels.customizeBlobHint });
+    expect(avatarBtn).toHaveAttribute("aria-haspopup", "dialog");
+    const customizeBtn = within(alice!).getByRole("button", { name: labels.customizeBlob });
+    expect(within(bob!).queryByRole("button", { name: labels.customizeBlob })).not.toBeInTheDocument();
+
+    fireEvent.click(customizeBtn);
+
+    const dialog = screen.getByRole("dialog", { name: blobLabels.title });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText(plain(labels.customizeBlobHint))).toBeInTheDocument();
+
+    const colorGroup = within(dialog).getByRole("group", { name: blobLabels.colorLegend });
+    fireEvent.click(within(colorGroup).getByRole("radio", { name: blobLabels.colors.coral }));
+
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: blobLabels.save }));
+    });
+
+    expect(mocks.updateBlobStyle).toHaveBeenCalledTimes(1);
+    expect(onBlobSaved).toHaveBeenCalledWith(
+      expect.objectContaining({ color: "coral" }),
+    );
+
+    fireEvent.click(within(dialog).getByRole("button", { name: labels.closeBlobModal }));
+    expect(screen.queryByRole("dialog", { name: blobLabels.title })).not.toBeInTheDocument();
   });
 });

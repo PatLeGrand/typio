@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="typio-t" x1="32" y1="6" x2="32" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#9b72ff" />
+      <stop offset="55%" stop-color="#7c4dff" />
+      <stop offset="100%" stop-color="#7043d9" />
+    </linearGradient>
+  </defs>
+  <!-- Socle 3D façon touche de clavier en forme de T -->
+  <path
+    d="M 11 10 H 53 A 5 5 0 0 1 58 15 V 21 A 5 5 0 0 1 53 26 H 41 V 53 A 5 5 0 0 1 36 58 H 28 A 5 5 0 0 1 23 53 V 26 H 11 A 5 5 0 0 1 6 21 V 15 A 5 5 0 0 1 11 10 Z"
+    fill="#4a2a99"
+  />
+  <!-- Face principale du T mauve ultra-gras -->
+  <path
+    d="M 11 6 H 53 A 5 5 0 0 1 58 11 V 17 A 5 5 0 0 1 53 22 H 41 V 49 A 5 5 0 0 1 36 54 H 28 A 5 5 0 0 1 23 49 V 22 H 11 A 5 5 0 0 1 6 17 V 11 A 5 5 0 0 1 11 6 Z"
+    fill="url(#typio-t)"
+    stroke="#5933b4"
+    stroke-width="1.5"
+  />
+  <!-- Reflet supérieur subtil de la touche T -->
+  <path
+    d="M 11 8.5 H 53"
+    stroke="#ede5ff"
+    stroke-opacity="0.45"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+</svg>
