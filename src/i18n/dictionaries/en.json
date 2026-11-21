@@ -107,6 +107,8 @@
       "characters": "characters",
       "inputLabel": "Type the text here",
       "hint": "Every correct character moves your Blob forward.",
+      "wordCapHint": "Two mistakes in this word. Type",
+      "freeHint": "Every character that goes in moves your Blob forward. You can only correct the current word.",
       "fix": "to fix",
       "autoValidate": "Ends automatically at the last character"
     },
@@ -555,7 +557,7 @@
     "inputMode": {
       "label": "Input mode",
       "free": "Free",
-      "freeDesc": "Keep going even after an error. Only correct keys move you forward.",
+      "freeDesc": "You can keep typing after a mistake (up to 2 per word). Once you pass a word, you can no longer correct it. Mistakes count toward your accuracy.",
       "blocking": "Blocking",
       "blockingDesc": "Correct each error before you can type the next character."
     },

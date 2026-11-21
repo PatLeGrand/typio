@@ -10,6 +10,7 @@ const STORAGE_KEY = "typio:music";
 const RACE_SELECTOR = ".room-race-screen";
 const FADE_MS = 600;
 const DOCKED_QUERY = "(min-width: 768px)";
+const FOOTER_GAP = 12;
 
 type Props = { labels: Dictionary["music"] };
 
@@ -155,26 +156,69 @@ export function MusicPlayer({ labels }: Props) {
     audio.play().catch(handlePlayError);
   }, [index]);
 
-  // Place du lecteur réservée en bas de page (body), pour que le pied de page reste lisible.
-  // ActiveRoomWidget réserve déjà sa propre hauteur + 32 px : on ne compte pas deux fois.
+  // Sous md : place réservée sous le pied de page pour que le lecteur (fixe, en bas) ne le recouvre pas.
+  // On mesure l'espace réellement présent sous le <footer> (widget de salle compris) au lieu de le déduire.
   useEffect(() => {
     const section = sectionRef.current;
     if (!loaded || !section || !track) return;
     const root = document.documentElement;
     const reserve = () => {
+      const footer = document.querySelector("footer");
+      if (!footer || window.matchMedia(DOCKED_QUERY).matches) {
+        root.style.setProperty("--music-reserve", "0px");
+        return;
+      }
       const offset = 16 + (widgetHeight > 0 ? widgetHeight + 16 : 0);
-      const widgetReserved = widgetHeight > 0 ? widgetHeight + 32 : 0;
-      const height = section.getBoundingClientRect().height;
-      root.style.setProperty("--music-reserve", `${Math.max(0, offset + height + 8 - widgetReserved)}px`);
+      const current = parseFloat(root.style.getPropertyValue("--music-reserve")) || 0;
+      const below = root.scrollHeight - (footer.getBoundingClientRect().bottom + window.scrollY) - current;
+      const needed = offset + section.getBoundingClientRect().height + 8;
+      root.style.setProperty("--music-reserve", `${Math.max(0, Math.ceil(needed - below))}px`);
     };
     reserve();
     const observer = new ResizeObserver(reserve);
     observer.observe(section);
+    observer.observe(document.body);
+    window.addEventListener("resize", reserve);
     return () => {
       observer.disconnect();
+      window.removeEventListener("resize", reserve);
       root.style.removeProperty("--music-reserve");
     };
-  }, [loaded, widgetHeight, track]);
+  }, [loaded, widgetHeight, track, pathname]);
+
+  // À partir de md : le lecteur (fixe, à 72 % de la hauteur) remonte au-dessus du pied de page
+  // quand celui-ci entre dans la fenêtre. La variable est posée directement, sans re-rendu au défilement.
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!loaded || !section || !track) return;
+    const docked = window.matchMedia(DOCKED_QUERY);
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const footer = document.querySelector("footer");
+      let lift = 0;
+      if (docked.matches && footer) {
+        const bottom = window.innerHeight * 0.72 + section.offsetHeight / 2;
+        lift = Math.max(0, bottom + FOOTER_GAP - footer.getBoundingClientRect().top);
+      }
+      section.style.setProperty("--music-footer-lift", `${Math.round(lift)}px`);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    schedule();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    const observer = new ResizeObserver(schedule);
+    observer.observe(document.body);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+      section.style.removeProperty("--music-footer-lift");
+    };
+  }, [loaded, track, pathname]);
 
   const open = !((prefs.collapsed && !welcoming) || racing);
   useEffect(() => {
@@ -215,7 +259,7 @@ export function MusicPlayer({ labels }: Props) {
       ref={sectionRef}
       aria-label={labels.label}
       style={lift}
-      className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground md:top-[72%] md:bottom-auto md:-translate-y-1/2 ${loaded ? "" : "invisible"}`}
+      className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground md:top-[72%] md:bottom-auto md:[translate:0_calc(-50%-var(--music-footer-lift,0px))] md:transition-[translate] md:duration-150 motion-reduce:transition-none ${loaded ? "" : "invisible"}`}
       onKeyDown={(event) => {
         setActivity((count) => count + 1);
         if (event.key !== "Escape" || collapsed) return;

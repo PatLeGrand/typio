@@ -57,12 +57,13 @@ describe("cycle de course du registre", () => {
     const { store, at } = setup();
     store.start("host", "ABCDEF");
     at(4000);
-    store.input("guest", "ABCDEF", ["x"]);
+    const first = store.snapshot("ABCDEF")!.text[0];
+    store.input("guest", "ABCDEF", [first]);
     store.disconnect("guest", "ABCDEF");
     expect(store.snapshot("ABCDEF")?.runners[1].connected).toBe(false);
     at(5000);
     store.reconnect("guest", "ABCDEF");
-    expect(store.self("ABCDEF", "guest")?.typed).toBe("x");
+    expect(store.self("ABCDEF", "guest")?.typed).toBe(first);
     expect(store.get("ABCDEF")?.participants.length).toBe(2);
     store.disconnect("guest", "ABCDEF");
     at(35_000);
