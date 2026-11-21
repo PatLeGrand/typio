@@ -113,7 +113,7 @@ export function RacePodium({ rows, locale, labels, highlightId, headingLevel = "
       </div>
 
       {/* Scène des trois marches */}
-      <div className="px-4 pt-6 pb-0 sm:px-6 sm:pt-8">
+      <div className="overflow-hidden px-4 pt-6 pb-0 sm:px-6 sm:pt-8">
         <ol className={gridClass}>
           {top.map((row, index) => {
             const tier = tierFor(row.rank);

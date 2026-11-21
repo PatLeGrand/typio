@@ -615,6 +615,7 @@ h2[tabindex="-1"]:focus-visible {
 .race-arrival::before { content: ""; flex-shrink: 0; background-image: repeating-conic-gradient(var(--key-ink) 0 25%,transparent 0 50%); }
 
 /* Arrivée sur le podium : seule animation marquante de l'écran de résultats, coupée si prefers-reduced-motion. */
+/* Animation uniquement sur transform (sans opacity) pour préserver le contraste AA dès la première image. */
 @media (prefers-reduced-motion: no-preference) {
   .podium-step {
     animation: podium-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -624,11 +625,9 @@ h2[tabindex="-1"]:focus-visible {
 
 @keyframes podium-rise {
   from {
-    opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(24px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
