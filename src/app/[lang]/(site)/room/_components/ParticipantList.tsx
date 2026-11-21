@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar } from "@/components/Avatar";
 import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { BlobPreview } from "@/components/race/BlobPreview";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { BLOB_COLORS, DEFAULT_BLOB_STYLE } from "@/race/blobStyle";
 import type { RoomState } from "@/realtime/protocol";
 
 type ParticipantListProps = {
@@ -48,42 +49,88 @@ export function ParticipantList({ room, currentUserId, labels, raceLabels, onKic
           {labels.runnersCount.replace("{count}", String(runners)).replace("{max}", String(room.config.capacity))}
         </p>
       </div>
-      <ul aria-labelledby="participants-title" aria-live="polite" className="flex flex-col gap-2">
+      <ul aria-labelledby="participants-title" aria-live="polite" className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {room.participants.map((participant) => (
           <li
             key={participant.userId}
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-field border border-border px-4 py-3"
+            className="flex min-w-0 flex-col items-center gap-2 rounded-field border border-border p-4 text-center"
           >
-            <Avatar name={participant.displayName} seed={participant.userId} userId={participant.userId} avatarVersion={participant.avatarVersion} size={32} />
-            <span className="min-w-0 break-words font-semibold text-foreground">{participant.displayName}</span>
-            {participant.kind === "guest" ? <Badge>{labels.guest}</Badge> : null}
-            {participant.userId === room.hostId ? <Badge>{labels.host}</Badge> : null}
-            {participant.userId === currentUserId ? <Badge tone="surface">{labels.you}</Badge> : null}
-            <span className="text-sm text-muted-strong">
-              {participant.role === "runner" ? labels.runner : labels.spectator}
-            </span>
+            <BlobPreview
+              style={participant.blobStyle ?? DEFAULT_BLOB_STYLE}
+              size={56}
+              className={participant.connected ? "shrink-0" : "shrink-0 opacity-60"}
+            />
+            <span className="max-w-full break-words font-semibold text-foreground">{participant.displayName}</span>
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              {participant.kind === "guest" ? <Badge>{labels.guest}</Badge> : null}
+              {participant.userId === room.hostId ? <Badge>{labels.host}</Badge> : null}
+              {participant.userId === currentUserId ? <Badge tone="surface">{labels.you}</Badge> : null}
+              <span className="text-sm text-muted-strong">
+                {participant.role === "runner" ? labels.runner : labels.spectator}
+              </span>
+            </div>
             {participant.connected ? null : (
               <span className="text-sm font-semibold text-danger">{labels.disconnected}</span>
             )}
             {onKick && participant.userId !== currentUserId ? (
               confirming === participant.userId ? (
-                <div role="group" aria-label={labels.kickConfirm.replace("{name}", participant.displayName)} className="flex w-full flex-wrap items-center gap-3">
-                  <p className="text-sm">{labels.kickConfirm.replace("{name}", participant.displayName)}</p>
-                  <Button disabled={pending} onClick={() => void kick(participant.userId)}>{labels.kickYes}</Button>
-                  <Button variant="secondary" onClick={() => setConfirming(null)}>{labels.kickCancel}</Button>
+                <div
+                  role="group"
+                  aria-label={labels.kickConfirm.replace("{name}", participant.displayName)}
+                  className="mt-auto flex w-full flex-col items-center gap-2 pt-1"
+                >
+                  <p className="max-w-full break-words text-sm text-foreground">
+                    {labels.kickConfirm.replace("{name}", participant.displayName)}
+                  </p>
+                  <div className="flex w-full flex-wrap justify-center gap-2">
+                    <Button
+                      disabled={pending}
+                      className="min-h-10 w-full max-w-full px-3 py-2 text-sm"
+                      onClick={() => void kick(participant.userId)}
+                    >
+                      {labels.kickYes}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={pending}
+                      className="min-h-10 w-full max-w-full px-3 py-2 text-sm"
+                      onClick={() => setConfirming(null)}
+                    >
+                      {labels.kickCancel}
+                    </Button>
+                  </div>
                 </div>
               ) : (
-                <Button variant="secondary" className="ml-auto" onClick={() => setConfirming(participant.userId)}>{labels.kick}</Button>
+                <Button
+                  variant="secondary"
+                  className="mt-auto min-h-10 w-full max-w-full px-3 py-2 text-sm"
+                  onClick={() => setConfirming(participant.userId)}
+                >
+                  {labels.kick}
+                </Button>
               )
             ) : null}
           </li>
         ))}
         {room.config.bots.map((level, index) => (
-          <li key={`bot-${index}`} className="flex flex-wrap items-center gap-3 rounded-field border border-border px-4 py-3">
-            {/* Le bot n'a pas encore de nom (tiré au départ) : avatar généré à partir de sa place. */}
-            <Avatar name={raceLabels.bot} seed={`bot-${index}`} size={32} />
-            <Badge>{raceLabels.bot}</Badge>
-            <span>{raceLabels.botLevels[level]}</span>
+          <li
+            key={`bot-${index}`}
+            className="flex min-w-0 flex-col items-center gap-2 rounded-field border border-border p-4 text-center"
+          >
+            {/* Le bot n'a pas encore de nom (tiré au départ) : blob coloré selon sa place. */}
+            <BlobPreview
+              style={{
+                color: BLOB_COLORS[(index + 1) % BLOB_COLORS.length],
+                glasses: "none",
+                hat: "none",
+              }}
+              size={56}
+              className="shrink-0"
+            />
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <Badge>{raceLabels.bot}</Badge>
+              <span className="text-sm text-muted-strong">{raceLabels.botLevels[level]}</span>
+            </div>
           </li>
         ))}
       </ul>
