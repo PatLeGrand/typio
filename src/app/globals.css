@@ -622,3 +622,6 @@ h2[tabindex="-1"]:focus-visible {
   from { transform: translateY(2px); }
   to { transform: translateY(-3px); }
 }
+
+/* Le lecteur de musique (fixe, en bas à droite) pose --music-reserve : le pied de page reste dégagé. */
+body { padding-bottom: var(--music-reserve, 0px); }

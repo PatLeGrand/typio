@@ -27,6 +27,7 @@ const controlClass =
 export function MusicPlayer({ labels }: Props) {
   const pathname = usePathname();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const [prefs, setPrefs] = useState<MusicPreferences>({ volume: 0.5, muted: false, collapsed: true });
   const [loaded, setLoaded] = useState(false);
   // Accueil de la première visite : lecteur déplié 4 s, en pause tant qu'on le survole ou le focalise.
@@ -158,6 +159,27 @@ export function MusicPlayer({ labels }: Props) {
     audio.play().catch(handlePlayError);
   }, [index]);
 
+  // Place du lecteur réservée en bas de page (body), pour que le pied de page reste lisible.
+  // ActiveRoomWidget réserve déjà sa propre hauteur + 32 px : on ne compte pas deux fois.
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!loaded || !section || !track) return;
+    const root = document.documentElement;
+    const reserve = () => {
+      const offset = 16 + (widgetHeight > 0 ? widgetHeight + 16 : 0);
+      const widgetReserved = widgetHeight > 0 ? widgetHeight + 32 : 0;
+      const height = section.getBoundingClientRect().height;
+      root.style.setProperty("--music-reserve", `${Math.max(0, offset + height + 8 - widgetReserved)}px`);
+    };
+    reserve();
+    const observer = new ResizeObserver(reserve);
+    observer.observe(section);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--music-reserve");
+    };
+  }, [loaded, widgetHeight, track]);
+
   if (!track) return null;
 
   const lift: CSSProperties | undefined =
@@ -166,6 +188,7 @@ export function MusicPlayer({ labels }: Props) {
 
   return (
     <section
+      ref={sectionRef}
       aria-label={labels.label}
       style={lift}
       className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground ${loaded ? "" : "invisible"}`}
