@@ -1,17 +1,17 @@
 import type { BotLevel, InputMode } from "../realtime/protocol";
-import { computeWpm, type Keystrokes } from "./metrics";
+import { computeWpm, MAX_FREE_WORD_ERRORS, type Keystrokes } from "./metrics";
 
 /** Indice = seconde depuis le départ, bornée par la fin du bot et les 600 s de course. */
 export function botWpmSeries(plan: BotPlan, endMs: number): number[] {
   const count = Math.min(601, Math.floor(Math.min(endMs, botFinishMs(plan)) / 1000) + 1);
-  return Array.from({ length: count }, (_, second) => computeWpm(botProgressAt(plan, second * 1000), second * 1000));
+  return Array.from({ length: count }, (_, second) => computeWpm(botCorrectChars(plan, botProgressAt(plan, second * 1000)), second * 1000));
 }
 
 /**
  * Simulation des bots (BOT-02, BOT-03, A-D8). Module pur : le hasard est injecté et le temps est un
  * simple paramètre `elapsedMs`, jamais lu sur une horloge. Le bot ne « joue » pas : on
- * précalcule sa frappe en une courbe temps -> caractères corrects, que l'écran (ou, plus tard,
- * le serveur) interroge à chaque image.
+ * précalcule sa frappe en une courbe temps -> caractères saisis, que l'écran et le serveur
+ * interrogent pendant la course.
  */
 
 /** Vitesse cible en mots par minute (1 mot = 5 caractères, comme la MPM du joueur). */
@@ -42,24 +42,23 @@ const START_DELAY_MAX_MS = 450;
 /** Facteur de durée des frappes pendant le brouillard. */
 export const BOT_FOG_SLOWDOWN_FACTOR = 1.6;
 
-/** Point de la courbe : après `timeMs`, le bot a tapé `chars` caractères corrects. */
+/** Point de la courbe : après `timeMs`, le bot a saisi `chars` caractères. */
 interface Keyframe {
   timeMs: number;
   chars: number;
 }
 
 /**
- * Courbe affine par morceaux, croissante au sens large : un segment plat est une pause ou
- * une faute en cours de correction. La progression ne recule jamais, car seuls les
- * caractères déjà corrects sont comptés (la frappe fausse n'avance pas le bot).
+ * Courbe affine par morceaux : un segment plat est une pause ou une faute bloquée.
+ * En mode libre, le bot conserve ses fautes acceptées et corrige celles qui sont bloquées.
  */
 export interface BotPlan {
   readonly textLength: number;
   readonly keyframes: readonly Keyframe[];
   /** Instants (ms) des frappes fausses, croissants. */
   readonly mistakeTimesMs: readonly number[];
-  /** Frappes justes après une faute libre, effacées puis retapées ; sans progression validée. */
-  readonly extraCorrectTimesMs: readonly number[];
+  /** Positions des fautes insérées en mode libre. */
+  readonly retainedMistakePositions: readonly number[];
 }
 
 function between(min: number, max: number, random: () => number): number {
@@ -73,11 +72,11 @@ function wordDifficulty(word: string): number {
     (/[^\p{L}\p{N}]/u.test(word) ? 0.1 : 0) + (/[À-ÖØ-öø-ÿ]/u.test(word) ? 0.1 : 0));
 }
 
-export function planBot(text: string, level: BotLevel, inputMode: InputMode, random: () => number): BotPlan {
+export function planBot(text: string, level: BotLevel, inputMode: InputMode, random: () => number, initialWordErrors = 0): BotPlan {
   const keyframes: Keyframe[] = [{ timeMs: 0, chars: 0 }];
   const mistakeTimesMs: number[] = [];
-  const extraCorrectTimesMs: number[] = [];
-  if (text.length === 0) return { textLength: 0, keyframes, mistakeTimesMs, extraCorrectTimesMs };
+  const retainedMistakePositions: number[] = [];
+  if (text.length === 0) return { textLength: 0, keyframes, mistakeTimesMs, retainedMistakePositions };
 
   const { minWpm, maxWpm, errorRate } = BOT_LEVEL_PROFILES[level];
   const msPerChar = 60_000 / (between(minWpm, maxWpm, random) * 5);
@@ -91,9 +90,9 @@ export function planBot(text: string, level: BotLevel, inputMode: InputMode, ran
     errorRate * ((ERROR_NOTICE_MIN_MS + ERROR_NOTICE_MAX_MS) / 2) +
     (START_DELAY_MIN_MS + START_DELAY_MAX_MS) / 2 / text.length;
   // Difficulté moyenne de référence : les mots difficiles restent plus lents, même seuls.
-  // Une faute ajoute une frappe en mode bloquant, quatre en moyenne avec les effacements libres.
-  const typingScale = Math.max(0.1,
-    (msPerChar - expectedOverheadMs) / (msPerChar * 1.1 * (1 + errorRate * (inputMode === "free" ? 4 : 1))));
+  const free = inputMode === "free";
+  const typingScale = Math.max(0.1, (msPerChar * (free ? 1 - errorRate : 1) - expectedOverheadMs) /
+    (msPerChar * 1.1 * (free ? 1 : 1 + errorRate)));
 
   let timeMs = 0;
   let chars = 0;
@@ -108,6 +107,7 @@ export function planBot(text: string, level: BotLevel, inputMode: InputMode, ran
   words.forEach((word, index) => {
     // L'espace qui suit le mot fait partie de sa frappe, sauf pour le dernier mot.
     const wordChars = word.length + (index < words.length - 1 ? 1 : 0);
+    let wordErrors = index === 0 ? initialWordErrors : 0;
     const speed = 1 + (random() * 2 - 1) * WORD_SPEED_VARIATION;
     const charMs = msPerChar * speed * wordDifficulty(word) * typingScale;
 
@@ -115,20 +115,19 @@ export function planBot(text: string, level: BotLevel, inputMode: InputMode, ran
 
     for (let offset = 0; offset < wordChars; offset++) {
       if (random() < errorRate) {
+        if (free && (offset === word.length || wordErrors < MAX_FREE_WORD_ERRORS)) {
+          retainedMistakePositions.push(chars);
+          wordErrors++;
+          timeMs += charMs;
+          mistakeTimesMs.push(timeMs);
+          chars++;
+          push();
+          if (chars < text.length) wait(between(ERROR_NOTICE_MIN_MS, ERROR_NOTICE_MAX_MS, random));
+          continue;
+        }
         wait(charMs);
         mistakeTimesMs.push(timeMs);
-        if (inputMode === "free") {
-          const continued = Math.min(2, text.length - chars - 1, Math.floor(random() * 3));
-          for (let extra = 0; extra < continued; extra++) {
-            wait(charMs);
-            extraCorrectTimesMs.push(timeMs);
-          }
-          wait(between(ERROR_NOTICE_MIN_MS, ERROR_NOTICE_MAX_MS, random));
-          // Backspace prend du temps mais n'entre pas dans la précision (voir metrics.ts).
-          wait((continued + 1) * charMs);
-        } else {
-          wait(between(ERROR_NOTICE_MIN_MS, ERROR_NOTICE_MAX_MS, random));
-        }
+        wait(between(ERROR_NOTICE_MIN_MS, ERROR_NOTICE_MAX_MS, random));
       }
       timeMs += charMs;
       chars++;
@@ -136,7 +135,7 @@ export function planBot(text: string, level: BotLevel, inputMode: InputMode, ran
     }
   });
 
-  return { textLength: text.length, keyframes, mistakeTimesMs, extraCorrectTimesMs };
+  return { textLength: text.length, keyframes, mistakeTimesMs, retainedMistakePositions };
 }
 
 /** Garde tout le passé, puis recalcule seulement le texte restant avec le même moteur. */
@@ -157,7 +156,10 @@ export function replanBot(
   const boundaryChars = to
     ? from.chars + (to.chars - from.chars) * (elapsedMs - from.timeMs) / (to.timeMs - from.timeMs)
     : chars;
-  const suffix = planBot(newText.slice(chars), level, inputMode, random);
+  const retained = plan.retainedMistakePositions.filter((position) => position < chars);
+  const wordStart = chars > 0 ? newText.lastIndexOf(" ", chars - 1) + 1 : 0;
+  const suffix = planBot(newText.slice(chars), level, inputMode, random,
+    retained.filter((position) => position >= wordStart).length);
   const factor = Math.max(1, slowdown?.factor ?? 1);
   const slowDuration = Math.max(0, (slowdown?.untilMs ?? elapsedMs) - elapsedMs) / factor;
   const timeAt = (timeMs: number) => elapsedMs + timeMs + Math.min(timeMs, slowDuration) * (factor - 1);
@@ -179,12 +181,11 @@ export function replanBot(
       ...future.map((frame) => ({ timeMs: timeAt(frame.timeMs), chars: chars + frame.chars }))],
     mistakeTimesMs: [...plan.mistakeTimesMs.filter((time) => time <= elapsedMs),
       ...suffix.mistakeTimesMs.map(timeAt)],
-    extraCorrectTimesMs: [...plan.extraCorrectTimesMs.filter((time) => time <= elapsedMs),
-      ...suffix.extraCorrectTimesMs.map(timeAt)],
+    retainedMistakePositions: [...retained, ...suffix.retainedMistakePositions.map((position) => chars + position)],
   };
 }
 
-/** Nombre de caractères corrects tapés par le bot, `elapsedMs` après le départ (0..longueur). */
+/** Nombre de caractères saisis par le bot, `elapsedMs` après le départ (0..longueur). */
 export function botProgressAt(plan: BotPlan, elapsedMs: number): number {
   const { keyframes, textLength } = plan;
   if (!(elapsedMs > 0)) return 0;
@@ -211,13 +212,13 @@ export function botFinishMs(plan: BotPlan): number {
   return Math.ceil(plan.keyframes[plan.keyframes.length - 1].timeMs);
 }
 
-/**
- * Frappes du bot `elapsedMs` après le départ, au sens de la précision du joueur : chaque caractère
- * correct est une frappe juste, y compris s'il est ensuite effacé ; chaque faute compte une fois.
- */
+export function botCorrectChars(plan: BotPlan, position: number): number {
+  return position - plan.retainedMistakePositions.filter((index) => index < position).length;
+}
+
+/** Chaque frappe correcte et chaque faute, insérée ou bloquée, compte une fois. */
 export function botKeystrokesAt(plan: BotPlan, elapsedMs: number): Keystrokes {
-  const correct = botProgressAt(plan, elapsedMs) +
-    plan.extraCorrectTimesMs.filter((timeMs) => timeMs <= elapsedMs).length;
+  const correct = botCorrectChars(plan, botProgressAt(plan, elapsedMs));
   const mistakes = plan.mistakeTimesMs.filter((timeMs) => timeMs <= elapsedMs).length;
   return { total: correct + mistakes, correct };
 }
