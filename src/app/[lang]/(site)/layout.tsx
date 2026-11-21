@@ -5,6 +5,7 @@ import { schedulePurge } from "@/auth/schedulePurge";
 import { SiteHeader } from "@/components/SiteHeader";
 import { pickSiteHeaderDictionary } from "@/components/siteHeaderDictionary";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SiteParticleField } from "@/components/SiteParticleField";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
 import { RoomSessionGuard } from "@/realtime/RoomSessionGuard";
@@ -21,6 +22,7 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
 
   return (
     <>
+      <SiteParticleField />
       <SiteHeader locale={locale} dictionary={pickSiteHeaderDictionary(getDictionary(locale))} user={user} />
       <RoomSessionGuard userId={user?.id ?? null} />
       {children}
