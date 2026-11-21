@@ -165,23 +165,25 @@ export function HomeRaceShowcase({ labels, playable, locale }: {
     }} onClick={(event) => {
       if (event.target instanceof Element && event.target.closest("[data-home-typing], [data-home-race-track]") && !event.target.closest("button, a, input, progress")) inputRef.current?.focus();
     }}>
-      <HomeLiveScene
-        labels={labels}
-        progress={frame.progress}
-        still={still}
-        paused={paused}
-        moving={!still && !paused && race.phase !== "finished"}
-        locale={locale}
-        pauseControl={still ? null : <MediaPlaybackButton playing={!userPaused} label={userPaused ? labels.resume : labels.pause}
-          onClick={() => {
-            if (!userPaused) {
-              const next = transitionPlayableRace(raceRef.current, { type: "tick", deltaMs: elapsed() });
-              raceRef.current = next;
-              setRace(next);
-            }
-            setUserPaused((value) => !value);
-          }} />}
-      />
+      <div className="mx-auto w-full max-w-[1440px] px-4 md:px-8 xl:px-[88px]">
+        <HomeLiveScene
+          labels={labels}
+          progress={frame.progress}
+          still={still}
+          paused={paused}
+          moving={!still && !paused && race.phase !== "finished"}
+          locale={locale}
+          pauseControl={still ? null : <MediaPlaybackButton playing={!userPaused} label={userPaused ? labels.resume : labels.pause}
+            onClick={() => {
+              if (!userPaused) {
+                const next = transitionPlayableRace(raceRef.current, { type: "tick", deltaMs: elapsed() });
+                raceRef.current = next;
+                setRace(next);
+              }
+              setUserPaused((value) => !value);
+            }} />}
+        />
+      </div>
       <div className="relative z-10 mx-auto mt-6 max-w-[960px] px-4 sm:px-8">
         <RaceInputCard data-home-typing>
           {!physicalKeyboard ? <div className={hydrated ? undefined : "md:invisible"}>
