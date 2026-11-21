@@ -35,6 +35,19 @@
     "confirmLeave": "Leaving the room means abandoning the race. Do you want to continue?",
     "leaveError": "Unable to leave the room. Check your connection and try again."
   },
+  "music": {
+    "label": "Lofi music",
+    "expand": "Open music player",
+    "collapse": "Collapse music player",
+    "play": "Play",
+    "pause": "Pause",
+    "previous": "Previous track",
+    "next": "Next track",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "error": "This track could not be played. Try again or skip to the next track."
+  },
   "raceEntry": {
     "invalidTitle": "Invalid settings",
     "title": "Race",
@@ -94,6 +107,8 @@
       "characters": "characters",
       "inputLabel": "Type the text here",
       "hint": "Every correct character moves your Blob forward.",
+      "wordCapHint": "Two mistakes in this word. Type",
+      "freeHint": "Every character that goes in moves your Blob forward. You can only correct the current word.",
       "fix": "to fix",
       "autoValidate": "Ends automatically at the last character"
     },
@@ -542,7 +557,7 @@
     "inputMode": {
       "label": "Input mode",
       "free": "Free",
-      "freeDesc": "Keep going even after an error. Only correct keys move you forward.",
+      "freeDesc": "You can keep typing after a mistake (up to 2 per word). Once you pass a word, you can no longer correct it. Mistakes count toward your accuracy.",
       "blocking": "Blocking",
       "blockingDesc": "Correct each error before you can type the next character."
     },

@@ -50,13 +50,13 @@ describe("RoomConfigPanel, host", () => {
     fireEvent.click(screen.getByRole("radio", { name: raceSettings.textMode.words }));
     openAdvanced();
     fireEvent.click(screen.getByRole("radio", { name: raceSettings.accents.exclude }));
-    fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${raceSettings.inputMode.blocking}`) }));
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(`^${raceSettings.inputMode.free}`) }));
     fireEvent.click(screen.getByRole("button", { name: raceSettings.bots.add }));
 
     expect(vi.mocked(onChange).mock.calls).toEqual([
       [{ textMode: "words" }],
       [{ accents: false }],
-      [{ inputMode: "blocking" }],
+      [{ inputMode: "free" }],
       [{ bots: ["intermediate"] }],
     ]);
   });

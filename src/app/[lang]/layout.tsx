@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import { locales } from "@/i18n/config";
 import { getDictionary } from "@/i18n/dictionaries";
 import { requireLocale } from "@/i18n/requireLocale";
+import { MusicPlayer } from "@/music/MusicPlayer";
+import { playlist } from "@/music/playlist";
 import { themeInitScript } from "@/theme/themeScript";
 import "../globals.css";
 // Inter est téléchargée au build et servie avec les assets du site : aucune
@@ -50,6 +52,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
         </svg>
         {/* L'en-tête vit dans (site)/layout.tsx : les pages (auth) ont le leur. */}
         {children}
+        {playlist.length > 0 && <MusicPlayer labels={getDictionary(locale).music} />}
       </body>
     </html>
   );

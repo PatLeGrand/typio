@@ -18,7 +18,7 @@ export interface BonusAward {
 export interface BonusRunner {
   readonly id: string;
   readonly active: boolean;
-  /** Progression = caractères corrects / longueur du texte courant propre au coureur.
+  /** Progression = caractères validés selon le mode / longueur du texte courant propre au coureur.
    * Un retrait préserve la position tapée ; la MPM reste fondée sur les caractères corrects. */
   readonly progress: number;
   readonly typedLength: number;

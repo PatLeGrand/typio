@@ -15,6 +15,14 @@ describe("race settings boundary (CONF-01 à CONF-04, CONF-06 à CONF-10, BOT-01
       .toMatchObject({ excludedCharacters: "ab" });
   });
 
+  it("defaults to blocking without a mode and preserves explicitly selected free mode", () => {
+    const { inputMode, ...old } = DEFAULT_RACE_SETTINGS;
+    expect(inputMode).toBe("blocking");
+    expect(deserializeRaceSettings(undefined)).toMatchObject({ inputMode: "blocking" });
+    expect(deserializeRaceSettings(JSON.stringify(old))).toMatchObject({ inputMode: "blocking" });
+    expect(deserializeRaceSettings(JSON.stringify({ ...old, inputMode: "free" }))).toMatchObject({ inputMode: "free" });
+  });
+
   it.each([0, 1, 90, -1, 601, 1.5, NaN, Infinity, "120"])("rejects duration %s outside the protocol list", (timeLimitSeconds) => {
     expect(parseRaceSettings({ ...DEFAULT_RACE_SETTINGS, timeLimitSeconds })).toBeNull();
   });

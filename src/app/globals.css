@@ -633,6 +633,13 @@ h2[tabindex="-1"]:focus-visible {
   font: 800 clamp(1.5rem, 2.5vw, 2.1rem)/1.1 var(--font-big-shoulders, system-ui), var(--font-inter, sans-serif), sans-serif;
 }
 .race-passage { overflow-wrap: anywhere; white-space: pre-wrap; font-family: var(--font-mono); font-size: clamp(1.1rem,1.6vw,1.4rem); line-height: 1.65; }
+@media (prefers-reduced-motion: no-preference) {
+  .word-cap-notice { animation: word-cap-appear 140ms ease-out; }
+}
+@keyframes word-cap-appear {
+  from { transform: translateY(3px); }
+  to { transform: translateY(0); }
+}
 .text-series-correct { color: var(--series-2); }
 .race-standings-head { justify-content: space-between; border-bottom: 2px solid var(--foreground); padding: .35rem .25rem .65rem; }
 .race-checks, .race-arrival::before {
@@ -660,4 +667,20 @@ h2[tabindex="-1"]:focus-visible {
   to {
     transform: translateY(0);
   }
+}
+
+/* Points rebondissants du bouton replié du lecteur de musique (src/music/MusicPlayer.tsx). */
+@media (prefers-reduced-motion: no-preference) {
+  .music-dot-active { animation: music-dot 0.7s ease-in-out infinite alternate; }
+}
+@keyframes music-dot {
+  from { transform: translateY(2px); }
+  to { transform: translateY(-3px); }
+}
+
+/* Le lecteur de musique (fixe, en bas à droite) pose --music-reserve : le pied de page reste dégagé. */
+body { padding-bottom: var(--music-reserve, 0px); }
+
+@media (min-width: 768px) {
+  body { padding-bottom: 0; }
 }

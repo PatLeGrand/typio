@@ -132,21 +132,25 @@ describe("applyInput", () => {
     expect(applyInput(race, "host", ["a"], START).ok).toBe(true);
   });
   it("replays free-mode errors and correction without erasing mistake counters", () => {
-    const race = racing();
+    const source = room();
+    source.config.inputMode = "free";
+    const race = racing("abc", source);
     const before = structuredClone(race);
     const next = input(race, ["x", "b", "\b", "\b", "a"]);
     expect(next.runners[0]).toMatchObject({ typed: "a", position: 1, inputCount: 5,
       keystrokes: { total: 3, correct: 2 }, lastActivityAt: START + 1_000 });
     expect(race).toEqual(before);
   });
-  it("blocks wrong characters while counting their errors", () => {
-    const source = room();
-    source.config.inputMode = "blocking";
-    const next = input(racing("abc", source), ["x", "a", "x", "b"]);
+  it("defaults to blocking wrong characters while counting their errors", () => {
+    const race = racing();
+    expect(race.config.inputMode).toBe("blocking");
+    const next = input(race, ["x", "a", "x", "b"]);
     expect(next.runners[0]).toMatchObject({ typed: "ab", position: 2, keystrokes: { total: 4, correct: 2 } });
   });
   it("counts and deletes emoji as two UTF-16 units", () => {
-    const race = input(racing(), ["\uD83D", "\uDE00"]);
+    const source = room();
+    source.config.inputMode = "free";
+    const race = input(racing("abc", source), ["\uD83D", "\uDE00"]);
     expect(race.runners[0]).toMatchObject({ typed: "😀", inputCount: 2, keystrokes: { total: 2, correct: 0 } });
     const next = input(race, ["\b"]);
     expect(next.runners[0].typed).toBe("\uD83D");
@@ -189,12 +193,34 @@ describe("applyInput", () => {
     expect(applyInput(abandonRace(race, "host", START), "host", ["a"], START).ok).toBe(false);
     expect(applyInput(input(race, ["a", "b", "c"]), "host", ["a"], START + 2_000).ok).toBe(false);
   });
-  it("finishes only with the complete correct text and freezes arrival time", () => {
+  it("in blocking mode finishes with the complete correct text and freezes arrival time", () => {
     let race = input(racing(), ["a", "x", "c"]);
-    expect(race.runners[0].status).toBe("typing");
-    race = input(race, ["\b", "\b", "b", "c"], START + 2_000);
+    expect(race.runners[0]).toMatchObject({ status: "typing", typed: "a", position: 1 });
+    race = input(race, ["b", "c"], START + 2_000);
     expect(race.runners[0]).toMatchObject({ status: "finished", position: 3, finishedAt: START + 2_000 });
     expect(race.status).toBe("racing");
+  });
+  it("enforces the free-mode cap and lock on the server, then ranks a finish with errors", () => {
+    const source = room();
+    source.config.inputMode = "free";
+    let race = input(racing("abcd efghi", source), ["x", "y", "z"]);
+    expect(race.runners[0]).toMatchObject({
+      typed: "xy", position: 2, inputCount: 3, keystrokes: { total: 3, correct: 0 },
+      missedKeys: { a: 1, b: 1, c: 1 },
+    });
+    race = input(race, ["c", "d", "X", "\b", "Y"], START + 2_000);
+    expect(race.runners[0]).toMatchObject({ typed: "xycdXY", position: 6 });
+    race = input(race, ["\b", "\b"], START + 3_000);
+    expect(race.runners[0]).toMatchObject({ typed: "xycdX", position: 5, inputCount: 10 });
+    expect(raceSnapshot(race, START + 3_000).runners[0]).toMatchObject({ progress: 0.5, wpm: 8 });
+    race = input(race, [..."efghi", "\b"], START + 60_000);
+    expect(race.runners[0]).toMatchObject({ typed: "xycdXefghi", status: "finished", position: 10, finishedAt: START + 60_000 });
+    expect(raceSnapshot(race, START + 60_000).runners[0]).toMatchObject({ progress: 1, wpm: 1, accuracy: 58 });
+    race = input(race, [..."abcd efghi"], START + 61_000, "guest");
+    expect(raceResults(race)?.[0]).toMatchObject({
+      id: "host", rank: 1, status: "finished", progress: 1, wpm: 1, grossWpm: 2, accuracy: 58, errors: 5,
+    });
+    expect(raceResults(race)?.[0].wpmSeries[4]).toBe(6);
   });
   it("does not accept input at or after the deadline", () => {
     const race = racing();
@@ -245,7 +271,7 @@ describe("lifecycle and disconnection", () => {
     const bot = race.runners[2];
     if (!bot.plan) throw new Error("Missing bot plan");
     expect(bot.plan.mistakeTimesMs.length).toBeGreaterThan(0);
-    expect(bot.plan.extraCorrectTimesMs.length > 0).toBe(inputMode === "free");
+    expect(bot.plan.retainedMistakePositions.length > 0).toBe(inputMode === "free");
     const now = START + 5_000;
     const next = tickRace(race, now);
     expect(next.runners[2].position).toBe(botProgressAt(bot.plan, 5_000));
@@ -316,7 +342,7 @@ describe("séries des bots aux résultats (RES-03)", () => {
     race.runners[2].plan = {
       textLength: 80,
       keyframes: [0, 5, 20, 45, 80].map((chars, second) => ({ chars, timeMs: second * 1000 })),
-      mistakeTimesMs: [], extraCorrectTimesMs: [],
+      mistakeTimesMs: [], retainedMistakePositions: [],
     };
     const ended = tickRace(race, START + race.timeLimitMs);
     const bot = raceResults(ended)?.find((row) => row.kind === "bot");
@@ -334,7 +360,7 @@ describe("séries des bots aux résultats (RES-03)", () => {
     const race = racing("a".repeat(1000), source);
     race.runners[2].plan = {
       textLength: 1000, keyframes: [{ chars: 0, timeMs: 0 }, { chars: 1000, timeMs: 1_000_000 }],
-      mistakeTimesMs: [], extraCorrectTimesMs: [],
+      mistakeTimesMs: [], retainedMistakePositions: [],
     };
     for (const limit of [2500, 600_000]) {
       const ended = tickRace({ ...race, timeLimitMs: limit }, START + limit + 10_000);
@@ -378,6 +404,18 @@ describe("bonus de remontée faisant autorité", () => {
     return { ...race, seed, runners: race.runners.map((r, i) => i === 0
       ? { ...r, typed: text.slice(0, 12), position: 12 } : r) };
   }
+
+  it("uses typed positions, including mistakes, at checkpoints and for unfinished ranks", () => {
+    const source = room();
+    source.config = { ...source.config, inputMode: "free", bonuses: true, timeLimitSeconds: 60 };
+    const deadline = START + 60_000;
+    const race = input(racing(text, source), [..."xx xxux xx"]);
+    expect(race.checkpointsTriggered).toBe(1);
+    expect(race.bonusEvents[0]).toMatchObject({ checkpoint: 0, recipientId: "guest" });
+    const guestText = applyTextEdits(text, race.runners[1].edits);
+    const finished = tickRace(input(race, [...guestText.slice(0, 5)], START + 2_000, "guest"), deadline);
+    expect(raceResults(finished)?.[0]).toMatchObject({ id: "host", position: 10, status: "unfinished" });
+  });
 
   // Sans activation, les points franchis ne changent ni le texte ni les adversaires.
   it("keeps bonuses disabled by default even after crossing all checkpoints", () => {
