@@ -111,20 +111,36 @@ export function MusicPlayer({ labels }: Props) {
     }
   }
 
-  function skip(direction: 1 | -1) {
-    setFailed(false);
-    setIndex((current) => nextTrackIndex(current, direction, playlist.length));
+  // Intention de reprise : `pause` précède `ended`, `playing` n'est donc pas fiable à ce moment.
+  const resumeRef = useRef(false);
+
+  function handlePlayError(error: unknown) {
+    // Un changement rapide de morceau interrompt le play() précédent : ce n'est pas une erreur.
+    if (error instanceof DOMException && error.name === "AbortError") return;
+    setFailed(true);
   }
 
-  // Après un changement de morceau, la lecture se poursuit si elle était en cours.
-  const wasPlaying = useRef(false);
-  useEffect(() => {
-    wasPlaying.current = playing;
-  }, [playing]);
+  function skip(direction: 1 | -1, resume: boolean) {
+    setFailed(false);
+    const next = nextTrackIndex(index, direction, playlist.length);
+    if (next === index) {
+      // Morceau unique : l'index ne change pas, on relance directement.
+      const audio = audioRef.current;
+      if (audio && resume) {
+        audio.currentTime = 0;
+        audio.play().catch(handlePlayError);
+      }
+      return;
+    }
+    resumeRef.current = resume;
+    setIndex(next);
+  }
+
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !wasPlaying.current) return;
-    audio.play().catch(() => setFailed(true));
+    if (!audio || !resumeRef.current) return;
+    resumeRef.current = false;
+    audio.play().catch(handlePlayError);
   }, [index]);
 
   if (!track) return null;
@@ -137,7 +153,7 @@ export function MusicPlayer({ labels }: Props) {
     <section
       aria-label={labels.label}
       style={lift}
-      className={`fixed bottom-4 left-4 z-30 max-w-[calc(100vw-2rem)] text-foreground max-sm:bottom-[calc(1rem+var(--music-lift,0px))] ${loaded ? "" : "invisible"}`}
+      className={`fixed bottom-4 left-4 z-30 max-w-[calc(100vw-2rem)] text-foreground max-[860px]:bottom-[calc(1rem+var(--music-lift,0px))] ${loaded ? "" : "invisible"}`}
     >
       <audio
         ref={audioRef}
@@ -145,7 +161,7 @@ export function MusicPlayer({ labels }: Props) {
         preload="none"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onEnded={() => skip(1)}
+        onEnded={() => skip(1, true)}
         onError={() => {
           setPlaying(false);
           setFailed(true);
@@ -172,19 +188,18 @@ export function MusicPlayer({ labels }: Props) {
         </button>
         {collapsed ? null : (
           <>
-            <button type="button" className={controlClass} aria-label={labels.previous} onClick={() => skip(-1)}>
+            <button type="button" className={controlClass} aria-label={labels.previous} onClick={() => skip(-1, playing)}>
               <Icon><path d="M6 6h2v12H6zM20 6v12L9.5 12z" /></Icon>
             </button>
             <button
               type="button"
               className={`${controlClass} border-accent bg-accent text-accent-foreground hover:bg-accent`}
               aria-label={playing ? labels.pause : labels.play}
-              aria-pressed={playing}
               onClick={() => void togglePlay()}
             >
               <Icon>{playing ? <path d="M6 5h4v14H6zM14 5h4v14h-4z" /> : <path d="M8 5v14l11-7z" />}</Icon>
             </button>
-            <button type="button" className={controlClass} aria-label={labels.next} onClick={() => skip(1)}>
+            <button type="button" className={controlClass} aria-label={labels.next} onClick={() => skip(1, playing)}>
               <Icon><path d="M16 6h2v12h-2zM4 6v12l10.5-6z" /></Icon>
             </button>
             <div className="hidden min-w-0 max-w-40 px-1 sm:block">
