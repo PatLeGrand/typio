@@ -236,6 +236,7 @@ describe("frontière client des courses (COURSE-06)", () => {
 
   it("refuse les entrées invalides et impossibles uniquement à l’émetteur", async () => {
     const { host, guest, store, at } = await setup();
+    await host.command("room:updateConfig", { inputMode: "free" });
     await host.command("race:start");
     host.input({ ops: ["a"] });
     expect(host.received.slice(-2)).toEqual([
@@ -267,29 +268,31 @@ describe("frontière client des courses (COURSE-06)", () => {
     await host.command("race:start");
     at(6000);
     const otherTab = client("host");
-    for (let n = 0; n < 12; n++) (n % 2 ? host : otherTab).input({ ops: ["x"] });
-    expect(store.self("ABCDEF", "host")?.typed).toBe("x".repeat(12));
+    const text = store.snapshot("ABCDEF")!.text;
+    for (let n = 0; n < 12; n++) (n % 2 ? host : otherTab).input({ ops: [text[n]] });
+    expect(store.self("ABCDEF", "host")?.typed).toBe(text.slice(0, 12));
     const count = host.received.length;
-    host.input({ ops: ["x"] });
+    host.input({ ops: [text[12]] });
     expect(host.received.length).toBe(count);
-    expect(store.self("ABCDEF", "host")?.typed).toBe("x".repeat(12));
+    expect(store.self("ABCDEF", "host")?.typed).toBe(text.slice(0, 12));
     at(7000);
-    host.input({ ops: ["x"] });
-    expect(store.self("ABCDEF", "host")?.typed).toBe("x".repeat(13));
+    host.input({ ops: [text[12]] });
+    expect(store.self("ABCDEF", "host")?.typed).toBe(text.slice(0, 13));
   });
 
   it("refuse les arrivées pendant la course et restaure la saisie aux seuls sockets du coureur", async () => {
-    const { host, guest, client, at, expirations } = await setup();
+    const { host, guest, client, at, expirations, store } = await setup();
     await host.command("race:start");
     const newcomer = client("new");
     expect(await newcomer.command("room:join", { code: "ABCDEF", role: "spectator" })).toEqual({ ok: false, error: "RACE_IN_PROGRESS" });
     at(6000);
-    guest.input({ ops: ["x"] });
+    const first = store.snapshot("ABCDEF")!.text[0];
+    guest.input({ ops: [first] });
     guest.disconnect();
     expect(expirations.get("guest")?.delay).toBe(30_000);
     const reconnected = client("guest");
     expect(expirations.size).toBe(0);
-    expect(reconnected.received.at(-1)).toEqual({ event: "race:self", payload: { typed: "x", keystrokes: { total: 1, correct: 0 } } });
+    expect(reconnected.received.at(-1)).toEqual({ event: "race:self", payload: { typed: first, keystrokes: { total: 1, correct: 1 } } });
     expect(host.received).toEqual([]);
   });
 

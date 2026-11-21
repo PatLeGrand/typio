@@ -21,7 +21,7 @@ export const DEFAULT_RACE_SETTINGS: Readonly<RaceSettings> = Object.freeze<RaceS
   excludedCharacters: "",
   includedCharacters: "",
   timeLimitSeconds: null,
-  inputMode: "free",
+  inputMode: "blocking",
   bots: ["intermediate", "intermediate"],
   visibility: "code",
   capacity: DEFAULT_CAPACITY,
@@ -57,6 +57,7 @@ export const raceSettingsSchema = z.preprocess((value) => {
   punctuation: roomConfigFields.punctuation.default(DEFAULT_RACE_SETTINGS.punctuation),
   numbers: roomConfigFields.numbers.default(DEFAULT_RACE_SETTINGS.numbers),
   uppercase: roomConfigFields.uppercase.default(DEFAULT_RACE_SETTINGS.uppercase),
+  inputMode: roomConfigFields.inputMode.default(DEFAULT_RACE_SETTINGS.inputMode),
   bonuses: roomConfigFields.bonuses.default(false),
 }));
 

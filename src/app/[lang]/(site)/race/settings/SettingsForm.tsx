@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
 import { RaceRoomSettings } from "@/components/race/RaceRoomSettings";
@@ -47,12 +47,29 @@ export function SettingsForm({
   const [includedError, setIncludedError] = useState<string | null>(null);
   const [excludedError, setExcludedError] = useState<string | null>(null);
   const [errorTrigger, setErrorTrigger] = useState(0);
+  const launchButtonRef = useRef<HTMLDivElement>(null);
+  const [showFloatingLaunch, setShowFloatingLaunch] = useState(false);
 
   // Marge de défilement basse sous `lg` pour qu'aucun contrôle focalisé ne soit masqué par la barre collée (WCAG 2.4.11).
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-race-settings-dock", "");
     return () => root.removeAttribute("data-race-settings-dock");
+  }, []);
+
+  // Sur ordinateur, affiche un bouton « Lancer la course » flottant quand celui du résumé sort par le haut (DES-06).
+  useEffect(() => {
+    const target = launchButtonRef.current;
+    if (!target || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const topLimit = entry.rootBounds?.top ?? 0;
+        setShowFloatingLaunch(!entry.isIntersecting && entry.boundingClientRect.bottom <= topLimit);
+      },
+      { rootMargin: "-64px 0px 0px 0px", threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
   }, []);
 
   const handleChange = (patch: Partial<RaceSettings>) => {
@@ -178,7 +195,39 @@ export function SettingsForm({
         </p>
 
         {/* Panneau « stade de nuit » : résumé en une phrase + lancement (barre collée en bas sous lg) */}
-        <RaceSettingsSummary settings={settings} dict={dict} lang={lang} onLaunch={handleLaunch} />
+        <RaceSettingsSummary
+          settings={settings}
+          dict={dict}
+          lang={lang}
+          onLaunch={handleLaunch}
+          launchButtonRef={launchButtonRef}
+        />
+      </div>
+
+      {/* Bouton de lancement flottant sur ordinateur quand celui du résumé sort de l'écran (DES-06) */}
+      <div
+        aria-hidden={!showFloatingLaunch}
+        inert={!showFloatingLaunch}
+        className="pointer-events-none hidden lg:sticky lg:bottom-[max(6rem,var(--active-room-widget-height,0px))] lg:z-30 lg:block lg:h-0"
+      >
+        <div className="grid grid-cols-[minmax(0,1fr)_380px] gap-x-10">
+          <div className="col-start-2 -mx-2 -translate-y-full overflow-hidden px-2 pb-3 pt-2">
+            <div
+              className={`transition-[translate,visibility] duration-300 ease-out motion-reduce:transition-none ${
+                showFloatingLaunch ? "pointer-events-auto visible translate-y-0" : "pointer-events-none invisible translate-y-[150%]"
+              }`}
+            >
+              <Button
+                variant="start"
+                fullWidth
+                tabIndex={showFloatingLaunch ? undefined : -1}
+                onClick={handleLaunch}
+              >
+                {dict.summary.start}
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );

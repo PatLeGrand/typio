@@ -98,7 +98,7 @@ export const DEFAULT_ROOM_CONFIG: RoomConfig = {
   uppercase: true,
   excludedCharacters: "",
   includedCharacters: "",
-  inputMode: "free",
+  inputMode: "blocking",
   bots: [],
   visibility: "code",
   capacity: DEFAULT_CAPACITY,

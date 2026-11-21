@@ -7,27 +7,23 @@ const text = "abcdefghij";
 const start = () => transitionPlayableRace(createPlayableRace(text), { type: "input", value: "a", deltaMs: 5000 });
 
 describe("playable race", () => {
-  it("starts on the first input and measures correct characters, including spaces", () => {
+  it("starts on the first input and measures typed characters, including spaces", () => {
     const waiting = createPlayableRace("ab cd");
     expect(transitionPlayableRace(waiting, { type: "tick", deltaMs: 60_000 })).toBe(waiting);
     expect(transitionPlayableRace(waiting, { type: "input", value: "", deltaMs: 1000 })).toBe(waiting);
     const racing = transitionPlayableRace(waiting, { type: "input", value: "ax ", deltaMs: 5000 });
     expect(racing.phase).toBe("racing");
     expect(racing.elapsedMs).toBe(0);
-    expect(playableRaceProgress(racing)[0]).toBe(40);
+    expect(playableRaceProgress(racing)[0]).toBe(60);
     expect(playableRaceResult(racing).accuracy).toBe(67);
   });
 
-  it("requires the whole correct sentence and keeps corrected errors in accuracy", () => {
-    let state = transitionPlayableRace(start(), { type: "input", value: "abcxefghij", deltaMs: 1000 });
-    expect(state.phase).toBe("racing");
-    expect(playableRaceProgress(state)[0]).toBe(90);
-    state = transitionPlayableRace(state, { type: "input", value: "abc", deltaMs: 1000 });
-    state = transitionPlayableRace(state, { type: "input", value: text, deltaMs: 1000 });
+  it("finishes at the full length and keeps errors in accuracy and net WPM", () => {
+    const state = transitionPlayableRace(start(), { type: "input", value: "abcxefghij", deltaMs: 3000 });
     expect(state.phase).toBe("finished");
     expect(playableRaceProgress(state)[0]).toBe(100);
-    expect(playableRaceResult(state)).toEqual({ wpm: 40, accuracy: 94, place: 3, order: [3, 2, 0, 1] });
-    expect(transitionPlayableRace(state, { type: "input", value: "", deltaMs: 1000 }).typed).toBe(text);
+    expect(playableRaceResult(state)).toEqual({ wpm: 36, accuracy: 90, place: 3, order: [3, 2, 0, 1] });
+    expect(transitionPlayableRace(state, { type: "input", value: "", deltaMs: 1000 }).typed).toBe("abcxefghij");
     expect(playableRaceResult(transitionPlayableRace(state, { type: "tick", deltaMs: 5000 }))).toEqual(playableRaceResult(state));
   });
 

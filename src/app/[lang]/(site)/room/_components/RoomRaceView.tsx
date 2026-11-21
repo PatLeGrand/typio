@@ -14,7 +14,7 @@ import type { Dictionary } from "@/i18n/dictionaries";
 import { formatClock, formatOrdinal } from "@/race/format";
 import { serializeRaceSettings } from "@/race/config";
 import { applyTextEdits } from "@/race/bonuses";
-import { applyTypedInput, countCorrectChars } from "@/race/metrics";
+import { applyTypedInput, type TypedInputResult } from "@/race/metrics";
 import { createRaceInputBuffer, raceInputOps } from "@/realtime/raceInput";
 import { getSocket } from "@/realtime/client";
 import type { RoomState } from "@/realtime/protocol";
@@ -48,7 +48,7 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
     socket.on("race:records", onRecords);
     return () => { socket.off("race:records", onRecords); };
   }, []);
-  const [input, setInput] = useState(self ?? { typed: "", keystrokes: { total: 0, correct: 0 } });
+  const [input, setInput] = useState<Pick<TypedInputResult, "typed" | "keystrokes" | "wordCapKey">>(self ?? { typed: "", keystrokes: { total: 0, correct: 0 } });
   const [resumedSelf, setResumedSelf] = useState(self);
   const typingRef = useRef<HTMLInputElement>(null);
   const finishRef = useRef<HTMLHeadingElement>(null);
@@ -58,6 +58,14 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
   const [now, setNow] = useState<number | null>(null);
   const physicalKeyboard = usePhysicalKeyboard();
   const buffer = useMemo(() => createRaceInputBuffer(sendInput), [sendInput]);
+
+  useEffect(() => {
+    if (!input.wordCapKey) return;
+    const timer = setTimeout(() => {
+      setInput(current => current === input ? { ...current, wordCapKey: undefined } : current);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [input]);
 
   // Une reprise remplace la prédiction et élimine les frappes de l'ancienne connexion.
   if (self !== resumedSelf) {
@@ -103,12 +111,13 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
   }
 
   function change(value: string) {
-    if (!race || !active || connection !== "connected" || pending || race.status !== "racing" || room.status !== "racing" || input.typed === text) return;
+    if (!race || !active || connection !== "connected" || pending || race.status !== "racing" || room.status !== "racing" || input.typed.length === text.length) return;
     const ops = raceInputOps(input.typed, value);
     let next = input;
     for (const op of ops) {
       const typed = op === "\b" ? next.typed.slice(0, -1) : next.typed + op;
       next = applyTypedInput(next.typed, typed, text, room.config.inputMode, next.keystrokes);
+      if (next.typed.length === text.length) break;
     }
     setInput(next);
     buffer.push(ops);
@@ -326,7 +335,7 @@ export function RoomRaceView({ room, userId, lang, labels, codeLabels, raceLabel
             {labels.finishCountdown.replace("{time}", formatClock(Math.max(0, race.finishDeadline - serverTime), "ceil"))}
           </p>}
           {room.status === "racing" && active ? <>
-            {physicalKeyboard ? connection === "connected" ? <RaceTypingPanel embedded focusRef={typingRef} fog={(runner?.fogUntil ?? 0) > serverTime} bonusMessage={playerBonusMessage(race.bonusEvents, userId, serverTime, raceLabels.bonuses, race.runners)} locale={lang} labels={raceLabels.typing} text={text} typed={input.typed} correctChars={countCorrectChars(input.typed, text)} onChange={change} /> : <p role="status">{labels.reconnecting}</p> : <p className="flex items-center gap-3 font-semibold"><Keyboard className="shrink-0 text-accent-text" aria-hidden="true" />{labels.keyboard}</p>}
+            {physicalKeyboard ? connection === "connected" ? <RaceTypingPanel embedded focusRef={typingRef} fog={(runner?.fogUntil ?? 0) > serverTime} bonusMessage={playerBonusMessage(race.bonusEvents, userId, serverTime, raceLabels.bonuses, race.runners)} locale={lang} labels={raceLabels.typing} text={text} typed={input.typed} wordCapKey={input.wordCapKey} inputMode={room.config.inputMode} onChange={change} /> : <p role="status">{labels.reconnecting}</p> : <p className="flex items-center gap-3 font-semibold"><Keyboard className="shrink-0 text-accent-text" aria-hidden="true" />{labels.keyboard}</p>}
             {confirmAbandon ? <div role="group" aria-label={labels.confirmAbandon} className="flex flex-wrap items-center gap-3">
               <p>{labels.confirmAbandon}</p>
               <Button disabled={pending || connection !== "connected"} onClick={() => { buffer.clear(); void command(abandonRace).then(() => setConfirmAbandon(false)); }}>{labels.confirm}</Button>

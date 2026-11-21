@@ -107,6 +107,8 @@
       "characters": "caractères",
       "inputLabel": "Tape le texte ici",
       "hint": "Chaque caractère correct fait avancer ton Blob.",
+      "wordCapHint": "Deux fautes dans ce mot. Tape",
+      "freeHint": "Chaque caractère inséré fait avancer ton Blob. Tu peux corriger le mot en cours.",
       "fix": "pour corriger",
       "autoValidate": "Fin automatique au dernier caractère"
     },
@@ -555,7 +557,7 @@
     "inputMode": {
       "label": "Mode de saisie",
       "free": "Libre",
-      "freeDesc": "Continue même après une erreur. Seuls les caractères corrects te font avancer.",
+      "freeDesc": "Tu peux continuer après une faute (2 au plus par mot). Un mot dépassé ne peut plus être corrigé. Les fautes comptent dans ta précision.",
       "blocking": "Bloquant",
       "blockingDesc": "Corrige chaque erreur pour pouvoir saisir le caractère suivant."
     },

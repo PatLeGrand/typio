@@ -104,7 +104,7 @@ describe("planBot / botProgressAt / botFinishMs", () => {
           const plan = planBot(text, difficulty, mode, seeded(seed));
           const finish = botFinishMs(plan);
           const strokes = botKeystrokesAt(plan, finish);
-          const wpm = averageWpm(text.length, finish);
+          const wpm = averageWpm(strokes.correct, finish);
           expect(wpm).toBeGreaterThanOrEqual(profile.minWpm * 0.85);
           expect(wpm).toBeLessThanOrEqual(profile.maxWpm * 1.15);
           totalWpm += wpm;
@@ -177,38 +177,32 @@ describe("planBot / botProgressAt / botFinishMs", () => {
 });
 
 describe("botKeystrokesAt", () => {
-  it.each(INPUT_MODES)("corrige une faute sans valider les caractères suivants (%s)", (mode) => {
-    // Première faute imposée, puis deux caractères anticipés en mode libre, sans autre faute.
-    const draws = [0.5, 0.5, 0.5, 0.5, 0, 0.9];
-    const plan = planBot("abcde", "noob", mode, () => draws.shift() ?? 0.5);
+  it("en mode bloquant, corrige une faute avant d'avancer", () => {
+    const draws = [0.5, 0.5, 0.5, 0.5, 0];
+    const plan = planBot("abcde", "noob", "blocking", () => draws.shift() ?? 0.5);
     expect(plan.mistakeTimesMs).toHaveLength(1);
     const mistake = plan.mistakeTimesMs[0];
     expect(botProgressAt(plan, mistake)).toBe(0);
     expect(botKeystrokesAt(plan, mistake)).toEqual({ total: 1, correct: 0 });
-    if (mode === "free") {
-      expect(plan.extraCorrectTimesMs).toHaveLength(2);
-      for (const [index, time] of plan.extraCorrectTimesMs.entries()) {
-        expect(botProgressAt(plan, time)).toBe(0);
-        expect(botKeystrokesAt(plan, time)).toEqual({ total: index + 2, correct: index + 1 });
-      }
-      expect(botKeystrokesAt(plan, botFinishMs(plan))).toEqual({ total: 8, correct: 7 });
-    } else {
-      expect(plan.extraCorrectTimesMs).toEqual([]);
-      const corrected = plan.keyframes.find((frame) => frame.chars === 1);
-      if (!corrected) throw new Error("correction manquante");
-      expect(botProgressAt(plan, corrected.timeMs - 1)).toBe(0);
-      expect(botKeystrokesAt(plan, corrected.timeMs - 1)).toEqual({ total: 1, correct: 0 });
-      expect(botKeystrokesAt(plan, botFinishMs(plan))).toEqual({ total: 6, correct: 5 });
-    }
-    expect(botProgressAt(plan, botFinishMs(plan))).toBe(5);
+    expect(botKeystrokesAt(plan, botFinishMs(plan))).toEqual({ total: 6, correct: 5 });
   });
 
-  it("corrige aussi une faute libre sur le dernier caractère sans dépasser le texte", () => {
-    const plan = planBot("a", "noob", "free", () => 0);
-    expect(plan.mistakeTimesMs).toHaveLength(1);
-    expect(plan.extraCorrectTimesMs).toEqual([]);
-    expect(botKeystrokesAt(plan, botFinishMs(plan))).toEqual({ total: 2, correct: 1 });
-    expect(botProgressAt(plan, botFinishMs(plan))).toBe(1);
+  it("en mode libre, conserve jusqu'à deux fautes par mot et peut finir par une faute", () => {
+    const text = "abcd efg";
+    const plan = planBot(text, "noob", "free", () => 0);
+    const [first, second, third] = plan.mistakeTimesMs;
+    expect(botProgressAt(plan, first)).toBe(1);
+    expect(botKeystrokesAt(plan, first)).toEqual({ total: 1, correct: 0 });
+    expect(botProgressAt(plan, third)).toBe(2);
+    expect(botKeystrokesAt(plan, third)).toEqual({ total: 3, correct: 0 });
+    expect(plan.retainedMistakePositions).toEqual([0, 1, 4, 5, 6]);
+    expect(botKeystrokesAt(plan, botFinishMs(plan))).toEqual({ total: 11, correct: 3 });
+    expect(replanBot(plan, second, text, "noob", "free", () => 0).retainedMistakePositions)
+      .toEqual(plan.retainedMistakePositions);
+
+    const single = planBot("a", "noob", "free", () => 0);
+    expect(botProgressAt(single, botFinishMs(single))).toBe(1);
+    expect(botKeystrokesAt(single, botFinishMs(single))).toEqual({ total: 1, correct: 0 });
   });
 
   it("compte une frappe fausse par faute commise, comme la précision du joueur", () => {
@@ -246,9 +240,10 @@ describe("replanBot", () => {
       }
       expect(botProgressAt(replanned, botFinishMs(replanned))).toBe(text.length);
       expect(botProgressAt(replanned, botFinishMs(replanned) - 1)).toBeLessThan(text.length);
+      const correct = text.length - replanned.retainedMistakePositions.length;
       expect(botKeystrokesAt(replanned, botFinishMs(replanned))).toEqual({
-        total: text.length + replanned.extraCorrectTimesMs.length + replanned.mistakeTimesMs.length,
-        correct: text.length + replanned.extraCorrectTimesMs.length,
+        total: correct + replanned.mistakeTimesMs.length,
+        correct,
       });
       expect(replanBot(original, elapsed, text, "noob", mode, seeded(9))).toEqual(replanned);
     }
