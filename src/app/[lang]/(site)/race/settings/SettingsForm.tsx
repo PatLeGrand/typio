@@ -208,7 +208,7 @@ export function SettingsForm({
       <div
         aria-hidden={!showFloatingLaunch}
         inert={!showFloatingLaunch}
-        className="pointer-events-none hidden lg:sticky lg:bottom-6 lg:z-30 lg:block lg:h-0"
+        className="pointer-events-none hidden lg:sticky lg:bottom-24 lg:z-30 lg:block lg:h-0"
       >
         <div className="grid grid-cols-[minmax(0,1fr)_380px] gap-x-10">
           <div className="col-start-2 -mx-2 -translate-y-full overflow-hidden px-2 pb-3 pt-2">
