@@ -102,6 +102,12 @@
       "personalBest": "Personal best",
       "newPersonalBest": "New personal best!",
       "podium": "Podium",
+      "yourResult": "Your performance",
+      "yourPosition": "Your position",
+      "participantsCount": {
+        "one": "{count} runner",
+        "other": "{count} runners"
+      },
       "missedKeys": {
         "title": "Missed keys",
         "space": "Space",

@@ -102,6 +102,12 @@
       "personalBest": "Record personnel",
       "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
+      "yourResult": "Ta performance",
+      "yourPosition": "Ta position",
+      "participantsCount": {
+        "one": "{count} coureur",
+        "other": "{count} coureurs"
+      },
       "missedKeys": {
         "title": "Touches manquées",
         "space": "Espace",

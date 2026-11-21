@@ -613,3 +613,22 @@ h2[tabindex="-1"]:focus-visible {
 }
 .race-arrival { background: var(--key-mint); color: var(--key-ink); padding: 1rem; border-radius: .6rem; }
 .race-arrival::before { content: ""; flex-shrink: 0; background-image: repeating-conic-gradient(var(--key-ink) 0 25%,transparent 0 50%); }
+
+/* Arrivée sur le podium : seule animation marquante de l'écran de résultats, coupée si prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .podium-step {
+    animation: podium-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--podium-delay, 0ms);
+  }
+}
+
+@keyframes podium-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
