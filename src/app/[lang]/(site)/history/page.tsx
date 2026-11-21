@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getCurrentUser } from "@/auth/currentUser";
+import { ButtonLink } from "@/components/ButtonLink";
 import { displayFont } from "@/components/home/homeFonts";
 import { RaceHistoryTable } from "@/components/race/RaceHistoryTable";
 import { getDb } from "@/db/shared";
@@ -48,18 +50,58 @@ export default async function HistoryPage({ params, searchParams }: {
           historyLabels={history}
         />
       ) : (
-        <div className="flex flex-col items-start gap-3">
-          <p className="text-muted">{page === 1 ? history.emptyFirst : history.empty}</p>
-          <Link className="road-link-inline" href={prefixWithLocale("/play", locale)}>{history.play}</Link>
-          {page > 1 && <Link className="road-link-inline" href={href}>{history.firstPage}</Link>}
-        </div>
+        <section className="overflow-hidden rounded-panel border border-border bg-surface shadow-soft">
+          <div aria-hidden="true" className="track-surface flex h-3 items-center justify-end px-4">
+            <span className="track-checker h-full w-16" />
+          </div>
+          <div className="flex flex-col items-start gap-4 p-6 sm:p-10">
+            <p className="max-w-[58ch] text-base leading-relaxed text-muted">
+              {page === 1 ? history.emptyFirst : history.empty}
+            </p>
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <ButtonLink href={prefixWithLocale("/play", locale)} variant="start">
+                {history.play}
+              </ButtonLink>
+              {page > 1 && (
+                <ButtonLink href={href} variant="secondary">
+                  {history.firstPage}
+                </ButtonLink>
+              )}
+            </div>
+          </div>
+        </section>
       )}
 
       {(items.length > 0 || page > 1) && (
-        <nav aria-label={history.pagination} className="flex flex-wrap items-center gap-4">
-          {page > 1 && <Link className="road-link-inline" href={`${href}?page=${page - 1}`}>{history.previous}</Link>}
-          <span className="tabular-nums">{history.page.replace("{page}", integer.format(page))}</span>
-          {hasNext && page < MAX_HISTORY_PAGE && <Link className="road-link-inline" href={`${href}?page=${page + 1}`}>{history.next}</Link>}
+        <nav
+          aria-label={history.pagination}
+          className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4"
+        >
+          <div className="min-w-0">
+            {page > 1 && (
+              <Link
+                className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-accent-text"
+                href={`${href}?page=${page - 1}`}
+              >
+                <ChevronLeft aria-hidden="true" className="size-4 shrink-0" />
+                <span className="road-link-inline">{history.previous}</span>
+              </Link>
+            )}
+          </div>
+          <span className="rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm font-semibold tabular-nums text-foreground">
+            {history.page.replace("{page}", integer.format(page))}
+          </span>
+          <div className="min-w-0">
+            {hasNext && page < MAX_HISTORY_PAGE && (
+              <Link
+                className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-accent-text"
+                href={`${href}?page=${page + 1}`}
+              >
+                <span className="road-link-inline">{history.next}</span>
+                <ChevronRight aria-hidden="true" className="size-4 shrink-0" />
+              </Link>
+            )}
+          </div>
         </nav>
       )}
     </main>
