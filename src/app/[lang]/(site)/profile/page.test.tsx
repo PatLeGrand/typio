@@ -94,4 +94,21 @@ describe("ProfilePage", () => {
     expect(screen.queryByRole("form", { name: profile.blob.title })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: profile.blob.save })).not.toBeInTheDocument();
   });
+
+  it("affiche 4 onglets pour un membre et expose l'avatar hors de #profile-form", async () => {
+    render(await ProfilePage({ params: Promise.resolve({ lang: "fr" }) }));
+    const { profile } = getDictionary("fr");
+
+    expect(screen.getAllByRole("tab")).toHaveLength(4);
+    const profileForm = document.getElementById("profile-form");
+    const avatarForm = screen.getByRole("form", { name: profile.avatar.title });
+    expect(profileForm?.contains(avatarForm)).toBe(false);
+  });
+
+  it("affiche uniquement 2 onglets pour un invité", async () => {
+    mocks.getCurrentUser.mockResolvedValue({ ...member, kind: "guest", username: null });
+    render(await ProfilePage({ params: Promise.resolve({ lang: "en" }) }));
+
+    expect(screen.getAllByRole("tab")).toHaveLength(2);
+  });
 });

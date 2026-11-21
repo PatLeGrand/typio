@@ -2,9 +2,10 @@ export type MusicPreferences = {
   volume: number;
   muted: boolean;
   collapsed: boolean;
+  paused: boolean;
 };
 
-const defaults: MusicPreferences = { volume: 0.5, muted: false, collapsed: true };
+const defaults: MusicPreferences = { volume: 0.5, muted: false, collapsed: true, paused: false };
 
 export function nextTrackIndex(index: number, direction: 1 | -1, length: number): number {
   return length === 0 ? 0 : (index + direction + length) % length;
@@ -22,11 +23,12 @@ export function readMusicPreferences(read: () => string | null): MusicPreference
     const value: unknown = JSON.parse(raw);
     if (value === null || typeof value !== "object") return defaults;
 
-    const { volume, muted, collapsed } = value as Partial<Record<keyof MusicPreferences, unknown>>;
+    const { volume, muted, collapsed, paused } = value as Partial<Record<keyof MusicPreferences, unknown>>;
     return {
       volume: typeof volume === "number" && volume >= 0 && volume <= 1 ? volume : defaults.volume,
       muted: typeof muted === "boolean" ? muted : defaults.muted,
       collapsed: typeof collapsed === "boolean" ? collapsed : defaults.collapsed,
+      paused: typeof paused === "boolean" ? paused : defaults.paused,
     };
   } catch {
     return defaults;

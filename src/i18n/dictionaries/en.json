@@ -743,6 +743,13 @@
     },
     "description": "Your name on the track, your keyboard settings. Make Typio your playground.",
     "backToCourses": "Back to races",
+    "tabs": {
+      "label": "Profile sections",
+      "profile": "Profile",
+      "preferences": "Preferences",
+      "stats": "Statistics",
+      "security": "Security"
+    },
     "actions": {
       "cancel": "Cancel",
       "logout": "Sign out",

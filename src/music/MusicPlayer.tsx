@@ -30,8 +30,9 @@ export function MusicPlayer({ labels }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const panelId = useId();
-  const [prefs, setPrefs] = useState<MusicPreferences>({ volume: 0.5, muted: false, collapsed: true });
+  const [prefs, setPrefs] = useState<MusicPreferences>({ volume: 0.5, muted: false, collapsed: true, paused: false });
   const [loaded, setLoaded] = useState(false);
+  const [shouldAutoplay, setShouldAutoplay] = useState(false);
   // Accueil de la première visite : lecteur déplié 4 s, en pause tant qu'on le survole ou le focalise.
   const [welcoming, setWelcoming] = useState(false);
   const [holding, setHolding] = useState(false);
@@ -49,6 +50,7 @@ export function MusicPlayer({ labels }: Props) {
     const read = () => window.localStorage.getItem(STORAGE_KEY);
     const stored = readMusicPreferences(read);
     setPrefs(stored);
+    if (!stored.paused) setShouldAutoplay(true);
     if (isFirstVisit(read)) {
       setWelcoming(true);
       try {
@@ -63,13 +65,15 @@ export function MusicPlayer({ labels }: Props) {
   }, []);
 
   function updatePrefs(patch: Partial<MusicPreferences>) {
-    const next = { ...prefs, ...patch };
-    setPrefs(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // Stockage indisponible : les préférences ne durent que pour cette visite.
-    }
+    setPrefs((prev) => {
+      const next = { ...prev, ...patch };
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Stockage indisponible : les préférences ne durent que pour cette visite.
+      }
+      return next;
+    });
   }
 
   // Course en cours (salle) et widget de salle active : observés sans toucher à ces composants.
@@ -93,11 +97,17 @@ export function MusicPlayer({ labels }: Props) {
     };
   }, []);
 
-  // Volume : transition douce vers la cible (baissée pendant la course).
+  // Volume : initialisé directement avant la lecture, puis transition douce vers la cible (baissée pendant la course).
   const target = prefs.muted ? 0 : playbackVolume(prefs.volume, racing);
+  const volumeInitializedRef = useRef(false);
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !loaded) return;
+    if (!volumeInitializedRef.current) {
+      volumeInitializedRef.current = true;
+      audio.volume = target;
+      return;
+    }
     const from = audio.volume;
     if (from === target) return;
     const start = performance.now();
@@ -107,15 +117,68 @@ export function MusicPlayer({ labels }: Props) {
       if (progress < 1) frame = requestAnimationFrame(step);
     });
     return () => cancelAnimationFrame(frame);
-  }, [target]);
+  }, [loaded, target]);
+
+  // Lancement automatique à l'ouverture, sauf si l'utilisateur avait mis la musique en pause.
+  useEffect(() => {
+    if (!loaded || !shouldAutoplay) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    let cancelled = false;
+    const clearUnlock = () => {
+      document.removeEventListener("pointerdown", onInteract);
+      document.removeEventListener("keydown", onInteract);
+    };
+    const armUnlock = () => {
+      if (cancelled) return;
+      document.addEventListener("pointerdown", onInteract);
+      document.addEventListener("keydown", onInteract);
+    };
+    const tryPlay = () => {
+      audio.play().then(
+        () => {
+          if (!cancelled) setShouldAutoplay(false);
+        },
+        (error: unknown) => {
+          if (cancelled) return;
+          if (error instanceof DOMException && error.name === "NotAllowedError") {
+            armUnlock();
+            return;
+          }
+          // Un changement de piste interrompt le play() en cours : skip relance sur la nouvelle piste.
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          setShouldAutoplay(false);
+          handlePlayError(error);
+        },
+      );
+    };
+    const onInteract = (event: Event) => {
+      // Laisse le bouton lecture/pause gérer lui-même son clic sans conflit avec le pointerdown global.
+      if (event.target instanceof Element && event.target.closest("[data-music-play]")) return;
+      clearUnlock();
+      if (!audio.paused) return;
+      tryPlay();
+    };
+
+    tryPlay();
+
+    return () => {
+      cancelled = true;
+      clearUnlock();
+    };
+  }, [loaded, shouldAutoplay]);
 
   async function togglePlay() {
     const audio = audioRef.current;
     if (!audio) return;
+    setShouldAutoplay(false);
     if (!audio.paused) {
       audio.pause();
+      updatePrefs({ paused: true });
       return;
     }
+    updatePrefs({ paused: false });
     try {
       setFailed(false);
       await audio.play();
@@ -231,9 +294,7 @@ export function MusicPlayer({ labels }: Props) {
     };
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
-    // updatePrefs lit les préférences courantes : on la relie à l'état ouvert.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, prefs]);
+  }, [open]);
 
   // Repli automatique : 4 s pour l'aperçu, 3 s après la dernière interaction sinon.
   // `prefs` et `activity` relancent le compte à rebours (réglage du volume, clic, touche).
@@ -245,7 +306,6 @@ export function MusicPlayer({ labels }: Props) {
       else updatePrefs({ collapsed: true });
     }, delay);
     return () => window.clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, welcoming, holding, prefs, activity]);
 
   if (!track) return null;
@@ -283,7 +343,10 @@ export function MusicPlayer({ labels }: Props) {
         ref={audioRef}
         src={`/music/${track.file}`}
         preload="none"
-        onPlay={() => setPlaying(true)}
+        onPlay={() => {
+          setPlaying(true);
+          setShouldAutoplay(false);
+        }}
         onPause={() => setPlaying(false)}
         onEnded={() => skip(1, true)}
         onError={() => {
@@ -321,18 +384,19 @@ export function MusicPlayer({ labels }: Props) {
           className={`grid min-w-0 ${welcoming ? "" : "transition-[grid-template-columns,visibility] duration-300 motion-reduce:transition-none"} ${collapsed ? "invisible grid-cols-[0fr]" : "grid-cols-[1fr]"}`}
         >
           <div className="-m-1 flex min-w-0 items-center gap-2 overflow-hidden p-1 pl-3">
-            <button type="button" className={controlClass} aria-label={labels.previous} onClick={() => skip(-1, playing)}>
+            <button type="button" className={controlClass} aria-label={labels.previous} onClick={() => skip(-1, playing || shouldAutoplay)}>
               <Icon><path d="M6 6h2v12H6zM20 6v12L9.5 12z" /></Icon>
             </button>
             <button
               type="button"
+              data-music-play
               className={`${controlClass} border-accent bg-accent text-accent-foreground hover:bg-accent`}
               aria-label={playing ? labels.pause : labels.play}
               onClick={() => void togglePlay()}
             >
               <Icon>{playing ? <path d="M6 5h4v14H6zM14 5h4v14h-4z" /> : <path d="M8 5v14l11-7z" />}</Icon>
             </button>
-            <button type="button" className={controlClass} aria-label={labels.next} onClick={() => skip(1, playing)}>
+            <button type="button" className={controlClass} aria-label={labels.next} onClick={() => skip(1, playing || shouldAutoplay)}>
               <Icon><path d="M16 6h2v12h-2zM4 6v12l10.5-6z" /></Icon>
             </button>
             <div className="hidden min-w-0 max-w-40 px-1 sm:block">
