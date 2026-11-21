@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { isFirstVisit, nextTrackIndex, playbackVolume, readMusicPreferences } from "./playerLogic";
+import { autoCollapseDelay, isFirstVisit, nextTrackIndex, playbackVolume, readMusicPreferences } from "./playerLogic";
 
 it("boucle la liste, atténue le volume et récupère les préférences valides", () => {
   expect(nextTrackIndex(1, 1, 3)).toBe(2);
@@ -26,4 +26,11 @@ it("n'accueille qu'à la première visite, jamais si le stockage est bloqué", (
   expect(isFirstVisit(() => null)).toBe(true);
   expect(isFirstVisit(() => "{}")).toBe(false);
   expect(isFirstVisit(() => { throw new Error("stockage bloqué"); })).toBe(false);
+});
+
+it("replie seul : 4 s pour l'aperçu, 3 s après ouverture, jamais sous le pointeur ou le focus", () => {
+  expect(autoCollapseDelay({ open: true, welcoming: true, holding: false })).toBe(4000);
+  expect(autoCollapseDelay({ open: true, welcoming: false, holding: false })).toBe(3000);
+  expect(autoCollapseDelay({ open: true, welcoming: false, holding: true })).toBeNull();
+  expect(autoCollapseDelay({ open: false, welcoming: false, holding: false })).toBeNull();
 });

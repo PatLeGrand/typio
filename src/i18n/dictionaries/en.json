@@ -46,7 +46,6 @@
     "volume": "Volume",
     "mute": "Mute",
     "unmute": "Unmute",
-    "credit": "Credit or license: {credit}",
     "error": "This track could not be played. Try again or skip to the next track."
   },
   "raceEntry": {

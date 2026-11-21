@@ -46,7 +46,6 @@
     "volume": "Volume",
     "mute": "Couper le son",
     "unmute": "Rétablir le son",
-    "credit": "Crédit ou licence : {credit}",
     "error": "Impossible de lire ce morceau. Réessaie ou passe au suivant."
   },
   "raceEntry": {

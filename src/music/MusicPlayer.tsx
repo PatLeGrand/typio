@@ -3,13 +3,12 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { isFirstVisit, nextTrackIndex, playbackVolume, readMusicPreferences, type MusicPreferences } from "./playerLogic";
+import { autoCollapseDelay, isFirstVisit, nextTrackIndex, playbackVolume, readMusicPreferences, type MusicPreferences } from "./playerLogic";
 import { playlist } from "./playlist";
 
 const STORAGE_KEY = "typio:music";
 const RACE_SELECTOR = ".room-race-screen";
 const FADE_MS = 600;
-const WELCOME_MS = 4000;
 const DOCKED_QUERY = "(min-width: 768px)";
 
 type Props = { labels: Dictionary["music"] };
@@ -35,6 +34,7 @@ export function MusicPlayer({ labels }: Props) {
   // Accueil de la première visite : lecteur déplié 4 s, en pause tant qu'on le survole ou le focalise.
   const [welcoming, setWelcoming] = useState(false);
   const [holding, setHolding] = useState(false);
+  const [activity, setActivity] = useState(0);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -60,12 +60,6 @@ export function MusicPlayer({ labels }: Props) {
     }
     setLoaded(true);
   }, []);
-
-  useEffect(() => {
-    if (!welcoming || holding) return;
-    const timer = window.setTimeout(() => setWelcoming(false), WELCOME_MS);
-    return () => window.clearTimeout(timer);
-  }, [welcoming, holding]);
 
   function updatePrefs(patch: Partial<MusicPreferences>) {
     const next = { ...prefs, ...patch };
@@ -197,6 +191,19 @@ export function MusicPlayer({ labels }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, prefs]);
 
+  // Repli automatique : 4 s pour l'aperçu, 3 s après la dernière interaction sinon.
+  // `prefs` et `activity` relancent le compte à rebours (réglage du volume, clic, touche).
+  useEffect(() => {
+    const delay = autoCollapseDelay({ open, welcoming, holding });
+    if (delay === null) return;
+    const timer = window.setTimeout(() => {
+      if (welcoming) setWelcoming(false);
+      else updatePrefs({ collapsed: true });
+    }, delay);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, welcoming, holding, prefs, activity]);
+
   if (!track) return null;
 
   const lift: CSSProperties | undefined =
@@ -210,6 +217,7 @@ export function MusicPlayer({ labels }: Props) {
       style={lift}
       className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground md:top-[72%] md:bottom-auto md:-translate-y-1/2 ${loaded ? "" : "invisible"}`}
       onKeyDown={(event) => {
+        setActivity((count) => count + 1);
         if (event.key !== "Escape" || collapsed) return;
         setWelcoming(false);
         updatePrefs({ collapsed: true });
@@ -220,6 +228,7 @@ export function MusicPlayer({ labels }: Props) {
       onFocus={() => setHolding(true)}
       onBlur={() => setHolding(false)}
       onClick={(event) => {
+        setActivity((count) => count + 1);
         // Toute commande utilisée pendant l'accueil garde le lecteur ouvert (le bouton de repli décide seul).
         if (!welcoming || (event.target as Element).closest("[data-music-toggle]")) return;
         setWelcoming(false);
@@ -315,11 +324,10 @@ export function MusicPlayer({ labels }: Props) {
         </div>
       </div>
       {collapsed ? null : (
-        <div className="mt-2 max-w-72 rounded-2xl md:absolute md:inset-x-0 md:top-full md:max-w-none border border-border bg-surface/70 px-3 py-2 text-xs text-muted-strong shadow-soft">
+        <div className={`mt-2 max-w-72 rounded-2xl md:absolute md:inset-x-0 md:top-full md:max-w-none border border-border bg-surface/70 px-3 py-2 text-xs text-muted-strong shadow-soft ${failed ? "" : "sm:hidden"}`}>
           <p className="sm:hidden">
             <span className="font-semibold text-foreground">{track.title}</span> — {track.artist}
           </p>
-          <p>{labels.credit.replace("{credit}", track.credit)}</p>
           {failed ? <p role="alert" className="mt-1 text-danger">{labels.error}</p> : null}
         </div>
       )}

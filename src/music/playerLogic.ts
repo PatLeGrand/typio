@@ -42,3 +42,9 @@ export function isFirstVisit(read: () => string | null): boolean {
     return false;
   }
 }
+
+/** Délai avant repli automatique, ou null si le lecteur ne doit pas se replier seul. */
+export function autoCollapseDelay(state: { open: boolean; welcoming: boolean; holding: boolean }): number | null {
+  if (!state.open || state.holding) return null;
+  return state.welcoming ? 4000 : 3000;
+}
