@@ -208,7 +208,7 @@ export function MusicPlayer({ labels }: Props) {
       ref={sectionRef}
       aria-label={labels.label}
       style={lift}
-      className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground md:top-[60%] md:right-0 md:bottom-auto md:max-w-[calc(100vw-1rem)] md:-translate-y-1/2 md:transition-[translate] md:duration-300 motion-reduce:transition-none ${collapsed ? "md:translate-x-[calc(100%-2rem)] md:hover:translate-x-[calc(100%-2.5rem)]" : "md:translate-x-0"} ${loaded ? "" : "invisible"}`}
+      className={`fixed right-4 bottom-[calc(1rem+var(--music-lift,0px))] z-30 flex max-w-[calc(100vw-2rem)] flex-col items-end text-foreground md:top-[72%] md:bottom-auto md:-translate-y-1/2 ${loaded ? "" : "invisible"}`}
       onKeyDown={(event) => {
         if (event.key !== "Escape" || collapsed) return;
         setWelcoming(false);
@@ -238,11 +238,11 @@ export function MusicPlayer({ labels }: Props) {
           setFailed(true);
         }}
       />
-      <div className="flex max-w-full items-center rounded-full border-2 border-border bg-surface/90 p-1.5 shadow-soft md:rounded-l-2xl md:rounded-r-none md:border-r-0 md:p-0">
+      <div className="flex max-w-full items-center rounded-full border-2 border-border bg-surface/70 p-1.5 shadow-soft">
         <button
           type="button"
           data-music-toggle
-          className={`${controlClass} md:h-16 md:w-8 md:rounded-none md:rounded-l-2xl md:border-0`}
+          className={controlClass}
           aria-expanded={!collapsed}
           aria-controls={panelId}
           aria-label={collapsed ? labels.expand : labels.collapse}
@@ -265,9 +265,9 @@ export function MusicPlayer({ labels }: Props) {
         <div
           id={panelId}
           inert={collapsed}
-          className={`grid min-w-0 transition-[grid-template-columns,visibility] duration-300 motion-reduce:transition-none md:transition-none ${collapsed ? "invisible grid-cols-[0fr] md:visible md:grid-cols-[1fr]" : "grid-cols-[1fr]"}`}
+          className={`grid min-w-0 transition-[grid-template-columns,visibility] duration-300 motion-reduce:transition-none ${collapsed ? "invisible grid-cols-[0fr]" : "grid-cols-[1fr]"}`}
         >
-          <div className="-m-1 flex min-w-0 items-center gap-2 overflow-hidden p-1 pl-3 md:pr-2">
+          <div className="-m-1 flex min-w-0 items-center gap-2 overflow-hidden p-1 pl-3">
             <button type="button" className={controlClass} aria-label={labels.previous} onClick={() => skip(-1, playing)}>
               <Icon><path d="M6 6h2v12H6zM20 6v12L9.5 12z" /></Icon>
             </button>
@@ -315,7 +315,7 @@ export function MusicPlayer({ labels }: Props) {
         </div>
       </div>
       {collapsed ? null : (
-        <div className="mt-2 max-w-72 rounded-2xl md:absolute md:top-full md:right-8 md:w-72 border border-border bg-surface/90 px-3 py-2 text-xs text-muted-strong shadow-soft">
+        <div className="mt-2 max-w-72 rounded-2xl md:absolute md:top-full md:right-0 border border-border bg-surface/70 px-3 py-2 text-xs text-muted-strong shadow-soft">
           <p className="sm:hidden">
             <span className="font-semibold text-foreground">{track.title}</span> — {track.artist}
           </p>
