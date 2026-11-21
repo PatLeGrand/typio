@@ -35,6 +35,19 @@
     "confirmLeave": "Leaving the room means abandoning the race. Do you want to continue?",
     "leaveError": "Unable to leave the room. Check your connection and try again."
   },
+  "music": {
+    "label": "Lofi music",
+    "expand": "Open music player",
+    "collapse": "Collapse music player",
+    "play": "Play",
+    "pause": "Pause",
+    "previous": "Previous track",
+    "next": "Next track",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "error": "This track could not be played. Try again or skip to the next track."
+  },
   "raceEntry": {
     "invalidTitle": "Invalid settings",
     "title": "Race",
