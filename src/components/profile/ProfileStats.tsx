@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Dictionary } from "@/i18n/dictionaries";
 import type { createDrizzleProfileStatsRepository } from "@/race/drizzleProfileStatsRepository";
 
@@ -20,7 +21,12 @@ export function ProfileStats({ stats, history, locale, labels }: Props) {
   const last = history.at(-1);
   return (
     <section className="min-w-0 rounded-card border border-border bg-surface p-4" aria-labelledby="profile-stats-title">
-      <h2 id="profile-stats-title" className="text-2xl font-bold">{labels.title}</h2>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="profile-stats-title" className="text-2xl font-bold">{labels.title}</h2>
+        <Link href={`/${locale}/stats`} className="road-link-inline text-sm font-semibold text-accent-text">
+          {labels.viewAll}
+        </Link>
+      </div>
       {!stats.raceCount ? <p className="mt-4 text-muted">{labels.empty}</p> : <>
         <dl className="my-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
           {([
