@@ -658,6 +658,8 @@
     "blob": {
       "title": "My race blob",
       "description": "Customize the character that races for you on the track, separate from your profile photo.",
+      "customize": "Customize my blob",
+      "backToProfile": "Back to profile",
       "preview": "Preview of your race blob: {color} color, {glasses} glasses, {hat} headwear.",
       "colorLegend": "Color",
       "glassesLegend": "Glasses",

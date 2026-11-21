@@ -658,6 +658,8 @@
     "blob": {
       "title": "Mon blob de course",
       "description": "Personnalise le personnage qui court pour toi sur la piste, indépendamment de ta photo de profil.",
+      "customize": "Personnaliser mon blob",
+      "backToProfile": "Retour au profil",
       "preview": "Aperçu de ton blob de course : couleur {color}, lunettes {glasses}, couvre-chef {hat}.",
       "colorLegend": "Couleur",
       "glassesLegend": "Lunettes",

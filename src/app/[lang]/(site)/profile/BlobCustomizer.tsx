@@ -16,22 +16,17 @@ import {
   type BlobStyle,
 } from "@/race/blobStyle";
 import { ChoiceRadio } from "./ChoiceRadio";
+import { formatBlobPreviewLabel } from "./blobPreviewLabel";
 import { updateBlobStyle, type BlobStyleErrorCode } from "./blobStyleActions";
 
 type BlobCustomizerProps = {
   initialStyle: BlobStyle;
   isDemo?: boolean;
   labels: Dictionary["profile"]["blob"];
+  showHeader?: boolean;
 };
 
-function formatPreviewLabel(template: string, style: BlobStyle, labels: Dictionary["profile"]["blob"]): string {
-  return template
-    .replace("{color}", labels.colors[style.color])
-    .replace("{glasses}", labels.glasses[style.glasses])
-    .replace("{hat}", labels.hats[style.hat]);
-}
-
-export function BlobCustomizer({ initialStyle, isDemo = false, labels }: BlobCustomizerProps) {
+export function BlobCustomizer({ initialStyle, isDemo = false, labels, showHeader = true }: BlobCustomizerProps) {
   const [savedStyle, setSavedStyle] = useState<BlobStyle>(initialStyle);
   const [style, setStyle] = useState<BlobStyle>(initialStyle);
   const [isPending, startTransition] = useTransition();
@@ -40,7 +35,7 @@ export function BlobCustomizer({ initialStyle, isDemo = false, labels }: BlobCus
 
   const hasChanges = !blobStyleEquals(style, savedStyle);
   const isDefault = blobStyleEquals(style, DEFAULT_BLOB_STYLE);
-  const previewLabel = formatPreviewLabel(labels.preview, style, labels);
+  const previewLabel = formatBlobPreviewLabel(labels.preview, style, labels);
 
   const updateSelection = (patch: Partial<BlobStyle>) => {
     setStyle((current) => ({ ...current, ...patch }));
@@ -90,15 +85,17 @@ export function BlobCustomizer({ initialStyle, isDemo = false, labels }: BlobCus
   return (
     <Card className="p-6 md:p-8">
       <form onSubmit={handleSubmit} className="flex flex-col gap-6" aria-label={labels.title}>
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-accent-soft text-accent-text rounded-[10px]">
-            <Sparkles aria-hidden="true" className="w-6 h-6" />
+        {showHeader && (
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-accent-soft text-accent-text rounded-[10px]">
+              <Sparkles aria-hidden="true" className="w-6 h-6" />
+            </div>
+            <div className="flex flex-col">
+              <h2 className="text-xl font-bold text-foreground">{labels.title}</h2>
+              <p className="text-sm text-muted">{labels.description}</p>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <h2 className="text-xl font-bold text-foreground">{labels.title}</h2>
-            <p className="text-sm text-muted">{labels.description}</p>
-          </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-4 flex flex-col items-center justify-center gap-4 rounded-card border border-border bg-island-mint p-6">

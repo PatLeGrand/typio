@@ -70,7 +70,7 @@ describe("updateBlobStyle", () => {
     expect(mocks.saveBlobStyle).not.toHaveBeenCalled();
   });
 
-  it("enregistre le style validé pour l'utilisateur de la session et revalide la page profil", async () => {
+  it("enregistre le style validé pour l'utilisateur de la session et revalide les pages profil et blob", async () => {
     const result = await updateBlobStyle(styleForm("mint", "round", "crown"));
     expect(result).toEqual({ ok: true, style: { color: "mint", glasses: "round", hat: "crown" } });
     expect(mocks.saveBlobStyle).toHaveBeenCalledWith(member.id, {
@@ -79,6 +79,7 @@ describe("updateBlobStyle", () => {
       hat: "crown",
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/fr/profile");
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/fr/profile/blob");
   });
 
   it("applique la limite de débit", async () => {

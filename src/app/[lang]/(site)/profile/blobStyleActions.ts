@@ -42,6 +42,7 @@ export async function updateBlobStyle(formData: FormData): Promise<BlobStyleSave
 
     await saveBlobStyle(user.id, style);
     revalidatePath(prefixWithLocale("/profile", user.locale));
+    revalidatePath(prefixWithLocale("/profile/blob", user.locale));
 
     return { ok: true, style };
   } catch (error) {
