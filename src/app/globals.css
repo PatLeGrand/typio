@@ -7,6 +7,36 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Le fond reste au-dessus du fond de page et sous les surfaces du contenu. */
+body:has(> .site-particle-field) {
+  isolation: isolate;
+}
+
+.site-particle-field {
+  display: none;
+}
+
+@media (min-width: 768px) and (any-hover: hover) and (any-pointer: fine) {
+  .site-particle-field {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+}
+
+.site-particle-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Cache le décor dès l'apparition de l'écran, avant même l'arrêt du ticker. */
+body:has(.room-race-screen) .site-particle-field {
+  display: none;
+}
+
 /*
  * Tokens de couleur issus de la maquette Figma (docs/design/login/README.md).
  * Les composants utilisent bg-surface, text-accent-text, border-border, etc.,

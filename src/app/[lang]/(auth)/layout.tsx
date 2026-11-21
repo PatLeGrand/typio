@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { schedulePurge } from "@/auth/schedulePurge";
+import { SiteParticleField } from "@/components/SiteParticleField";
 
 /**
  * Pages de connexion, d'inscription et d'invité. Elles n'ont pas de `SiteHeader` (le cadre
@@ -8,5 +9,10 @@ import { schedulePurge } from "@/auth/schedulePurge";
  */
 export default function AuthRouteLayout({ children }: { children: ReactNode }) {
   schedulePurge();
-  return children;
+  return (
+    <>
+      <SiteParticleField />
+      {children}
+    </>
+  );
 }
