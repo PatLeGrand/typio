@@ -45,7 +45,7 @@ export function StatsRecentRaces({
         </div>
         <Link
           href={historyHref}
-          className="road-link-inline inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-accent-text"
+          className="road-link-inline inline-flex items-center gap-1 text-sm font-semibold text-accent-text"
         >
           <span>{labels.viewAll}</span>
           <ArrowUpRight aria-hidden="true" className="size-4" />
