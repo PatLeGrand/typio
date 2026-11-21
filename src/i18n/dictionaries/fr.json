@@ -743,6 +743,13 @@
     },
     "description": "Ton nom sur la piste, tes réglages aux touches. Fais de Typio ton terrain de jeu.",
     "backToCourses": "Retour aux courses",
+    "tabs": {
+      "label": "Sections du profil",
+      "profile": "Profil",
+      "preferences": "Préférences",
+      "stats": "Statistiques",
+      "security": "Sécurité"
+    },
     "actions": {
       "cancel": "Annuler",
       "logout": "Se déconnecter",
