@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type RefObject } from "react";
 import { Button } from "@/components/Button";
 import type { RaceSettings } from "@/race/config";
 import { formatPlural } from "@/race/format";
@@ -10,13 +10,15 @@ type RaceSettingsSummaryProps = {
   dict: Dictionary["raceSettings"];
   lang: Locale;
   onLaunch: () => void;
+  /** Repère du bouton de lancement d'origine pour déclencher le bouton flottant sur ordinateur. */
+  launchButtonRef?: RefObject<HTMLDivElement | null>;
 };
 
 /**
  * Résumé en une phrase et lancement dans l'esprit « stade de nuit » (`--screen*`).
  * Sous `lg`, barre compacte (≤ 72 px) collée en bas de l'écran pour lancer sans parcourir la page.
  */
-export function RaceSettingsSummary({ settings, dict, lang, onLaunch }: RaceSettingsSummaryProps) {
+export function RaceSettingsSummary({ settings, dict, lang, onLaunch, launchButtonRef }: RaceSettingsSummaryProps) {
   const headingId = useId();
   const numberFormat = new Intl.NumberFormat(lang);
 
@@ -42,7 +44,7 @@ export function RaceSettingsSummary({ settings, dict, lang, onLaunch }: RaceSett
   return (
     <aside
       aria-labelledby={headingId}
-      className="order-4 sticky bottom-0 z-20 -mx-4 border-t border-screen-border bg-screen text-screen-text shadow-[0_-8px_24px_rgba(0,0,0,0.22)] sm:-mx-8 lg:order-none lg:relative lg:bottom-auto lg:mx-0 lg:shrink-0 lg:overflow-hidden lg:rounded-panel lg:border-t-0 lg:shadow-soft lg:ring-1 lg:ring-inset lg:ring-screen-border"
+      className="sticky bottom-0 z-20 -mx-4 border-t border-screen-border bg-screen text-screen-text shadow-[0_-8px_24px_rgba(0,0,0,0.22)] sm:-mx-8 lg:relative lg:bottom-auto lg:col-start-2 lg:row-start-1 lg:mx-0 lg:overflow-hidden lg:rounded-panel lg:border-t-0 lg:shadow-soft lg:ring-1 lg:ring-inset lg:ring-screen-border"
     >
       {/* Lignes de virage discrètes du stade de nuit */}
       <svg
@@ -91,13 +93,15 @@ export function RaceSettingsSummary({ settings, dict, lang, onLaunch }: RaceSett
           </p>
         </div>
 
-        <Button
-          variant="start"
-          onClick={onLaunch}
-          className="w-full shrink-0 max-lg:min-h-11 max-lg:py-2 sm:w-auto lg:w-full"
-        >
-          {dict.summary.start}
-        </Button>
+        <div ref={launchButtonRef} className="w-full shrink-0 sm:w-auto lg:w-full">
+          <Button
+            variant="start"
+            onClick={onLaunch}
+            className="w-full max-lg:min-h-11 max-lg:py-2"
+          >
+            {dict.summary.start}
+          </Button>
+        </div>
 
         <p className="hidden text-center text-xs leading-relaxed text-screen-muted lg:block">
           {dict.summary.ready}
