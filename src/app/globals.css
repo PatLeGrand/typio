@@ -7,6 +7,36 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Le fond reste au-dessus du fond de page et sous les surfaces du contenu. */
+body:has(> .site-particle-field) {
+  isolation: isolate;
+}
+
+.site-particle-field {
+  display: none;
+}
+
+@media (min-width: 768px) and (any-hover: hover) and (any-pointer: fine) {
+  .site-particle-field {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+}
+
+.site-particle-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Cache le décor dès l'apparition de l'écran, avant même l'arrêt du ticker. */
+body:has(.room-race-screen) .site-particle-field {
+  display: none;
+}
+
 /*
  * Tokens de couleur issus de la maquette Figma (docs/design/login/README.md).
  * Les composants utilisent bg-surface, text-accent-text, border-border, etc.,
@@ -613,3 +643,37 @@ h2[tabindex="-1"]:focus-visible {
 }
 .race-arrival { background: var(--key-mint); color: var(--key-ink); padding: 1rem; border-radius: .6rem; }
 .race-arrival::before { content: ""; flex-shrink: 0; background-image: repeating-conic-gradient(var(--key-ink) 0 25%,transparent 0 50%); }
+
+/* Arrivée sur le podium : seule animation marquante de l'écran de résultats, coupée si prefers-reduced-motion. */
+/* Animation uniquement sur transform (sans opacity) pour préserver le contraste AA dès la première image. */
+@media (prefers-reduced-motion: no-preference) {
+  .podium-step {
+    animation: podium-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--podium-delay, 0ms);
+  }
+}
+
+@keyframes podium-rise {
+  from {
+    transform: translateY(24px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Points rebondissants du bouton replié du lecteur de musique (src/music/MusicPlayer.tsx). */
+@media (prefers-reduced-motion: no-preference) {
+  .music-dot-active { animation: music-dot 0.7s ease-in-out infinite alternate; }
+}
+@keyframes music-dot {
+  from { transform: translateY(2px); }
+  to { transform: translateY(-3px); }
+}
+
+/* Le lecteur de musique (fixe, en bas à droite) pose --music-reserve : le pied de page reste dégagé. */
+body { padding-bottom: var(--music-reserve, 0px); }
+
+@media (min-width: 768px) {
+  body { padding-bottom: 0; }
+}

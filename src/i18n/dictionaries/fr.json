@@ -35,6 +35,19 @@
     "confirmLeave": "Quitter la salle vaut abandon de la course. Veux-tu continuer ?",
     "leaveError": "Impossible de quitter la salle. Vérifie ta connexion et réessaie."
   },
+  "music": {
+    "label": "Musique lofi",
+    "expand": "Ouvrir le lecteur de musique",
+    "collapse": "Replier le lecteur de musique",
+    "play": "Lire",
+    "pause": "Mettre en pause",
+    "previous": "Morceau précédent",
+    "next": "Morceau suivant",
+    "volume": "Volume",
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son",
+    "error": "Impossible de lire ce morceau. Réessaie ou passe au suivant."
+  },
   "raceEntry": {
     "invalidTitle": "Configuration invalide",
     "title": "Course",
@@ -102,6 +115,12 @@
       "personalBest": "Record personnel",
       "newPersonalBest": "Nouveau record personnel !",
       "podium": "Podium",
+      "yourResult": "Ta performance",
+      "yourPosition": "Ta position",
+      "participantsCount": {
+        "one": "{count} coureur",
+        "other": "{count} coureurs"
+      },
       "missedKeys": {
         "title": "Touches manquées",
         "space": "Espace",
@@ -134,6 +153,7 @@
         "peakWpm": "Pic de MPM"
       },
       "tableTitle": "Résultats de la course",
+      "standingsTitle": "Classement complet",
       "bonusTypes": {"shorten": "−3 mots", "lengthen": "+3 mots", "fog": "Brouillard"},
       "columns": {
         "bonuses": "Bonus",

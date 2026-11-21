@@ -35,6 +35,19 @@
     "confirmLeave": "Leaving the room means abandoning the race. Do you want to continue?",
     "leaveError": "Unable to leave the room. Check your connection and try again."
   },
+  "music": {
+    "label": "Lofi music",
+    "expand": "Open music player",
+    "collapse": "Collapse music player",
+    "play": "Play",
+    "pause": "Pause",
+    "previous": "Previous track",
+    "next": "Next track",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "error": "This track could not be played. Try again or skip to the next track."
+  },
   "raceEntry": {
     "invalidTitle": "Invalid settings",
     "title": "Race",
@@ -102,6 +115,12 @@
       "personalBest": "Personal best",
       "newPersonalBest": "New personal best!",
       "podium": "Podium",
+      "yourResult": "Your performance",
+      "yourPosition": "Your position",
+      "participantsCount": {
+        "one": "{count} runner",
+        "other": "{count} runners"
+      },
       "missedKeys": {
         "title": "Missed keys",
         "space": "Space",
@@ -134,6 +153,7 @@
         "peakWpm": "Peak WPM"
       },
       "tableTitle": "Race results",
+      "standingsTitle": "Full standings",
       "bonusTypes": {"shorten": "−3 words", "lengthen": "+3 words", "fog": "Fog"},
       "columns": {
         "bonuses": "Bonus",

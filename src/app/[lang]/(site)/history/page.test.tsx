@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("@/auth/currentUser", () => ({ getCurrentUser: mocks.user }));
 vi.mock("@/db/shared", () => ({ getDb: mocks.db }));
+vi.mock("@/components/home/homeFonts", () => ({
+  displayFont: { variable: "font-display-test" },
+}));
 vi.mock("@/race/drizzleRaceHistoryRepository", () => ({
   createDrizzleRaceHistoryRepository: () => ({ listUserRaces: mocks.list, getRaceForUser: mocks.detail }),
 }));

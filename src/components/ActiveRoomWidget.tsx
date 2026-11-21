@@ -55,7 +55,7 @@ function ConnectedActiveRoomWidget({ userId, locale, labels, pathname }: Props &
 
   return (
     <div ref={reserveSpace}>
-      <aside aria-label={labels.label} className="pointer-events-none fixed inset-x-4 bottom-4 z-40 sm:left-auto sm:w-80">
+      <aside data-active-room-widget aria-label={labels.label} className="pointer-events-none fixed inset-x-4 bottom-4 z-40 sm:left-auto sm:w-80">
         <Card className="pointer-events-auto border border-border p-4 text-foreground">
           <p className="break-words font-semibold text-balance">
             {message.split("{code}").map((part, index) => <span key={index}>{index > 0 ? <span translate="no">{room.code}</span> : null}{part}</span>)}
