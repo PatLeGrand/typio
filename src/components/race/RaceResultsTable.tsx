@@ -61,7 +61,7 @@ export function RaceResultsTable({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3.5 sm:px-6">
         <Heading className="flex items-center gap-2 font-display text-2xl font-black uppercase tracking-tight text-foreground sm:text-3xl">
           <Flag aria-hidden="true" className="size-5 shrink-0 text-accent-text" />
-          <span>{labels.tableTitle}</span>
+          <span>{labels.standingsTitle}</span>
         </Heading>
         <span aria-hidden="true" className="race-checks hidden sm:inline-block" />
       </div>

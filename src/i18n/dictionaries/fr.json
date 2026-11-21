@@ -140,6 +140,7 @@
         "peakWpm": "Pic de MPM"
       },
       "tableTitle": "Résultats de la course",
+      "standingsTitle": "Classement complet",
       "bonusTypes": {"shorten": "−3 mots", "lengthen": "+3 mots", "fog": "Brouillard"},
       "columns": {
         "bonuses": "Bonus",

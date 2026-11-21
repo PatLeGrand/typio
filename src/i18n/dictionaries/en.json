@@ -140,6 +140,7 @@
         "peakWpm": "Peak WPM"
       },
       "tableTitle": "Race results",
+      "standingsTitle": "Full standings",
       "bonusTypes": {"shorten": "−3 words", "lengthen": "+3 words", "fog": "Fog"},
       "columns": {
         "bonuses": "Bonus",
