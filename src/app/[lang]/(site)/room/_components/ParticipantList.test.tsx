@@ -14,7 +14,13 @@ const raceLabels = dict.raceScreen;
 
 describe("ParticipantList", () => {
   it("affiche les blobs des joueurs humains (style personnalisé et repli sur DEFAULT_BLOB_STYLE)", () => {
-    const customStyle: BlobStyle = { color: "coral", glasses: "star", hat: "crown" };
+    const customStyle: BlobStyle = {
+      color: "coral",
+      expression: "wink",
+      glasses: "star",
+      hat: "crown",
+      accessory: "cape",
+    };
     const room = makeRoom([
       makeParticipant(ME, { displayName: "Alice", blobStyle: customStyle }),
       makeParticipant(OTHER, { displayName: "Bob", blobStyle: undefined }),
@@ -60,7 +66,7 @@ describe("ParticipantList", () => {
     const bot1 = items[1]!;
     const bot1Img = bot1.querySelector("img");
     expect(bot1Img?.getAttribute("src")).toBe(
-      blobSvgDataUrl({ color: BLOB_COLORS[1 % BLOB_COLORS.length], glasses: "none", hat: "none" }),
+      blobSvgDataUrl({ ...DEFAULT_BLOB_STYLE, color: BLOB_COLORS[1 % BLOB_COLORS.length] }),
     );
     expect(bot1Img).toHaveAttribute("alt", "");
     expect(bot1Img).toHaveAttribute("aria-hidden", "true");
@@ -70,7 +76,7 @@ describe("ParticipantList", () => {
     const bot2 = items[2]!;
     const bot2Img = bot2.querySelector("img");
     expect(bot2Img?.getAttribute("src")).toBe(
-      blobSvgDataUrl({ color: BLOB_COLORS[2 % BLOB_COLORS.length], glasses: "none", hat: "none" }),
+      blobSvgDataUrl({ ...DEFAULT_BLOB_STYLE, color: BLOB_COLORS[2 % BLOB_COLORS.length] }),
     );
     expect(bot2Img).toHaveAttribute("alt", "");
     expect(bot2Img).toHaveAttribute("aria-hidden", "true");

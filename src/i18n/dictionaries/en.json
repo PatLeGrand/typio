@@ -660,30 +660,65 @@
       "description": "Customize the character that races for you on the track, separate from your profile photo.",
       "customize": "Customize my blob",
       "backToProfile": "Back to profile",
-      "preview": "Preview of your race blob: {color} color, {glasses} glasses, {hat} headwear.",
+      "preview": "Preview of your race blob: {color} color, {expression} expression, {glasses} glasses, {hat} headwear, {accessory} accessory.",
       "colorLegend": "Color",
+      "expressionLegend": "Expression",
       "glassesLegend": "Glasses",
       "hatLegend": "Headwear",
+      "accessoryLegend": "Accessory",
       "colors": {
         "sky": "Sky blue",
         "mint": "Mint",
         "coral": "Coral",
         "sun": "Sunshine",
         "lavender": "Lavender",
-        "berry": "Berry"
+        "berry": "Berry",
+        "tangerine": "Tangerine",
+        "lime": "Lime",
+        "indigo": "Indigo",
+        "peach": "Peach",
+        "slate": "Slate",
+        "cream": "Cream"
+      },
+      "expressions": {
+        "smile": "Smile",
+        "wink": "Wink",
+        "determined": "Determined",
+        "surprised": "Surprised",
+        "cat": "Cat",
+        "cool": "Cool"
       },
       "glasses": {
         "none": "None",
         "round": "Round",
         "shades": "Sunglasses",
-        "star": "Star"
+        "star": "Star",
+        "heart": "Hearts",
+        "pixel": "Pixel",
+        "monocle": "Monocle",
+        "visor": "Visor"
       },
       "hats": {
         "none": "None",
         "cap": "Cap",
         "beanie": "Beanie",
-        "crown": "Crown"
+        "crown": "Crown",
+        "tophat": "Top hat",
+        "headphones": "Headphones",
+        "beret": "Beret",
+        "party": "Party hat"
       },
+      "accessories": {
+        "none": "None",
+        "bowtie": "Bow tie",
+        "scarf": "Scarf",
+        "blush": "Rosy cheeks",
+        "mustache": "Mustache",
+        "cape": "Cape",
+        "wings": "Wings",
+        "bandaid": "Band-aid"
+      },
+      "randomize": "Randomize",
       "save": "Save blob",
       "saving": "Saving…",
       "cancel": "Cancel",

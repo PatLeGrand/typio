@@ -19,8 +19,10 @@ beforeEach(() => {
     ok: true,
     style: {
       color: formData.get("color") as BlobStyle["color"],
+      expression: formData.get("expression") as BlobStyle["expression"],
       glasses: formData.get("glasses") as BlobStyle["glasses"],
       hat: formData.get("hat") as BlobStyle["hat"],
+      accessory: formData.get("accessory") as BlobStyle["accessory"],
     },
   }));
 });
@@ -31,24 +33,33 @@ describe.each(["fr", "en"] as const)("BlobCustomizer (%s)", (locale) => {
   const setup = (initialStyle: BlobStyle = DEFAULT_BLOB_STYLE, isDemo = false) =>
     render(<BlobCustomizer initialStyle={initialStyle} isDemo={isDemo} labels={labels} />);
 
-  it("affiche les trois groupes accessibles, met à jour l'aperçu en direct et enregistre la combinaison", async () => {
+  it("affiche les cinq groupes accessibles, met à jour l'aperçu en direct et enregistre la combinaison", async () => {
     setup();
 
     const colorGroup = screen.getByRole("group", { name: labels.colorLegend });
+    const expressionGroup = screen.getByRole("group", { name: labels.expressionLegend });
     const glassesGroup = screen.getByRole("group", { name: labels.glassesLegend });
     const hatGroup = screen.getByRole("group", { name: labels.hatLegend });
+    const accessoryGroup = screen.getByRole("group", { name: labels.accessoryLegend });
     expect(screen.getByRole("button", { name: labels.save })).toBeDisabled();
 
     fireEvent.click(within(colorGroup).getByRole("radio", { name: labels.colors.coral }));
+    fireEvent.click(within(expressionGroup).getByRole("radio", { name: labels.expressions.wink }));
     fireEvent.click(within(glassesGroup).getByRole("radio", { name: labels.glasses.shades }));
     fireEvent.click(within(hatGroup).getByRole("radio", { name: labels.hats.cap }));
+    fireEvent.click(within(accessoryGroup).getByRole("radio", { name: labels.accessories.scarf }));
 
     const preview = screen.getByRole("img");
     expect(preview).toHaveAttribute("alt", expect.stringContaining(labels.colors.coral));
+    expect(preview).toHaveAttribute("alt", expect.stringContaining(labels.expressions.wink));
     expect(preview).toHaveAttribute("alt", expect.stringContaining(labels.glasses.shades));
     expect(preview).toHaveAttribute("alt", expect.stringContaining(labels.hats.cap));
-    expect(decodeURIComponent(preview.getAttribute("src") ?? "")).toContain('id="Glasses-shades"');
-    expect(decodeURIComponent(preview.getAttribute("src") ?? "")).toContain('id="Hat-cap"');
+    expect(preview).toHaveAttribute("alt", expect.stringContaining(labels.accessories.scarf));
+    const decodedSvg = decodeURIComponent(preview.getAttribute("src") ?? "");
+    expect(decodedSvg).toContain('id="Expression-wink"');
+    expect(decodedSvg).toContain('id="Glasses-shades"');
+    expect(decodedSvg).toContain('id="Hat-cap"');
+    expect(decodedSvg).toContain('id="Accessory-scarf"');
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: labels.save }));
@@ -56,27 +67,45 @@ describe.each(["fr", "en"] as const)("BlobCustomizer (%s)", (locale) => {
 
     expect(mocks.updateBlobStyle).toHaveBeenCalledTimes(1);
     const sent = Object.fromEntries(mocks.updateBlobStyle.mock.calls[0][0].entries());
-    expect(sent).toEqual({ color: "coral", glasses: "shades", hat: "cap" });
+    expect(sent).toEqual({
+      color: "coral",
+      expression: "wink",
+      glasses: "shades",
+      hat: "cap",
+      accessory: "scarf",
+    });
     expect(screen.getByText(plain(labels.saved))).toBeInTheDocument();
     expect(screen.getByRole("button", { name: labels.save })).toBeDisabled();
   });
 
   it("permet d'annuler ou de revenir au style par défaut", () => {
-    setup({ color: "lavender", glasses: "round", hat: "crown" });
+    setup({
+      color: "lavender",
+      expression: "cat",
+      glasses: "round",
+      hat: "crown",
+      accessory: "bowtie",
+    });
 
     const colorGroup = screen.getByRole("group", { name: labels.colorLegend });
+    const expressionGroup = screen.getByRole("group", { name: labels.expressionLegend });
     const glassesGroup = screen.getByRole("group", { name: labels.glassesLegend });
     const hatGroup = screen.getByRole("group", { name: labels.hatLegend });
+    const accessoryGroup = screen.getByRole("group", { name: labels.accessoryLegend });
 
     fireEvent.click(screen.getByRole("button", { name: labels.reset }));
     expect(within(colorGroup).getByRole("radio", { name: labels.colors.sky })).toBeChecked();
+    expect(within(expressionGroup).getByRole("radio", { name: labels.expressions.smile })).toBeChecked();
     expect(within(glassesGroup).getByRole("radio", { name: labels.glasses.none })).toBeChecked();
     expect(within(hatGroup).getByRole("radio", { name: labels.hats.none })).toBeChecked();
+    expect(within(accessoryGroup).getByRole("radio", { name: labels.accessories.none })).toBeChecked();
 
     fireEvent.click(screen.getByRole("button", { name: labels.cancel }));
     expect(within(colorGroup).getByRole("radio", { name: labels.colors.lavender })).toBeChecked();
+    expect(within(expressionGroup).getByRole("radio", { name: labels.expressions.cat })).toBeChecked();
     expect(within(glassesGroup).getByRole("radio", { name: labels.glasses.round })).toBeChecked();
     expect(within(hatGroup).getByRole("radio", { name: labels.hats.crown })).toBeChecked();
+    expect(within(accessoryGroup).getByRole("radio", { name: labels.accessories.bowtie })).toBeChecked();
   });
 
   it("annonce une erreur serveur traduite dans la région aria-live", async () => {
@@ -95,6 +124,7 @@ describe.each(["fr", "en"] as const)("BlobCustomizer (%s)", (locale) => {
   it("désactive l'édition pour le compte de démonstration", () => {
     setup(DEFAULT_BLOB_STYLE, true);
     expect(screen.getByRole("radio", { name: labels.colors.coral })).toBeDisabled();
+    expect(screen.getByRole("button", { name: labels.randomize })).toBeDisabled();
     expect(screen.getByRole("button", { name: labels.save })).toBeDisabled();
   });
 });

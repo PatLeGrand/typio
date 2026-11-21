@@ -164,7 +164,13 @@ it("charge le SVG personnalisé du blobStyle dans Pixi et libère les textures a
           name: "Alice",
           progress: 25,
           isLocal: true,
-          blobStyle: { color: "coral", glasses: "shades", hat: "cap" },
+          blobStyle: {
+            color: "coral",
+            expression: "smile",
+            glasses: "shades",
+            hat: "cap",
+            accessory: "cape",
+          },
         },
       ]}
     />,
@@ -173,6 +179,7 @@ it("charge le SVG personnalisé du blobStyle dans Pixi et libère les textures a
   await waitFor(() => expect(loadedImages.length).toBe(1));
   expect(decodeURIComponent(loadedImages[0].src)).toContain('id="Glasses-shades"');
   expect(decodeURIComponent(loadedImages[0].src)).toContain('id="Hat-cap"');
+  expect(decodeURIComponent(loadedImages[0].src)).toContain('id="Accessory-cape"');
 
   act(() => { loadedImages[0].onload?.(); });
   expect(drawImage).toHaveBeenCalledTimes(1);
@@ -186,13 +193,20 @@ it("charge le SVG personnalisé du blobStyle dans Pixi et libère les textures a
           name: "Alice",
           progress: 30,
           isLocal: true,
-          blobStyle: { color: "mint", glasses: "round", hat: "crown" },
+          blobStyle: {
+            color: "mint",
+            expression: "wink",
+            glasses: "round",
+            hat: "crown",
+            accessory: "none",
+          },
         },
       ]}
     />,
   );
 
   await waitFor(() => expect(loadedImages.length).toBe(2));
+  expect(decodeURIComponent(loadedImages[1].src)).toContain('id="Expression-wink"');
   expect(decodeURIComponent(loadedImages[1].src)).toContain('id="Glasses-round"');
   expect(decodeURIComponent(loadedImages[1].src)).toContain('id="Hat-crown"');
   act(() => { loadedImages[1].onload?.(); });

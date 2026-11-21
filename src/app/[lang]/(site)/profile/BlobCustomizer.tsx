@@ -1,22 +1,25 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
-import { CircleAlert, CircleCheck, RotateCcw, Save, Sparkles } from "lucide-react";
+import { CircleAlert, CircleCheck, Dices, RotateCcw, Save, Sparkles } from "lucide-react";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { BlobPreview } from "@/components/race/BlobPreview";
 import type { Dictionary } from "@/i18n/dictionaries";
 import {
+  BLOB_ACCESSORIES,
   BLOB_COLORS,
   BLOB_COLOR_HEX,
+  BLOB_EXPRESSIONS,
   BLOB_GLASSES,
   BLOB_HATS,
   DEFAULT_BLOB_STYLE,
   blobStyleEquals,
+  randomBlobStyle,
   type BlobStyle,
 } from "@/race/blobStyle";
 import { ChoiceRadio } from "./ChoiceRadio";
-import { formatBlobPreviewLabel } from "./blobPreviewLabel";
+import { formatBlobPreviewLabel, formatBlobStyleSummary } from "./blobPreviewLabel";
 import { updateBlobStyle, type BlobStyleErrorCode } from "./blobStyleActions";
 
 type BlobCustomizerProps = {
@@ -43,6 +46,18 @@ export function BlobCustomizer({ initialStyle, isDemo = false, labels, showHeade
     setErrorCode(null);
   };
 
+  const handleRandomize = () => {
+    setStyle((current) => {
+      let next = randomBlobStyle();
+      if (blobStyleEquals(next, current)) {
+        next = randomBlobStyle();
+      }
+      return next;
+    });
+    setSaved(false);
+    setErrorCode(null);
+  };
+
   const handleResetToDefault = () => {
     setStyle(DEFAULT_BLOB_STYLE);
     setSaved(false);
@@ -61,8 +76,10 @@ export function BlobCustomizer({ initialStyle, isDemo = false, labels, showHeade
 
     const formData = new FormData();
     formData.set("color", style.color);
+    formData.set("expression", style.expression);
     formData.set("glasses", style.glasses);
     formData.set("hat", style.hat);
+    formData.set("accessory", style.accessory);
 
     setSaved(false);
     setErrorCode(null);
@@ -98,27 +115,33 @@ export function BlobCustomizer({ initialStyle, isDemo = false, labels, showHeade
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-4 flex flex-col items-center justify-center gap-4 rounded-card border border-border bg-island-mint p-6">
+          <div className="lg:col-span-4 lg:sticky lg:top-6 flex flex-col items-center justify-center gap-4 rounded-card border border-border bg-island-mint p-6">
             <div className="relative flex flex-col items-center">
-              <BlobPreview style={style} size={148} label={previewLabel} className="relative z-10" />
+              <BlobPreview style={style} size={156} label={previewLabel} className="relative z-10" />
               <div
                 aria-hidden="true"
                 className="-mt-3 h-3 w-24 rounded-full bg-foreground/15"
               />
             </div>
             <p className="text-center text-xs font-medium text-muted">
-              {labels.colors[style.color]}
-              {" · "}
-              {labels.glasses[style.glasses]}
-              {" · "}
-              {labels.hats[style.hat]}
+              {formatBlobStyleSummary(style, labels)}
             </p>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isDemo || isPending}
+              onClick={handleRandomize}
+              className="w-full"
+            >
+              <Dices aria-hidden="true" className="w-4 h-4 shrink-0" />
+              {labels.randomize}
+            </Button>
           </div>
 
           <div className="lg:col-span-8 flex flex-col gap-6">
             <fieldset className="flex flex-col gap-3">
               <legend className="text-sm font-semibold text-foreground mb-2">{labels.colorLegend}</legend>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {BLOB_COLORS.map((color) => (
                   <label
                     key={color}
@@ -141,6 +164,23 @@ export function BlobCustomizer({ initialStyle, isDemo = false, labels, showHeade
                     <span className="truncate">{labels.colors[color]}</span>
                     <CircleCheck aria-hidden="true" className="ml-auto hidden size-4 shrink-0 group-has-checked:block" />
                   </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="flex flex-col gap-3">
+              <legend className="text-sm font-semibold text-foreground mb-2">{labels.expressionLegend}</legend>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {BLOB_EXPRESSIONS.map((expression) => (
+                  <ChoiceRadio
+                    key={expression}
+                    name="expression"
+                    value={expression}
+                    label={labels.expressions[expression]}
+                    checked={style.expression === expression}
+                    disabled={isDemo || isPending}
+                    onChange={() => updateSelection({ expression })}
+                  />
                 ))}
               </div>
             </fieldset>
@@ -174,6 +214,23 @@ export function BlobCustomizer({ initialStyle, isDemo = false, labels, showHeade
                     checked={style.hat === hat}
                     disabled={isDemo || isPending}
                     onChange={() => updateSelection({ hat })}
+                  />
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="flex flex-col gap-3">
+              <legend className="text-sm font-semibold text-foreground mb-2">{labels.accessoryLegend}</legend>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {BLOB_ACCESSORIES.map((accessory) => (
+                  <ChoiceRadio
+                    key={accessory}
+                    name="accessory"
+                    value={accessory}
+                    label={labels.accessories[accessory]}
+                    checked={style.accessory === accessory}
+                    disabled={isDemo || isPending}
+                    onChange={() => updateSelection({ accessory })}
                   />
                 ))}
               </div>

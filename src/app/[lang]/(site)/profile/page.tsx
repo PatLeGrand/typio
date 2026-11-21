@@ -19,7 +19,7 @@ import { createDrizzleProfileStatsRepository } from "@/race/drizzleProfileStatsR
 import { ProfileForm } from "./ProfileForm";
 import { ProfileSecurityPanel } from "./ProfileSecurityPanel";
 import { AvatarForm } from "./AvatarForm";
-import { formatBlobPreviewLabel } from "./blobPreviewLabel";
+import { formatBlobPreviewLabel, formatBlobStyleSummary } from "./blobPreviewLabel";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const locale = requireLocale((await params).lang);
@@ -70,11 +70,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
         <h3 className="text-xl font-bold text-foreground">{profile.blob.title}</h3>
         <p className="text-sm text-muted">{profile.blob.description}</p>
         <p className="text-xs font-medium text-muted pt-1">
-          {profile.blob.colors[initialBlobStyle.color]}
-          {" · "}
-          {profile.blob.glasses[initialBlobStyle.glasses]}
-          {" · "}
-          {profile.blob.hats[initialBlobStyle.hat]}
+          {formatBlobStyleSummary(initialBlobStyle, profile.blob)}
         </p>
       </div>
       <div>

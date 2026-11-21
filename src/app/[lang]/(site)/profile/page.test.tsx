@@ -66,7 +66,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getCurrentUser.mockResolvedValue(member);
   mockProfileDb();
-  mocks.getBlobStyle.mockResolvedValue({ color: "mint", glasses: "round", hat: "crown" });
+  mocks.getBlobStyle.mockResolvedValue({
+    color: "mint",
+    expression: "smile",
+    glasses: "round",
+    hat: "crown",
+    accessory: "none",
+  });
   mocks.getUserStats.mockResolvedValue({
     bestWpm: null,
     averageWpm: null,
