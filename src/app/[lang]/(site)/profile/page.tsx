@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, BarChart3, History, Sparkles } from "lucide-react";
 import { getCurrentUser } from "@/auth/currentUser";
 import { getDb } from "@/db/shared";
 import { users, oauthAccounts } from "@/db/schema";
@@ -88,30 +89,49 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
   return (
     <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 md:px-8 md:py-12">
       <div className="flex flex-col gap-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground tracking-tight">
-              {profile.title}
-            </h1>
-            <p className="text-muted mt-2 text-base">
-              {profile.description}
-            </p>
+        <header className="flex flex-col gap-3">
+          <Link
+            href={prefixWithLocale("/play", locale)}
+            className="group inline-flex self-start items-center gap-1.5 text-sm font-medium text-muted hover:text-accent-text transition-colors"
+          >
+            <ArrowLeft
+              aria-hidden="true"
+              className="h-4 w-4 transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none"
+            />
+            {profile.backToCourses}
+          </Link>
+
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+                {profile.title}
+              </h1>
+              <p className="text-muted mt-1.5 max-w-2xl text-sm sm:text-base text-pretty">
+                {profile.description}
+              </p>
+            </div>
+            {currentUser.kind === "member" && (
+              <div className="shrink-0 self-start sm:self-auto inline-flex flex-wrap items-center gap-1 rounded-full border border-border bg-surface/85 p-1 shadow-soft">
+                <Link
+                  href={prefixWithLocale("/stats", locale)}
+                  className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent-soft hover:text-accent-text"
+                >
+                  <BarChart3 aria-hidden="true" className="h-4 w-4" />
+                  {dictionary.stats.title}
+                  <ArrowUpRight aria-hidden="true" className="w-3.5 h-3.5 text-muted" />
+                </Link>
+                <Link
+                  href={prefixWithLocale("/history", locale)}
+                  className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent-soft hover:text-accent-text"
+                >
+                  <History aria-hidden="true" className="h-4 w-4" />
+                  {dictionary.history.title}
+                  <ArrowUpRight aria-hidden="true" className="w-3.5 h-3.5 text-muted" />
+                </Link>
+              </div>
+            )}
           </div>
-          <div className="shrink-0 flex flex-wrap gap-2">
-            {currentUser.kind === "member" && <>
-              <ButtonLink href={prefixWithLocale("/stats", locale)} variant="secondary">
-                {dictionary.stats.title}
-              </ButtonLink>
-              <ButtonLink href={prefixWithLocale("/history", locale)} variant="secondary">
-                {dictionary.history.title}
-              </ButtonLink>
-            </>}
-            <ButtonLink href={prefixWithLocale("/play", locale)} variant="secondary">
-              <ArrowLeft aria-hidden="true" className="w-4 h-4" />
-              {profile.backToCourses}
-            </ButtonLink>
-          </div>
-        </div>
+        </header>
 
         <ProfileForm
           user={currentUser}

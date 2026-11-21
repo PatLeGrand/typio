@@ -111,4 +111,24 @@ describe("ProfilePage", () => {
 
     expect(screen.getAllByRole("tab")).toHaveLength(2);
   });
+
+  it("expose les liens d'en-tête accessibles pour un membre et masque les raccourcis membre pour un invité", async () => {
+    render(await ProfilePage({ params: Promise.resolve({ lang: "fr" }) }));
+    const fr = getDictionary("fr");
+
+    expect(screen.getByRole("heading", { level: 1, name: fr.profile.title })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: fr.profile.backToCourses })).toHaveAttribute("href", "/fr/play");
+    expect(screen.getByRole("link", { name: fr.stats.title })).toHaveAttribute("href", "/fr/stats");
+    expect(screen.getByRole("link", { name: fr.history.title })).toHaveAttribute("href", "/fr/history");
+  });
+
+  it("n'affiche pas les raccourcis statistiques et historique pour un invité", async () => {
+    mocks.getCurrentUser.mockResolvedValue({ ...member, kind: "guest", username: null });
+    render(await ProfilePage({ params: Promise.resolve({ lang: "en" }) }));
+    const en = getDictionary("en");
+
+    expect(screen.getByRole("link", { name: en.profile.backToCourses })).toHaveAttribute("href", "/en/play");
+    expect(screen.queryByRole("link", { name: en.stats.title })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: en.history.title })).not.toBeInTheDocument();
+  });
 });
