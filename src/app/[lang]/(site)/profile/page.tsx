@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function ProfilePage({ params }: { params: Promise<{ lang: string }> }) {
   const locale = requireLocale((await params).lang);
   const currentUser = await getCurrentUser();
-  
+
   if (!currentUser) {
     redirect(prefixWithLocale("/login", locale));
   }
@@ -40,7 +40,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
   }
 
   const userOauth = await getDb().select().from(oauthAccounts).where(eq(oauthAccounts.userId, currentUser.id));
-  
+
   const providers = userOauth.map((o) => o.provider);
   const hasGithub = providers.includes("github");
   const hasDiscord = providers.includes("discord");
@@ -55,6 +55,35 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
       : Promise.resolve(null),
     getBlobStyle(currentUser.id),
   ]);
+
+  const blobPanel = (
+    <Card className="p-6 md:p-8 flex flex-col gap-6">
+      <div className="flex flex-col items-center justify-center rounded-card border border-border bg-island-mint px-6 py-6">
+        <BlobPreview
+          style={initialBlobStyle}
+          size={96}
+          label={formatBlobPreviewLabel(profile.blob.preview, initialBlobStyle, profile.blob)}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <h3 className="text-xl font-bold text-foreground">{profile.blob.title}</h3>
+        <p className="text-sm text-muted">{profile.blob.description}</p>
+        <p className="text-xs font-medium text-muted pt-1">
+          {profile.blob.colors[initialBlobStyle.color]}
+          {" · "}
+          {profile.blob.glasses[initialBlobStyle.glasses]}
+          {" · "}
+          {profile.blob.hats[initialBlobStyle.hat]}
+        </p>
+      </div>
+      <div>
+        <ButtonLink href={prefixWithLocale("/profile/blob", locale)} variant="secondary" fullWidth>
+          <Sparkles aria-hidden="true" className="w-4 h-4" />
+          {profile.blob.customize}
+        </ButtonLink>
+      </div>
+    </Card>
+  );
 
   return (
     <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-8 md:px-8 md:py-12">
@@ -84,50 +113,34 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
           </div>
         </div>
 
-        {statistics && <ProfileStats stats={statistics[0]} history={statistics[1]} locale={locale} labels={profile.stats} />}
-
-        {currentUser.kind === "member" && <AvatarForm userId={currentUser.id} displayName={currentUser.displayName}
-          version={dbUser.avatarVersion} labels={profile.avatar} />}
-
-        <Card className="p-6 md:p-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
-              <div className="shrink-0 flex flex-col items-center justify-center rounded-card border border-border bg-island-mint px-4 py-3">
-                <BlobPreview
-                  style={initialBlobStyle}
-                  size={72}
-                  label={formatBlobPreviewLabel(profile.blob.preview, initialBlobStyle, profile.blob)}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-bold text-foreground">{profile.blob.title}</h2>
-                <p className="text-sm text-muted">{profile.blob.description}</p>
-                <p className="text-xs font-medium text-muted">
-                  {profile.blob.colors[initialBlobStyle.color]}
-                  {" · "}
-                  {profile.blob.glasses[initialBlobStyle.glasses]}
-                  {" · "}
-                  {profile.blob.hats[initialBlobStyle.hat]}
-                </p>
-              </div>
-            </div>
-            <div className="shrink-0">
-              <ButtonLink href={prefixWithLocale("/profile/blob", locale)} variant="secondary">
-                <Sparkles aria-hidden="true" className="w-4 h-4" />
-                {profile.blob.customize}
-              </ButtonLink>
-            </div>
-          </div>
-        </Card>
-
-        {currentUser.isDemo && <p role="status">{profile.demoReadOnly}</p>}
-        <ProfileForm 
-          user={currentUser} 
+        <ProfileForm
+          user={currentUser}
           dbUser={{
             createdAt: dbUser.createdAt,
             // La base garantit la valeur (contrainte CHECK) ; la garde recale un éventuel écart de schéma.
             keyboardLayout: isKeyboardLayout(dbUser.keyboardLayout) ? dbUser.keyboardLayout : "qwerty",
           }}
+          avatarPanel={
+            currentUser.kind === "member" ? (
+              <AvatarForm
+                userId={currentUser.id}
+                displayName={currentUser.displayName}
+                version={dbUser.avatarVersion}
+                labels={profile.avatar}
+              />
+            ) : null
+          }
+          blobPanel={blobPanel}
+          statsPanel={
+            statistics ? (
+              <ProfileStats
+                stats={statistics[0]}
+                history={statistics[1]}
+                locale={locale}
+                labels={profile.stats}
+              />
+            ) : null
+          }
           securityPanel={
             currentUser.kind === "member" ? (
               <ProfileSecurityPanel
@@ -138,8 +151,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ lang: 
               />
             ) : null
           }
-          dictionary={dictionary} 
-          locale={locale} 
+          dictionary={dictionary}
+          locale={locale}
         />
       </div>
     </main>

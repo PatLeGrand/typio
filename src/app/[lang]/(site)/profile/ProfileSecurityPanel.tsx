@@ -19,7 +19,7 @@ export function ProfileSecurityPanel({ hasPassword, hasGithub, hasDiscord, dicti
   const { profile } = dictionary;
 
   return (
-    <section className="flex flex-col gap-8 lg:col-span-5">
+    <section className="grid grid-cols-1 lg:grid-cols-2 items-start gap-6">
       <Card className="p-6 md:p-8 flex flex-col gap-6">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-accent-soft text-accent-text rounded-[10px]">

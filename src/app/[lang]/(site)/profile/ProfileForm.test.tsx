@@ -16,6 +16,7 @@ vi.mock("@/auth/actions", () => ({ logout: mocks.logout }));
 
 import { ProfileForm } from "./ProfileForm";
 import { ProfileSecurityPanel } from "./ProfileSecurityPanel";
+import { AvatarForm } from "./AvatarForm";
 import { plain } from "@/test/text";
 
 const member: CurrentUser = {
@@ -23,7 +24,8 @@ const member: CurrentUser = {
   kind: "member",
   displayName: "Alice",
   username: "alice",
-  locale: "fr", avatarVersion: null,
+  locale: "fr",
+  avatarVersion: null,
 };
 const guest: CurrentUser = { ...member, kind: "guest", displayName: "Zoé", username: null };
 
@@ -33,6 +35,12 @@ function renderForm(locale: "fr" | "en", user: CurrentUser = member) {
     <ProfileForm
       user={user}
       dbUser={{ createdAt: new Date("2026-01-15T12:00:00Z"), keyboardLayout: "qwerty" }}
+      avatarPanel={
+        user.kind === "member" ? (
+          <AvatarForm userId={user.id} displayName={user.displayName} version={user.avatarVersion} labels={dictionary.profile.avatar} />
+        ) : null
+      }
+      statsPanel={user.kind === "member" ? <div data-testid="stats-panel">Stats</div> : null}
       securityPanel={<ProfileSecurityPanel hasPassword hasGithub={false} hasDiscord dictionary={dictionary} />}
       dictionary={dictionary}
       locale={locale}
@@ -49,35 +57,121 @@ function saveButton(dictionary: ReturnType<typeof getDictionary>) {
   return screen.getByRole("button", { name: dictionary.profile.actions.save });
 }
 
+function openTab(name: string) {
+  fireEvent.click(screen.getByRole("tab", { name }));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.updateProfile.mockResolvedValue({ ok: true, locale: "fr" });
 });
 
 describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
-  it("affiche les libellés traduits, dont la disposition « Canadien multilingue »", () => {
+  it("affiche les 4 onglets pour un membre et les libellés traduits, dont « Canadien multilingue »", () => {
     const dictionary = renderForm(locale);
     const { profile } = dictionary;
 
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      profile.tabs.profile,
+      profile.tabs.preferences,
+      profile.tabs.stats,
+      profile.tabs.security,
+    ]);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(tabs[0]).toHaveAttribute("tabindex", "0");
+    expect(tabs[1]).toHaveAttribute("aria-selected", "false");
+    expect(tabs[1]).toHaveAttribute("tabindex", "-1");
+
     expect(screen.getByRole("textbox", { name: profile.identity.displayName })).toHaveValue("Alice");
     expect(screen.getByRole("textbox", { name: profile.identity.username })).toHaveValue("@alice");
+    expect(screen.getByText(profile.identity.member)).toBeInTheDocument();
+    expect(screen.getByText(locale === "fr" ? "Membre depuis le 15 janvier 2026" : "Member since January 15, 2026")).toBeInTheDocument();
+    expect(screen.getByText(profile.actions.noChanges)).toBeInTheDocument();
+    expect(saveButton(dictionary)).toBeDisabled();
+
+    openTab(profile.tabs.preferences);
     expect(screen.getByRole("radio", { name: profile.settings.layouts.cmf })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: profile.settings.layouts.qwerty })).toBeChecked();
     expect(screen.getByRole("radio", { name: dictionary.language.names[locale] })).toBeChecked();
     expect(screen.getByRole("group", { name: profile.settings.layout })).toBeInTheDocument();
     expect(screen.getByRole("group", { name: profile.settings.language })).toBeInTheDocument();
-    expect(screen.getByText(profile.identity.member)).toBeInTheDocument();
-    expect(screen.getByText(locale === "fr" ? "Membre depuis le 15 janvier 2026" : "Member since January 15, 2026")).toBeInTheDocument();
-    expect(screen.getByText(profile.actions.noChanges)).toBeInTheDocument();
-    expect(saveButton(dictionary)).toBeDisabled();
+  });
+
+  it("gère la navigation clavier WAI-ARIA (ArrowRight, ArrowLeft, Home, End) et l'attribut hidden des panneaux", () => {
+    renderForm(locale);
+    const tabs = screen.getAllByRole("tab");
+    const panelIds = ["profile-panel-profile", "profile-panel-preferences", "profile-panel-stats", "profile-panel-security"];
+
+    tabs[0].focus();
+    fireEvent.keyDown(tabs[0], { key: "ArrowRight" });
+    expect(tabs[1]).toHaveAttribute("aria-selected", "true");
+    expect(document.activeElement).toBe(tabs[1]);
+    expect(document.getElementById(panelIds[0])).toHaveAttribute("hidden");
+    expect(document.getElementById(panelIds[1])).not.toHaveAttribute("hidden");
+
+    fireEvent.keyDown(tabs[1], { key: "End" });
+    expect(tabs[3]).toHaveAttribute("aria-selected", "true");
+    expect(document.activeElement).toBe(tabs[3]);
+    expect(document.getElementById(panelIds[3])).not.toHaveAttribute("hidden");
+
+    fireEvent.keyDown(tabs[3], { key: "ArrowRight" });
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(document.activeElement).toBe(tabs[0]);
+
+    fireEvent.keyDown(tabs[0], { key: "ArrowLeft" });
+    expect(tabs[3]).toHaveAttribute("aria-selected", "true");
+    expect(document.activeElement).toBe(tabs[3]);
+
+    fireEvent.keyDown(tabs[3], { key: "Home" });
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+    expect(document.activeElement).toBe(tabs[0]);
+  });
+
+  it("conserve les modifications non enregistrées entre Profil et Préférences et enregistre tout en une fois", async () => {
+    const dictionary = renderForm(locale);
+
+    fireEvent.change(nameField(dictionary), { target: { value: "Alice Pro" } });
+    openTab(dictionary.profile.tabs.preferences);
+    fireEvent.click(screen.getByRole("radio", { name: dictionary.profile.settings.layouts.azerty }));
+
+    openTab(dictionary.profile.tabs.profile);
+    expect(nameField(dictionary)).toHaveValue("Alice Pro");
+
+    openTab(dictionary.profile.tabs.preferences);
+    expect(screen.getByRole("radio", { name: dictionary.profile.settings.layouts.azerty })).toBeChecked();
+
+    await act(async () => {
+      fireEvent.click(saveButton(dictionary));
+    });
+
+    expect(mocks.updateProfile).toHaveBeenCalledTimes(1);
+    const sent = mocks.updateProfile.mock.calls[0][0];
+    expect(Object.fromEntries(sent.entries())).toEqual({
+      displayName: "Alice Pro",
+      keyboardLayout: "azerty",
+      locale,
+    });
+  });
+
+  it("n'imbrique pas AvatarForm dans #profile-form", () => {
+    const dictionary = renderForm(locale);
+    const profileForm = document.getElementById("profile-form");
+    const avatarForm = screen.getByRole("form", { name: dictionary.profile.avatar.title });
+
+    expect(profileForm).not.toBeNull();
+    expect(avatarForm).not.toBe(profileForm);
+    expect(profileForm?.contains(avatarForm)).toBe(false);
+    expect(profileForm?.querySelectorAll("form").length).toBe(0);
   });
 
   it("envoie la disposition cmf (valeur de la base) et rien d'autre que les trois réglages", async () => {
     const dictionary = renderForm(locale);
 
+    openTab(dictionary.profile.tabs.preferences);
     fireEvent.click(screen.getByRole("radio", { name: dictionary.profile.settings.layouts.cmf }));
     await act(async () => {
-      fireEvent.submit(nameField(dictionary).closest("form") as HTMLFormElement);
+      fireEvent.click(saveButton(dictionary));
     });
 
     expect(mocks.updateProfile).toHaveBeenCalledTimes(1);
@@ -89,6 +183,7 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
   it("un choix exclusif remplace le précédent (un seul radio coché par groupe)", () => {
     const dictionary = renderForm(locale);
 
+    openTab(dictionary.profile.tabs.preferences);
     fireEvent.click(screen.getByRole("radio", { name: dictionary.profile.settings.layouts.azerty }));
 
     expect(screen.getByRole("radio", { name: dictionary.profile.settings.layouts.azerty })).toBeChecked();
@@ -145,16 +240,18 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
     expect(mocks.updateProfile).not.toHaveBeenCalled();
   });
 
-  it("affiche sur le champ l'erreur renvoyée par le serveur (nom déjà pris)", async () => {
+  it("affiche sur le champ l'erreur renvoyée par le serveur (nom déjà pris) et revient sur l'onglet Profil", async () => {
     mocks.updateProfile.mockResolvedValue({ ok: false, code: "PSEUDO_TAKEN" });
     const dictionary = renderForm(locale);
 
     fireEvent.change(nameField(dictionary), { target: { value: "Bob" } });
+    openTab(dictionary.profile.tabs.preferences);
     await act(async () => {
-      fireEvent.submit(nameField(dictionary).closest("form") as HTMLFormElement);
+      fireEvent.click(saveButton(dictionary));
     });
 
     expect(await screen.findByText(dictionary.auth.errors.PSEUDO_TAKEN)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: dictionary.profile.tabs.profile })).toHaveAttribute("aria-selected", "true");
   });
 
   it("affiche une erreur de session dans une bannière", async () => {
@@ -174,9 +271,10 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
     mocks.updateProfile.mockResolvedValue({ ok: true, locale: other });
     const dictionary = renderForm(locale);
 
+    openTab(dictionary.profile.tabs.preferences);
     fireEvent.click(screen.getByRole("radio", { name: dictionary.language.names[other] }));
     await act(async () => {
-      fireEvent.submit(nameField(dictionary).closest("form") as HTMLFormElement);
+      fireEvent.click(saveButton(dictionary));
     });
 
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(`/${other}/profile`));
@@ -201,9 +299,14 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
     expect(logoutForm?.querySelector<HTMLInputElement>('input[name="locale"]')?.value).toBe(locale);
   });
 
-  it("un invité n'a ni comptes reliés ni sécurité, et son identifiant est « aucun »", () => {
+  it("un invité n'a que 2 onglets (Profil et Préférences), ni statistiques ni sécurité, et son identifiant est « aucun »", () => {
     const dictionary = renderForm(locale, guest);
 
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      dictionary.profile.tabs.profile,
+      dictionary.profile.tabs.preferences,
+    ]);
     expect(screen.queryByText(plain(dictionary.profile.security.linkedAccounts))).toBeNull();
     expect(screen.getByRole("textbox", { name: dictionary.profile.identity.username })).toHaveValue(
       dictionary.profile.identity.noUsername,
@@ -215,9 +318,12 @@ describe.each(["fr", "en"] as const)("ProfileForm (%s)", (locale) => {
 
 it("désactive l’enregistrement et les liaisons pour le compte de démo", () => {
   const dictionary = renderForm("fr", { ...member, isDemo: true });
+  expect(screen.getByRole("status")).toHaveTextContent(dictionary.profile.demoReadOnly);
   fireEvent.change(nameField(dictionary), { target: { value: "Autre nom" } });
   expect(saveButton(dictionary)).toBeDisabled();
-  expect(screen.getByRole("button", { name: dictionary.profile.security.link })).toBeDisabled();
   fireEvent.submit(nameField(dictionary).closest("form")!);
   expect(mocks.updateProfile).not.toHaveBeenCalled();
+
+  openTab(dictionary.profile.tabs.security);
+  expect(screen.getByRole("button", { name: dictionary.profile.security.link })).toBeDisabled();
 });
