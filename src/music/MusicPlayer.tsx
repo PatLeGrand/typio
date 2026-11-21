@@ -247,7 +247,7 @@ export function MusicPlayer({ labels }: Props) {
           setFailed(true);
         }}
       />
-      <div className="flex max-w-full items-center rounded-full border-2 border-border bg-surface/70 p-1.5 shadow-soft">
+      <div className="flex max-w-full items-center rounded-full border-2 border-border bg-surface/85 p-1.5 shadow-soft">
         <button
           type="button"
           data-music-toggle
@@ -293,7 +293,7 @@ export function MusicPlayer({ labels }: Props) {
             </button>
             <div className="hidden min-w-0 max-w-40 px-1 sm:block">
               <p className="truncate text-sm font-semibold" title={`${track.title} — ${track.artist}`}>{track.title}</p>
-              <p className="truncate text-xs text-muted-strong">{track.artist}</p>
+              <p className="truncate text-xs text-foreground">{track.artist}</p>
             </div>
             <button
               type="button"
@@ -324,7 +324,7 @@ export function MusicPlayer({ labels }: Props) {
         </div>
       </div>
       {collapsed ? null : (
-        <div className={`mt-2 max-w-72 rounded-2xl md:absolute md:inset-x-0 md:top-full md:max-w-none border border-border bg-surface/70 px-3 py-2 text-xs text-muted-strong shadow-soft ${failed ? "" : "sm:hidden"}`}>
+        <div className={`mt-2 max-w-72 rounded-2xl md:absolute md:inset-x-0 md:top-full md:max-w-none border border-border bg-surface/85 px-3 py-2 text-xs text-foreground shadow-soft ${failed ? "" : "sm:hidden"}`}>
           <p className="sm:hidden">
             <span className="font-semibold text-foreground">{track.title}</span> — {track.artist}
           </p>
